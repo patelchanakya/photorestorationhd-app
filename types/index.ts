@@ -16,6 +16,7 @@ export interface Restoration {
   completed_at?: string;
   error_message?: string;
   prediction_id?: string;
+  function_type?: 'restoration' | 'unblur';
 }
 
 export interface RestorationInput {
