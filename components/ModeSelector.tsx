@@ -20,7 +20,9 @@ interface ModeSelectorProps {
 
 export function ModeSelector({ visible, modes, selectedMode, onSelect, onClose }: ModeSelectorProps) {
   const handleModeSelect = (modeId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onSelect(modeId);
+    onClose();
   };
 
   const handleBackdropPress = () => {
@@ -138,7 +140,7 @@ export function ModeSelector({ visible, modes, selectedMode, onSelect, onClose }
 
               {/* Cancel Button */}
               <TouchableOpacity
-                onPress={onClose}
+                onPress={handleBackdropPress}
                 style={{
                   marginTop: 10,
                   paddingVertical: 16,

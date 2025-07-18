@@ -1,5 +1,6 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { restorationService } from '@/services/supabase';
+import { useRestorationStore } from '@/store/restorationStore';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { photoRestorationKeys } from './usePhotoRestoration';
 
 export interface RestorationHistoryItem {
@@ -16,6 +17,7 @@ export interface RestorationHistoryItem {
 
 // Hook to get restoration history
 export function useRestorationHistory(enabled: boolean = true) {
+  const setRestorationCount = useRestorationStore((state) => state.setRestorationCount);
   return useQuery({
     queryKey: photoRestorationKeys.history(),
     queryFn: async (): Promise<RestorationHistoryItem[]> => {
@@ -38,16 +40,20 @@ export function useRestorationHistory(enabled: boolean = true) {
             restoredImageUri: restoration.restored_filename || '',
             createdAt: new Date(restoration.created_at),
             original_filename: restoration.original_filename || '',
-            restored_filename: restoration.restored_filename,
-            thumbnail_filename: restoration.thumbnail_filename,
+            restored_filename: restoration.restored_filename ?? null,
+            thumbnail_filename: restoration.thumbnail_filename ?? null,
             status: restoration.status,
-            function_type: restoration.function_type,
+            function_type: restoration.function_type || '',
           }));
           
+        // Update Zustand store with the count
+        console.log('[useRestorationHistory] Setting restoration count:', processedRestorations.length);
+        setRestorationCount(processedRestorations.length);
         console.log('📊 Processed restoration history:', processedRestorations.length, 'completed items');
         return processedRestorations;
       } catch (error) {
         console.error('❌ Failed to load restoration history:', error);
+        setRestorationCount(0);
         return [];
       }
     },
@@ -57,6 +63,8 @@ export function useRestorationHistory(enabled: boolean = true) {
     gcTime: 1000 * 60 * 60 * 24, // 24 hours
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 }
 

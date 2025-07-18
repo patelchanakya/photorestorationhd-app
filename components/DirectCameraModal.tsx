@@ -1,26 +1,27 @@
+import { useRestorationHistory } from '@/hooks/useRestorationHistory';
+import { useRestorationStore } from '@/store/restorationStore';
 import { CameraType, CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Alert,
-    AppState,
-    AppStateStatus,
-    Modal,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Alert,
+  AppState,
+  AppStateStatus,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import Animated, {
-    useAnimatedStyle,
-    useSharedValue,
-    withSequence,
-    withSpring,
-    withTiming
-} from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { useRestorationHistory } from '@/hooks/useRestorationHistory';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming
+} from 'react-native-reanimated';
 import { CameraViewfinder } from './CameraViewfinder';
 import { IconSymbol } from './ui/IconSymbol';
 
@@ -39,6 +40,7 @@ export function DirectCameraModal({
   onPhotoSelected,
   defaultFunctionType = 'restoration' 
 }: DirectCameraModalProps) {
+  console.log('[DirectCameraModal] Mounted');
   const [facing, setFacing] = useState<CameraType>('back');
   const [enableTorch, setEnableTorch] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
@@ -50,9 +52,8 @@ export function DirectCameraModal({
   const cameraRef = useRef<CameraView>(null);
   const isMounted = useRef(true);
   
-  // Get restoration history for count badge
-  const { data: restorationHistory } = useRestorationHistory();
-  const restorationCount = restorationHistory?.length || 0;
+  // Get restoration count from Zustand store for badge
+  const restorationCount = useRestorationStore((state) => state.restorationCount);
   
   // Animation values
   const captureButtonScale = useSharedValue(1);
@@ -125,6 +126,13 @@ export function DirectCameraModal({
   useEffect(() => {
     setFunctionType(defaultFunctionType);
   }, [defaultFunctionType]);
+
+  // Ensure restoration count is fetched and synced on mount
+  const { refetch } = useRestorationHistory();
+  useEffect(() => {
+    console.log('[DirectCameraModal] Forcing restoration history refetch on mount (cancelRefetch: false)');
+    refetch({ cancelRefetch: false });
+  }, []);
 
   const animatedCaptureStyle = useAnimatedStyle(() => {
     return {
@@ -360,7 +368,7 @@ export function DirectCameraModal({
             {/* Settings Button */}
             <TouchableOpacity
               onPress={toggleFunctionType}
-              style={{ width: 44, height: 44, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' }}
             >
               <IconSymbol name="gear" size={22} color="#fff" />
             </TouchableOpacity>
@@ -375,7 +383,7 @@ export function DirectCameraModal({
             {/* Close Button */}
             <TouchableOpacity
               onPress={onClose}
-              style={{ width: 44, height: 44, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
             >
               <IconSymbol name="xmark" size={22} color="#fff" />
             </TouchableOpacity>
@@ -386,7 +394,7 @@ export function DirectCameraModal({
             {/* Flash Control */}
             <TouchableOpacity
               onPress={toggleFlash}
-              style={{ width: 44, height: 44, backgroundColor: enableTorch ? 'rgba(249,115,22,0.9)' : 'rgba(0,0,0,0.6)', borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' }}
             >
               <IconSymbol 
                 name={enableTorch ? 'bolt.fill' : 'bolt.slash'} 
@@ -395,13 +403,6 @@ export function DirectCameraModal({
               />
             </TouchableOpacity>
 
-            {/* Camera Flip */}
-            <TouchableOpacity
-              onPress={toggleCameraFacing}
-              style={{ width: 44, height: 44, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}
-            >
-              <IconSymbol name="camera.rotate" size={22} color="#fff" />
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -411,7 +412,7 @@ export function DirectCameraModal({
             {/* Gallery Button with Count Badge */}
             <TouchableOpacity
               onPress={handleGalleryPress}
-              style={{ position: 'absolute', left: 32, width: 56, height: 56, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 28, alignItems: 'center', justifyContent: 'center' }}
+              style={{ position: 'absolute', left: 32, width: 56, height: 56, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' }}
             >
               <IconSymbol name="photo" size={28} color="#fff" />
               {restorationCount > 0 && (
@@ -446,7 +447,7 @@ export function DirectCameraModal({
             {/* Upload Button */}
             <TouchableOpacity
               onPress={handleGalleryPress}
-              style={{ position: 'absolute', right: 32, width: 56, height: 56, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 28, alignItems: 'center', justifyContent: 'center' }}
+              style={{ position: 'absolute', right: 32, width: 56, height: 56, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' }}
             >
               <IconSymbol name="square.and.arrow.up" size={28} color="#fff" />
             </TouchableOpacity>

@@ -1,28 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Alert,
-  Modal,
-  ActivityIndicator,
-  Image as RNImage,
-  Dimensions,
-} from 'react-native';
+import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring, 
-  withRepeat, 
-  withSequence,
-  withTiming,
-  interpolate,
-  runOnJS
+import React, { useEffect, useState } from 'react';
+import {
+    Alert,
+    Dimensions,
+    Modal,
+    Image as RNImage,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withRepeat,
+    withSequence,
+    withSpring,
+    withTiming
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
 import { IconSymbol } from './ui/IconSymbol';
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);

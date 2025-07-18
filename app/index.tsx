@@ -1,14 +1,15 @@
-import { IconSymbol } from '@/components/ui/IconSymbol';
 import { CameraViewfinder } from '@/components/CameraViewfinder';
 import { ModeSelector } from '@/components/ModeSelector';
+import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useRestorationHistory } from '@/hooks/useRestorationHistory';
+import { useRestorationStore } from '@/store/restorationStore';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Text, TouchableOpacity, View, InteractionManager } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming, withRepeat } from 'react-native-reanimated';
+import { InteractionManager, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -31,26 +32,28 @@ export default function MinimalCameraWithGalleryButton() {
   const router = useRouter();
   const cameraRef = useRef<CameraView>(null);
   
-  // Get restoration history for count badge immediately (no delay)
-  const { data: restorationHistory, isLoading, error } = useRestorationHistory(true);
-  const restorationCount = restorationHistory?.length || 0;
+  // Always fetch and sync restoration history on app start
+  const { refetch } = useRestorationHistory();
+  useEffect(() => {
+    refetch({ cancelRefetch: false });
+  }, []);
+  // Use Zustand store for restorationCount
+  const restorationCount = useRestorationStore((state) => state.restorationCount);
   
   // Debug logging for badge
   useEffect(() => {
     console.log('📊 Badge State:', {
-      isLoading,
       restorationCount,
-      hasData: !!restorationHistory,
-      dataLength: restorationHistory?.length,
-      error: error?.message
     });
-  }, [isLoading, restorationCount, restorationHistory, error]);
+  }, [restorationCount]);
   
   
   // Animation values
   const captureButtonScale = useSharedValue(1);
   const flashAnimation = useSharedValue(0);
   const glowOpacity = useSharedValue(0.3);
+  const badgeScale = useSharedValue(1);
+  const badgeOpacity = useSharedValue(1);
 
   useEffect(() => {
     if (!permission) return;
@@ -98,6 +101,13 @@ export default function MinimalCameraWithGalleryButton() {
   const animatedGlowStyle = useAnimatedStyle(() => {
     return {
       opacity: glowOpacity.value,
+    };
+  });
+
+  const animatedBadgeStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: badgeScale.value }],
+      opacity: badgeOpacity.value,
     };
   });
 
@@ -159,8 +169,21 @@ export default function MinimalCameraWithGalleryButton() {
     setShowModeSelector(true);
   }, []);
 
-  const handleModeSelect = useCallback((mode: ModeType) => {
-    setFunctionType(mode);
+  // Make a mutable copy of MODES for ModeSelector
+  const mutableModes = MODES.map(mode => ({ ...mode }));
+
+  // Update handleModeSelect to accept modeId: string
+  const handleModeSelect = useCallback((modeId: string) => {
+    // Animate badge transition
+    badgeScale.value = withSequence(
+      withSpring(1.1, { damping: 15 }),
+      withSpring(1, { damping: 15 })
+    );
+    badgeOpacity.value = withSequence(
+      withTiming(0.7, { duration: 150 }),
+      withTiming(1, { duration: 150 })
+    );
+    setFunctionType(modeId as ModeType);
     setShowModeSelector(false);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   }, []);
@@ -242,14 +265,26 @@ export default function MinimalCameraWithGalleryButton() {
               </TouchableOpacity>
 
               {/* Mode Selector Badge */}
-              <TouchableOpacity
-                onPress={handleModePress}
-                style={{ backgroundColor: 'rgba(249,115,22,0.9)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 6 }}
-              >
-                <Text style={{ color: 'white', fontSize: 14, fontWeight: '600' }}>
-                  {getCurrentMode().name}
-                </Text>
-                <IconSymbol name="chevron.down" size={12} color="white" />
+              <TouchableOpacity onPress={handleModePress} activeOpacity={0.8}>
+                <Animated.View
+                  style={[
+                    { 
+                      backgroundColor: 'rgba(249,115,22,0.9)', 
+                      paddingHorizontal: 16, 
+                      paddingVertical: 8, 
+                      borderRadius: 20, 
+                      flexDirection: 'row', 
+                      alignItems: 'center', 
+                      gap: 6 
+                    },
+                    animatedBadgeStyle
+                  ]}
+                >
+                  <Text style={{ color: 'white', fontSize: 14, fontWeight: '600' }}>
+                    {getCurrentMode().name}
+                  </Text>
+                  <IconSymbol name="chevron.down" size={12} color="white" />
+                </Animated.View>
               </TouchableOpacity>
 
               {/* Flash/Torch Toggle */}
@@ -292,7 +327,7 @@ export default function MinimalCameraWithGalleryButton() {
                   elevation: 5
                 }}>
                   <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>
-                    {isLoading ? '...' : (restorationCount > 99 ? '99+' : restorationCount.toString())}
+                    {restorationCount > 99 ? '99+' : restorationCount.toString()}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -350,7 +385,7 @@ export default function MinimalCameraWithGalleryButton() {
           {/* Mode Selector Modal */}
           <ModeSelector
             visible={showModeSelector}
-            modes={MODES}
+            modes={mutableModes}
             selectedMode={functionType}
             onSelect={handleModeSelect}
             onClose={() => setShowModeSelector(false)}

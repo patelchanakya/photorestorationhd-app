@@ -1,29 +1,30 @@
 import { BeforeAfterSlider } from '@/components/BeforeAfterSlider';
+import { ProcessingScreen } from '@/components/ProcessingScreen';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 import { photoStorage } from '@/services/storage';
 import { restorationService } from '@/services/supabase';
+import { useRestorationStore } from '@/store/restorationStore';
 import { Restoration } from '@/types';
-import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
-import { ProcessingScreen } from '@/components/ProcessingScreen';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
+  ActionSheetIOS,
   ActivityIndicator,
   Alert,
+  FlatList,
+  Image,
+  Platform,
   SafeAreaView,
   Share,
   Text,
   TouchableOpacity,
   View,
-  FlatList,
-  Image,
-  ActionSheetIOS,
-  Platform,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, withRepeat, withSequence } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
+import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring } from 'react-native-reanimated';
 
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
@@ -36,6 +37,7 @@ export default function RestorationScreen() {
   
   // Use the photo restoration hook
   const photoRestoration = usePhotoRestoration();
+  const decrementRestorationCount = useRestorationStore((state) => state.decrementRestorationCount);
   
   // Check if this is a new restoration request
   const isNewRestoration = !!imageUri && !!functionType;
@@ -183,6 +185,9 @@ export default function RestorationScreen() {
       // Delete from database
       await restorationService.delete(restoration.id);
       
+      // Decrement restoration count in Zustand
+      decrementRestorationCount();
+
       // Navigate back to main screen
       router.back();
     } catch (error) {

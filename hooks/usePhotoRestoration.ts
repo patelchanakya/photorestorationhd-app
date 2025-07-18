@@ -1,7 +1,8 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { restorePhoto } from '@/services/replicate';
 import { photoStorage } from '@/services/storage';
 import { restorationService } from '@/services/supabase';
+import { useRestorationStore } from '@/store/restorationStore';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export interface RestorationResult {
   id: string;
@@ -22,6 +23,7 @@ export const photoRestorationKeys = {
 // Hook to start photo restoration
 export function usePhotoRestoration() {
   const queryClient = useQueryClient();
+  const incrementRestorationCount = useRestorationStore((state) => state.incrementRestorationCount);
 
   return useMutation({
     mutationFn: async ({ imageUri, functionType }: { imageUri: string; functionType: 'restoration' | 'unblur' | 'colorize' }) => {
@@ -87,6 +89,8 @@ export function usePhotoRestoration() {
       
       // Invalidate history to refresh the list
       queryClient.invalidateQueries({ queryKey: photoRestorationKeys.history() });
+      // Increment restoration count in Zustand
+      incrementRestorationCount();
     },
     onError: (error) => {
       console.error('Photo restoration failed:', error);
