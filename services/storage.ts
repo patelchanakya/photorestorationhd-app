@@ -1,6 +1,7 @@
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as MediaLibrary from 'expo-media-library';
+import Constants from 'expo-constants';
 import { PhotoData, Restoration } from '../types';
 
 class PhotoStorage {
@@ -118,21 +119,18 @@ class PhotoStorage {
   getPhotoUri(type: 'original' | 'restored' | 'thumbnail', filename: string): string {
     const folder = type === 'thumbnail' ? 'thumbnails' : type === 'restored' ? 'restored' : 'originals';
     const uri = `${this.basePath}${folder}/${filename}`;
-    
-    // Debug logging
-    console.log(`📁 Getting ${type} photo URI:`, uri);
-    
-    // Check if file exists (async operation, but we'll log the result)
-    FileSystem.getInfoAsync(uri).then(info => {
-      console.log(`📄 File ${filename} exists:`, info.exists);
-      if (info.exists && 'size' in info) {
-        console.log(`📏 File size: ${info.size} bytes`);
-      }
-    }).catch(error => {
-      console.error(`❌ Error checking file ${filename}:`, error);
-    });
-    
     return uri;
+  }
+  
+  // Check if a photo file exists
+  async checkPhotoExists(type: 'original' | 'restored' | 'thumbnail', filename: string): Promise<boolean> {
+    try {
+      const uri = this.getPhotoUri(type, filename);
+      const info = await FileSystem.getInfoAsync(uri);
+      return info.exists;
+    } catch (error) {
+      return false;
+    }
   }
 
   // Delete a photo and its associated files
@@ -154,15 +152,52 @@ class PhotoStorage {
     );
   }
 
+  // Check if running in Expo Go
+  private isExpoGo(): boolean {
+    return Constants.appOwnership === 'expo';
+  }
+
   // Export photo to camera roll
   async exportToCameraRoll(uri: string): Promise<void> {
-    const { status } = await MediaLibrary.requestPermissionsAsync();
-    
-    if (status !== 'granted') {
-      throw new Error('Camera roll permission not granted');
+    try {
+      // If in Expo Go, provide helpful message
+      if (this.isExpoGo()) {
+        console.log('🎯 Running in Expo Go - attempting save with limited permissions');
+      }
+      
+      // First check if we already have permissions
+      const { status: existingStatus } = await MediaLibrary.getPermissionsAsync();
+      
+      let finalStatus = existingStatus;
+      
+      // Only request if we don't have permissions
+      if (existingStatus !== 'granted') {
+        const { status: newStatus } = await MediaLibrary.requestPermissionsAsync();
+        finalStatus = newStatus;
+      }
+      
+      if (finalStatus !== 'granted') {
+        throw new Error('Camera roll permission not granted. Please enable in Settings.');
+      }
+      
+      // Try to save to library
+      const asset = await MediaLibrary.createAssetAsync(uri);
+      
+      if (!asset) {
+        throw new Error('Failed to create asset');
+      }
+      
+      console.log('✅ Photo saved to camera roll successfully');
+    } catch (error: any) {
+      console.error('❌ MediaLibrary save error:', error);
+      
+      // If it's the specific Expo Go error, provide clear guidance
+      if (error.message?.includes('NSPhotoLibraryAddUsageDescription')) {
+        throw new Error('Photo library access not available in Expo Go. Please use the Share button instead, or test in a development build.');
+      }
+      
+      throw error;
     }
-    
-    await MediaLibrary.saveToLibraryAsync(uri);
   }
 
   // Get photo info
@@ -207,7 +242,7 @@ class PhotoStorage {
   // Get storage info
   async getStorageInfo(): Promise<{ used: number; count: number }> {
     let totalSize = 0;
-    let fileCount = 0;
+    let restorationCount = 0;
 
     const directories = ['originals', 'restored', 'thumbnails'];
     
@@ -216,7 +251,11 @@ class PhotoStorage {
       
       try {
         const files = await FileSystem.readDirectoryAsync(dirPath);
-        fileCount += files.length;
+        
+        // Count restorations based on originals directory only
+        if (dir === 'originals') {
+          restorationCount = files.length;
+        }
         
         for (const file of files) {
           const fileInfo = await FileSystem.getInfoAsync(`${dirPath}${file}`);
@@ -231,8 +270,37 @@ class PhotoStorage {
 
     return {
       used: totalSize,
-      count: fileCount,
+      count: restorationCount,
     };
+  }
+
+  // Delete all photos from storage
+  async deleteAllPhotos(): Promise<{ deletedCount: number }> {
+    let deletedCount = 0;
+    const directories = ['originals', 'restored', 'thumbnails'];
+    
+    for (const dir of directories) {
+      const dirPath = `${this.basePath}${dir}/`;
+      
+      try {
+        const files = await FileSystem.readDirectoryAsync(dirPath);
+        
+        // Delete each file
+        for (const file of files) {
+          try {
+            await FileSystem.deleteAsync(`${dirPath}${file}`, { idempotent: true });
+            deletedCount++;
+          } catch (error) {
+            console.warn(`Failed to delete file ${file}:`, error);
+          }
+        }
+      } catch (error) {
+        console.warn(`Failed to read directory ${dir}:`, error);
+      }
+    }
+
+    console.log(`🗑️ Deleted ${deletedCount} photo files`);
+    return { deletedCount };
   }
 }
 

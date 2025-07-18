@@ -26,6 +26,8 @@ import {
     withSpring
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { showPaywall } from '@/services/superwall';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const HEADER_HEIGHT = 60;
@@ -41,6 +43,7 @@ export default function CropModalScreen() {
   const [showCropTool, setShowCropTool] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const insets = useSafeAreaInsets();
+  const { canRestore, incrementFreeRestorations } = useSubscriptionStore();
   // We'll use Reanimated shared values for crop box in the next step
   
   const decodedUri = imageUri ? decodeURIComponent(imageUri as string) : '';
@@ -144,7 +147,7 @@ export default function CropModalScreen() {
       );
       
       // Navigate to restoration screen with cropped image
-      router.push(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(result.uri)}&functionType=${functionType}`);
+      await handleRestoration(result.uri);
     } catch (error) {
       console.error('Error cropping image:', error);
       Alert.alert('Error', 'Failed to crop the image. Please try again.');
@@ -155,6 +158,29 @@ export default function CropModalScreen() {
 
   const handleCancel = () => {
     router.back();
+  };
+
+  const handleRestoration = async (imageUri: string) => {
+    // Check if user can restore
+    if (!canRestore()) {
+      // Show paywall if limit reached
+      const result = await showPaywall('restoration_limit');
+      if (!result || (result as any)?.type !== 'purchased' && (result as any)?.type !== 'restored') {
+        // User didn't purchase, don't proceed
+        Alert.alert(
+          'Restoration Limit Reached',
+          'You\'ve reached your daily limit of 3 free restorations. Upgrade to PRO for unlimited restorations!',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+    }
+    
+    // Increment usage counter (only for free users)
+    incrementFreeRestorations();
+    
+    // Proceed with restoration
+    router.replace(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(imageUri)}&functionType=${functionType}`);
   };
 
   // Pan gesture
@@ -263,7 +289,7 @@ export default function CropModalScreen() {
             onEditingComplete={(cropped) => {
               setShowCropTool(false);
               if (cropped?.uri) {
-                router.replace(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(cropped.uri)}&functionType=${functionType}`);
+                handleRestoration(cropped.uri);
               }
             }}
             onEditingCancel={() => {
@@ -348,7 +374,7 @@ export default function CropModalScreen() {
                       paddingHorizontal: 12,
                     }}
                     onPress={() => {
-                      router.replace(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(currentImageUri)}&functionType=${functionType}`);
+                      handleRestoration(currentImageUri);
                     }}
                     accessibilityLabel="Use Whole Image"
                     activeOpacity={0.85}
@@ -368,7 +394,9 @@ export default function CropModalScreen() {
       )}
     </SafeAreaView>
   );
-}const styles = StyleSheet.create({
+}
+
+const styles = StyleSheet.create({
   cropContainer: {
     width: SCREEN_WIDTH,
     height: SCREEN_HEIGHT * 0.7,

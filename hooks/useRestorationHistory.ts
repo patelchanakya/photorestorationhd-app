@@ -16,7 +16,7 @@ export interface RestorationHistoryItem {
 }
 
 // Hook to get restoration history
-export function useRestorationHistory(enabled: boolean = true) {
+export function useRestorationHistory(enabled: boolean = true, updateCount: boolean = true) {
   const setRestorationCount = useRestorationStore((state) => state.setRestorationCount);
   return useQuery({
     queryKey: photoRestorationKeys.history(),
@@ -31,8 +31,24 @@ export function useRestorationHistory(enabled: boolean = true) {
         const restorations = await restorationService.getUserRestorations('anonymous');
         console.log('✅ Loaded restoration history:', restorations.length, 'items');
         
-        const processedRestorations = restorations
-          .filter(r => r.status === 'completed')
+        // Import photoStorage to check file existence
+        const { photoStorage } = await import('@/services/storage');
+        
+        // Filter and validate restorations
+        const validRestorations = [];
+        for (const restoration of restorations) {
+          if (restoration.status === 'completed' && restoration.thumbnail_filename) {
+            // Check if thumbnail exists
+            const exists = await photoStorage.checkPhotoExists('thumbnail', restoration.thumbnail_filename);
+            if (exists) {
+              validRestorations.push(restoration);
+            }
+          }
+        }
+        
+        console.log(`✅ Valid restorations: ${validRestorations.length} out of ${restorations.length}`);
+        
+        const processedRestorations = validRestorations
           .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
           .map(restoration => ({
             id: restoration.id,
@@ -46,9 +62,11 @@ export function useRestorationHistory(enabled: boolean = true) {
             function_type: restoration.function_type || '',
           }));
           
-        // Update Zustand store with the count
-        console.log('[useRestorationHistory] Setting restoration count:', processedRestorations.length);
-        setRestorationCount(processedRestorations.length);
+        // Update Zustand store with the count only if updateCount is true
+        if (updateCount) {
+          console.log('[useRestorationHistory] Setting restoration count:', processedRestorations.length);
+          setRestorationCount(processedRestorations.length);
+        }
         console.log('📊 Processed restoration history:', processedRestorations.length, 'completed items');
         return processedRestorations;
       } catch (error) {

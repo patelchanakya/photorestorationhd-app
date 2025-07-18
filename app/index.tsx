@@ -34,19 +34,35 @@ export default function MinimalCameraWithGalleryButton() {
   // Always fetch and sync restoration history on app start
   const { refetch } = useRestorationHistory();
   useEffect(() => {
-    refetch({ cancelRefetch: false });
-  }, []);
+    // Clean up orphaned records on app start
+    import('@/services/supabase').then(({ localStorageHelpers }) => {
+      localStorageHelpers.cleanupOrphanedRecords().then((cleanedCount) => {
+        if (cleanedCount > 0) {
+          console.log(`🧹 Cleaned ${cleanedCount} orphaned records on app start`);
+          refetch({ cancelRefetch: false });
+        } else {
+          refetch({ cancelRefetch: false });
+        }
+      });
+    });
+  }, [refetch]);
   
   // Use Zustand store for restorationCount and flash button visibility
   const restorationCount = useRestorationStore((state) => state.restorationCount);
   const showFlashButton = useRestorationStore((state) => state.showFlashButton);
   
-  // Debug logging for badge
+  // Debug logging for badge and force initial sync
   useEffect(() => {
     console.log('📊 Badge State:', {
       restorationCount,
     });
   }, [restorationCount]);
+  
+  // Force sync restoration count on mount
+  useEffect(() => {
+    console.log('🚀 App mounted, forcing restoration history sync...');
+    refetch({ cancelRefetch: false });
+  }, []);
   
   
   // Animation values
@@ -250,12 +266,12 @@ export default function MinimalCameraWithGalleryButton() {
 
 
           {/* Top Controls */}
-          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, paddingTop: 60, paddingHorizontal: 16 }}>
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, paddingTop: 60, paddingHorizontal: 16, zIndex: 50 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               {/* Settings Button */}
               <TouchableOpacity
                 onPress={() => router.push('/settings-modal')}
-                style={{ width: 52, height: 52, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 26, alignItems: 'center', justifyContent: 'center' }}
+                style={{ width: 52, height: 52, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 26, alignItems: 'center', justifyContent: 'center', zIndex: 100 }}
               >
                 <IconSymbol name="gear" size={28} color="#fff" />
               </TouchableOpacity>
@@ -291,12 +307,15 @@ export default function MinimalCameraWithGalleryButton() {
 
               {/* Pro Button */}
               <TouchableOpacity
-                onPress={() => console.log('Pro button pressed')}
+                onPress={async () => {
+                  const { showPaywall } = await import('@/services/superwall');
+                  await showPaywall('pro_button');
+                }}
                 style={{ 
-                  width: 72, 
-                  height: 36, 
-                  backgroundColor: 'rgba(249,115,22,0.1)',
-                  borderRadius: 18, 
+                  width: 76, 
+                  height: 38, 
+                  backgroundColor: 'rgba(249, 115, 22, 0.08)',
+                  borderRadius: 19, 
                   alignItems: 'center', 
                   justifyContent: 'center',
                   borderWidth: 1.5,
@@ -331,29 +350,30 @@ export default function MinimalCameraWithGalleryButton() {
                 style={{ position: 'absolute', left: 32, width: 64, height: 64, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 32, alignItems: 'center', justifyContent: 'center' }}
               >
                 <IconSymbol name="photo" size={32} color="#fff" />
-                {/* Always show badge for testing - replace with restorationCount > 0 later */}
-                <View style={{ 
-                  position: 'absolute', 
-                  top: 4, 
-                  right: 4, 
-                  backgroundColor: '#f97316', 
-                  borderRadius: 12, 
-                  minWidth: 24, 
-                  height: 24, 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  borderWidth: 2, 
-                  borderColor: '#000',
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 4,
-                  elevation: 5
-                }}>
-                  <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>
-                    {restorationCount > 99 ? '99+' : restorationCount.toString()}
-                  </Text>
-                </View>
+                {restorationCount > 0 && (
+                  <View style={{ 
+                    position: 'absolute', 
+                    top: 4, 
+                    right: 4, 
+                    backgroundColor: '#f97316', 
+                    borderRadius: 12, 
+                    minWidth: 24, 
+                    height: 24, 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    borderWidth: 2, 
+                    borderColor: '#000',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 4,
+                    elevation: 5
+                  }}>
+                    <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>
+                      {restorationCount > 99 ? '99+' : restorationCount.toString()}
+                    </Text>
+                  </View>
+                )}
               </TouchableOpacity>
 
               {/* Capture Button with Glow and Flash */}

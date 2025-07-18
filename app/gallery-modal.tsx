@@ -1,5 +1,6 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { photoStorage } from '@/services/storage';
+import { localStorageHelpers } from '@/services/supabase';
 import { useRestorationHistory, useRefreshHistory } from '@/hooks/useRestorationHistory';
 import { useRouter } from 'expo-router';
 import React, { useState, useEffect } from 'react';
@@ -46,6 +47,7 @@ export default function GalleryModalScreen() {
   const { data: restorationHistory, isLoading: loading } = useRestorationHistory(true);
   
   // Convert RestorationHistoryItem[] to match the existing interface
+  // Note: restorationHistory is already validated in the hook
   const restorations = restorationHistory?.map(item => ({
     id: item.id,
     user_id: 'anonymous',
@@ -57,9 +59,17 @@ export default function GalleryModalScreen() {
     function_type: item.function_type as 'restoration' | 'unblur' | 'colorize' | undefined,
   })) || [];
   
-  // Refresh on mount to ensure we have latest data
+  // Refresh on mount and cleanup orphaned records
   useEffect(() => {
     console.log('🔄 Gallery Modal: Refreshing history on mount');
+    
+    // Clean up orphaned records in the background
+    localStorageHelpers.cleanupOrphanedRecords().then((cleanedCount) => {
+      if (cleanedCount > 0) {
+        refreshHistory();
+      }
+    });
+    
     refreshHistory();
   }, []);
   
@@ -93,7 +103,7 @@ export default function GalleryModalScreen() {
         ? photoStorage.getPhotoUri('thumbnail', item.thumbnail_filename)
         : undefined;
     } catch (err) {
-      console.error('[GalleryModal] Error getting image URIs for item:', item, err);
+      // Silently handle missing files
     }
     return (
       <TouchableOpacity
@@ -112,7 +122,6 @@ export default function GalleryModalScreen() {
             source={{ uri: thumbnailUri }}
             style={styles.thumbnail}
             resizeMode="cover"
-            onError={e => console.error('[GalleryModal] Image load error:', e.nativeEvent)}
           />
         )}
         <View style={styles.cardContent}>
@@ -141,6 +150,25 @@ export default function GalleryModalScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <Text style={styles.loadingText}>Loading your restorations...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  // Empty state
+  if (!loading && restorations.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.emptyContainer}>
+          <IconSymbol name="photo" size={64} color="#ccc" />
+          <Text style={styles.emptyTitle}>No Restorations Yet</Text>
+          <Text style={styles.emptyText}>Your restored photos will appear here</Text>
+          <TouchableOpacity
+            style={styles.emptyButton}
+            onPress={() => router.dismiss()}
+          >
+            <Text style={styles.emptyButtonText}>Start Restoring</Text>
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
     );
   }
@@ -209,7 +237,7 @@ export default function GalleryModalScreen() {
                     ? photoStorage.getPhotoUri('thumbnail', item.thumbnail_filename)
                     : undefined;
                 } catch (err) {
-                  console.error('[GalleryModal] Error getting image URIs for item:', item, err);
+                  // Silently handle missing files
                 }
                 // Remove right margin from last item in each row
                 const isLastInRow = (index + 1) % NUM_COLUMNS === 0;
@@ -587,5 +615,28 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.2,
     backgroundColor: 'transparent',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 32,
+  },
+  emptyButton: {
+    backgroundColor: '#f97316',
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 999,
+  },
+  emptyButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 }); 

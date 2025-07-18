@@ -7,10 +7,15 @@
     "icon": "./assets/images/icon.png",
     "scheme": "photorestorationhdapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.chanakyap.photorestorationhdapp"
+      "bundleIdentifier": "com.chanakyap.photorestorationhdapp",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSPhotoLibraryAddUsageDescription": "This app needs access to your photo library to save restored photos.",
+        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to select and save photos."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -45,6 +50,14 @@
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to capture photos for restoration",
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
           "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to save restored photos to your photo library",
+          "savePhotosPermission": "Allow $(PRODUCT_NAME) to save restored photos to your photo library",
+          "isAccessMediaLocationEnabled": true
         }
       ]
     ],

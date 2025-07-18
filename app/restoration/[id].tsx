@@ -5,10 +5,11 @@ import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 import { photoStorage } from '@/services/storage';
 import { restorationService } from '@/services/supabase';
 import { useRestorationStore } from '@/store/restorationStore';
-import { Restoration } from '@/types';
+import { useRestorationScreenStore } from '@/store/restorationScreenStore';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import * as FileSystem from 'expo-file-system';
+import React, { useCallback, useEffect } from 'react';
 import {
   ActionSheetIOS,
   ActivityIndicator,
@@ -36,11 +37,23 @@ const isTinyDevice = SCREEN_HEIGHT < 700;
 
 export default function RestorationScreen() {
   const { id, imageUri, functionType } = useLocalSearchParams();
-  const [restoration, setRestoration] = useState<Restoration | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [downloadText, setDownloadText] = useState('Save');
-  const [allRestorations, setAllRestorations] = useState<Restoration[]>([]);
-  const [isNavigating, setIsNavigating] = useState(false);
+  
+  // Use Zustand store for all state management
+  const {
+    restoration,
+    setRestoration,
+    loading,
+    setLoading,
+    downloadText,
+    setDownloadText,
+    allRestorations,
+    setAllRestorations,
+    isNavigating,
+    setIsNavigating,
+    filesExist,
+    setFilesExist,
+    resetState
+  } = useRestorationScreenStore();
   
   // Use the photo restoration hook
   const photoRestoration = usePhotoRestoration();
@@ -48,6 +61,13 @@ export default function RestorationScreen() {
   
   // Check if this is a new restoration request
   const isNewRestoration = !!imageUri && !!functionType;
+  
+  // Reset state on unmount
+  useEffect(() => {
+    return () => {
+      resetState();
+    };
+  }, [resetState]);
   
   // Animation values for the save button
   const buttonScale = useSharedValue(1);
@@ -131,6 +151,34 @@ export default function RestorationScreen() {
       router.replace(`/restoration/${restorationData.id}`);
     }
   }, [photoRestoration.isSuccess, photoRestoration.data]);
+  
+  // Check if files exist when viewing existing restoration
+  useEffect(() => {
+    const checkFiles = async () => {
+      if (!restoration || isNewRestoration) return;
+      
+      try {
+        const originalUri = photoStorage.getPhotoUri('original', restoration.original_filename);
+        const restoredUri = restoration.restored_filename
+          ? photoStorage.getPhotoUri('restored', restoration.restored_filename)
+          : null;
+          
+        const originalInfo = await FileSystem.getInfoAsync(originalUri);
+        const restoredInfo = restoredUri ? await FileSystem.getInfoAsync(restoredUri) : { exists: false };
+        
+        if (!originalInfo.exists || (restoredUri && !restoredInfo.exists)) {
+          setFilesExist(false);
+        } else {
+          setFilesExist(true);
+        }
+      } catch (error) {
+        console.error('Error checking files:', error);
+        setFilesExist(false);
+      }
+    };
+    
+    checkFiles();
+  }, [restoration, isNewRestoration, setFilesExist]);
 
   // Reset animation function
   const resetAnimation = () => {
@@ -186,12 +234,32 @@ export default function RestorationScreen() {
         setDownloadText('Save');
       }, 1500);
       
-    } catch (err) {
+    } catch (err: any) {
       // Error feedback
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       runOnJS(resetAnimation)();
       console.error('Failed to save photo to camera roll:', err);
-      Alert.alert('Error', 'Failed to save photo to camera roll');
+      
+      // Check if it's a permission or Expo Go error
+      if (err.message?.includes('NSPhotoLibraryAddUsageDescription') || 
+          err.message?.includes('Expo Go')) {
+        Alert.alert(
+          'Expo Go Limitation', 
+          'Saving to camera roll is not available in Expo Go. Please use the Share button to save your photo, or test in a development build.',
+          [
+            { text: 'Use Share Instead', onPress: handleShare },
+            { text: 'Cancel', style: 'cancel' }
+          ]
+        );
+      } else if (err.message?.includes('permission')) {
+        Alert.alert(
+          'Permission Required', 
+          err.message || 'Please enable photo library permissions in Settings.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert('Error', 'Failed to save photo to camera roll. Please try again.');
+      }
     }
   };
 
@@ -325,8 +393,8 @@ export default function RestorationScreen() {
     );
   }
 
-  const originalUri = photoStorage.getPhotoUri('original', restoration.original_filename);
-  const restoredUri = restoration.restored_filename
+  const originalUri = restoration ? photoStorage.getPhotoUri('original', restoration.original_filename) : '';
+  const restoredUri = restoration?.restored_filename
     ? photoStorage.getPhotoUri('restored', restoration.restored_filename)
     : null;
 
@@ -353,7 +421,25 @@ export default function RestorationScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Error state when files are missing */}
+        {!filesExist && (
+          <View className="flex-1 items-center justify-center px-8">
+            <IconSymbol name="exclamationmark.triangle" size={64} color="#ef4444" />
+            <Text className="text-xl font-semibold text-gray-900 mt-4 mb-2">Photo Not Found</Text>
+            <Text className="text-center text-gray-600 mb-6">
+              The photo files have been deleted or moved. This restoration record will be cleaned up.
+            </Text>
+            <TouchableOpacity 
+              onPress={() => router.back()}
+              className="bg-blue-500 px-6 py-3 rounded-full"
+            >
+              <Text className="text-white font-semibold">Go Back</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Main Content - ScrollView for small screens */}
+        {filesExist && (
         <ScrollView 
           className="flex-1"
           showsVerticalScrollIndicator={false}
@@ -497,6 +583,7 @@ export default function RestorationScreen() {
             </View>
           </View>
         </ScrollView>
+        )}
       </SafeAreaView>
     </GestureHandlerRootView>
   );

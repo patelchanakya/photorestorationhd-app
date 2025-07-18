@@ -5,7 +5,34 @@ import { Restoration } from '../types';
 // No Supabase dependency required
 
 // Local storage helpers for offline restoration data
-const localStorageHelpers = {
+export const localStorageHelpers = {
+  async cleanupOrphanedRecords(): Promise<number> {
+    try {
+      let cleanedCount = 0;
+      const restorations = await this.getAllLocalRestorations();
+      
+      for (const restoration of restorations) {
+        // Check if thumbnail exists
+        let hasFiles = false;
+        if (restoration.thumbnail_filename) {
+          const { photoStorage } = await import('./storage');
+          hasFiles = await photoStorage.checkPhotoExists('thumbnail', restoration.thumbnail_filename);
+        }
+        
+        // If no files exist, delete the record
+        if (!hasFiles) {
+          await this.deleteRestoration(restoration.id);
+          cleanedCount++;
+        }
+      }
+      
+      console.log(`🧹 Cleaned up ${cleanedCount} orphaned restoration records`);
+      return cleanedCount;
+    } catch (error) {
+      console.error('❌ Failed to cleanup orphaned records:', error);
+      return 0;
+    }
+  },
   async saveRestoration(restoration: Restoration): Promise<void> {
     try {
       const key = `restoration_${restoration.id}`;
@@ -82,6 +109,23 @@ const localStorageHelpers = {
       console.log('🗑️ Deleted restoration from local storage:', id);
     } catch (error) {
       console.error('❌ Failed to delete restoration from local storage:', error);
+    }
+  },
+
+  async deleteAllLocalRestorations(): Promise<{ deletedCount: number }> {
+    try {
+      const keys = await AsyncStorage.getAllKeys();
+      const restorationKeys = keys.filter(key => key.startsWith('restoration_'));
+      
+      if (restorationKeys.length > 0) {
+        await AsyncStorage.multiRemove(restorationKeys);
+      }
+      
+      console.log(`🗑️ Deleted ${restorationKeys.length} restoration records from local storage`);
+      return { deletedCount: restorationKeys.length };
+    } catch (error) {
+      console.error('❌ Failed to delete all restorations from local storage:', error);
+      return { deletedCount: 0 };
     }
   },
 };

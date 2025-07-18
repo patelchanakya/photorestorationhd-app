@@ -12,6 +12,7 @@ import { QueryClient, QueryClientProvider, focusManager, onlineManager } from '@
 import { useEffect } from 'react';
 import { AppState, AppStateStatus, Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+// import { SuperwallProvider } from 'expo-superwall';
 
 // Create QueryClient instance
 const queryClient = new QueryClient({
@@ -72,19 +73,21 @@ export default function RootLayout() {
     <ErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <QueryClientProvider client={queryClient}>
-          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-            <Stack>
-              <Stack.Screen name="index" options={{ headerShown: false, title: "Photo Restoration HD" }} />
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="restoration/[id]" options={{ headerShown: false }} />
-              <Stack.Screen name="gallery-modal" options={{ presentation: 'modal', headerShown: false }} />
-              <Stack.Screen name="settings-modal" options={{ presentation: 'modal', headerShown: false }} />
-              <Stack.Screen name="crop-modal" options={{ presentation: 'modal', headerShown: false }} />
-              <Stack.Screen name="gallery-image/[id]" options={{ presentation: 'modal', headerShown: false }} />
-              <Stack.Screen name="+not-found" />
-            </Stack>
-            <StatusBar style="auto" />
-          </ThemeProvider>
+          {/* <SuperwallProvider apiKey="pk_9463ee79e9c6a66da3118d96b615f85d505d307dbce01cf3"> */}
+            <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+              <Stack>
+                <Stack.Screen name="index" options={{ headerShown: false, title: "Photo Restoration HD" }} />
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="restoration/[id]" options={{ headerShown: false }} />
+                <Stack.Screen name="gallery-modal" options={{ presentation: 'modal', headerShown: false }} />
+                <Stack.Screen name="settings-modal" options={{ presentation: 'modal', headerShown: false }} />
+                <Stack.Screen name="crop-modal" options={{ presentation: 'modal', headerShown: false }} />
+                <Stack.Screen name="gallery-image/[id]" options={{ presentation: 'modal', headerShown: false }} />
+                <Stack.Screen name="+not-found" />
+              </Stack>
+              <StatusBar style="auto" />
+            </ThemeProvider>
+          {/* </SuperwallProvider> */}
         </QueryClientProvider>
       </GestureHandlerRootView>
     </ErrorBoundary>
