@@ -1,4 +1,5 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { useRestorationStore } from '@/store/restorationStore';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import {
@@ -9,9 +10,11 @@ import {
   View,
 } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 
 export default function SettingsModalScreen() {
   const router = useRouter();
+  const { showFlashButton, toggleFlashButton } = useRestorationStore();
 
   const handleClose = () => {
     router.back();
@@ -53,7 +56,7 @@ export default function SettingsModalScreen() {
         <ScrollView style={{ flex: 1, paddingHorizontal: 16 }}>
           <View style={{ paddingVertical: 20 }}>
             
-            {/* App Settings Section */}
+            {/* Connect & Support Section */}
             <View style={{ marginBottom: 32 }}>
               <Text style={{ 
                 color: 'rgba(249,115,22,1)', 
@@ -61,7 +64,7 @@ export default function SettingsModalScreen() {
                 fontWeight: '600', 
                 marginBottom: 16 
               }}>
-                App Settings
+                Connect & Support
               </Text>
               
               <View style={{ 
@@ -70,7 +73,7 @@ export default function SettingsModalScreen() {
                 overflow: 'hidden' 
               }}>
                 
-                {/* Camera Quality */}
+                {/* Follow Us */}
                 <TouchableOpacity style={{
                   flexDirection: 'row',
                   alignItems: 'center',
@@ -87,20 +90,53 @@ export default function SettingsModalScreen() {
                     justifyContent: 'center',
                     marginRight: 12
                   }}>
-                    <IconSymbol name="camera" size={18} color="#f97316" />
+                    <Ionicons name="people" size={18} color="#f97316" />
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      Camera Quality
-                    </Text>
-                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                      High quality (recommended)
-                    </Text>
+                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
+                    Follow Us
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: 12 }}>
+                    <TouchableOpacity>
+                      <FontAwesome5 name="pinterest" size={20} color="rgba(255,255,255,0.8)" />
+                    </TouchableOpacity>
+                    <TouchableOpacity>
+                      <FontAwesome5 name="facebook" size={20} color="rgba(255,255,255,0.8)" />
+                    </TouchableOpacity>
+                    <TouchableOpacity>
+                      <FontAwesome5 name="instagram" size={20} color="rgba(255,255,255,0.8)" />
+                    </TouchableOpacity>
+                    <TouchableOpacity>
+                      <FontAwesome5 name="tiktok" size={20} color="rgba(255,255,255,0.8)" />
+                    </TouchableOpacity>
                   </View>
+                </TouchableOpacity>
+
+                {/* Email Support */}
+                <TouchableOpacity style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: 16,
+                  borderBottomWidth: 1,
+                  borderBottomColor: 'rgba(255,255,255,0.1)'
+                }}>
+                  <View style={{
+                    width: 36,
+                    height: 36,
+                    backgroundColor: 'rgba(249,115,22,0.2)',
+                    borderRadius: 18,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: 12
+                  }}>
+                    <Ionicons name="mail" size={18} color="#f97316" />
+                  </View>
+                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
+                    E-mail Support
+                  </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </TouchableOpacity>
 
-                {/* Auto-save to Gallery */}
+                {/* Rate Us */}
                 <TouchableOpacity style={{
                   flexDirection: 'row',
                   alignItems: 'center',
@@ -117,36 +153,15 @@ export default function SettingsModalScreen() {
                     justifyContent: 'center',
                     marginRight: 12
                   }}>
-                    <IconSymbol name="photo" size={18} color="#f97316" />
+                    <Ionicons name="star" size={18} color="#f97316" />
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      Auto-save to Gallery
-                    </Text>
-                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                      Automatically save restored photos
-                    </Text>
-                  </View>
-                  <View style={{
-                    width: 44,
-                    height: 24,
-                    backgroundColor: '#f97316',
-                    borderRadius: 12,
-                    alignItems: 'center',
-                    justifyContent: 'flex-end',
-                    flexDirection: 'row',
-                    paddingHorizontal: 2
-                  }}>
-                    <View style={{
-                      width: 20,
-                      height: 20,
-                      backgroundColor: 'white',
-                      borderRadius: 10
-                    }} />
-                  </View>
+                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
+                    Like Us? Rate us!
+                  </Text>
+                  <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </TouchableOpacity>
 
-                {/* Processing Quality */}
+                {/* Share App */}
                 <TouchableOpacity style={{
                   flexDirection: 'row',
                   alignItems: 'center',
@@ -161,17 +176,107 @@ export default function SettingsModalScreen() {
                     justifyContent: 'center',
                     marginRight: 12
                   }}>
-                    <IconSymbol name="wand.and.stars" size={18} color="#f97316" />
+                    <Ionicons name="share-social" size={18} color="#f97316" />
+                  </View>
+                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
+                    Share App
+                  </Text>
+                  <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
+                </TouchableOpacity>
+              </View>
+            </View>
+            
+            {/* Preferences Section */}
+            <View style={{ marginBottom: 32 }}>
+              <Text style={{ 
+                color: 'rgba(249,115,22,1)', 
+                fontSize: 16, 
+                fontWeight: '600', 
+                marginBottom: 16 
+              }}>
+                Preferences
+              </Text>
+              
+              <View style={{ 
+                backgroundColor: 'rgba(255,255,255,0.05)', 
+                borderRadius: 12, 
+                overflow: 'hidden' 
+              }}>
+                
+                {/* Language */}
+                <TouchableOpacity style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: 16,
+                  borderBottomWidth: 1,
+                  borderBottomColor: 'rgba(255,255,255,0.1)'
+                }}>
+                  <View style={{
+                    width: 36,
+                    height: 36,
+                    backgroundColor: 'rgba(249,115,22,0.2)',
+                    borderRadius: 18,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: 12
+                  }}>
+                    <Ionicons name="globe" size={18} color="#f97316" />
+                  </View>
+                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
+                    Language
+                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={{ fontSize: 20 }}>🇬🇧</Text>
+                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 15 }}>English</Text>
+                  </View>
+                  <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" style={{ marginLeft: 8 }} />
+                </TouchableOpacity>
+                
+                {/* Show Flash Toggle */}
+                <TouchableOpacity 
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    padding: 16
+                  }}
+                  onPress={toggleFlashButton}
+                >
+                  <View style={{
+                    width: 36,
+                    height: 36,
+                    backgroundColor: 'rgba(249,115,22,0.2)',
+                    borderRadius: 18,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: 12
+                  }}>
+                    <Ionicons name="flash" size={18} color="#f97316" />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      Processing Quality
+                      Show Flash Button
                     </Text>
                     <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                      Maximum quality (slower)
+                      Display flash toggle on camera
                     </Text>
                   </View>
-                  <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
+                  <View style={{
+                    width: 44,
+                    height: 24,
+                    backgroundColor: showFlashButton ? '#f97316' : 'rgba(255,255,255,0.2)',
+                    borderRadius: 12,
+                    alignItems: 'center',
+                    justifyContent: showFlashButton ? 'flex-end' : 'flex-start',
+                    flexDirection: 'row',
+                    paddingHorizontal: 2
+                  }}>
+                    <View style={{
+                      width: 20,
+                      height: 20,
+                      backgroundColor: 'white',
+                      borderRadius: 10
+                    }} />
+                  </View>
                 </TouchableOpacity>
               </View>
             </View>
@@ -223,7 +328,104 @@ export default function SettingsModalScreen() {
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </TouchableOpacity>
 
-                {/* Clear Cache */}
+                {/* Delete All Photos */}
+                <TouchableOpacity style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: 16
+                }}>
+                  <View style={{
+                    width: 36,
+                    height: 36,
+                    backgroundColor: 'rgba(239,68,68,0.2)',
+                    borderRadius: 18,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: 12
+                  }}>
+                    <Ionicons name="trash" size={18} color="#ef4444" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
+                      Delete All Photos
+                    </Text>
+                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
+                      Remove all saved photos permanently
+                    </Text>
+                  </View>
+                  <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Account & Legal Section */}
+            <View style={{ marginBottom: 32 }}>
+              <Text style={{ 
+                color: 'rgba(249,115,22,1)', 
+                fontSize: 16, 
+                fontWeight: '600', 
+                marginBottom: 16 
+              }}>
+                Account & Legal
+              </Text>
+              
+              <View style={{ 
+                backgroundColor: 'rgba(255,255,255,0.05)', 
+                borderRadius: 12, 
+                overflow: 'hidden' 
+              }}>
+                
+                {/* Restore Purchases */}
+                <TouchableOpacity style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: 16,
+                  borderBottomWidth: 1,
+                  borderBottomColor: 'rgba(255,255,255,0.1)'
+                }}>
+                  <View style={{
+                    width: 36,
+                    height: 36,
+                    backgroundColor: 'rgba(249,115,22,0.2)',
+                    borderRadius: 18,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: 12
+                  }}>
+                    <Ionicons name="refresh" size={18} color="#f97316" />
+                  </View>
+                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
+                    Restore Purchases
+                  </Text>
+                  <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
+                </TouchableOpacity>
+
+                {/* Privacy Policy */}
+                <TouchableOpacity style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: 16,
+                  borderBottomWidth: 1,
+                  borderBottomColor: 'rgba(255,255,255,0.1)'
+                }}>
+                  <View style={{
+                    width: 36,
+                    height: 36,
+                    backgroundColor: 'rgba(249,115,22,0.2)',
+                    borderRadius: 18,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: 12
+                  }}>
+                    <Ionicons name="lock-closed" size={18} color="#f97316" />
+                  </View>
+                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
+                    Privacy Policy
+                  </Text>
+                  <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
+                </TouchableOpacity>
+
+                {/* Terms of Use */}
                 <TouchableOpacity style={{
                   flexDirection: 'row',
                   alignItems: 'center',
@@ -238,16 +440,11 @@ export default function SettingsModalScreen() {
                     justifyContent: 'center',
                     marginRight: 12
                   }}>
-                    <IconSymbol name="trash" size={18} color="#f97316" />
+                    <Ionicons name="document-text" size={18} color="#f97316" />
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      Clear Cache
-                    </Text>
-                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                      Free up temporary storage
-                    </Text>
-                  </View>
+                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
+                    Terms of Use
+                  </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </TouchableOpacity>
               </View>
@@ -330,6 +527,22 @@ export default function SettingsModalScreen() {
             </View>
 
           </View>
+          
+          {/* Version Info */}
+          <View style={{ 
+            alignItems: 'center', 
+            paddingVertical: 20,
+            marginTop: 10
+          }}>
+            <Text style={{ 
+              color: 'rgba(255,255,255,0.4)', 
+              fontSize: 14,
+              fontWeight: '400'
+            }}>
+              App version: 3.2 (1)
+            </Text>
+          </View>
+          
         </ScrollView>
       </Animated.View>
     </SafeAreaView>

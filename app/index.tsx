@@ -37,8 +37,9 @@ export default function MinimalCameraWithGalleryButton() {
     refetch({ cancelRefetch: false });
   }, []);
   
-  // Use Zustand store for restorationCount
+  // Use Zustand store for restorationCount and flash button visibility
   const restorationCount = useRestorationStore((state) => state.restorationCount);
+  const showFlashButton = useRestorationStore((state) => state.showFlashButton);
   
   // Debug logging for badge
   useEffect(() => {
@@ -259,35 +260,63 @@ export default function MinimalCameraWithGalleryButton() {
                 <IconSymbol name="gear" size={28} color="#fff" />
               </TouchableOpacity>
 
-              {/* Mode Selector Badge */}
-              <TouchableOpacity onPress={handleModePress} activeOpacity={0.8}>
+              {/* Mode Selector Badge - Absolutely Centered */}
+              <View style={{ position: 'absolute', left: 0, right: 0, alignItems: 'center', justifyContent: 'center' }}>
+                <TouchableOpacity onPress={handleModePress} activeOpacity={0.8}>
                 <Animated.View
                   style={[
                     { 
                       backgroundColor: 'rgba(249,115,22,0.9)', 
                       paddingHorizontal: 16, 
-                      paddingVertical: 8, 
-                      borderRadius: 20, 
+                      paddingVertical: 9, 
+                      borderRadius: 22, 
                       flexDirection: 'row', 
                       alignItems: 'center', 
-                      gap: 6 
+                      gap: 7,
+                      borderWidth: 1,
+                      borderColor: 'rgba(255,255,255,0.2)',
+                      minWidth: 110
                     },
                     animatedBadgeStyle
                   ]}
                 >
-                  <Text style={{ color: 'white', fontSize: 14, fontWeight: '600' }}>
+                  <IconSymbol name={getCurrentMode().icon} size={16} color="white" />
+                  <Text style={{ color: 'white', fontSize: 15, fontWeight: '600' }}>
                     {getCurrentMode().name}
                   </Text>
-                  <IconSymbol name="chevron.down" size={12} color="white" />
+                  <IconSymbol name="chevron.down" size={14} color="white" />
                 </Animated.View>
-              </TouchableOpacity>
+                </TouchableOpacity>
+              </View>
 
-              {/* Flash/Torch Toggle */}
+              {/* Pro Button */}
               <TouchableOpacity
-                onPress={toggleFlash}
-                style={{ width: 52, height: 52, backgroundColor: enableTorch ? 'rgba(249,115,22,0.9)' : 'rgba(0,0,0,0.6)', borderRadius: 26, alignItems: 'center', justifyContent: 'center' }}
+                onPress={() => console.log('Pro button pressed')}
+                style={{ 
+                  width: 72, 
+                  height: 36, 
+                  backgroundColor: 'rgba(249,115,22,0.1)',
+                  borderRadius: 18, 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  borderWidth: 1.5,
+                  borderColor: '#f97316',
+                  flexDirection: 'row',
+                  gap: 4,
+                  shadowColor: '#f97316',
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 6,
+                  elevation: 3
+                }}
               >
-                <IconSymbol name={enableTorch ? 'bolt.fill' : 'bolt.slash'} size={28} color="#fff" />
+                <IconSymbol name="crown" size={16} color="#f97316" />
+                <Text style={{ 
+                  color: '#f97316', 
+                  fontSize: 13, 
+                  fontWeight: '800', 
+                  letterSpacing: 0.3
+                }}>PRO</Text>
               </TouchableOpacity>
             </View>
 
@@ -327,8 +356,32 @@ export default function MinimalCameraWithGalleryButton() {
                 </View>
               </TouchableOpacity>
 
-              {/* Capture Button with Glow */}
+              {/* Capture Button with Glow and Flash */}
               <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                {/* Small Flash Button Above Capture - Only show if enabled in settings */}
+                {showFlashButton && (
+                  <TouchableOpacity
+                    onPress={toggleFlash}
+                    style={{
+                      position: 'absolute',
+                      top: -60,
+                      width: 36,
+                      height: 36,
+                      borderRadius: 18,
+                      backgroundColor: enableTorch ? 'rgba(249,115,22,0.15)' : 'rgba(0,0,0,0.4)',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderWidth: 1.5,
+                      borderColor: enableTorch ? 'rgba(249,115,22,0.8)' : 'rgba(255,255,255,0.3)',
+                    }}
+                  >
+                    <IconSymbol 
+                      name={enableTorch ? 'bolt.fill' : 'bolt.slash'} 
+                      size={20} 
+                      color={enableTorch ? '#f97316' : '#fff'} 
+                    />
+                  </TouchableOpacity>
+                )}
                 {/* Glow Effect */}
                 <Animated.View
                   style={[

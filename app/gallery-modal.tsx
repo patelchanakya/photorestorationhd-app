@@ -146,7 +146,7 @@ export default function GalleryModalScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <Animated.View entering={FadeIn} style={styles.modalContent}>
         {/* Modern, organized header row */}
         <View style={styles.newHeaderRow}>
@@ -240,15 +240,17 @@ export default function GalleryModalScreen() {
             />
           </View>
         ) : (
-          <SectionList
-            sections={sections}
-            key={'list'}
-            keyExtractor={item => item.id}
-            renderSectionHeader={renderSectionHeader}
-            renderItem={renderItem}
-            contentContainerStyle={{ paddingBottom: 32, paddingTop: 0 }}
-            showsVerticalScrollIndicator={false}
-          />
+          <View style={{ flex: 1, marginBottom: -34 }}>
+            <SectionList
+              sections={sections}
+              key={'list'}
+              keyExtractor={item => item.id}
+              renderSectionHeader={renderSectionHeader}
+              renderItem={renderItem}
+              contentContainerStyle={{ paddingBottom: 0, paddingTop: 0 }}
+              showsVerticalScrollIndicator={false}
+            />
+          </View>
         )}
       </Animated.View>
     </SafeAreaView>
@@ -264,7 +266,7 @@ const styles = StyleSheet.create({
   modalContent: {
     flex: 1,
     paddingTop: 8,
-    paddingBottom: 8,
+    paddingBottom: 0,
     paddingHorizontal: 0,
     backgroundColor: '#f5f6fa',
   },
@@ -506,9 +508,10 @@ const styles = StyleSheet.create({
   gridContainer: {
     flex: 1,
     paddingHorizontal: CONTAINER_PADDING,
+    marginBottom: -34, // Extend into safe area
   },
   gridContentContainer: {
-    paddingBottom: 32,
+    paddingBottom: 0,
     paddingTop: 8,
   },
   gridRow: {

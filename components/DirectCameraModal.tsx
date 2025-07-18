@@ -43,7 +43,7 @@ export function DirectCameraModal({
 }: DirectCameraModalProps) {
   console.log('[DirectCameraModal] Mounted');
   const [facing, setFacing] = useState<CameraType>('back');
-  const [enableTorch, setEnableTorch] = useState(false);
+  // Flash removed from app
   const [permission, requestPermission] = useCameraPermissions();
   const [functionType, setFunctionType] = useState<'restoration' | 'unblur'>(defaultFunctionType);
   const router = useRouter();
@@ -75,7 +75,6 @@ export function DirectCameraModal({
       console.log('[DirectCameraModal] Component unmounting');
       // Clean up camera resources
       setIsCameraReady(false);
-      setEnableTorch(false);
     };
   }, []);
   
@@ -89,8 +88,7 @@ export function DirectCameraModal({
       } else if (nextAppState.match(/inactive|background/)) {
         console.log('[DirectCameraModal] App going to background');
         // Disable camera features when going to background
-        setEnableTorch(false);
-        setIsCameraReady(false);
+          setIsCameraReady(false);
       }
       
       setAppState(nextAppState);
@@ -108,7 +106,6 @@ export function DirectCameraModal({
     if (!visible) {
       console.log('[DirectCameraModal] Modal closing, cleaning up camera');
       setIsCameraReady(false);
-      setEnableTorch(false);
       setFacing('back');
       setCameraInstanceKey((k) => k + 1); // Force remount CameraView
       // Reset to back camera when closing
@@ -119,7 +116,6 @@ export function DirectCameraModal({
         requestPermission();
       }
       setIsCameraReady(false);
-      setEnableTorch(false);
       setFacing('back');
     }
   }, [visible, permission?.granted, requestPermission]);
@@ -231,11 +227,7 @@ export function DirectCameraModal({
     setFacing(current => (current === 'back' ? 'front' : 'back'));
   }, []);
 
-  const toggleFlash = useCallback(() => {
-    console.log('[DirectCameraModal] Toggling flash');
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setEnableTorch(current => !current);
-  }, []);
+  // Flash toggle removed
 
   const toggleFunctionType = useCallback(() => {
     console.log('[DirectCameraModal] Toggling function type');
@@ -333,7 +325,7 @@ export function DirectCameraModal({
             ref={cameraRef}
             style={{ ...StyleSheet.absoluteFillObject }}
             facing={facing}
-            enableTorch={enableTorch}
+            // Flash removed
             zoom={zoom}
             onCameraReady={handleCameraReady}
             onMountError={handleCameraError}
@@ -392,21 +384,6 @@ export function DirectCameraModal({
             </TouchableOpacity>
           </View>
 
-          {/* Camera Controls */}
-          <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 16, gap: 24 }}>
-            {/* Flash Control */}
-            <TouchableOpacity
-              onPress={toggleFlash}
-              style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' }}
-            >
-              <IconSymbol 
-                name={enableTorch ? 'bolt.fill' : 'bolt.slash'} 
-                size={22} 
-                color="#fff" 
-              />
-            </TouchableOpacity>
-
-          </View>
         </View>
 
         {/* Bottom Controls */}
