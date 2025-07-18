@@ -151,7 +151,7 @@ export default function MinimalCameraWithGalleryButton() {
       });
 
       if (!result.canceled && result.assets[0]) {
-        router.push(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(result.assets[0].uri)}&functionType=${functionType}`);
+        router.push(`/crop-modal?imageUri=${encodeURIComponent(result.assets[0].uri)}&functionType=${functionType}`);
       }
     } catch (error) {
       console.error('Gallery error:', error);

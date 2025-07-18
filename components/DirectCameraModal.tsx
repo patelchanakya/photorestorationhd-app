@@ -213,8 +213,8 @@ export function DirectCameraModal({
 
       if (!result.canceled && result.assets[0] && isMounted.current) {
         console.log('[DirectCameraModal] Image selected from gallery');
-        // For gallery images, go directly to restoration (no crop)
-        router.push(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(result.assets[0].uri)}&functionType=${functionType}`);
+        // Navigate to crop modal for consistent UX
+        router.push(`/crop-modal?imageUri=${encodeURIComponent(result.assets[0].uri)}&functionType=${functionType}`);
         onClose();
       }
     } catch (error) {

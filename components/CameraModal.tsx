@@ -293,9 +293,10 @@ interface CameraButtonProps {
   onPress: () => void;
   icon: string;
   label: string;
+  disabled?: boolean;
 }
 
-function CameraButton({ onPress, icon, label }: CameraButtonProps) {
+function CameraButton({ onPress, icon, label, disabled }: CameraButtonProps) {
   const scale = useSharedValue(1);
   
   const animatedStyle = useAnimatedStyle(() => {
@@ -334,9 +335,11 @@ function CameraButton({ onPress, icon, label }: CameraButtonProps) {
           borderColor: 'rgba(255, 255, 255, 0.3)',
         },
         animatedStyle,
+        disabled && { opacity: 0.7, backgroundColor: 'rgba(255, 255, 255, 0.1)' },
       ]}
+      disabled={disabled}
     >
-      <IconSymbol name={icon} size={32} color="#fff" />
+      <IconSymbol name={icon === 'camera' ? 'camera' : 'photo'} size={32} color="#fff" />
       <Text 
         className="text-white text-lg font-semibold mt-2"
         style={{ 
@@ -362,6 +365,7 @@ interface CameraModalProps {
 
 export function CameraModal({ visible, onClose, onPhotoSelected, isProcessing = false, isComplete = false, functionType = 'restoration' }: CameraModalProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
   const { height } = Dimensions.get('window');
   const router = useRouter();
 
@@ -377,7 +381,6 @@ export function CameraModal({ visible, onClose, onPhotoSelected, isProcessing = 
 
   const pickImage = async (source: 'camera' | 'gallery') => {
     const hasPermission = await requestPermissions(source);
-    
     if (!hasPermission) {
       Alert.alert(
         'Permission Required',
@@ -387,8 +390,8 @@ export function CameraModal({ visible, onClose, onPhotoSelected, isProcessing = 
       return;
     }
 
+    setIsCapturing(true);
     let result;
-    
     if (source === 'camera') {
       result = await ImagePicker.launchCameraAsync({
         mediaTypes: 'images',
@@ -402,16 +405,12 @@ export function CameraModal({ visible, onClose, onPhotoSelected, isProcessing = 
         quality: 1,
       });
     }
+    setIsCapturing(false);
 
     if (!result.canceled && result.assets[0]) {
       const uri = result.assets[0].uri;
-      // For gallery images, go directly to restoration (no crop)
-      if (source === 'gallery') {
-        router.push(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(uri)}&functionType=${functionType}`);
-      } else {
-        // For camera images, use crop modal
-        router.push(`/crop-modal?imageUri=${encodeURIComponent(uri)}&functionType=${functionType}`);
-      }
+      // For both camera and gallery images, use crop modal for consistent UX
+      router.push(`/crop-modal?imageUri=${encodeURIComponent(uri)}&functionType=${functionType}`);
       onClose();
     }
   };
@@ -455,7 +454,14 @@ export function CameraModal({ visible, onClose, onPhotoSelected, isProcessing = 
         </View>
 
         {/* Content */}
-        {isProcessing && selectedImage ? (
+        {isCapturing ? (
+          <View className="flex-1 justify-center items-center">
+            <Text className="text-white text-lg mb-4">Capturing photo...</Text>
+            <Animated.View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#f97316', justifyContent: 'center', alignItems: 'center' }}>
+              <IconSymbol name="camera" size={32} color="#fff" />
+            </Animated.View>
+          </View>
+        ) : isProcessing && selectedImage ? (
           <ProcessingAnimation
             selectedImage={selectedImage}
             functionType={functionType}
@@ -514,15 +520,17 @@ export function CameraModal({ visible, onClose, onPhotoSelected, isProcessing = 
                 
                 <View className="flex-row gap-4 w-full max-w-sm">
                   <CameraButton 
-                    onPress={() => pickImage('camera')}
+                    onPress={() => { if (!isCapturing) pickImage('camera'); }}
                     icon="camera"
                     label="Camera"
+                    disabled={isCapturing}
                   />
                   
                   <CameraButton 
-                    onPress={() => pickImage('gallery')}
+                    onPress={() => { if (!isCapturing) pickImage('gallery'); }}
                     icon="photo"
                     label="Gallery"
+                    disabled={isCapturing}
                   />
                 </View>
               </View>

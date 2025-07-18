@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-  Image as RNImage,
-} from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    Image as RNImage,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import { IconSymbol } from './ui/IconSymbol';
 
 interface PhotoPickerProps {
@@ -71,13 +71,8 @@ export function PhotoPicker({ onPhotoSelected, isProcessing = false, functionTyp
 
     if (!result.canceled && result.assets[0]) {
       const uri = result.assets[0].uri;
-      // For gallery images, go directly to restoration (no crop)
-      if (source === 'gallery') {
-        router.push(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(uri)}&functionType=${functionType}`);
-      } else {
-        // For camera images, use crop modal
-        router.push(`/crop-modal?imageUri=${encodeURIComponent(uri)}&functionType=${functionType}`);
-      }
+      // For both camera and gallery images, use crop modal for consistent UX
+      router.push(`/crop-modal?imageUri=${encodeURIComponent(uri)}&functionType=${functionType}`);
     }
   };
 
