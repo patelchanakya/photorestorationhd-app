@@ -74,9 +74,10 @@ export function ProcessingScreen({ functionType, isProcessing, onComplete }: Pro
   useEffect(() => {
     if (!isProcessing && progress > 0) {
       setProgress(100);
+      // Reduced delay - just show 100% briefly then transition
       const timeout = setTimeout(() => {
         onComplete?.();
-      }, 800);
+      }, 150);
       return () => clearTimeout(timeout);
     }
   }, [isProcessing, progress, onComplete]);

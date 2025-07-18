@@ -13,10 +13,12 @@ import {
   ActionSheetIOS,
   ActivityIndicator,
   Alert,
+  Dimensions,
   FlatList,
   Image,
   Platform,
   SafeAreaView,
+  ScrollView,
   Share,
   Text,
   TouchableOpacity,
@@ -26,6 +28,11 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
+
+// Get screen dimensions for responsive design
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const isSmallDevice = SCREEN_WIDTH < 375;
+const isTinyDevice = SCREEN_HEIGHT < 700;
 
 export default function RestorationScreen() {
   const { id, imageUri, functionType } = useLocalSearchParams();
@@ -46,23 +53,8 @@ export default function RestorationScreen() {
   const buttonScale = useSharedValue(1);
   const iconScale = useSharedValue(1);
   const iconRotation = useSharedValue(0);
-  const progressScale = useSharedValue(0);
-  const glowOpacity = useSharedValue(0);
   const successBackground = useSharedValue(0);
 
-  // Format date for header
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    }) + ' at ' + date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
-  };
   
   // Animated styles for save button
   const animatedButtonStyle = useAnimatedStyle(() => {
@@ -80,18 +72,7 @@ export default function RestorationScreen() {
     };
   });
 
-  const animatedGlowStyle = useAnimatedStyle(() => {
-    return {
-      opacity: glowOpacity.value,
-    };
-  });
 
-  const animatedProgressStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: progressScale.value }],
-      opacity: progressScale.value,
-    };
-  });
 
   const animatedSuccessStyle = useAnimatedStyle(() => {
     return {
@@ -181,14 +162,6 @@ export default function RestorationScreen() {
         withTiming(0, { duration: 100 })
       );
       
-      // Glow effect
-      glowOpacity.value = withSequence(
-        withTiming(0.8, { duration: 200 }),
-        withTiming(0.3, { duration: 300 })
-      );
-      
-      // Progress animation
-      progressScale.value = withTiming(1, { duration: 800 });
       
       // Change text
       runOnJS(setDownloadText)('Saving...');
@@ -196,18 +169,13 @@ export default function RestorationScreen() {
       const uri = photoStorage.getPhotoUri('restored', restoration.restored_filename);
       await photoStorage.exportToCameraRoll(uri);
       
-      // Success animation
-      progressScale.value = withTiming(0, { duration: 300 });
-      
-      // Green highlight effect
-      successBackground.value = withTiming(1, { duration: 300 });
-      
+      // Success feedback
       buttonScale.value = withSequence(
-        withTiming(1.1, { duration: 200 }),
+        withTiming(1.05, { duration: 100 }),
         withSpring(1, { damping: 10 })
       );
       
-      // Heavy haptic for success
+      // Haptic feedback
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       
       // Show success text
@@ -215,26 +183,12 @@ export default function RestorationScreen() {
       
       // Reset after delay
       setTimeout(() => {
-        glowOpacity.value = withTiming(0, { duration: 300 });
-        successBackground.value = withTiming(0, { duration: 300 });
         setDownloadText('Save');
       }, 1500);
       
     } catch (err) {
-      // Error animation
-      buttonScale.value = withSequence(
-        withTiming(0.95, { duration: 100 }),
-        withSpring(1, { damping: 15 })
-      );
-      
-      iconRotation.value = withSequence(
-        withTiming(20, { duration: 100 }),
-        withTiming(-20, { duration: 100 }),
-        withTiming(0, { duration: 100 })
-      );
-      
+      // Error feedback
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      progressScale.value = withTiming(0, { duration: 300 });
       runOnJS(resetAnimation)();
       console.error('Failed to save photo to camera roll:', err);
       Alert.alert('Error', 'Failed to save photo to camera roll');
@@ -382,170 +336,86 @@ export default function RestorationScreen() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaView className="flex-1 bg-gray-100">
-        <View className="flex-1 px-4 py-2">
-        <View className="flex-row items-center justify-between mb-6">
-          <TouchableOpacity onPress={() => router.back()} className="p-2">
-            <IconSymbol name="chevron.left" size={24} color="#f97316" />
+      <SafeAreaView className="flex-1 bg-white">
+        {/* Clean Header */}
+        <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-100">
+          <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2">
+            <IconSymbol name="chevron.left" size={isSmallDevice ? 20 : 24} color="#000" />
           </TouchableOpacity>
-          <View className="flex-1 items-center">
-            <Text className="text-lg font-bold text-gray-800">
-              {restoration?.function_type === 'unblur' ? 'Unblurred' : 
-               restoration?.function_type === 'colorize' ? 'Colorized' : 'Restored'}
-            </Text>
-            <Text className="text-sm font-medium text-gray-600">
-              {restoration?.completed_at ? formatDate(restoration.completed_at) : formatDate(restoration.created_at)}
+          <View className="flex-1 mx-2">
+            <Text className={`${isSmallDevice ? 'text-sm' : 'text-base'} font-semibold text-gray-900 text-center`} numberOfLines={1}>
+              {restoration?.function_type === 'unblur' ? 'Unblurred Photo' : 
+               restoration?.function_type === 'colorize' ? 'Colorized Photo' : 'Restored Photo'}
             </Text>
           </View>
-          <View className="w-6" />
+          <TouchableOpacity onPress={showDeleteActionSheet} className="p-2 -mr-2">
+            <IconSymbol name="trash" size={isSmallDevice ? 18 : 20} color="#ef4444" />
+          </TouchableOpacity>
         </View>
 
-        {/* Before/After Slider */}
-        <BeforeAfterSlider
-          beforeUri={originalUri}
-          afterUri={restoredUri || originalUri}
-          style={{ marginBottom: 24 }}
-        />
+        {/* Main Content - ScrollView for small screens */}
+        <ScrollView 
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ flexGrow: 1 }}
+        >
+          <View className="flex-1 px-4">
+            {/* Before/After Slider */}
+            <View className={`${isTinyDevice ? 'py-4' : 'flex-1 justify-center'}`}>
+              <BeforeAfterSlider
+                beforeUri={originalUri}
+                afterUri={restoredUri || originalUri}
+                style={{ marginVertical: isTinyDevice ? 10 : 20 }}
+              />
+            </View>
 
-        {/* Action Buttons */}
-        <View className="items-center mb-4">
-          {/* Large Animated Save Button */}
-          <AnimatedTouchableOpacity
-            style={[
-              {
-                width: 140,
-                height: 50,
-                borderRadius: 25,
-                backgroundColor: '#f97316',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexDirection: 'row',
-                position: 'relative',
-                paddingHorizontal: 16,
-                marginBottom: 16,
-              },
-              animatedButtonStyle,
-              animatedSuccessStyle,
-            ]}
-            onPress={handleExport}
-          >
-            {/* Glow effect */}
-            <Animated.View
-              style={[
-                {
-                  position: 'absolute',
-                  width: 160,
-                  height: 70,
-                  borderRadius: 35,
-                  backgroundColor: '#f97316',
-                  opacity: 0.3,
-                },
-                animatedGlowStyle,
-              ]}
-            />
-            
-            {/* Progress ring */}
-            <Animated.View
-              style={[
-                {
-                  position: 'absolute',
-                  width: 150,
-                  height: 60,
-                  borderRadius: 30,
-                  borderWidth: 3,
-                  borderColor: '#fff',
-                  backgroundColor: 'transparent',
-                },
-                animatedProgressStyle,
-              ]}
-            />
-            
-            {/* Main icon */}
-            <Animated.View style={animatedIconStyle}>
-              <IconSymbol name="arrow.down.to.line" size={22} color="#fff" />
-            </Animated.View>
-            
-            {/* Save text inside button */}
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600', marginLeft: 8, textAlign: 'center' }}>
-              {downloadText}
-            </Text>
-          </AnimatedTouchableOpacity>
-
-          {/* Secondary Action Buttons */}
-          <View className="flex-row gap-8">
-            <TouchableOpacity
-              className="flex-row items-center justify-center px-2 py-2 gap-1 active:scale-95"
-              onPress={handleShare}
-            >
-              <IconSymbol name="square.and.arrow.up" size={16} color="#f97316" />
-              <Text className="text-orange-500 font-medium text-sm">Share</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              className="flex-row items-center justify-center px-2 py-2 gap-1 active:scale-95"
-              onPress={showDeleteActionSheet}
-            >
-              <IconSymbol name="trash" size={16} color="#ef4444" />
-              <Text className="text-red-500 font-medium text-sm">Delete</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Carousel of Other Restorations */}
-        {allRestorations.length > 0 && (
-          <View className="mb-6">
-            <Text className="text-gray-800 text-lg font-semibold mb-3">
-              Other Restorations
-            </Text>
-            <FlatList
-              data={allRestorations}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  className="mr-3 active:scale-95"
-                  onPress={() => {
-                    // Prevent navigating to the same restoration
-                    if (item.id === id) return;
-                    
-                    // Prevent multiple rapid taps
-                    if (isNavigating) return;
-                    
-                    setIsNavigating(true);
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    
-                    // Replace instead of push to avoid stacking
-                    router.replace(`/restoration/${item.id}`);
-                    
-                    // Reset navigation state after a delay
-                    setTimeout(() => setIsNavigating(false), 1000);
-                  }}
+            {/* Primary Actions */}
+            <View className={`${isTinyDevice ? 'pb-2' : 'pb-3'}`}>
+              {/* Save & Share Buttons - Clean Row */}
+              <View className={`flex-row ${isSmallDevice ? 'gap-2' : 'gap-3'} ${isTinyDevice ? 'mb-2' : 'mb-3'}`}>
+                {/* Save Button */}
+                <AnimatedTouchableOpacity
+                  style={[
+                    {
+                      flex: 1,
+                      height: isSmallDevice ? 48 : 52,
+                      borderRadius: 14,
+                      backgroundColor: '#f97316',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexDirection: 'row',
+                      position: 'relative',
+                    },
+                    animatedButtonStyle,
+                    animatedSuccessStyle,
+                  ]}
+                  onPress={handleExport}
                 >
-                  <View className={`rounded-xl shadow-sm overflow-hidden ${item.id === id ? 'border-2 border-orange-500' : 'bg-white'}`}>
-                    <Image
-                      source={{ uri: item.thumbnail_filename 
-                        ? photoStorage.getPhotoUri('thumbnail', item.thumbnail_filename)
-                        : photoStorage.getPhotoUri('restored', item.restored_filename!)
-                      }}
-                      style={{ width: 80, height: 80, opacity: item.id === id ? 0.7 : 1 }}
-                      className="rounded-xl"
-                    />
-                    {item.id === id && (
-                      <View className="absolute inset-0 bg-orange-500/20 rounded-xl" />
-                    )}
-                  </View>
-                </TouchableOpacity>
-              )}
-              contentContainerStyle={{ paddingHorizontal: 0 }}
-            />
-          </View>
-        )}
+                  {/* Simple icon and text */}
+                  <Animated.View style={animatedIconStyle}>
+                    <IconSymbol name="arrow.down.circle.fill" size={isSmallDevice ? 20 : 22} color="#fff" />
+                  </Animated.View>
+                  <Text style={{ color: '#fff', fontSize: isSmallDevice ? 14 : 16, fontWeight: '600', marginLeft: 6 }}>
+                    {downloadText}
+                  </Text>
+                </AnimatedTouchableOpacity>
 
-        {/* Restore Another Photo - Compact Button */}
-        <View className="mt-2 mb-4">
-          <TouchableOpacity
-            className="bg-orange-500 px-6 py-3 rounded-xl active:scale-95"
+                {/* Share Button */}
+                <TouchableOpacity
+                  className={`flex-1 ${isSmallDevice ? 'h-[48px]' : 'h-[52px]'} bg-gray-100 rounded-[14px] flex-row items-center justify-center active:scale-95`}
+                  onPress={handleShare}
+                >
+                  <IconSymbol name="square.and.arrow.up" size={isSmallDevice ? 18 : 20} color="#374151" />
+                  <Text className={`text-gray-700 font-semibold ${isSmallDevice ? 'text-sm' : 'text-base'} ml-1.5`}>Share</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Bottom Section */}
+            <View className={`${isTinyDevice ? 'pb-3' : 'pb-4'}`}>
+              {/* Restore Another Photo Button */}
+              <TouchableOpacity
+                className={`w-full ${isSmallDevice ? 'h-12' : 'h-14'} bg-gray-900 rounded-2xl items-center justify-center flex-row active:scale-95`}
             onPress={async () => {
               // Prevent multiple rapid taps
               if (isNavigating) return;
@@ -565,13 +435,68 @@ export default function RestorationScreen() {
               setTimeout(() => setIsNavigating(false), 1000);
             }}
           >
-            <Text className="text-white font-semibold text-center">
-              Restore Another Photo
-            </Text>
-          </TouchableOpacity>
-        </View>
+                <IconSymbol name="camera" size={isSmallDevice ? 18 : 20} color="#fff" />
+                <Text className={`text-white font-semibold ${isSmallDevice ? 'text-sm' : 'text-base'} ml-2`}>
+                  Take Another Photo
+                </Text>
+              </TouchableOpacity>
 
-        </View>
+              {/* Other Restorations */}
+              {allRestorations.length > 0 && (
+                <View className={`${isTinyDevice ? 'mt-4' : 'mt-6'}`}>
+                  <Text className={`text-gray-700 ${isSmallDevice ? 'text-xs' : 'text-sm'} font-medium ${isTinyDevice ? 'mb-2' : 'mb-3'}`}>
+                    Recent Restorations
+                  </Text>
+                  <FlatList
+                    data={allRestorations}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => {
+                      const thumbnailSize = isSmallDevice ? 50 : 60;
+                      return (
+                        <TouchableOpacity
+                          className={`${isSmallDevice ? 'mr-2' : 'mr-3'} active:scale-95`}
+                  onPress={() => {
+                    // Prevent navigating to the same restoration
+                    if (item.id === id) return;
+                    
+                    // Prevent multiple rapid taps
+                    if (isNavigating) return;
+                    
+                    setIsNavigating(true);
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    
+                    // Replace instead of push to avoid stacking
+                    router.replace(`/restoration/${item.id}`);
+                    
+                    // Reset navigation state after a delay
+                    setTimeout(() => setIsNavigating(false), 1000);
+                  }}
+                >
+                  <View className={`rounded-lg overflow-hidden ${item.id === id ? 'border-2 border-orange-500' : 'border border-gray-200'}`}>
+                    <Image
+                              source={{ uri: item.thumbnail_filename 
+                                ? photoStorage.getPhotoUri('thumbnail', item.thumbnail_filename)
+                                : photoStorage.getPhotoUri('restored', item.restored_filename!)
+                              }}
+                              style={{ width: thumbnailSize, height: thumbnailSize, opacity: item.id === id ? 0.6 : 1 }}
+                              className="rounded-lg"
+                            />
+                            {item.id === id && (
+                              <View className="absolute inset-0 bg-orange-500/20 rounded-lg" />
+                            )}
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    }}
+                    contentContainerStyle={{ paddingRight: 16 }}
+                  />
+                </View>
+              )}
+            </View>
+          </View>
+        </ScrollView>
       </SafeAreaView>
     </GestureHandlerRootView>
   );

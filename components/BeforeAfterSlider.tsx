@@ -1,8 +1,11 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import React, { useState } from 'react';
-import { Image as RNImage, View } from 'react-native';
+import { Dimensions, Image as RNImage, View } from 'react-native';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedGestureHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const isSmallDevice = SCREEN_WIDTH < 375;
 
 interface BeforeAfterSliderProps {
   beforeUri: string;
@@ -51,11 +54,12 @@ export function BeforeAfterSlider({ beforeUri, afterUri, style }: BeforeAfterSli
   });
 
   const handleStyle = useAnimatedStyle(() => {
+    const handleSize = isSmallDevice ? 28 : 32;
     return {
       left: `${sliderPosition.value * 100}%`,
       zIndex: 2,
       transform: [
-        { translateX: -16 },
+        { translateX: -handleSize / 2 },
         { scale: dragging ? 1.18 : 1 },
       ],
       shadowColor: '#f97316',
@@ -66,101 +70,107 @@ export function BeforeAfterSlider({ beforeUri, afterUri, style }: BeforeAfterSli
     };
   });
 
-  // Animated style for the slider handle below the image
-  const sliderHandleStyle = useAnimatedStyle(() => {
-    return {
-      left: sliderPosition.value * containerWidth - 24,
-      transform: [{ scale: dragging ? 1.12 : 1 }],
-    };
-  });
-
   return (
     <View style={[{ backgroundColor: 'transparent' }, style]}>
-      {/* Image container (no gesture handler) */}
-      <Animated.View 
-        style={{ height: 320, position: 'relative', backgroundColor: '#f5f5f5' }}
-        onLayout={(event) => {
-          const { width } = event.nativeEvent.layout;
-          setContainerWidth(width);
-        }}
-      >
-        {/* After image (base) */}
-        <RNImage
-          source={{ uri: afterUri }}
+      {/* Image container */}
+      <PanGestureHandler onGestureEvent={gestureHandler}>
+        <Animated.View 
           style={{ 
-            width: '100%', 
-            height: '100%', 
-            position: 'absolute',
+            height: SCREEN_WIDTH < 380 ? 280 : 320, 
+            position: 'relative', 
+            backgroundColor: '#f5f5f5',
+            maxHeight: '100%'
           }}
-          resizeMode="contain"
-          onError={(error) => {
-            console.error('After image error:', error);
+          onLayout={(event) => {
+            const { width } = event.nativeEvent.layout;
+            setContainerWidth(width);
           }}
-        />
-        {/* Before image (clipped overlay) */}
-        <Animated.View
-          style={[
-            {
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              height: '100%',
-              overflow: 'hidden',
-            },
-            animatedStyle,
-          ]}
         >
+          {/* After image (base) */}
           <RNImage
-            source={{ uri: beforeUri }}
+            source={{ uri: afterUri }}
             style={{ 
-              width: containerWidth, // Dynamic width based on container
-              height: '100%',
+              width: '100%', 
+              height: '100%', 
+              position: 'absolute',
             }}
             resizeMode="contain"
             onError={(error) => {
-              console.error('Before image error:', error);
+              console.error('After image error:', error);
             }}
           />
-        </Animated.View>
-      </Animated.View>
-      {/* Slider below the image */}
-      <View style={{ width: containerWidth, alignSelf: 'center', marginTop: 24 }}>
-        <PanGestureHandler onGestureEvent={gestureHandler}>
-          <Animated.View style={{ width: '100%', height: 44, justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
-            {/* Modern slider track */}
-            <View style={{ position: 'absolute', left: 0, right: 0, top: '50%', height: 6, backgroundColor: '#bbb', borderRadius: 3, transform: [{ translateY: -3 }] }} />
-            {/* Minimal slider handle */}
-            <Animated.View
-              style={[
-                {
-                  position: 'absolute',
-                  top: 7,
-                  width: 32,
-                  height: 28,
-                  backgroundColor: '#fff',
-                  borderRadius: 16,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  zIndex: 2,
-                  shadowColor: '#000',
-                  shadowOpacity: 0.08,
-                  shadowRadius: 4,
-                  shadowOffset: { width: 0, height: 1 },
-                  elevation: 2,
-                  // No border
-                },
-                sliderHandleStyle,
-              ]}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: 32, height: 28 }}>
-                <IconSymbol name="chevron.left" size={14} color="#f97316" style={{ marginRight: 0 }} />
-                <View style={{ width: 4, height: 16, backgroundColor: '#f97316', borderRadius: 2, marginHorizontal: 1 }} />
-                <IconSymbol name="chevron.right" size={14} color="#f97316" style={{ marginLeft: 0 }} />
-              </View>
-            </Animated.View>
+          
+          {/* Before image (clipped overlay) */}
+          <Animated.View
+            style={[
+              {
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                height: '100%',
+                overflow: 'hidden',
+              },
+              animatedStyle,
+            ]}
+          >
+            <RNImage
+              source={{ uri: beforeUri }}
+              style={{ 
+                width: containerWidth, // Dynamic width based on container
+                height: '100%',
+              }}
+              resizeMode="contain"
+              onError={(error) => {
+                console.error('Before image error:', error);
+              }}
+            />
           </Animated.View>
-        </PanGestureHandler>
-      </View>
+          {/* Single slider line */}
+          <Animated.View
+            style={[
+              {
+                position: 'absolute',
+                top: 0,
+                width: 2,
+                height: '100%',
+                backgroundColor: '#aaa',
+                marginLeft: -1,
+                borderRadius: 1,
+              },
+              lineStyle,
+            ]}
+          />
+          {/* Single slider handle */}
+          <Animated.View
+            style={[
+              {
+                position: 'absolute',
+                top: '50%',
+                width: isSmallDevice ? 28 : 32,
+                height: isSmallDevice ? 28 : 32,
+                backgroundColor: 'transparent',
+                borderRadius: isSmallDevice ? 14 : 16,
+                marginTop: isSmallDevice ? -14 : -16,
+                justifyContent: 'center',
+                alignItems: 'center',
+              },
+              handleStyle,
+            ]}
+          >
+            <View style={{ 
+              flexDirection: 'row', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              width: isSmallDevice ? 28 : 32, 
+              height: isSmallDevice ? 28 : 32 
+            }}>
+              <IconSymbol name="chevron.left" size={isSmallDevice ? 14 : 16} color="#fff" style={{ marginRight: 0 }} />
+              <IconSymbol name="chevron.right" size={isSmallDevice ? 14 : 16} color="#fff" style={{ marginLeft: 0 }} />
+            </View>
+          </Animated.View>
+        </Animated.View>
+      </PanGestureHandler>
+      
     </View>
   );
 }

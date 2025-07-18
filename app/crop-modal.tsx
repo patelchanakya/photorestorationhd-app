@@ -180,7 +180,7 @@ export default function CropModalScreen() {
       <SafeAreaView className="flex-1 bg-black">
         <View className="flex-1">
           {/* Header */}
-          <View className="flex-row justify-between items-center px-4 py-3 border-b border-white/10">
+          <View className="flex-row justify-between items-center px-4 py-3 border-b border-white/10 bg-black/90" style={{ zIndex: 10 }}>
             <TouchableOpacity
               onPress={handleCancel}
               className="w-10 h-10 rounded-full bg-white/10 justify-center items-center"
@@ -189,16 +189,24 @@ export default function CropModalScreen() {
               <IconSymbol name="xmark" size={20} color="#fff" />
             </TouchableOpacity>
             
-            <Text className="text-white text-lg font-semibold">
-              Crop Image
-            </Text>
+            <View className="flex-1 mx-4">
+              <Text className="text-white text-lg font-semibold text-center">
+                {functionType === 'unblur' ? 'Unblur Photo' : functionType === 'colorize' ? 'Colorize Photo' : 'Restore Photo'}
+              </Text>
+              <Text className="text-white/60 text-sm text-center mt-1">
+                Position and crop your image
+              </Text>
+            </View>
             
             <TouchableOpacity
               onPress={handleCrop}
-              className="px-4 py-2 rounded-full bg-orange-500"
+              className="px-4 py-2 rounded-full bg-orange-500 flex-row items-center"
               disabled={isProcessing || imageSize.width === 0}
             >
-              <Text className="text-white font-semibold">Done</Text>
+              <IconSymbol name="sparkles" size={16} color="#fff" />
+              <Text className="text-white font-semibold ml-1">
+                {functionType === 'unblur' ? 'Unblur' : functionType === 'colorize' ? 'Colorize' : 'Restore'}
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -274,12 +282,6 @@ export default function CropModalScreen() {
             )}
           </View>
 
-          {/* Instructions */}
-          <View className="px-4 py-6 bg-black/80">
-            <Text className="text-white/70 text-center text-sm">
-              Pinch to zoom • Drag to move • Tap Done to {functionType === 'unblur' ? 'unblur' : functionType === 'colorize' ? 'colorize' : 'restore'}
-            </Text>
-          </View>
         </View>
       </SafeAreaView>
     </GestureHandlerRootView>
@@ -305,7 +307,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     position: 'absolute',
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
   },
   cropArea: {
     position: 'absolute',
@@ -313,38 +315,44 @@ const styles = StyleSheet.create({
     height: CROP_SIZE,
     left: (SCREEN_WIDTH - CROP_SIZE) / 2,
     top: (SCREEN_HEIGHT * 0.7 - CROP_SIZE) / 2,
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: '#f97316',
     backgroundColor: 'transparent',
+    shadowColor: '#f97316',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   corner: {
     position: 'absolute',
-    width: 20,
-    height: 20,
+    width: 24,
+    height: 24,
     borderColor: '#f97316',
+    borderRadius: 2,
   },
   topLeft: {
-    top: -2,
-    left: -2,
-    borderTopWidth: 4,
-    borderLeftWidth: 4,
+    top: -3,
+    left: -3,
+    borderTopWidth: 5,
+    borderLeftWidth: 5,
   },
   topRight: {
-    top: -2,
-    right: -2,
-    borderTopWidth: 4,
-    borderRightWidth: 4,
+    top: -3,
+    right: -3,
+    borderTopWidth: 5,
+    borderRightWidth: 5,
   },
   bottomLeft: {
-    bottom: -2,
-    left: -2,
-    borderBottomWidth: 4,
-    borderLeftWidth: 4,
+    bottom: -3,
+    left: -3,
+    borderBottomWidth: 5,
+    borderLeftWidth: 5,
   },
   bottomRight: {
-    bottom: -2,
-    right: -2,
-    borderBottomWidth: 4,
-    borderRightWidth: 4,
+    bottom: -3,
+    right: -3,
+    borderBottomWidth: 5,
+    borderRightWidth: 5,
   },
 });
