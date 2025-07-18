@@ -3,6 +3,7 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import { photoStorage } from '@/services/storage';
 import { restorationService } from '@/services/supabase';
 import { Restoration } from '@/types';
+import { useRefreshHistory } from '@/hooks/useRestorationHistory';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import * as MediaLibrary from 'expo-media-library';
@@ -27,6 +28,7 @@ const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpaci
 export default function GalleryImageModal() {
   const { id } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
+  const refreshHistory = useRefreshHistory();
   const [restoration, setRestoration] = useState<Restoration | null>(null);
   const [loading, setLoading] = useState(true);
   const [originalUri, setOriginalUri] = useState<string | null>(null);
@@ -190,6 +192,8 @@ export default function GalleryImageModal() {
             try {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
               await restorationService.delete(restoration.id);
+              // Refresh the gallery data before dismissing
+              refreshHistory();
               Alert.alert('Deleted', 'Image deleted.');
               router.dismiss();
             } catch (err) {

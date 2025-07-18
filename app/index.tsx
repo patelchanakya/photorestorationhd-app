@@ -1,5 +1,6 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { CameraViewfinder } from '@/components/CameraViewfinder';
+import { ModeSelector } from '@/components/ModeSelector';
 import { useRestorationHistory } from '@/hooks/useRestorationHistory';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
@@ -11,17 +12,39 @@ import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, w
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
+// Define available modes
+const MODES = [
+  { id: 'restoration', name: 'Photo Restore', icon: 'wand.and.stars' },
+  { id: 'unblur', name: 'Unblur', icon: 'eye' }
+] as const;
+
+type ModeType = typeof MODES[number]['id'];
+
 export default function MinimalCameraWithGalleryButton() {
   const [permission, requestPermission] = useCameraPermissions();
   const [enableTorch, setEnableTorch] = useState(false);
   const [facing, setFacing] = useState<'front' | 'back'>('back');
   const [isAppReady, setIsAppReady] = useState(false);
+  const [functionType, setFunctionType] = useState<ModeType>('restoration');
+  const [showModeSelector, setShowModeSelector] = useState(false);
   const router = useRouter();
   const cameraRef = useRef<CameraView>(null);
   
-  // Get restoration history for count badge (only after app is ready)
-  const { data: restorationHistory } = useRestorationHistory(isAppReady);
+  // Get restoration history for count badge immediately (no delay)
+  const { data: restorationHistory, isLoading, error } = useRestorationHistory(true);
   const restorationCount = restorationHistory?.length || 0;
+  
+  // Debug logging for badge
+  useEffect(() => {
+    console.log('📊 Badge State:', {
+      isLoading,
+      restorationCount,
+      hasData: !!restorationHistory,
+      dataLength: restorationHistory?.length,
+      error: error?.message
+    });
+  }, [isLoading, restorationCount, restorationHistory, error]);
+  
   
   // Animation values
   const captureButtonScale = useSharedValue(1);
@@ -38,10 +61,11 @@ export default function MinimalCameraWithGalleryButton() {
   useEffect(() => {
     // Defer heavy operations until after interactions complete
     InteractionManager.runAfterInteractions(() => {
-      // Small delay to ensure app is fully loaded
+      // Reduced delay for faster loading
       setTimeout(() => {
+        console.log('📱 App is ready, enabling restoration history loading');
         setIsAppReady(true);
-      }, 500);
+      }, 100);
     });
   }, []);
   
@@ -98,12 +122,12 @@ export default function MinimalCameraWithGalleryButton() {
     try {
       const photo = await cameraRef.current.takePictureAsync();
       if (photo) {
-        router.push(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(photo.uri)}`);
+        router.push(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(photo.uri)}&functionType=${functionType}`);
       }
     } catch (error) {
       console.error('Failed to take picture:', error);
     }
-  }, [router, captureButtonScale, flashAnimation]);
+  }, [router, functionType, captureButtonScale, flashAnimation]);
 
   const handleGalleryPress = useCallback(async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -117,17 +141,32 @@ export default function MinimalCameraWithGalleryButton() {
       });
 
       if (!result.canceled && result.assets[0]) {
-        router.push(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(result.assets[0].uri)}`);
+        router.push(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(result.assets[0].uri)}&functionType=${functionType}`);
       }
     } catch (error) {
       console.error('Gallery error:', error);
     }
-  }, [router]);
+  }, [router, functionType]);
 
   const toggleFlash = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setEnableTorch(current => !current);
   }, []);
+
+  const handleModePress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setShowModeSelector(true);
+  }, []);
+
+  const handleModeSelect = useCallback((mode: ModeType) => {
+    setFunctionType(mode);
+    setShowModeSelector(false);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  }, []);
+
+  const getCurrentMode = useCallback(() => {
+    return MODES.find(mode => mode.id === functionType) || MODES[0];
+  }, [functionType]);
 
 
   if (!permission || !isAppReady) {
@@ -201,10 +240,16 @@ export default function MinimalCameraWithGalleryButton() {
                 <IconSymbol name="gear" size={28} color="#fff" />
               </TouchableOpacity>
 
-              {/* Mode Indicator */}
-              <View style={{ backgroundColor: 'rgba(249,115,22,0.9)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 }}>
-                <Text style={{ color: 'white', fontSize: 14, fontWeight: '600' }}>Photo Restore</Text>
-              </View>
+              {/* Mode Selector Badge */}
+              <TouchableOpacity
+                onPress={handleModePress}
+                style={{ backgroundColor: 'rgba(249,115,22,0.9)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 6 }}
+              >
+                <Text style={{ color: 'white', fontSize: 14, fontWeight: '600' }}>
+                  {getCurrentMode().name}
+                </Text>
+                <IconSymbol name="chevron.down" size={12} color="white" />
+              </TouchableOpacity>
 
               {/* Flash/Torch Toggle */}
               <TouchableOpacity
@@ -246,7 +291,7 @@ export default function MinimalCameraWithGalleryButton() {
                   elevation: 5
                 }}>
                   <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>
-                    {restorationCount > 99 ? '99+' : (restorationCount || '0')}
+                    {isLoading ? '...' : (restorationCount > 99 ? '99+' : restorationCount.toString())}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -300,6 +345,15 @@ export default function MinimalCameraWithGalleryButton() {
               </TouchableOpacity>
             </View>
           </View>
+
+          {/* Mode Selector Modal */}
+          <ModeSelector
+            visible={showModeSelector}
+            modes={MODES}
+            selectedMode={functionType}
+            onSelect={handleModeSelect}
+            onClose={() => setShowModeSelector(false)}
+          />
       </View>
     );
   }

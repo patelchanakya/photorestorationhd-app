@@ -20,12 +20,16 @@ export function useRestorationHistory(enabled: boolean = true) {
     queryKey: photoRestorationKeys.history(),
     queryFn: async (): Promise<RestorationHistoryItem[]> => {
       try {
-        // Add small delay to prevent race conditions
-        await new Promise(resolve => setTimeout(resolve, 100));
+        console.log('🔍 Loading restoration history...');
+        
+        // Reduced delay for faster loading
+        await new Promise(resolve => setTimeout(resolve, 50));
         
         // Always use 'anonymous' since we don't have auth
         const restorations = await restorationService.getUserRestorations('anonymous');
-        return restorations
+        console.log('✅ Loaded restoration history:', restorations.length, 'items');
+        
+        const processedRestorations = restorations
           .filter(r => r.status === 'completed')
           .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
           .map(restoration => ({
@@ -39,8 +43,11 @@ export function useRestorationHistory(enabled: boolean = true) {
             status: restoration.status,
             function_type: restoration.function_type,
           }));
+          
+        console.log('📊 Processed restoration history:', processedRestorations.length, 'completed items');
+        return processedRestorations;
       } catch (error) {
-        console.error('Failed to load restoration history:', error);
+        console.error('❌ Failed to load restoration history:', error);
         return [];
       }
     },

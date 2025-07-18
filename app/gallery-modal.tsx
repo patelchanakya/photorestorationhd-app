@@ -1,9 +1,8 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { photoStorage } from '@/services/storage';
-import { restorationService } from '@/services/supabase';
-import { Restoration } from '@/types';
+import { useRestorationHistory, useRefreshHistory } from '@/hooks/useRestorationHistory';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Dimensions,
     FlatList,
@@ -21,9 +20,17 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_MAX_WIDTH = 500;
 
-const NUM_COLUMNS = 3;
+// Responsive columns: 3 for phones, 4-6 for tablets
+const getNumColumns = () => {
+  if (SCREEN_WIDTH < 768) return 3; // Phones
+  if (SCREEN_WIDTH < 1024) return 4; // Small tablets
+  return 6; // Large tablets
+};
+
+const NUM_COLUMNS = getNumColumns();
 const GRID_SPACING = 8;
-const GRID_ITEM_SIZE = Math.floor((SCREEN_WIDTH - (GRID_SPACING * (NUM_COLUMNS + 1))) / NUM_COLUMNS);
+const CONTAINER_PADDING = 16;
+const GRID_ITEM_SIZE = Math.floor((SCREEN_WIDTH - CONTAINER_PADDING * 2 - (GRID_SPACING * (NUM_COLUMNS - 1))) / NUM_COLUMNS);
 
 function formatDate(dateString: string) {
   const date = new Date(dateString);
@@ -31,56 +38,55 @@ function formatDate(dateString: string) {
 }
 
 export default function GalleryModalScreen() {
-  const [restorations, setRestorations] = useState<Restoration[]>([]);
-  const [loading, setLoading] = useState(true);
   const [gridView, setGridView] = useState(false);
   const router = useRouter();
-
+  const refreshHistory = useRefreshHistory();
+  
+  // Use the React Query hook for data management
+  const { data: restorationHistory, isLoading: loading } = useRestorationHistory(true);
+  
+  // Convert RestorationHistoryItem[] to match the existing interface
+  const restorations = restorationHistory?.map(item => ({
+    id: item.id,
+    user_id: 'anonymous',
+    original_filename: item.original_filename,
+    restored_filename: item.restored_filename || undefined,
+    thumbnail_filename: item.thumbnail_filename || undefined,
+    status: item.status as 'completed',
+    created_at: item.createdAt.toISOString(),
+    function_type: item.function_type as 'restoration' | 'unblur' | undefined,
+  })) || [];
+  
+  // Refresh on mount to ensure we have latest data
   useEffect(() => {
-    loadRestorations();
+    console.log('🔄 Gallery Modal: Refreshing history on mount');
+    refreshHistory();
   }, []);
-
-  // Debug: Log restorations before rendering
+  
+  // Debug restorations
   useEffect(() => {
-    console.log('restorations:', restorations);
-  }, [restorations]);
-
-  const loadRestorations = async () => {
-    setLoading(true);
-    try {
-      const data = await restorationService.getUserRestorations('anonymous');
-      setRestorations(data.filter(r => r.status === 'completed'));
-    } catch (err) {
-      console.error('[GalleryModal] Failed to load restorations:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    console.log('📸 Gallery Modal: Restorations loaded:', {
+      count: restorations.length,
+      loading,
+      hasData: !!restorationHistory,
+      items: restorations.slice(0, 3) // First 3 items for debugging
+    });
+  }, [restorations, loading]);
 
   // Group restorations by date
-  let grouped = {} as Record<string, Restoration[]>;
-  try {
-    grouped = restorations.reduce((acc, item) => {
-      const date = formatDate(item.created_at);
-      if (!acc[date]) acc[date] = [];
-      acc[date].push(item);
-      return acc;
-    }, {} as Record<string, Restoration[]>);
-  } catch (err) {
-    console.error('[GalleryModal] Error grouping restorations:', err);
-  }
+  const grouped = restorations.reduce((acc, item) => {
+    const date = formatDate(item.created_at);
+    if (!acc[date]) acc[date] = [];
+    acc[date].push(item);
+    return acc;
+  }, {} as Record<string, typeof restorations[0][]>);
 
-  let sections = [] as { title: string; data: Restoration[] }[];
-  try {
-    sections = Object.keys(grouped).map(date => ({
-      title: date,
-      data: grouped[date],
-    })).filter(section => section.data.length > 0);
-  } catch (err) {
-    console.error('[GalleryModal] Error creating sections:', err);
-  }
+  const sections = Object.keys(grouped).map(date => ({
+    title: date,
+    data: grouped[date],
+  })).filter(section => section.data.length > 0);
 
-  const renderItem = ({ item }: { item: Restoration }) => {
+  const renderItem = ({ item }: { item: typeof restorations[0] }) => {
     let thumbnailUri = undefined;
     try {
       thumbnailUri = item.thumbnail_filename
@@ -174,41 +180,44 @@ export default function GalleryModalScreen() {
             <Text style={styles.emptySubtitle}>Your generated images will appear here.</Text>
           </View>
         ) : gridView ? (
-          <FlatList
-            data={restorations}
-            key={'grid'}
-            numColumns={NUM_COLUMNS}
-            keyExtractor={item => item.id}
-            renderItem={({ item }) => {
-              let thumbnailUri = undefined;
-              try {
-                thumbnailUri = item.thumbnail_filename
-                  ? photoStorage.getPhotoUri('thumbnail', item.thumbnail_filename)
-                  : undefined;
-              } catch (err) {
-                console.error('[GalleryModal] Error getting image URIs for item:', item, err);
-              }
-              // Debug: Log thumbnailUri and item
-              console.log('thumbnailUri:', thumbnailUri, 'item:', item);
-              return (
-                <TouchableOpacity
-                  style={styles.gridItem}
-                  onPress={() => router.push(`/gallery-image/${item.id}`)}
-                  activeOpacity={0.7}
-                >
-                  {thumbnailUri && (
-                    <RNImage
-                      source={{ uri: thumbnailUri }}
-                      style={styles.gridImage}
-                      resizeMode="cover"
-                    />
-                  )}
-                </TouchableOpacity>
-              );
-            }}
-            contentContainerStyle={styles.gridContainer}
-            showsVerticalScrollIndicator={false}
-          />
+          <View style={styles.gridContainer}>
+            <FlatList
+              data={restorations}
+              key={'grid'}
+              numColumns={NUM_COLUMNS}
+              keyExtractor={item => item.id}
+              columnWrapperStyle={NUM_COLUMNS > 1 ? styles.gridRow : undefined}
+              renderItem={({ item, index }) => {
+                let thumbnailUri = undefined;
+                try {
+                  thumbnailUri = item.thumbnail_filename
+                    ? photoStorage.getPhotoUri('thumbnail', item.thumbnail_filename)
+                    : undefined;
+                } catch (err) {
+                  console.error('[GalleryModal] Error getting image URIs for item:', item, err);
+                }
+                // Remove right margin from last item in each row
+                const isLastInRow = (index + 1) % NUM_COLUMNS === 0;
+                return (
+                  <TouchableOpacity
+                    style={[styles.gridItem, isLastInRow && { marginRight: 0 }]}
+                    onPress={() => router.push(`/gallery-image/${item.id}`)}
+                    activeOpacity={0.7}
+                  >
+                    {thumbnailUri && (
+                      <RNImage
+                        source={{ uri: thumbnailUri }}
+                        style={styles.gridImage}
+                        resizeMode="cover"
+                      />
+                    )}
+                  </TouchableOpacity>
+                );
+              }}
+              contentContainerStyle={styles.gridContentContainer}
+              showsVerticalScrollIndicator={false}
+            />
+          </View>
         ) : (
           <SectionList
             sections={sections}
@@ -237,7 +246,6 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     paddingHorizontal: 0,
     backgroundColor: '#f5f6fa',
-    alignItems: 'center',
   },
   header: {
     flexDirection: 'row',
@@ -271,12 +279,6 @@ const styles = StyleSheet.create({
     width: 56,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  headerRightGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    minWidth: 56,
   },
   restoreIconWrapper: {
     width: 36,
@@ -472,11 +474,23 @@ const styles = StyleSheet.create({
     marginRight: 8,
     zIndex: 20,
   },
+  gridContainer: {
+    flex: 1,
+    paddingHorizontal: CONTAINER_PADDING,
+  },
+  gridContentContainer: {
+    paddingBottom: 32,
+    paddingTop: 8,
+  },
+  gridRow: {
+    justifyContent: 'flex-start',
+    paddingHorizontal: 0,
+  },
   gridItem: {
     width: GRID_ITEM_SIZE,
-    height: GRID_ITEM_SIZE + 40,
-    marginLeft: GRID_SPACING,
-    marginTop: GRID_SPACING,
+    height: GRID_ITEM_SIZE,
+    marginRight: GRID_SPACING,
+    marginBottom: GRID_SPACING,
     borderRadius: 18,
     overflow: 'hidden',
     backgroundColor: '#fff',
