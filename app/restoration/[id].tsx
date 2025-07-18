@@ -243,22 +243,33 @@ export default function RestorationScreen() {
         />
 
         {/* Action Buttons */}
-        <View className="flex-row gap-4 mb-6">
+        <View className="items-center mb-4">
+          {/* Large Circular Save Button */}
           <TouchableOpacity
-            className="flex-1 flex-row items-center justify-center bg-orange-500 p-4 rounded-2xl gap-3 shadow-sm active:scale-95"
+            className="w-16 h-16 bg-orange-500 rounded-full items-center justify-center mb-4 active:scale-95"
             onPress={handleExport}
           >
-            <IconSymbol name="square.and.arrow.down" size={20} color="#fff" />
-            <Text className="text-white text-lg font-semibold">{downloadText}</Text>
+            <IconSymbol name="square.and.arrow.down" size={24} color="#fff" />
           </TouchableOpacity>
 
-          <TouchableOpacity
-            className="flex-1 flex-row items-center justify-center bg-white border-2 border-orange-500 p-4 rounded-2xl gap-3 active:scale-95"
-            onPress={handleShare}
-          >
-            <IconSymbol name="square.and.arrow.up" size={20} color="#f97316" />
-            <Text className="text-orange-500 text-lg font-semibold">Share</Text>
-          </TouchableOpacity>
+          {/* Secondary Action Buttons */}
+          <View className="flex-row gap-6">
+            <TouchableOpacity
+              className="flex-row items-center justify-center px-4 py-2 rounded-lg gap-2 active:scale-95"
+              onPress={handleShare}
+            >
+              <IconSymbol name="square.and.arrow.up" size={16} color="#f97316" />
+              <Text className="text-orange-500 font-medium">Share</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="flex-row items-center justify-center px-4 py-2 rounded-lg gap-2 active:scale-95"
+              onPress={showDeleteActionSheet}
+            >
+              <IconSymbol name="trash" size={16} color="#ef4444" />
+              <Text className="text-red-500 font-medium">Delete</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Carousel of Other Restorations */}
@@ -298,59 +309,21 @@ export default function RestorationScreen() {
         )}
 
         {/* Restore Another Photo - Compact Button */}
-        <View className="mt-2 mb-6">
-          <Animated.View style={animatedButtonStyle}>
-            <TouchableOpacity
-              activeOpacity={0.9}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-                const functionType = restoration?.function_type || 'restoration';
-                router.replace(`/?openModal=${functionType}`);
-              }}
-            >
-              <LinearGradient
-                colors={['#f97316', '#ec4899', '#8b5cf6']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={{
-                  paddingVertical: 12,
-                  paddingHorizontal: 24,
-                  borderRadius: 16,
-                  shadowColor: '#f97316',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.2,
-                  shadowRadius: 4,
-                  elevation: 4,
-                }}
-              >
-              <View className="items-center">
-                <Text className="text-white text-lg font-bold text-center">
-                  ✨ Restore Another Photo ✨
-                </Text>
-              </View>
-            </LinearGradient>
-          </TouchableOpacity>
-          </Animated.View>
-          
-          {/* Social Proof - Creates FOMO */}
-          <View className="items-center mt-2">
-            <Text className="text-gray-500 text-xs">
-              🔥 2,847 photos restored today
+        <View className="mt-2 mb-4">
+          <TouchableOpacity
+            className="bg-orange-500 px-6 py-3 rounded-xl active:scale-95"
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+              const functionType = restoration?.function_type || 'restoration';
+              router.replace(`/?openModal=${functionType}`);
+            }}
+          >
+            <Text className="text-white font-semibold text-center">
+              Restore Another Photo
             </Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
-        {/* Delete Button */}
-        <View className="items-center mt-6 mb-4">
-          <TouchableOpacity
-            onPress={showDeleteActionSheet}
-            className="active:opacity-70"
-          >
-            <Text className="text-red-500 text-sm font-medium">
-              Delete Photo
-            </Text>
-          </TouchableOpacity>
-        </View>
         </View>
       </SafeAreaView>
     </GestureHandlerRootView>
