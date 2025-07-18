@@ -2,6 +2,7 @@ import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     Alert,
@@ -362,6 +363,7 @@ interface CameraModalProps {
 export function CameraModal({ visible, onClose, onPhotoSelected, isProcessing = false, isComplete = false, functionType = 'restoration' }: CameraModalProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const { height } = Dimensions.get('window');
+  const router = useRouter();
 
   const requestPermissions = async (type: 'camera' | 'gallery') => {
     if (type === 'camera') {
@@ -390,23 +392,27 @@ export function CameraModal({ visible, onClose, onPhotoSelected, isProcessing = 
     if (source === 'camera') {
       result = await ImagePicker.launchCameraAsync({
         mediaTypes: 'images',
-        allowsEditing: true,
-        aspect: [4, 3],
+        allowsEditing: false,
         quality: 1,
       });
     } else {
       result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: 'images',
-        allowsEditing: true,
-        aspect: [4, 3],
+        allowsEditing: false,
         quality: 1,
       });
     }
 
     if (!result.canceled && result.assets[0]) {
       const uri = result.assets[0].uri;
-      setSelectedImage(uri);
-      onPhotoSelected(uri);
+      // For gallery images, go directly to restoration (no crop)
+      if (source === 'gallery') {
+        router.push(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(uri)}&functionType=${functionType}`);
+      } else {
+        // For camera images, use crop modal
+        router.push(`/crop-modal?imageUri=${encodeURIComponent(uri)}&functionType=${functionType}`);
+      }
+      onClose();
     }
   };
 

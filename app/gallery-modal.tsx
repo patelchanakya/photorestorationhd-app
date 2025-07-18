@@ -98,7 +98,13 @@ export default function GalleryModalScreen() {
     return (
       <TouchableOpacity
         style={[styles.card, { maxWidth: CARD_MAX_WIDTH, width: SCREEN_WIDTH - 32 }]}
-        onPress={() => router.push(`/gallery-image/${item.id}`)}
+        onPress={() => {
+          // Dismiss the modal first, then navigate
+          router.dismiss();
+          setTimeout(() => {
+            router.push(`/restoration/${item.id}`);
+          }, 100);
+        }}
         activeOpacity={0.7}
       >
         {thumbnailUri && (
@@ -144,23 +150,29 @@ export default function GalleryModalScreen() {
       <Animated.View entering={FadeIn} style={styles.modalContent}>
         {/* Modern, organized header row */}
         <View style={styles.newHeaderRow}>
-          {/* Left: Single grid/list toggle button */}
-          <TouchableOpacity
-            style={styles.singleToggleButton}
-            onPress={() => setGridView(g => !g)}
-            accessibilityLabel={gridView ? 'Switch to list view' : 'Switch to grid view'}
-            activeOpacity={0.8}
-          >
-            <IconSymbol
-              name={gridView ? 'list.bullet' : 'square.grid.2x2'}
-              size={22}
-              color={'#f97316'}
-            />
-          </TouchableOpacity>
-          {/* Center: Title (absolutely centered, visually aligned) */}
-          <Text style={styles.absoluteHeaderTitle} numberOfLines={1} ellipsizeMode="tail">My Restorations</Text>
-          {/* Right: Restored photo badge and Close */}
-          <View style={styles.headerRightGroup}>
+          {/* Left section with toggle button */}
+          <View style={styles.headerSection}>
+            <TouchableOpacity
+              style={styles.singleToggleButton}
+              onPress={() => setGridView(g => !g)}
+              accessibilityLabel={gridView ? 'Switch to list view' : 'Switch to grid view'}
+              activeOpacity={0.8}
+            >
+              <IconSymbol
+                name={gridView ? 'list.bullet' : 'square.grid.2x2'}
+                size={22}
+                color={'#f97316'}
+              />
+            </TouchableOpacity>
+          </View>
+          
+          {/* Center section with title */}
+          <View style={styles.headerCenterSection}>
+            <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">My Restorations</Text>
+          </View>
+          
+          {/* Right section with badge and close */}
+          <View style={styles.headerSection}>
             <View style={styles.restoredBadge}>
               <IconSymbol name="photo" size={18} color="#888" />
               <Text style={styles.restoredBadgeText}>{restorations.length}</Text>
@@ -204,7 +216,13 @@ export default function GalleryModalScreen() {
                 return (
                   <TouchableOpacity
                     style={[styles.gridItem, isLastInRow && { marginRight: 0 }]}
-                    onPress={() => router.push(`/gallery-image/${item.id}`)}
+                    onPress={() => {
+          // Dismiss the modal first, then navigate
+          router.dismiss();
+          setTimeout(() => {
+            router.push(`/restoration/${item.id}`);
+          }, 100);
+        }}
                     activeOpacity={0.7}
                   >
                     {thumbnailUri && (
@@ -268,15 +286,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
     minWidth: 0,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#222',
-    textAlign: 'center',
-    flex: 1,
-    marginHorizontal: 8,
-    alignSelf: 'center',
   },
   headerSide: {
     width: 56,
@@ -422,7 +431,6 @@ const styles = StyleSheet.create({
     height: 56,
     backgroundColor: '#f5f6fa',
     width: '100%',
-    gap: 0,
   },
   headerLeftGroup: {
     flexDirection: 'row',
@@ -441,6 +449,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 0,
+  },
+  headerSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 80,
+  },
+  headerCenterSection: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#222',
+    textAlign: 'center',
   },
   restoredBadge: {
     flexDirection: 'row',
@@ -491,7 +517,7 @@ const styles = StyleSheet.create({
   },
   gridItem: {
     width: GRID_ITEM_SIZE,
-    height: GRID_ITEM_SIZE,
+    height: Math.floor(GRID_ITEM_SIZE * 1.4), // Make it 40% taller (rectangle instead of square)
     marginRight: GRID_SPACING,
     marginBottom: GRID_SPACING,
     borderRadius: 18,
@@ -537,18 +563,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#222',
-  },
-  absoluteHeaderTitle: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    textAlign: 'center',
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#222',
-    zIndex: 1,
-    top: 26,
-    transform: [{ translateY: -10 }],
   },
   sectionHeaderContainer: {
     flexDirection: 'row',

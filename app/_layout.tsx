@@ -79,6 +79,7 @@ export default function RootLayout() {
               <Stack.Screen name="restoration/[id]" options={{ headerShown: false }} />
               <Stack.Screen name="gallery-modal" options={{ presentation: 'modal', headerShown: false }} />
               <Stack.Screen name="settings-modal" options={{ presentation: 'modal', headerShown: false }} />
+              <Stack.Screen name="crop-modal" options={{ presentation: 'modal', headerShown: false }} />
               <Stack.Screen name="gallery-image/[id]" options={{ presentation: 'modal', headerShown: false }} />
               <Stack.Screen name="+not-found" />
             </Stack>

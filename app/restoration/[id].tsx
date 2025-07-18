@@ -7,7 +7,6 @@ import { restorationService } from '@/services/supabase';
 import { useRestorationStore } from '@/store/restorationStore';
 import { Restoration } from '@/types';
 import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -24,16 +23,17 @@ import {
   View,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring } from 'react-native-reanimated';
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
-const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
 export default function RestorationScreen() {
   const { id, imageUri, functionType } = useLocalSearchParams();
   const [restoration, setRestoration] = useState<Restoration | null>(null);
   const [loading, setLoading] = useState(true);
-  const [downloadText, setDownloadText] = useState('Save to Photos');
+  const [downloadText, setDownloadText] = useState('Save');
   const [allRestorations, setAllRestorations] = useState<Restoration[]>([]);
+  const [isNavigating, setIsNavigating] = useState(false);
   
   // Use the photo restoration hook
   const photoRestoration = usePhotoRestoration();
@@ -42,9 +42,13 @@ export default function RestorationScreen() {
   // Check if this is a new restoration request
   const isNewRestoration = !!imageUri && !!functionType;
   
-  // Animation for the button
+  // Animation values for the save button
   const buttonScale = useSharedValue(1);
-  const glowOpacity = useSharedValue(0.3);
+  const iconScale = useSharedValue(1);
+  const iconRotation = useSharedValue(0);
+  const progressScale = useSharedValue(0);
+  const glowOpacity = useSharedValue(0);
+  const successBackground = useSharedValue(0);
 
   // Format date for header
   const formatDate = (dateString: string) => {
@@ -60,30 +64,38 @@ export default function RestorationScreen() {
     });
   };
   
-  useEffect(() => {
-    // Subtle pulsing animation
-    buttonScale.value = withRepeat(
-      withSequence(
-        withSpring(1.02, { damping: 15 }),
-        withSpring(1, { damping: 15 })
-      ),
-      -1,
-      true
-    );
-    
-    glowOpacity.value = withRepeat(
-      withSequence(
-        withSpring(0.5, { damping: 15 }),
-        withSpring(0.3, { damping: 15 })
-      ),
-      -1,
-      true
-    );
-  }, []);
-  
+  // Animated styles for save button
   const animatedButtonStyle = useAnimatedStyle(() => {
     return {
       transform: [{ scale: buttonScale.value }],
+    };
+  });
+
+  const animatedIconStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { scale: iconScale.value },
+        { rotate: `${iconRotation.value}deg` }
+      ],
+    };
+  });
+
+  const animatedGlowStyle = useAnimatedStyle(() => {
+    return {
+      opacity: glowOpacity.value,
+    };
+  });
+
+  const animatedProgressStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: progressScale.value }],
+      opacity: progressScale.value,
+    };
+  });
+
+  const animatedSuccessStyle = useAnimatedStyle(() => {
+    return {
+      backgroundColor: successBackground.value === 1 ? '#10b981' : '#f97316',
     };
   });
 
@@ -139,22 +151,91 @@ export default function RestorationScreen() {
     }
   }, [photoRestoration.isSuccess, photoRestoration.data]);
 
+  // Reset animation function
+  const resetAnimation = () => {
+    setDownloadText('Save');
+  };
+
   const handleExport = async () => {
     if (!restoration?.restored_filename) return;
 
     try {
+      // Start animation sequence
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      
+      // Button press animation
+      buttonScale.value = withSequence(
+        withTiming(0.9, { duration: 100 }),
+        withSpring(1.05, { damping: 15 })
+      );
+      
+      // Icon animation - bounce and rotate
+      iconScale.value = withSequence(
+        withTiming(1.2, { duration: 150 }),
+        withSpring(1, { damping: 10 })
+      );
+      
+      iconRotation.value = withSequence(
+        withTiming(10, { duration: 100 }),
+        withTiming(-10, { duration: 100 }),
+        withTiming(0, { duration: 100 })
+      );
+      
+      // Glow effect
+      glowOpacity.value = withSequence(
+        withTiming(0.8, { duration: 200 }),
+        withTiming(0.3, { duration: 300 })
+      );
+      
+      // Progress animation
+      progressScale.value = withTiming(1, { duration: 800 });
+      
+      // Change text
+      runOnJS(setDownloadText)('Saving...');
+      
       const uri = photoStorage.getPhotoUri('restored', restoration.restored_filename);
       await photoStorage.exportToCameraRoll(uri);
       
-      // Flash "Downloaded" text
-      setDownloadText('Downloaded ✓');
+      // Success animation
+      progressScale.value = withTiming(0, { duration: 300 });
+      
+      // Green highlight effect
+      successBackground.value = withTiming(1, { duration: 300 });
+      
+      buttonScale.value = withSequence(
+        withTiming(1.1, { duration: 200 }),
+        withSpring(1, { damping: 10 })
+      );
+      
+      // Heavy haptic for success
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       
-      // Reset after 1.5 seconds
+      // Show success text
+      runOnJS(setDownloadText)('Saved!');
+      
+      // Reset after delay
       setTimeout(() => {
-        setDownloadText('Save to Photos');
+        glowOpacity.value = withTiming(0, { duration: 300 });
+        successBackground.value = withTiming(0, { duration: 300 });
+        setDownloadText('Save');
       }, 1500);
+      
     } catch (err) {
+      // Error animation
+      buttonScale.value = withSequence(
+        withTiming(0.95, { duration: 100 }),
+        withSpring(1, { damping: 15 })
+      );
+      
+      iconRotation.value = withSequence(
+        withTiming(20, { duration: 100 }),
+        withTiming(-20, { duration: 100 }),
+        withTiming(0, { duration: 100 })
+      );
+      
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      progressScale.value = withTiming(0, { duration: 300 });
+      runOnJS(resetAnimation)();
       console.error('Failed to save photo to camera roll:', err);
       Alert.alert('Error', 'Failed to save photo to camera roll');
     }
@@ -328,30 +409,84 @@ export default function RestorationScreen() {
 
         {/* Action Buttons */}
         <View className="items-center mb-4">
-          {/* Large Circular Save Button */}
-          <TouchableOpacity
-            className="w-16 h-16 bg-orange-500 rounded-full items-center justify-center mb-4 active:scale-95"
+          {/* Large Animated Save Button */}
+          <AnimatedTouchableOpacity
+            style={[
+              {
+                width: 140,
+                height: 50,
+                borderRadius: 25,
+                backgroundColor: '#f97316',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexDirection: 'row',
+                position: 'relative',
+                paddingHorizontal: 16,
+                marginBottom: 16,
+              },
+              animatedButtonStyle,
+              animatedSuccessStyle,
+            ]}
             onPress={handleExport}
           >
-            <IconSymbol name="square.and.arrow.down" size={24} color="#fff" />
-          </TouchableOpacity>
+            {/* Glow effect */}
+            <Animated.View
+              style={[
+                {
+                  position: 'absolute',
+                  width: 160,
+                  height: 70,
+                  borderRadius: 35,
+                  backgroundColor: '#f97316',
+                  opacity: 0.3,
+                },
+                animatedGlowStyle,
+              ]}
+            />
+            
+            {/* Progress ring */}
+            <Animated.View
+              style={[
+                {
+                  position: 'absolute',
+                  width: 150,
+                  height: 60,
+                  borderRadius: 30,
+                  borderWidth: 3,
+                  borderColor: '#fff',
+                  backgroundColor: 'transparent',
+                },
+                animatedProgressStyle,
+              ]}
+            />
+            
+            {/* Main icon */}
+            <Animated.View style={animatedIconStyle}>
+              <IconSymbol name="arrow.down.to.line" size={22} color="#fff" />
+            </Animated.View>
+            
+            {/* Save text inside button */}
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600', marginLeft: 8, textAlign: 'center' }}>
+              {downloadText}
+            </Text>
+          </AnimatedTouchableOpacity>
 
           {/* Secondary Action Buttons */}
-          <View className="flex-row gap-6">
+          <View className="flex-row gap-8">
             <TouchableOpacity
-              className="flex-row items-center justify-center px-4 py-2 rounded-lg gap-2 active:scale-95"
+              className="flex-row items-center justify-center px-2 py-2 gap-1 active:scale-95"
               onPress={handleShare}
             >
               <IconSymbol name="square.and.arrow.up" size={16} color="#f97316" />
-              <Text className="text-orange-500 font-medium">Share</Text>
+              <Text className="text-orange-500 font-medium text-sm">Share</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              className="flex-row items-center justify-center px-4 py-2 rounded-lg gap-2 active:scale-95"
+              className="flex-row items-center justify-center px-2 py-2 gap-1 active:scale-95"
               onPress={showDeleteActionSheet}
             >
               <IconSymbol name="trash" size={16} color="#ef4444" />
-              <Text className="text-red-500 font-medium">Delete</Text>
+              <Text className="text-red-500 font-medium text-sm">Delete</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -371,19 +506,34 @@ export default function RestorationScreen() {
                 <TouchableOpacity
                   className="mr-3 active:scale-95"
                   onPress={() => {
+                    // Prevent navigating to the same restoration
+                    if (item.id === id) return;
+                    
+                    // Prevent multiple rapid taps
+                    if (isNavigating) return;
+                    
+                    setIsNavigating(true);
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    router.push(`/restoration/${item.id}`);
+                    
+                    // Replace instead of push to avoid stacking
+                    router.replace(`/restoration/${item.id}`);
+                    
+                    // Reset navigation state after a delay
+                    setTimeout(() => setIsNavigating(false), 1000);
                   }}
                 >
-                  <View className="bg-white rounded-xl shadow-sm overflow-hidden">
+                  <View className={`rounded-xl shadow-sm overflow-hidden ${item.id === id ? 'border-2 border-orange-500' : 'bg-white'}`}>
                     <Image
                       source={{ uri: item.thumbnail_filename 
                         ? photoStorage.getPhotoUri('thumbnail', item.thumbnail_filename)
                         : photoStorage.getPhotoUri('restored', item.restored_filename!)
                       }}
-                      style={{ width: 80, height: 80 }}
+                      style={{ width: 80, height: 80, opacity: item.id === id ? 0.7 : 1 }}
                       className="rounded-xl"
                     />
+                    {item.id === id && (
+                      <View className="absolute inset-0 bg-orange-500/20 rounded-xl" />
+                    )}
                   </View>
                 </TouchableOpacity>
               )}
@@ -396,10 +546,23 @@ export default function RestorationScreen() {
         <View className="mt-2 mb-4">
           <TouchableOpacity
             className="bg-orange-500 px-6 py-3 rounded-xl active:scale-95"
-            onPress={() => {
+            onPress={async () => {
+              // Prevent multiple rapid taps
+              if (isNavigating) return;
+              
+              setIsNavigating(true);
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-              const functionType = restoration?.function_type || 'restoration';
-              router.replace(`/?openModal=${functionType}`);
+              
+              // Simply dismiss all modals and go back to the camera (home screen)
+              if (router.canGoBack()) {
+                router.dismissAll();
+              } else {
+                // If we can't go back, replace with home
+                router.replace('/');
+              }
+              
+              // Reset navigation state after a delay
+              setTimeout(() => setIsNavigating(false), 1000);
             }}
           >
             <Text className="text-white font-semibold text-center">

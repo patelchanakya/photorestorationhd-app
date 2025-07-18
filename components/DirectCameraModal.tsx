@@ -3,6 +3,7 @@ import { useRestorationStore } from '@/store/restorationStore';
 import { CameraType, CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
@@ -45,6 +46,7 @@ export function DirectCameraModal({
   const [enableTorch, setEnableTorch] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
   const [functionType, setFunctionType] = useState<'restoration' | 'unblur'>(defaultFunctionType);
+  const router = useRouter();
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [appState, setAppState] = useState(AppState.currentState);
   const [cameraInstanceKey, setCameraInstanceKey] = useState(0); // NEW: key for CameraView
@@ -186,7 +188,8 @@ export function DirectCameraModal({
       
       if (photo && isMounted.current) {
         console.log('[DirectCameraModal] Photo captured successfully:', photo.uri);
-        onPhotoSelected(photo.uri, functionType);
+        // Navigate to crop modal instead of directly processing
+        router.push(`/crop-modal?imageUri=${encodeURIComponent(photo.uri)}&functionType=${functionType}`);
         onClose();
       }
     } catch (error) {
@@ -204,14 +207,14 @@ export function DirectCameraModal({
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [4, 3],
+        allowsEditing: false,
         quality: 1,
       });
 
       if (!result.canceled && result.assets[0] && isMounted.current) {
         console.log('[DirectCameraModal] Image selected from gallery');
-        onPhotoSelected(result.assets[0].uri, functionType);
+        // For gallery images, go directly to restoration (no crop)
+        router.push(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(result.assets[0].uri)}&functionType=${functionType}`);
         onClose();
       }
     } catch (error) {

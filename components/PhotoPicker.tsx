@@ -9,15 +9,18 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
 import { IconSymbol } from './ui/IconSymbol';
 
 interface PhotoPickerProps {
   onPhotoSelected: (uri: string) => void;
   isProcessing?: boolean;
+  functionType?: string;
 }
 
-export function PhotoPicker({ onPhotoSelected, isProcessing = false }: PhotoPickerProps) {
+export function PhotoPicker({ onPhotoSelected, isProcessing = false, functionType = 'restoration' }: PhotoPickerProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const router = useRouter();
 
   // Reset state when screen comes into focus (e.g., when returning from restoration screen)
   useFocusEffect(
@@ -55,23 +58,26 @@ export function PhotoPicker({ onPhotoSelected, isProcessing = false }: PhotoPick
     if (source === 'camera') {
       result = await ImagePicker.launchCameraAsync({
         mediaTypes: 'images',
-        allowsEditing: true,
-        aspect: [4, 3],
+        allowsEditing: false,
         quality: 1,
       });
     } else {
       result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: 'images',
-        allowsEditing: true,
-        aspect: [4, 3],
+        allowsEditing: false,
         quality: 1,
       });
     }
 
     if (!result.canceled && result.assets[0]) {
       const uri = result.assets[0].uri;
-      setSelectedImage(uri);
-      onPhotoSelected(uri);
+      // For gallery images, go directly to restoration (no crop)
+      if (source === 'gallery') {
+        router.push(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(uri)}&functionType=${functionType}`);
+      } else {
+        // For camera images, use crop modal
+        router.push(`/crop-modal?imageUri=${encodeURIComponent(uri)}&functionType=${functionType}`);
+      }
     }
   };
 

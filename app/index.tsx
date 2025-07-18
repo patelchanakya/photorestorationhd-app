@@ -1,4 +1,3 @@
-import { CameraViewfinder } from '@/components/CameraViewfinder';
 import { ModeSelector } from '@/components/ModeSelector';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useRestorationHistory } from '@/hooks/useRestorationHistory';
@@ -37,6 +36,7 @@ export default function MinimalCameraWithGalleryButton() {
   useEffect(() => {
     refetch({ cancelRefetch: false });
   }, []);
+  
   // Use Zustand store for restorationCount
   const restorationCount = useRestorationStore((state) => state.restorationCount);
   
@@ -133,7 +133,7 @@ export default function MinimalCameraWithGalleryButton() {
     try {
       const photo = await cameraRef.current.takePictureAsync();
       if (photo) {
-        router.push(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(photo.uri)}&functionType=${functionType}`);
+        router.push(`/crop-modal?imageUri=${encodeURIComponent(photo.uri)}&functionType=${functionType}`);
       }
     } catch (error) {
       console.error('Failed to take picture:', error);
@@ -146,8 +146,7 @@ export default function MinimalCameraWithGalleryButton() {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [4, 3],
+        allowsEditing: false,
         quality: 1,
       });
 
@@ -248,10 +247,6 @@ export default function MinimalCameraWithGalleryButton() {
             ]}
           />
 
-          {/* Center Viewfinder */}
-          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', pointerEvents: 'none' }}>
-            <CameraViewfinder />
-          </View>
 
           {/* Top Controls */}
           <View style={{ position: 'absolute', top: 0, left: 0, right: 0, paddingTop: 60, paddingHorizontal: 16 }}>
@@ -299,7 +294,7 @@ export default function MinimalCameraWithGalleryButton() {
           </View>
 
           {/* Bottom Controls */}
-          <View style={{ position: 'absolute', bottom: 32, left: 0, right: 0, alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ position: 'absolute', bottom: 64, left: 0, right: 0, alignItems: 'center', justifyContent: 'center' }}>
             <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
               {/* Gallery Button with Count Badge */}
               <TouchableOpacity
