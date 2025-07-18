@@ -238,3 +238,40 @@ class PhotoStorage {
 
 // Export singleton instance
 export const photoStorage = new PhotoStorage();
+
+// Additional functions for TanStack Query integration
+export interface StoredRestoration {
+  id: string;
+  originalImageUri: string;
+  restoredImageUri: string;
+  createdAt: string;
+}
+
+// Simple in-memory storage for demo purposes
+// In production, you might want to use AsyncStorage or SQLite
+let storedRestorations: StoredRestoration[] = [];
+
+export async function saveRestoredPhoto(data: {
+  id: string;
+  originalImageUri: string;
+  restoredImageUri: string;
+  createdAt: Date;
+}): Promise<void> {
+  const restoration: StoredRestoration = {
+    id: data.id,
+    originalImageUri: data.originalImageUri,
+    restoredImageUri: data.restoredImageUri,
+    createdAt: data.createdAt.toISOString(),
+  };
+  
+  storedRestorations.unshift(restoration);
+  
+  // Keep only the last 50 restorations
+  if (storedRestorations.length > 50) {
+    storedRestorations = storedRestorations.slice(0, 50);
+  }
+}
+
+export async function getStoredRestorations(): Promise<StoredRestoration[]> {
+  return storedRestorations;
+}

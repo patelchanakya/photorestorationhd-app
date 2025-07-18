@@ -5,8 +5,7 @@ import Animated, {
   useAnimatedStyle, 
   withRepeat, 
   withSequence, 
-  withTiming,
-  interpolate
+  withTiming
 } from 'react-native-reanimated';
 import { Restoration } from '@/types';
 import { IconSymbol } from './ui/IconSymbol';
@@ -27,6 +26,7 @@ export function SkeletonRestorationCard({ restoration }: SkeletonRestorationCard
   const pulseScale = useSharedValue(1);
   const progressValue = useSharedValue(0);
   const checkmarkScale = useSharedValue(0);
+  const cardOpacity = useSharedValue(1);
   
   useEffect(() => {
     // Shimmer animation for loading placeholder
@@ -59,9 +59,19 @@ export function SkeletonRestorationCard({ restoration }: SkeletonRestorationCard
   useEffect(() => {
     if (restoration.isComplete) {
       checkmarkScale.value = withSequence(
-        withTiming(1.2, { duration: 200 }),
+        withTiming(0, { duration: 0 }),
+        withTiming(1.3, { duration: 300 }),
         withTiming(1, { duration: 200 })
       );
+      // Add a subtle bounce to the card
+      cardOpacity.value = withSequence(
+        withTiming(1, { duration: 0 }),
+        withTiming(1.1, { duration: 200 }),
+        withTiming(1, { duration: 200 })
+      );
+    } else {
+      checkmarkScale.value = withTiming(0, { duration: 0 });
+      cardOpacity.value = withTiming(1, { duration: 200 });
     }
   }, [restoration.isComplete]);
 
@@ -79,30 +89,40 @@ export function SkeletonRestorationCard({ restoration }: SkeletonRestorationCard
 
   const animatedProgressStyle = useAnimatedStyle(() => {
     return {
-      transform: [{ rotate: `${progressValue.value * 3.6}deg` }],
+      width: `${progressValue.value}%`,
     };
   });
 
   const animatedCheckmarkStyle = useAnimatedStyle(() => {
     return {
       transform: [{ scale: checkmarkScale.value }],
-      opacity: checkmarkScale.value > 0 ? 1 : 0,
+      opacity: restoration.isComplete ? 1 : 0,
+    };
+  });
+
+  const animatedCardStyle = useAnimatedStyle(() => {
+    return {
+      opacity: cardOpacity.value,
+      transform: [{ scale: restoration.isComplete ? 1.02 : 1 }],
     };
   });
 
   return (
-    <View
-      style={{
-        backgroundColor: '#ffffff',
-        borderRadius: 20,
-        padding: 16,
-        marginBottom: 16,
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 4,
-      }}
+    <Animated.View
+      style={[
+        {
+          backgroundColor: '#ffffff',
+          borderRadius: 20,
+          padding: 16,
+          marginBottom: 16,
+          shadowColor: '#000000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+          elevation: 4,
+        },
+        animatedCardStyle,
+      ]}
     >
       <View className="flex-row gap-4">
         {/* Before Image (Original) */}
@@ -147,73 +167,76 @@ export function SkeletonRestorationCard({ restoration }: SkeletonRestorationCard
               ]}
             />
             
-            {/* Progress Circle and Loading Spinner */}
+            {/* Progress Bar and Loading State */}
             {!restoration.isComplete ? (
-              <View style={{ position: 'relative' }}>
-                {/* Progress Circle Background */}
+              <View style={{ alignItems: 'center' }}>
+                {/* Progress Bar Container */}
                 <View
                   style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 16,
-                    borderWidth: 2,
-                    borderColor: '#e5e7eb',
+                    width: 80,
+                    height: 6,
+                    backgroundColor: '#e5e7eb',
+                    borderRadius: 3,
+                    overflow: 'hidden',
+                    marginBottom: 8,
                   }}
-                />
+                >
+                  {/* Progress Bar Fill */}
+                  <Animated.View
+                    style={[
+                      {
+                        height: '100%',
+                        backgroundColor: '#f97316',
+                        borderRadius: 3,
+                      },
+                      animatedProgressStyle,
+                    ]}
+                  />
+                </View>
                 
-                {/* Progress Circle */}
-                <Animated.View
-                  style={[
-                    {
-                      position: 'absolute',
-                      width: 32,
-                      height: 32,
-                      borderRadius: 16,
-                      borderWidth: 2,
-                      borderColor: 'transparent',
-                      borderTopColor: '#f97316',
-                    },
-                    animatedProgressStyle,
-                  ]}
-                />
-                
-                {/* Loading Spinner Center */}
+                {/* Loading Icon */}
                 <View
                   style={{
-                    position: 'absolute',
-                    top: 8,
-                    left: 8,
-                    width: 16,
-                    height: 16,
-                    borderRadius: 8,
-                    backgroundColor: '#f3f4f6',
+                    width: 24,
+                    height: 24,
+                    borderRadius: 12,
+                    backgroundColor: '#f97316',
+                    justifyContent: 'center',
+                    alignItems: 'center',
                   }}
-                />
+                >
+                  <IconSymbol name="photo" size={12} color="#ffffff" />
+                </View>
               </View>
             ) : (
               /* Success Checkmark */
               <Animated.View
                 style={[
                   {
-                    width: 32,
-                    height: 32,
-                    borderRadius: 16,
+                    width: 36,
+                    height: 36,
+                    borderRadius: 18,
                     backgroundColor: '#10b981',
                     justifyContent: 'center',
                     alignItems: 'center',
+                    shadowColor: '#10b981',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 4,
+                    elevation: 4,
                   },
                   animatedCheckmarkStyle,
                 ]}
               >
-                <IconSymbol name="checkmark" size={16} color="#ffffff" />
+                <IconSymbol name="checkmark" size={18} color="#ffffff" />
               </Animated.View>
             )}
             
             {/* Loading Text */}
             <Text className="text-gray-500 text-xs mt-2 font-medium">
               {restoration.isComplete 
-                ? 'Complete!' 
-                : `${Math.round(restoration.progress)}% ${restoration.function_type === 'restoration' ? 'Restoring...' : 'Removing blur...'}`
+                ? '✨ Complete!' 
+                : `${Math.round(restoration.progress)}`
               }
             </Text>
           </Animated.View>
@@ -239,6 +262,6 @@ export function SkeletonRestorationCard({ restoration }: SkeletonRestorationCard
           </Text>
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 }

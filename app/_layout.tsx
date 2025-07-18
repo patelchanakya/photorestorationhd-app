@@ -6,6 +6,50 @@ import 'react-native-reanimated';
 import '../global.css';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { QueryClient, QueryClientProvider, focusManager, onlineManager } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { AppState, AppStateStatus, Platform } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
+
+// Create QueryClient instance
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 60 * 24, // 24 hours
+    },
+    mutations: {
+      retry: 1,
+    },
+  },
+});
+
+// Network state management hook
+function useOnlineManager() {
+  useEffect(() => {
+    return onlineManager.setEventListener((setOnline) => {
+      return NetInfo.addEventListener((state) => {
+        setOnline(!!state.isConnected);
+      });
+    });
+  }, []);
+}
+
+// App state management hook
+function useAppState(onChange: (status: AppStateStatus) => void) {
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', onChange);
+    return () => subscription?.remove();
+  }, [onChange]);
+}
+
+// App state change handler
+function onAppStateChange(status: AppStateStatus) {
+  if (Platform.OS !== 'web') {
+    focusManager.setFocused(status === 'active');
+  }
+}
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -13,20 +57,26 @@ export default function RootLayout() {
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
+  // Set up network and app state management
+  useOnlineManager();
+  useAppState(onAppStateChange);
+
   if (!loaded) {
     // Async font loading only occurs in development.
     return null;
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false, title: "Photo Restoration HD" }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="restoration/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <Stack>
+          <Stack.Screen name="index" options={{ headerShown: false, title: "Photo Restoration HD" }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="restoration/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="+not-found" />
+        </Stack>
+        <StatusBar style="auto" />
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }

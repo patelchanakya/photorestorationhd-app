@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -12,18 +12,19 @@ import {
   ActionSheetIOS,
   Platform,
 } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 
 import { FunctionCards } from '@/components/FunctionCards';
 import { SkeletonRestorationCard } from '@/components/SkeletonRestorationCard';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { restorePhoto } from '@/services/replicate';
 import { photoStorage } from '@/services/storage';
-import { restorationService } from '@/services/supabase';
 import { Restoration } from '@/types';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
+import { useRestorationHistory } from '@/hooks/useRestorationHistory';
+import { useRefreshOnFocus } from '@/hooks/useScreenFocus';
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -112,7 +113,7 @@ function RestorationCard({ item, thumbnailUri, originalUri, onPress }: Restorati
       
       <View className="flex-row justify-between items-center mt-4">
         <Text className="text-gray-500 text-sm">
-          {new Date(item.created_at).toLocaleDateString()}
+          {new Date(item.created_at || item.createdAt).toLocaleDateString()}
         </Text>
         <Text className="text-orange-600 text-sm font-medium">
           View Details →
@@ -123,28 +124,64 @@ function RestorationCard({ item, thumbnailUri, originalUri, onPress }: Restorati
 }
 
 export default function HomeScreen() {
-  const { openModal } = useLocalSearchParams();
-  const [restorations, setRestorations] = useState<Restoration[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [processingJobs, setProcessingJobs] = useState<Map<string, ProcessingJob>>(new Map());
-
-  useEffect(() => {
-    loadRestorations();
-  }, []);
+  const [progressIntervals, setProgressIntervals] = useState<Map<string, NodeJS.Timeout>>(new Map());
+  
+  // TanStack Query hooks
+  const photoRestorationMutation = usePhotoRestoration();
+  const { data: restorations = [], isLoading: loading, refetch, isFetching } = useRestorationHistory();
+  
+  // Refresh on screen focus
+  useRefreshOnFocus(refetch);
 
   const loadRestorations = async () => {
-    try {
-      // Always use 'anonymous' since we don't have auth
-      const data = await restorationService.getUserRestorations('anonymous');
-      setRestorations(data.filter(r => r.status === 'completed').sort((a, b) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      ));
-    } catch (err) {
-      console.error('Failed to load restorations:', err);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+    await refetch();
+  };
+
+  // Create artificial smooth progress animation
+  const startProgressAnimation = (jobId: string) => {
+    let currentProgress = 0;
+    const targetProgress = 95; // Don't reach 100% until API completes
+    const duration = 6000; // 6 seconds
+    const intervalTime = 100; // Update every 100ms
+    const increment = (targetProgress / duration) * intervalTime;
+
+    const interval = setInterval(() => {
+      currentProgress += increment;
+      
+      if (currentProgress >= targetProgress) {
+        currentProgress = targetProgress;
+        clearInterval(interval);
+        setProgressIntervals(prev => {
+          const newMap = new Map(prev);
+          newMap.delete(jobId);
+          return newMap;
+        });
+      }
+
+      setProcessingJobs(prev => {
+        const newMap = new Map(prev);
+        const job = newMap.get(jobId);
+        if (job && !job.isComplete) {
+          newMap.set(jobId, { ...job, progress: Math.round(currentProgress) });
+        }
+        return newMap;
+      });
+    }, intervalTime);
+
+    setProgressIntervals(prev => new Map(prev.set(jobId, interval)));
+  };
+
+  // Clear progress animation
+  const clearProgressAnimation = (jobId: string) => {
+    const interval = progressIntervals.get(jobId);
+    if (interval) {
+      clearInterval(interval);
+      setProgressIntervals(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(jobId);
+        return newMap;
+      });
     }
   };
 
@@ -228,148 +265,86 @@ export default function HomeScreen() {
 
   const handlePhotoSelected = async (uri: string, functionType: 'restoration' | 'unblur') => {
     try {
-      // Always use 'anonymous' since we don't have auth
-
-      // Save original photo locally
-      const originalFilename = await photoStorage.saveOriginal(uri);
-
-      // Create restoration record in database
-      const restoration = await restorationService.create({
+      // Create unique processing job ID
+      const processingJobId = `temp_${Date.now()}`;
+      
+      // Show loading state while processing
+      const processingJob: ProcessingJob = {
+        id: processingJobId,
         user_id: 'anonymous',
-        original_filename: originalFilename,
+        original_filename: '',
+        restored_filename: undefined,
+        thumbnail_filename: undefined,
         status: 'processing',
         function_type: functionType,
-      });
-
-      // Add to processing jobs (for skeleton display)
-      const processingJob: ProcessingJob = {
-        ...restoration,
+        processing_time_ms: undefined,
+        created_at: new Date().toISOString(),
+        completed_at: undefined,
         originalUri: uri,
         isProcessing: true,
         progress: 0,
         isComplete: false,
       };
       
-      setProcessingJobs(prev => new Map(prev.set(restoration.id, processingJob)));
-
-      // Process photo in background
-      processPhotoInBackground(uri, restoration, originalFilename);
+      setProcessingJobs(prev => new Map(prev.set(processingJobId, processingJob)));
+      
+      // Start artificial smooth progress animation
+      startProgressAnimation(processingJobId);
+      
+      // Use TanStack Query mutation for photo restoration
+      photoRestorationMutation.mutate(uri, {
+        onSuccess: (data) => {
+          console.log('🎉 Photo restoration completed:', data);
+          
+          // Clear the artificial progress animation
+          clearProgressAnimation(processingJobId);
+          
+          // Show completion state briefly
+          setProcessingJobs(prev => {
+            const newMap = new Map(prev);
+            const job = newMap.get(processingJobId);
+            if (job) {
+              newMap.set(processingJobId, { ...job, progress: 100, isComplete: true });
+            }
+            return newMap;
+          });
+          
+          // Remove processing job after completion animation
+          setTimeout(() => {
+            setProcessingJobs(prev => {
+              const newMap = new Map(prev);
+              newMap.delete(processingJobId);
+              return newMap;
+            });
+          }, 1500); // Give time for completion animation
+        },
+        onError: (error) => {
+          console.error('Photo restoration failed:', error);
+          
+          // Clear the artificial progress animation
+          clearProgressAnimation(processingJobId);
+          
+          // Remove processing job on error
+          setProcessingJobs(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(processingJobId);
+            return newMap;
+          });
+          
+          Alert.alert(
+            'Restoration Failed',
+            'Something went wrong. Please try again.',
+            [{ text: 'OK' }]
+          );
+        },
+      });
       
     } catch (error) {
       console.error('Failed to start restoration:', error);
-      Alert.alert('Error', 'Failed to start photo restoration. Please try again.');
+      Alert.alert('Error', 'Something went wrong. Please try again.');
     }
   };
 
-  const processPhotoInBackground = async (uri: string, restoration: Restoration, originalFilename: string) => {
-    try {
-      const startTime = Date.now();
-
-      // Progress update function
-      const updateProgress = (progress: number) => {
-        setProcessingJobs(prev => {
-          const newMap = new Map(prev);
-          const job = newMap.get(restoration.id);
-          if (job) {
-            newMap.set(restoration.id, { ...job, progress });
-          }
-          return newMap;
-        });
-      };
-
-      // Stage 1: Initial processing (20% at 1 second)
-      setTimeout(() => updateProgress(20), 1000);
-      
-      // Stage 2: Image analysis (40% at 2 seconds)
-      setTimeout(() => updateProgress(40), 2000);
-      
-      // Stage 3: AI processing (80% at 3 seconds)
-      setTimeout(() => updateProgress(80), 3000);
-
-      // Process photo with Replicate
-      const restoredUrl = await restorePhoto(uri);
-      console.log('🎉 Photo restored successfully, URL:', restoredUrl);
-
-      // Complete progress (100%)
-      updateProgress(100);
-
-      // Save restored photo locally
-      const restoredFilename = await photoStorage.saveRestored(restoredUrl, originalFilename);
-      console.log('💾 Restored photo saved locally:', restoredFilename);
-
-      // Get the URI for the restored photo
-      const restoredUri = photoStorage.getPhotoUri('restored', restoredFilename);
-      console.log('📍 Restored photo URI:', restoredUri);
-
-      // Create thumbnails
-      const thumbnailFilename = await photoStorage.createThumbnail(
-        restoredUri,
-        'restored'
-      );
-      console.log('🖼️ Thumbnail created:', thumbnailFilename);
-
-      // Update restoration record
-      const updatedRestoration = await restorationService.update(restoration.id, {
-        restored_filename: restoredFilename,
-        thumbnail_filename: thumbnailFilename,
-        status: 'completed',
-        processing_time_ms: Date.now() - startTime,
-        completed_at: new Date().toISOString(),
-      });
-
-      // Mark as complete for success animation
-      setProcessingJobs(prev => {
-        const newMap = new Map(prev);
-        const job = newMap.get(restoration.id);
-        if (job) {
-          newMap.set(restoration.id, { ...job, isComplete: true });
-        }
-        return newMap;
-      });
-
-      // Remove from processing jobs after success animation (1 second)
-      setTimeout(() => {
-        setProcessingJobs(prev => {
-          const newMap = new Map(prev);
-          newMap.delete(restoration.id);
-          return newMap;
-        });
-
-        // Reload restorations to show completed result
-        loadRestorations();
-      }, 1000);
-      
-    } catch (error) {
-      console.error('Background processing error:', error);
-      
-      // Remove from processing jobs
-      setProcessingJobs(prev => {
-        const newMap = new Map(prev);
-        newMap.delete(restoration.id);
-        return newMap;
-      });
-
-      let errorMessage = 'Unable to restore your photo. Please try again.';
-      
-      if (error instanceof Error) {
-        if (error.message.includes('Authentication failed')) {
-          errorMessage = 'Authentication failed. Please check your API token.';
-        } else if (error.message.includes('Network request failed')) {
-          errorMessage = 'Network connection failed. Please check your internet connection.';
-        } else if (error.message.includes('does not exist')) {
-          errorMessage = 'File system error. Please restart the app and try again.';
-        } else if (error.message.includes('Download failed')) {
-          errorMessage = 'Failed to download restored photo. Please try again.';
-        }
-      }
-      
-      Alert.alert(
-        'Restoration Failed',
-        errorMessage,
-        [{ text: 'OK' }]
-      );
-    }
-  };
 
   const handleRestorationPress = () => {
     showActionSheet('restoration');
@@ -379,7 +354,7 @@ export default function HomeScreen() {
     showActionSheet('unblur');
   };
 
-  const renderRestoration = ({ item }: { item: Restoration }) => {
+  const renderRestoration = ({ item }: { item: any }) => {
     const thumbnailUri = item.thumbnail_filename
       ? photoStorage.getPhotoUri('thumbnail', item.thumbnail_filename)
       : null;
@@ -413,11 +388,8 @@ export default function HomeScreen() {
         className="flex-1"
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => {
-              setRefreshing(true);
-              loadRestorations();
-            }}
+            refreshing={isFetching}
+            onRefresh={loadRestorations}
             tintColor="#f97316"
           />
         }
