@@ -54,7 +54,7 @@ export default function GalleryModalScreen() {
     thumbnail_filename: item.thumbnail_filename || undefined,
     status: item.status as 'completed',
     created_at: item.createdAt.toISOString(),
-    function_type: item.function_type as 'restoration' | 'unblur' | undefined,
+    function_type: item.function_type as 'restoration' | 'unblur' | 'colorize' | undefined,
   })) || [];
   
   // Refresh on mount to ensure we have latest data
@@ -110,7 +110,10 @@ export default function GalleryModalScreen() {
           />
         )}
         <View style={styles.cardContent}>
-          <Text style={styles.cardTitle} numberOfLines={1}>{item.function_type === 'unblur' ? 'Unblurred' : 'Restored'}</Text>
+          <Text style={styles.cardTitle} numberOfLines={1}>
+            {item.function_type === 'unblur' ? 'Unblurred' : 
+             item.function_type === 'colorize' ? 'Colorized' : 'Restored'}
+          </Text>
           <Text style={styles.cardSubtitle} numberOfLines={1}>{item.original_filename}</Text>
           <Text style={styles.cardDate}>{new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
         </View>

@@ -3,6 +3,8 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import { photoStorage } from '@/services/storage';
 import { restorationService } from '@/services/supabase';
 import { Restoration } from '@/types';
+import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
+import { ProcessingScreen } from '@/components/ProcessingScreen';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -26,11 +28,17 @@ import * as Haptics from 'expo-haptics';
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
 export default function RestorationScreen() {
-  const { id } = useLocalSearchParams();
+  const { id, imageUri, functionType } = useLocalSearchParams();
   const [restoration, setRestoration] = useState<Restoration | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloadText, setDownloadText] = useState('Save to Photos');
   const [allRestorations, setAllRestorations] = useState<Restoration[]>([]);
+  
+  // Use the photo restoration hook
+  const photoRestoration = usePhotoRestoration();
+  
+  // Check if this is a new restoration request
+  const isNewRestoration = !!imageUri && !!functionType;
   
   // Animation for the button
   const buttonScale = useSharedValue(1);
@@ -107,9 +115,27 @@ export default function RestorationScreen() {
   }, [id]);
 
   useEffect(() => {
-    loadRestoration();
-    loadAllRestorations();
-  }, [loadRestoration, loadAllRestorations]);
+    if (isNewRestoration) {
+      // Start restoration process for new images
+      photoRestoration.mutate({
+        imageUri: imageUri as string,
+        functionType: functionType as 'restoration' | 'unblur' | 'colorize'
+      });
+    } else {
+      // Load existing restoration
+      loadRestoration();
+      loadAllRestorations();
+    }
+  }, [isNewRestoration, imageUri, functionType, loadRestoration, loadAllRestorations]);
+  
+  // Handle restoration success
+  useEffect(() => {
+    if (photoRestoration.isSuccess && photoRestoration.data) {
+      const restorationData = photoRestoration.data;
+      // Navigate to the completed restoration view
+      router.replace(`/restoration/${restorationData.id}`);
+    }
+  }, [photoRestoration.isSuccess, photoRestoration.data]);
 
   const handleExport = async () => {
     if (!restoration?.restored_filename) return;
@@ -194,10 +220,57 @@ export default function RestorationScreen() {
     }
   };
 
-  if (loading) {
+  // Show loading state for new restorations or while loading existing ones
+  if (loading || photoRestoration.isPending) {
+    // For new restorations, use the enhanced processing screen
+    if (isNewRestoration && functionType) {
+      return (
+        <ProcessingScreen
+          functionType={functionType as 'restoration' | 'unblur' | 'colorize'}
+          isProcessing={photoRestoration.isPending}
+        />
+      );
+    }
+    
+    // For loading existing restorations, use simple loading
     return (
-      <View className="flex-1 bg-gray-100 justify-center items-center">
+      <View className="flex-1 bg-gray-100 justify-center items-center px-6">
         <ActivityIndicator size="large" color="#f97316" />
+        <Text className="text-gray-800 text-lg mt-4 text-center">
+          Loading...
+        </Text>
+      </View>
+    );
+  }
+
+  // Handle error state for new restorations
+  if (photoRestoration.isError) {
+    const getErrorText = () => {
+      switch (functionType) {
+        case 'unblur':
+          return 'Unblur failed';
+        case 'colorize':
+          return 'Colorize failed';
+        default:
+          return 'Restoration failed';
+      }
+    };
+    
+    return (
+      <View className="flex-1 bg-gray-100 justify-center items-center px-6">
+        <IconSymbol name="exclamationmark.triangle" size={48} color="#ef4444" />
+        <Text className="text-gray-800 text-lg mt-4 text-center">
+          {getErrorText()}
+        </Text>
+        <Text className="text-gray-600 text-sm mt-2 text-center">
+          {photoRestoration.error?.message || 'Please try again'}
+        </Text>
+        <TouchableOpacity 
+          className="mt-4 px-6 py-3 bg-orange-500 rounded-lg"
+          onPress={() => router.back()}
+        >
+          <Text className="text-white font-medium">Go Back</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -229,9 +302,15 @@ export default function RestorationScreen() {
           <TouchableOpacity onPress={() => router.back()} className="p-2">
             <IconSymbol name="chevron.left" size={24} color="#f97316" />
           </TouchableOpacity>
-          <Text className="text-sm font-semibold text-gray-800 text-center flex-1">
-            {restoration?.completed_at ? formatDate(restoration.completed_at) : formatDate(restoration.created_at)}
-          </Text>
+          <View className="flex-1 items-center">
+            <Text className="text-lg font-bold text-gray-800">
+              {restoration?.function_type === 'unblur' ? 'Unblurred' : 
+               restoration?.function_type === 'colorize' ? 'Colorized' : 'Restored'}
+            </Text>
+            <Text className="text-sm font-medium text-gray-600">
+              {restoration?.completed_at ? formatDate(restoration.completed_at) : formatDate(restoration.created_at)}
+            </Text>
+          </View>
           <View className="w-6" />
         </View>
 

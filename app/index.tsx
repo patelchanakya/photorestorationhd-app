@@ -14,8 +14,9 @@ const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpaci
 
 // Define available modes
 const MODES = [
-  { id: 'restoration', name: 'Photo Restore', icon: 'wand.and.stars' },
-  { id: 'unblur', name: 'Unblur', icon: 'eye' }
+  { id: 'restoration', name: 'Restore', icon: 'wand.and.stars' },
+  { id: 'unblur', name: 'Unblur', icon: 'eye' },
+  { id: 'colorize', name: 'Colorize', icon: 'paintbrush' }
 ] as const;
 
 type ModeType = typeof MODES[number]['id'];

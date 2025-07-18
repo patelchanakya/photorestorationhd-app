@@ -24,7 +24,7 @@ export function usePhotoRestoration() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (imageUri: string) => {
+    mutationFn: async ({ imageUri, functionType }: { imageUri: string; functionType: 'restoration' | 'unblur' | 'colorize' }) => {
       const startTime = Date.now();
       
       try {
@@ -36,7 +36,7 @@ export function usePhotoRestoration() {
           user_id: 'anonymous',
           original_filename: originalFilename,
           status: 'processing',
-          function_type: 'restoration',
+          function_type: functionType,
         });
 
         // Call Replicate API
