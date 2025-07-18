@@ -1,7 +1,7 @@
 import { BeforeAfterSlider } from '@/components/BeforeAfterSlider';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { photoStorage } from '@/services/storage';
-import { restorationService, authService } from '@/services/supabase';
+import { restorationService } from '@/services/supabase';
 import { Restoration } from '@/types';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -91,8 +91,8 @@ export default function RestorationScreen() {
 
   const loadAllRestorations = useCallback(async () => {
     try {
-      const user = await authService.getCurrentUser();
-      const userId = user?.id || 'anonymous';
+      // Always use 'anonymous' since we don't have auth
+      const userId = 'anonymous';
       const data = await restorationService.getUserRestorations(userId);
       // Filter out current restoration and only show completed ones
       const otherRestorations = data.filter(r => 

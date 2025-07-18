@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Alert, SafeAreaView, Image as RNImage } from 'react-native';
 import { router } from 'expo-router';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { restorationService, authService } from '@/services/supabase';
+import { restorationService } from '@/services/supabase';
 import { photoStorage } from '@/services/storage';
 import { Restoration } from '@/types';
 
@@ -18,8 +18,8 @@ export default function GalleryScreen() {
 
   const loadRestorations = async () => {
     try {
-      const user = await authService.getCurrentUser();
-      const userId = user?.id || 'anonymous';
+      // Always use 'anonymous' since we don't have auth
+      const userId = 'anonymous';
       
       const data = await restorationService.getUserRestorations(userId);
       setRestorations(data.filter(r => r.status === 'completed'));

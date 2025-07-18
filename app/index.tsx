@@ -20,7 +20,7 @@ import { SkeletonRestorationCard } from '@/components/SkeletonRestorationCard';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { restorePhoto } from '@/services/replicate';
 import { photoStorage } from '@/services/storage';
-import { restorationService, authService } from '@/services/supabase';
+import { restorationService } from '@/services/supabase';
 import { Restoration } from '@/types';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
@@ -135,10 +135,8 @@ export default function HomeScreen() {
 
   const loadRestorations = async () => {
     try {
-      const user = await authService.getCurrentUser();
-      const userId = user?.id || 'anonymous';
-      
-      const data = await restorationService.getUserRestorations(userId);
+      // Always use 'anonymous' since we don't have auth
+      const data = await restorationService.getUserRestorations('anonymous');
       setRestorations(data.filter(r => r.status === 'completed').sort((a, b) => 
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       ));
@@ -230,16 +228,14 @@ export default function HomeScreen() {
 
   const handlePhotoSelected = async (uri: string, functionType: 'restoration' | 'unblur') => {
     try {
-      // Get current user
-      const user = await authService.getCurrentUser();
-      const userId = user?.id || 'anonymous';
+      // Always use 'anonymous' since we don't have auth
 
       // Save original photo locally
       const originalFilename = await photoStorage.saveOriginal(uri);
 
       // Create restoration record in database
       const restoration = await restorationService.create({
-        user_id: userId,
+        user_id: 'anonymous',
         original_filename: originalFilename,
         status: 'processing',
         function_type: functionType,
