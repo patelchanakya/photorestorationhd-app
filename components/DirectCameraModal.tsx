@@ -19,6 +19,9 @@ import Animated, {
     withSpring,
     withTiming
 } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { useRestorationHistory } from '@/hooks/useRestorationHistory';
+import { CameraViewfinder } from './CameraViewfinder';
 import { IconSymbol } from './ui/IconSymbol';
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
@@ -43,12 +46,19 @@ export function DirectCameraModal({
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [appState, setAppState] = useState(AppState.currentState);
   const [cameraInstanceKey, setCameraInstanceKey] = useState(0); // NEW: key for CameraView
+  const [zoom, setZoom] = useState(1);
   const cameraRef = useRef<CameraView>(null);
   const isMounted = useRef(true);
+  
+  // Get restoration history for count badge
+  const { data: restorationHistory } = useRestorationHistory();
+  const restorationCount = restorationHistory?.length || 0;
   
   // Animation values
   const captureButtonScale = useSharedValue(1);
   const flashAnimation = useSharedValue(0);
+  const savedZoom = useSharedValue(1);
+  const scale = useSharedValue(1);
   
   console.log('[DirectCameraModal] Rendering with visible:', visible, 'appState:', appState);
 
@@ -127,6 +137,18 @@ export function DirectCameraModal({
       opacity: flashAnimation.value,
     };
   });
+
+  // Pinch-to-zoom gesture
+  const pinchGesture = Gesture.Pinch()
+    .onUpdate((event) => {
+      const newZoom = Math.max(1, Math.min(savedZoom.value * event.scale, 10));
+      scale.value = event.scale;
+      setZoom(newZoom);
+    })
+    .onEnd(() => {
+      savedZoom.value = zoom;
+      scale.value = withSpring(1);
+    });
 
   const handleCapture = useCallback(async () => {
     if (!cameraRef.current || !isCameraReady || !isMounted.current) {
@@ -293,16 +315,18 @@ export function DirectCameraModal({
       presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
-      <View style={{ flex: 1, position: 'relative', backgroundColor: 'black' }}>
-        <CameraView
-          key={cameraInstanceKey} // NEW: force remount on modal open/close
-          ref={cameraRef}
-          style={{ ...StyleSheet.absoluteFillObject }}
-          facing={facing}
-          enableTorch={enableTorch}
-          onCameraReady={handleCameraReady}
-          onMountError={handleCameraError}
-        />
+      <GestureDetector gesture={pinchGesture}>
+        <View style={{ flex: 1, position: 'relative', backgroundColor: 'black' }}>
+          <CameraView
+            key={cameraInstanceKey} // NEW: force remount on modal open/close
+            ref={cameraRef}
+            style={{ ...StyleSheet.absoluteFillObject }}
+            facing={facing}
+            enableTorch={enableTorch}
+            zoom={zoom}
+            onCameraReady={handleCameraReady}
+            onMountError={handleCameraError}
+          />
 
         {/* Flash overlay animation */}
         <Animated.View
@@ -320,20 +344,30 @@ export function DirectCameraModal({
           ]}
         />
 
+        {/* Center Viewfinder and Zoom Indicator */}
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', pointerEvents: 'none' }}>
+          <CameraViewfinder />
+          <View style={{ marginTop: 16, backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 }}>
+            <Text style={{ color: 'white', fontSize: 14, fontWeight: '500' }}>
+              {zoom.toFixed(1)}x
+            </Text>
+          </View>
+        </View>
+
         {/* Top Controls */}
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, paddingTop: 48, paddingHorizontal: 16 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             {/* Settings Button */}
             <TouchableOpacity
               onPress={toggleFunctionType}
-              style={{ width: 40, height: 40, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: 44, height: 44, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}
             >
-              <IconSymbol name="gear" size={20} color="#fff" />
+              <IconSymbol name="gear" size={22} color="#fff" />
             </TouchableOpacity>
 
             {/* Function Type Indicator */}
-            <View style={{ backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 }}>
-              <Text style={{ color: 'white', fontSize: 14, fontWeight: '500' }}>
+            <View style={{ backgroundColor: 'rgba(249,115,22,0.9)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 }}>
+              <Text style={{ color: 'white', fontSize: 14, fontWeight: '600' }}>
                 {functionType === 'restoration' ? 'Restore' : 'Unblur'}
               </Text>
             </View>
@@ -341,9 +375,9 @@ export function DirectCameraModal({
             {/* Close Button */}
             <TouchableOpacity
               onPress={onClose}
-              style={{ width: 40, height: 40, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: 44, height: 44, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}
             >
-              <IconSymbol name="xmark" size={20} color="#fff" />
+              <IconSymbol name="xmark" size={22} color="#fff" />
             </TouchableOpacity>
           </View>
 
@@ -352,11 +386,11 @@ export function DirectCameraModal({
             {/* Flash Control */}
             <TouchableOpacity
               onPress={toggleFlash}
-              style={{ width: 40, height: 40, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: 44, height: 44, backgroundColor: enableTorch ? 'rgba(249,115,22,0.9)' : 'rgba(0,0,0,0.6)', borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}
             >
               <IconSymbol 
                 name={enableTorch ? 'bolt.fill' : 'bolt.slash'} 
-                size={20} 
+                size={22} 
                 color="#fff" 
               />
             </TouchableOpacity>
@@ -364,9 +398,9 @@ export function DirectCameraModal({
             {/* Camera Flip */}
             <TouchableOpacity
               onPress={toggleCameraFacing}
-              style={{ width: 40, height: 40, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: 44, height: 44, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}
             >
-              <IconSymbol name="camera.rotate" size={20} color="#fff" />
+              <IconSymbol name="camera.rotate" size={22} color="#fff" />
             </TouchableOpacity>
           </View>
         </View>
@@ -374,12 +408,19 @@ export function DirectCameraModal({
         {/* Bottom Controls */}
         <View style={{ position: 'absolute', bottom: 32, left: 0, right: 0, alignItems: 'center', justifyContent: 'center' }}>
           <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
-            {/* Gallery Button */}
+            {/* Gallery Button with Count Badge */}
             <TouchableOpacity
               onPress={handleGalleryPress}
-              style={{ position: 'absolute', left: 32, width: 48, height: 48, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}
+              style={{ position: 'absolute', left: 32, width: 56, height: 56, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 28, alignItems: 'center', justifyContent: 'center' }}
             >
-              <IconSymbol name="photo" size={24} color="#fff" />
+              <IconSymbol name="photo" size={28} color="#fff" />
+              {restorationCount > 0 && (
+                <View style={{ position: 'absolute', top: -4, right: -4, backgroundColor: '#f97316', borderRadius: 12, minWidth: 24, height: 24, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#000' }}>
+                  <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>
+                    {restorationCount > 99 ? '99+' : restorationCount}
+                  </Text>
+                </View>
+              )}
             </TouchableOpacity>
 
             {/* Capture Button */}
@@ -390,7 +431,7 @@ export function DirectCameraModal({
                   width: 72,
                   height: 72,
                   borderRadius: 36,
-                  backgroundColor: '#10b981',
+                  backgroundColor: 'red',
                   borderWidth: 4,
                   borderColor: '#fff',
                   justifyContent: 'center',
@@ -402,15 +443,17 @@ export function DirectCameraModal({
               <View style={{ width: 64, height: 64, backgroundColor: 'white', borderRadius: 32 }} />
             </AnimatedTouchableOpacity>
 
-            {/* Mode Text */}
-            <View style={{ position: 'absolute', right: 32 }}>
-              <Text style={{ color: 'white', fontSize: 12, fontWeight: '500' }}>
-                {facing === 'back' ? '1.0x' : 'Front'}
-              </Text>
-            </View>
+            {/* Upload Button */}
+            <TouchableOpacity
+              onPress={handleGalleryPress}
+              style={{ position: 'absolute', right: 32, width: 56, height: 56, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 28, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <IconSymbol name="square.and.arrow.up" size={28} color="#fff" />
+            </TouchableOpacity>
           </View>
         </View>
-      </View>
+        </View>
+      </GestureDetector>
     </Modal>
   );
 }

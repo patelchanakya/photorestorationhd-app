@@ -15,11 +15,14 @@ export interface RestorationHistoryItem {
 }
 
 // Hook to get restoration history
-export function useRestorationHistory() {
+export function useRestorationHistory(enabled: boolean = true) {
   return useQuery({
     queryKey: photoRestorationKeys.history(),
     queryFn: async (): Promise<RestorationHistoryItem[]> => {
       try {
+        // Add small delay to prevent race conditions
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         // Always use 'anonymous' since we don't have auth
         const restorations = await restorationService.getUserRestorations('anonymous');
         return restorations
@@ -41,8 +44,12 @@ export function useRestorationHistory() {
         return [];
       }
     },
+    enabled,
+    initialData: [],
     staleTime: 1000 * 60 * 2, // 2 minutes
     gcTime: 1000 * 60 * 60 * 24, // 24 hours
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
   });
 }
 

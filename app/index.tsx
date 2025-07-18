@@ -1,12 +1,32 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { CameraViewfinder } from '@/components/CameraViewfinder';
+import { useRestorationHistory } from '@/hooks/useRestorationHistory';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import React, { useEffect } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Text, TouchableOpacity, View, InteractionManager } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming, withRepeat } from 'react-native-reanimated';
+
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
 export default function MinimalCameraWithGalleryButton() {
   const [permission, requestPermission] = useCameraPermissions();
+  const [enableTorch, setEnableTorch] = useState(false);
+  const [facing, setFacing] = useState<'front' | 'back'>('back');
+  const [isAppReady, setIsAppReady] = useState(false);
   const router = useRouter();
+  const cameraRef = useRef<CameraView>(null);
+  
+  // Get restoration history for count badge (only after app is ready)
+  const { data: restorationHistory } = useRestorationHistory(isAppReady);
+  const restorationCount = restorationHistory?.length || 0;
+  
+  // Animation values
+  const captureButtonScale = useSharedValue(1);
+  const flashAnimation = useSharedValue(0);
+  const glowOpacity = useSharedValue(0.3);
 
   useEffect(() => {
     if (!permission) return;
@@ -14,11 +34,109 @@ export default function MinimalCameraWithGalleryButton() {
       requestPermission();
     }
   }, [permission, requestPermission]);
+  
+  useEffect(() => {
+    // Defer heavy operations until after interactions complete
+    InteractionManager.runAfterInteractions(() => {
+      // Small delay to ensure app is fully loaded
+      setTimeout(() => {
+        setIsAppReady(true);
+      }, 500);
+    });
+  }, []);
+  
+  useEffect(() => {
+    // Subtle glow animation for capture button
+    glowOpacity.value = withRepeat(
+      withSequence(
+        withTiming(0.6, { duration: 1500 }),
+        withTiming(0.3, { duration: 1500 })
+      ),
+      -1,
+      true
+    );
+  }, [glowOpacity]);
+  
+  // Animated styles
+  const animatedCaptureStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: captureButtonScale.value }],
+    };
+  });
 
-  if (!permission) {
+  const animatedFlashStyle = useAnimatedStyle(() => {
+    return {
+      opacity: flashAnimation.value,
+    };
+  });
+
+  const animatedGlowStyle = useAnimatedStyle(() => {
+    return {
+      opacity: glowOpacity.value,
+    };
+  });
+
+    
+  // Camera functions
+  const handleCapture = useCallback(async () => {
+    if (!cameraRef.current) return;
+    
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    // Animate capture button
+    captureButtonScale.value = withSequence(
+      withSpring(0.8),
+      withSpring(1)
+    );
+
+    // Flash animation
+    flashAnimation.value = withSequence(
+      withTiming(1, { duration: 100 }),
+      withTiming(0, { duration: 300 })
+    );
+
+    try {
+      const photo = await cameraRef.current.takePictureAsync();
+      if (photo) {
+        router.push(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(photo.uri)}`);
+      }
+    } catch (error) {
+      console.error('Failed to take picture:', error);
+    }
+  }, [router, captureButtonScale, flashAnimation]);
+
+  const handleGalleryPress = useCallback(async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        router.push(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(result.assets[0].uri)}`);
+      }
+    } catch (error) {
+      console.error('Gallery error:', error);
+    }
+  }, [router]);
+
+  const toggleFlash = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setEnableTorch(current => !current);
+  }, []);
+
+
+  if (!permission || !isAppReady) {
     return (
       <View style={{ flex: 1, backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ color: 'white', fontSize: 18 }}>Checking camera permissions...</Text>
+        <IconSymbol name="camera" size={64} color="#f97316" />
+        <Text style={{ color: 'white', fontSize: 18, marginTop: 16 }}>
+          {!permission ? 'Checking camera permissions...' : 'Loading camera...'}
+        </Text>
       </View>
     );
   }
@@ -44,14 +162,144 @@ export default function MinimalCameraWithGalleryButton() {
   if (permission.status === 'granted') {
     return (
       <View style={{ flex: 1, backgroundColor: 'black' }}>
-        <CameraView style={{ flex: 1 }} />
-        {/* Gallery Button Overlay (no navigation) */}
-        <TouchableOpacity
-          onPress={() => router.push('/gallery-modal')}
-          style={{ position: 'absolute', left: 24, bottom: 32, width: 48, height: 48, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}
-        >
-          <IconSymbol name="photo" size={28} color="#fff" />
-        </TouchableOpacity>
+        <CameraView 
+          ref={cameraRef}
+          style={{ flex: 1 }} 
+          facing={facing}
+          enableTorch={enableTorch}
+        />
+          
+          {/* Flash overlay animation */}
+          <Animated.View
+            style={[
+              {
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'white',
+                pointerEvents: 'none',
+              },
+              animatedFlashStyle,
+            ]}
+          />
+
+          {/* Center Viewfinder */}
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', pointerEvents: 'none' }}>
+            <CameraViewfinder />
+          </View>
+
+          {/* Top Controls */}
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, paddingTop: 60, paddingHorizontal: 16 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              {/* Settings Button */}
+              <TouchableOpacity
+                onPress={() => router.push('/settings-modal')}
+                style={{ width: 52, height: 52, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 26, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <IconSymbol name="gear" size={28} color="#fff" />
+              </TouchableOpacity>
+
+              {/* Mode Indicator */}
+              <View style={{ backgroundColor: 'rgba(249,115,22,0.9)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 }}>
+                <Text style={{ color: 'white', fontSize: 14, fontWeight: '600' }}>Photo Restore</Text>
+              </View>
+
+              {/* Flash/Torch Toggle */}
+              <TouchableOpacity
+                onPress={toggleFlash}
+                style={{ width: 52, height: 52, backgroundColor: enableTorch ? 'rgba(249,115,22,0.9)' : 'rgba(0,0,0,0.6)', borderRadius: 26, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <IconSymbol name={enableTorch ? 'bolt.fill' : 'bolt.slash'} size={28} color="#fff" />
+              </TouchableOpacity>
+            </View>
+
+          </View>
+
+          {/* Bottom Controls */}
+          <View style={{ position: 'absolute', bottom: 32, left: 0, right: 0, alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+              {/* Gallery Button with Count Badge */}
+              <TouchableOpacity
+                onPress={() => router.push('/gallery-modal')}
+                style={{ position: 'absolute', left: 32, width: 64, height: 64, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 32, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <IconSymbol name="photo" size={32} color="#fff" />
+                {/* Always show badge for testing - replace with restorationCount > 0 later */}
+                <View style={{ 
+                  position: 'absolute', 
+                  top: 4, 
+                  right: 4, 
+                  backgroundColor: '#f97316', 
+                  borderRadius: 12, 
+                  minWidth: 24, 
+                  height: 24, 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  borderWidth: 2, 
+                  borderColor: '#000',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                  elevation: 5
+                }}>
+                  <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>
+                    {restorationCount > 99 ? '99+' : (restorationCount || '0')}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Capture Button with Glow */}
+              <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                {/* Glow Effect */}
+                <Animated.View
+                  style={[
+                    {
+                      position: 'absolute',
+                      width: 90,
+                      height: 90,
+                      borderRadius: 45,
+                      backgroundColor: '#f97316',
+                      shadowColor: '#f97316',
+                      shadowOffset: { width: 0, height: 0 },
+                      shadowOpacity: 1,
+                      shadowRadius: 20,
+                      elevation: 20,
+                    },
+                    animatedGlowStyle,
+                  ]}
+                />
+                <AnimatedTouchableOpacity
+                  onPress={handleCapture}
+                  style={[
+                    {
+                      width: 72,
+                      height: 72,
+                      borderRadius: 36,
+                      backgroundColor: '#f97316',
+                      borderWidth: 4,
+                      borderColor: '#fff',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    },
+                    animatedCaptureStyle,
+                  ]}
+                >
+                  <View style={{ width: 64, height: 64, backgroundColor: 'white', borderRadius: 32 }} />
+                </AnimatedTouchableOpacity>
+              </View>
+
+              {/* Upload Button */}
+              <TouchableOpacity
+                onPress={handleGalleryPress}
+                style={{ position: 'absolute', right: 32, width: 64, height: 64, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 32, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <IconSymbol name="photo.badge.plus" size={32} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          </View>
       </View>
     );
   }
