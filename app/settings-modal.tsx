@@ -34,7 +34,7 @@ const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpaci
 export default function SettingsModalScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { showFlashButton, toggleFlashButton, setRestorationCount } = useRestorationStore();
+  const { showFlashButton, toggleFlashButton, setRestorationCount, galleryViewMode, setGalleryViewMode } = useRestorationStore();
 
   // Query for storage info
   const { data: storageInfo, isLoading: isLoadingStorage } = useQuery({
@@ -676,6 +676,56 @@ Best regards`;
                     borderRadius: 12,
                     alignItems: 'center',
                     justifyContent: showFlashButton ? 'flex-end' : 'flex-start',
+                    flexDirection: 'row',
+                    paddingHorizontal: 2
+                  }}>
+                    <View style={{
+                      width: 20,
+                      height: 20,
+                      backgroundColor: 'white',
+                      borderRadius: 10
+                    }} />
+                  </View>
+                </TouchableOpacity>
+                
+                {/* Grid View Mode */}
+                <TouchableOpacity 
+                  onPress={() => setGalleryViewMode(galleryViewMode === 'list' ? 'grid' : 'list')}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    padding: 16,
+                  }}>
+                  <View style={{
+                    width: 36,
+                    height: 36,
+                    backgroundColor: 'rgba(249,115,22,0.2)',
+                    borderRadius: 18,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: 12
+                  }}>
+                    <IconSymbol 
+                      name="square.grid.2x2" 
+                      size={18} 
+                      color="#f97316" 
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
+                      Grid View
+                    </Text>
+                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
+                      Show photos in grid layout
+                    </Text>
+                  </View>
+                  <View style={{
+                    width: 44,
+                    height: 24,
+                    backgroundColor: galleryViewMode === 'grid' ? '#f97316' : 'rgba(255,255,255,0.2)',
+                    borderRadius: 12,
+                    alignItems: 'center',
+                    justifyContent: galleryViewMode === 'grid' ? 'flex-end' : 'flex-start',
                     flexDirection: 'row',
                     paddingHorizontal: 2
                   }}>

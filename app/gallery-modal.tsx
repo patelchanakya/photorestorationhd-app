@@ -2,6 +2,7 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import { photoStorage } from '@/services/storage';
 import { localStorageHelpers } from '@/services/supabase';
 import { useRestorationHistory, useRefreshHistory } from '@/hooks/useRestorationHistory';
+import { useRestorationStore } from '@/store/restorationStore';
 import { useRouter } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import {
@@ -39,9 +40,10 @@ function formatDate(dateString: string) {
 }
 
 export default function GalleryModalScreen() {
-  const [gridView, setGridView] = useState(false);
   const router = useRouter();
   const refreshHistory = useRefreshHistory();
+  const galleryViewMode = useRestorationStore((state) => state.galleryViewMode);
+  const toggleGalleryViewMode = useRestorationStore((state) => state.toggleGalleryViewMode);
   
   // Use the React Query hook for data management
   const { data: restorationHistory, isLoading: loading } = useRestorationHistory(true);
@@ -182,12 +184,12 @@ export default function GalleryModalScreen() {
           <View style={styles.headerSection}>
             <TouchableOpacity
               style={styles.singleToggleButton}
-              onPress={() => setGridView(g => !g)}
-              accessibilityLabel={gridView ? 'Switch to list view' : 'Switch to grid view'}
+              onPress={toggleGalleryViewMode}
+              accessibilityLabel={galleryViewMode === 'grid' ? 'Switch to list view' : 'Switch to grid view'}
               activeOpacity={0.8}
             >
               <IconSymbol
-                name={gridView ? 'list.bullet' : 'square.grid.2x2'}
+                name={galleryViewMode === 'grid' ? 'list.bullet' : 'square.grid.2x2'}
                 size={22}
                 color={'#f97316'}
               />
@@ -222,7 +224,7 @@ export default function GalleryModalScreen() {
             <Text style={styles.emptyTitle}>No Images Yet</Text>
             <Text style={styles.emptySubtitle}>Your generated images will appear here.</Text>
           </View>
-        ) : gridView ? (
+        ) : galleryViewMode === 'grid' ? (
           <View style={styles.gridContainer}>
             <FlatList
               data={restorations}

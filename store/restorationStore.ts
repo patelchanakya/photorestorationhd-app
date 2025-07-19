@@ -8,6 +8,9 @@ interface RestorationStore {
   showFlashButton: boolean;
   setShowFlashButton: (show: boolean) => void;
   toggleFlashButton: () => void;
+  galleryViewMode: 'grid' | 'list';
+  setGalleryViewMode: (mode: 'grid' | 'list') => void;
+  toggleGalleryViewMode: () => void;
 }
 
 export const useRestorationStore = create<RestorationStore>((set) => ({
@@ -24,4 +27,12 @@ export const useRestorationStore = create<RestorationStore>((set) => ({
     set({ showFlashButton: show });
   },
   toggleFlashButton: () => set((state) => ({ showFlashButton: !state.showFlashButton })),
+  galleryViewMode: 'list',
+  setGalleryViewMode: (mode) => {
+    console.log('[Zustand] setGalleryViewMode called with:', mode);
+    set({ galleryViewMode: mode });
+  },
+  toggleGalleryViewMode: () => set((state) => ({ 
+    galleryViewMode: state.galleryViewMode === 'list' ? 'grid' : 'list' 
+  })),
 })); 
