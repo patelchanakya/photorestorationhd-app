@@ -1,7 +1,6 @@
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as MediaLibrary from 'expo-media-library';
-import Constants from 'expo-constants';
 import { PhotoData, Restoration } from '../types';
 
 class PhotoStorage {
@@ -152,19 +151,9 @@ class PhotoStorage {
     );
   }
 
-  // Check if running in Expo Go
-  private isExpoGo(): boolean {
-    return Constants.appOwnership === 'expo';
-  }
-
   // Export photo to camera roll
   async exportToCameraRoll(uri: string): Promise<void> {
     try {
-      // If in Expo Go, provide helpful message
-      if (this.isExpoGo()) {
-        console.log('🎯 Running in Expo Go - attempting save with limited permissions');
-      }
-      
       // First check if we already have permissions
       const { status: existingStatus } = await MediaLibrary.getPermissionsAsync();
       
@@ -180,14 +169,29 @@ class PhotoStorage {
         throw new Error('Camera roll permission not granted. Please enable in Settings.');
       }
       
-      // Try to save to library
-      const asset = await MediaLibrary.createAssetAsync(uri);
+      // Use ImageManipulator to create a new file with current timestamp
+      const processedImage = await ImageManipulator.manipulateAsync(
+        uri,
+        [], // No modifications needed
+        { 
+          compress: 1, // Keep original quality
+          format: ImageManipulator.SaveFormat.JPEG 
+        }
+      );
+      
+      // Save the processed image to library (will have current timestamp)
+      const asset = await MediaLibrary.createAssetAsync(processedImage.uri);
       
       if (!asset) {
         throw new Error('Failed to create asset');
       }
       
-      console.log('✅ Photo saved to camera roll successfully');
+      // Clean up the temporary file created by ImageManipulator
+      try {
+        await FileSystem.deleteAsync(processedImage.uri, { idempotent: true });
+      } catch (cleanupError) {
+        console.warn('Failed to clean up temporary file:', cleanupError);
+      }
     } catch (error: any) {
       console.error('❌ MediaLibrary save error:', error);
       

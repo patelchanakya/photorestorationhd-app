@@ -6,22 +6,22 @@ import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Alert,
-  AppState,
-  AppStateStatus,
-  Modal,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    Alert,
+    AppState,
+    AppStateStatus,
+    Modal,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSequence,
-  withSpring,
-  withTiming
+    useAnimatedStyle,
+    useSharedValue,
+    withSequence,
+    withSpring,
+    withTiming
 } from 'react-native-reanimated';
 import { CameraViewfinder } from './CameraViewfinder';
 import { IconSymbol } from './ui/IconSymbol';
@@ -50,7 +50,8 @@ export function DirectCameraModal({
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [appState, setAppState] = useState(AppState.currentState);
   const [cameraInstanceKey, setCameraInstanceKey] = useState(0); // NEW: key for CameraView
-  const [zoom, setZoom] = useState(1);
+  // Set default zoom to 0.5 to avoid ultra-wide (0.5x) lens and use standard (1x) lens on most devices
+  const [zoom, setZoom] = useState(0.5);
   const cameraRef = useRef<CameraView>(null);
   const isMounted = useRef(true);
   
