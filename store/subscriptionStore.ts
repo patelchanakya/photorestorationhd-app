@@ -5,24 +5,28 @@ import { deviceTrackingService } from '@/services/deviceTracking';
 
 interface SubscriptionState {
   isPro: boolean;
+  isDeveloperMode: boolean;
   freeRestorationsUsed: number;
   freeRestorationsLimit: number;
   lastResetDate: string;
   expirationDate: string | null;
   appUserId: string | null;
   setIsPro: (isPro: boolean) => void;
+  toggleDeveloperMode: () => void;
   setExpirationDate: (date: string | null) => void;
   setAppUserId: (userId: string | null) => void;
   incrementFreeRestorations: () => Promise<void>;
   resetDailyLimit: () => void;
   canRestore: () => Promise<boolean>;
   getRemainingRestorations: () => Promise<number>;
+  getEffectiveProStatus: () => boolean;
 }
 
 export const useSubscriptionStore = create<SubscriptionState>()(
   persist(
     (set, get) => ({
       isPro: false,
+      isDeveloperMode: false, // Developer toggle for testing PRO features
       freeRestorationsUsed: 0,
       freeRestorationsLimit: 3, // 3 free restorations per day
       lastResetDate: new Date().toDateString(),
@@ -44,12 +48,26 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         set({ appUserId: userId });
       },
 
+      toggleDeveloperMode: () => {
+        const state = get();
+        const newDeveloperMode = !state.isDeveloperMode;
+        console.log('🧪 Developer mode toggled:', newDeveloperMode);
+        set({ isDeveloperMode: newDeveloperMode });
+      },
+
+      getEffectiveProStatus: () => {
+        const state = get();
+        const effectiveProStatus = state.isPro || state.isDeveloperMode;
+        return effectiveProStatus;
+      },
+
       incrementFreeRestorations: async () => {
         const state = get();
         
-        // Don't increment if user is pro
-        if (state.isPro) {
-          console.log('✨ Pro user - not incrementing free restoration count');
+        // Don't increment if user is pro (including developer mode)
+        const effectiveProStatus = state.isPro || state.isDeveloperMode;
+        if (effectiveProStatus) {
+          console.log('✨ Pro user (or developer mode) - not incrementing free restoration count');
           return;
         }
         
@@ -143,8 +161,9 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       getRemainingRestorations: async () => {
         const state = get();
         
-        // Pro users have unlimited
-        if (state.isPro) {
+        // Pro users (including developer mode) have unlimited
+        const effectiveProStatus = state.isPro || state.isDeveloperMode;
+        if (effectiveProStatus) {
           return 999; // Large number to indicate unlimited
         }
         

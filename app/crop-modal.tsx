@@ -32,6 +32,7 @@ import Animated, {
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { useCropModalStore } from '@/store/cropModalStore';
 import Constants from 'expo-constants';
 import { presentPaywall } from '@/services/revenuecat';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
@@ -45,12 +46,41 @@ const CROP_SIZE = Math.min(SCREEN_WIDTH, AVAILABLE_HEIGHT) * 0.7;
 function CropModalScreen() {
   const router = useRouter();
   const { imageUri, functionType } = useLocalSearchParams();
-  const [currentImageUri, setCurrentImageUri] = useState(imageUri ? decodeURIComponent(imageUri as string) : '');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [showCropTool, setShowCropTool] = useState(false);
   const [error] = useState<string | null>(null);
-  const [useImageLoading, setUseImageLoading] = useState(false);
-  const [buttonText, setButtonText] = useState('Use Image');
+  
+  // Use Zustand store for state management
+  const {
+    currentImageUri,
+    isProcessing,
+    showCropTool,
+    useImageLoading,
+    buttonText,
+    setIsProcessing,
+    setShowCropTool,
+    setUseImageLoading,
+    setButtonText,
+    resetForNewImage,
+    reset,
+  } = useCropModalStore();
+
+  // Reset store state when imageUri changes (new image loaded)
+  useEffect(() => {
+    if (imageUri) {
+      const newUri = decodeURIComponent(imageUri as string);
+      resetForNewImage(newUri);
+      
+      // Reset animation values
+      buttonScale.value = 1;
+      buttonOpacity.value = 1;
+    }
+  }, [imageUri, resetForNewImage]);
+
+  // Cleanup store on unmount
+  useEffect(() => {
+    return () => {
+      reset();
+    };
+  }, [reset]);
   const insets = useSafeAreaInsets();
   
   // Get screen dimensions for responsive design
@@ -339,34 +369,29 @@ function CropModalScreen() {
               console.log('🔍 Cropped object keys:', cropped ? Object.keys(cropped) : 'cropped is null/undefined');
               
               setShowCropTool(false);
+              
               // Check for different possible URI properties
               const croppedUri = cropped?.uri || cropped?.path || cropped?.url || cropped;
               console.log('🔍 Final cropped URI to use:', croppedUri);
               
               if (croppedUri && typeof croppedUri === 'string') {
-                console.log('✅ Cropped URI exists, calling handleRestoration');
-                try {
-                  await handleRestoration(croppedUri);
-                  console.log('✅ handleRestoration completed successfully');
-                } catch (error) {
-                  console.error('❌ handleRestoration failed:', error);
-                  Alert.alert('Error', 'Failed to process cropped image. Please try again.');
-                }
+                console.log('✅ Cropped URI exists, updating current image');
+                // Update the current image to the cropped version
+                resetForNewImage(croppedUri);
+                console.log('✅ Image updated to cropped version, returning to main crop modal view');
               } else {
-                console.log('❌ No valid cropped URI found');
-                console.log('🔍 Falling back to original image');
-                // Fallback: use original image if cropping failed
-                try {
-                  await handleRestoration(currentImageUri);
-                  console.log('✅ Fallback to original image successful');
-                } catch (error) {
-                  console.error('❌ Fallback also failed:', error);
-                  Alert.alert('Error', 'Failed to process image. Please try again.');
-                }
+                console.log('❌ No valid cropped URI found, keeping original image');
+                // Keep the original image if cropping failed
+                // User stays in main view with original image
               }
+              
+              // Note: We don't call handleRestoration() here anymore
+              // User can now see the cropped image and decide when to click "Restore"
             }}
             onEditingCancel={() => {
+              console.log('🔍 ImageEditor onEditingCancel called');
               setShowCropTool(false);
+              // Return to main crop modal view with original image (no changes)
             }}
             dynamicCrop={true}
             // If the package supports a confirm/save button text prop, set it here:
@@ -468,7 +493,7 @@ function CropModalScreen() {
                         [{ rotate: 90 }],
                         { compress: 1, format: ImageManipulator.SaveFormat.JPEG }
                       );
-                      setCurrentImageUri(result.uri);
+                      resetForNewImage(result.uri);
                     } catch (e) {}
                   }}
                   accessibilityLabel="Rotate Image"

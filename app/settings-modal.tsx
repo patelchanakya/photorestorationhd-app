@@ -37,7 +37,7 @@ export default function SettingsModalScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { showFlashButton, toggleFlashButton, setRestorationCount, galleryViewMode, setGalleryViewMode } = useRestorationStore();
-  const { isPro, freeRestorationsUsed, freeRestorationsLimit, expirationDate } = useSubscriptionStore();
+  const { isPro, isDeveloperMode, toggleDeveloperMode, getEffectiveProStatus, freeRestorationsUsed, freeRestorationsLimit, expirationDate } = useSubscriptionStore();
 
 
   // Format bytes to human readable
@@ -973,6 +973,118 @@ Best regards`;
                   </View>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Developer Section */}
+            <View style={{ marginBottom: 32 }}>
+              <Text style={{ 
+                color: 'rgba(245,158,11,1)', // Amber color for developer section
+                fontSize: 16, 
+                fontWeight: '600', 
+                marginBottom: 16 
+              }}>
+                Developer
+              </Text>
+              
+              <View style={{ 
+                backgroundColor: 'rgba(245,158,11,0.1)', // Amber tinted background
+                borderRadius: 12, 
+                overflow: 'hidden',
+                borderWidth: 1,
+                borderColor: 'rgba(245,158,11,0.3)'
+              }}>
+                
+                {/* Developer PRO Mode Toggle */}
+                <TouchableOpacity 
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    padding: 16
+                  }}
+                  onPress={toggleDeveloperMode}
+                >
+                  <View style={{
+                    width: 36,
+                    height: 36,
+                    backgroundColor: 'rgba(245,158,11,0.2)',
+                    borderRadius: 18,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: 12
+                  }}>
+                    <IconSymbol name="hammer.fill" size={18} color="#f59e0b" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
+                      Developer PRO Mode
+                    </Text>
+                    <Text style={{ color: 'rgba(245,158,11,0.8)', fontSize: 14 }}>
+                      Enable PRO features for testing
+                    </Text>
+                  </View>
+                  <View style={{
+                    width: 44,
+                    height: 24,
+                    backgroundColor: isDeveloperMode ? '#f59e0b' : 'rgba(255,255,255,0.2)',
+                    borderRadius: 12,
+                    alignItems: 'center',
+                    justifyContent: isDeveloperMode ? 'flex-end' : 'flex-start',
+                    flexDirection: 'row',
+                    paddingHorizontal: 2
+                  }}>
+                    <View style={{
+                      width: 20,
+                      height: 20,
+                      backgroundColor: 'white',
+                      borderRadius: 10
+                    }} />
+                  </View>
+                </TouchableOpacity>
+
+                {/* Status Indicator */}
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: 16,
+                  paddingTop: 0
+                }}>
+                  <View style={{
+                    width: 36,
+                    height: 36,
+                    backgroundColor: 'rgba(245,158,11,0.2)',
+                    borderRadius: 18,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: 12
+                  }}>
+                    <IconSymbol name="info.circle" size={18} color="#f59e0b" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
+                      Effective PRO Status
+                    </Text>
+                    <Text style={{ color: getEffectiveProStatus() ? '#10b981' : 'rgba(255,255,255,0.6)', fontSize: 14 }}>
+                      {getEffectiveProStatus() ? 
+                        (isPro ? 'Real PRO Subscription Active' : 'Developer Mode Active') : 
+                        'Free Plan'}
+                    </Text>
+                  </View>
+                  <View style={{
+                    backgroundColor: getEffectiveProStatus() ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)',
+                    borderRadius: 8,
+                    paddingHorizontal: 8,
+                    paddingVertical: 4
+                  }}>
+                    <Text style={{
+                      color: getEffectiveProStatus() ? '#10b981' : '#ef4444',
+                      fontSize: 12,
+                      fontWeight: '600'
+                    }}>
+                      {getEffectiveProStatus() ? 'PRO' : 'FREE'}
+                    </Text>
+                  </View>
+                </View>
               </View>
             </View>
 

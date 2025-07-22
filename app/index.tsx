@@ -66,7 +66,8 @@ export default function MinimalCameraWithGalleryButton() {
   const { proAnimationDuration, isProAnimationActive } = useAnimationStore();
   
   // Use Zustand store for subscription state
-  const isPro = useSubscriptionStore((state) => state.isPro);
+  const getEffectiveProStatus = useSubscriptionStore((state) => state.getEffectiveProStatus);
+  const isPro = getEffectiveProStatus();
   
   // Debug logging for badge and force initial sync
   useEffect(() => {
@@ -354,8 +355,8 @@ export default function MinimalCameraWithGalleryButton() {
               {/* Pro Button - Conditional Rendering */}
               <View style={{
                 width: 80,
-                height: 42,
-                borderRadius: 21,
+                height: 36, // Reduced from 42 to match mode selector height
+                borderRadius: 18, // Adjusted radius to match new height
                 overflow: 'hidden',
                 justifyContent: 'center',
                 alignItems: 'center',
@@ -373,20 +374,20 @@ export default function MinimalCameraWithGalleryButton() {
                     }}
                     style={{ 
                       width: 80, 
-                      height: 42, 
-                      backgroundColor: '#10b981', // Green background for active pro
-                      borderRadius: 21, 
+                      height: 36, // Reduced from 42
+                      backgroundColor: '#1a1a1a', // Premium dark background
+                      borderRadius: 18, // Reduced from 21
                       alignItems: 'center', 
                       justifyContent: 'center',
                       flexDirection: 'row',
                       gap: 4,
-                      borderWidth: 2,
-                      borderColor: '#ffffff',
+                      borderWidth: 1.5,
+                      borderColor: '#22c55e', // Green border instead of fill
                     }}
                   >
-                    <IconSymbol name="checkmark.circle.fill" size={16} color="#ffffff" />
+                    <IconSymbol name="checkmark.circle.fill" size={16} color="#22c55e" />
                     <Text style={{ 
-                      color: '#ffffff', 
+                      color: '#22c55e', 
                       fontSize: 13, 
                       fontWeight: '800', 
                       letterSpacing: 0.3
@@ -397,7 +398,7 @@ export default function MinimalCameraWithGalleryButton() {
                   <>
                     {/* Rotating gradient background */}
                     <AnimatedLinearGradient
-                      colors={['transparent', '#ffffff', 'transparent', '#ffffff', 'transparent']}
+                      colors={['transparent', '#f59e0b', 'transparent', '#f59e0b', 'transparent']}
                       locations={[0, 0.2, 0.3, 0.8, 1]}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
@@ -441,9 +442,9 @@ export default function MinimalCameraWithGalleryButton() {
                       }}
                       style={{ 
                         width: 76, 
-                        height: 38, 
-                        backgroundColor: 'black', // Solid background to mask the gradient
-                        borderRadius: 19, 
+                        height: 32, // Reduced from 38
+                        backgroundColor: 'rgba(26, 26, 26, 0.95)', // Premium dark with slight transparency
+                        borderRadius: 16, // Reduced from 19
                         alignItems: 'center', 
                         justifyContent: 'center',
                         flexDirection: 'row',
@@ -451,9 +452,9 @@ export default function MinimalCameraWithGalleryButton() {
                         margin: 2, // Creates the border effect
                       }}
                     >
-                      <IconSymbol name="crown" size={16} color="#f97316" />
+                      <IconSymbol name="crown" size={16} color="#f59e0b" />
                       <Text style={{ 
-                        color: '#f97316', 
+                        color: '#f59e0b', 
                         fontSize: 13, 
                         fontWeight: '800', 
                         letterSpacing: 0.3

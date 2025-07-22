@@ -13,7 +13,7 @@ interface AnimationStore {
 
 export const useAnimationStore = create<AnimationStore>((set) => ({
   // Initial state
-  proAnimationDuration: 2000, // 2 seconds for smooth, elegant animation
+  proAnimationDuration: 2250, // 2.5 seconds for smooth, elegant animation
   isProAnimationActive: true,
   
   // Actions
