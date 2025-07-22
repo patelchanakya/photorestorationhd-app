@@ -1,0 +1,72 @@
+{
+  "settings": {
+    "title": "Einstellungen",
+    "connectSupport": "Verbinden & Support",
+    "followUs": "Folgen Sie uns",
+    "emailSupport": "E-Mail Support",
+    "rateUs": "Gefällt es Ihnen? Bewerten Sie uns!",
+    "shareApp": "App Teilen",
+    "preferences": "Einstellungen",
+    "language": "Sprache",
+    "showFlashButton": "Blitz-Taste Anzeigen",
+    "showFlashButtonDescription": "Blitz-Steuerung in der Kamera anzeigen",
+    "gridView": "Gitter-Ansicht",
+    "gridViewDescription": "Fotos in Gitter-Layout anzeigen",
+    "subscription": "Abonnement",
+    "proSubscription": "Pro Abonnement",
+    "freePlan": "Kostenloser Plan",
+    "freeRestorations": "Kostenlose Wiederherstellungen",
+    "restorePurchases": "Käufe Wiederherstellen",
+    "restorePurchasesDescription": "Frühere Käufe wiederherstellen",
+    "manageSubscription": "Abonnement Verwalten",
+    "manageSubscriptionDescription": "Abonnement ändern oder kündigen",
+    "storage": "Speicher",
+    "deleteAllPhotos": "Alle Fotos Löschen",
+    "deleteAllPhotosDescription": "Alle Bilder dauerhaft entfernen",
+    "accountLegal": "Konto & Rechtliches",
+    "privacyPolicy": "Datenschutzrichtlinie",
+    "termsOfUse": "Nutzungsbedingungen",
+    "about": "Über",
+    "version": "Version",
+    "helpSupport": "Hilfe & Support",
+    "helpSupportDescription": "Hilfe bei der App-Nutzung erhalten"
+  },
+  "language": {
+    "selectLanguage": "Sprache Auswählen",
+    "availableNow": "Jetzt verfügbar",
+    "nextIn": "Nächste in {{time}}"
+  },
+  "common": {
+    "ok": "OK",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "save": "Speichern",
+    "done": "Fertig",
+    "error": "Fehler",
+    "loading": "Lädt",
+    "retry": "Wiederholen"
+  },
+  "home": {
+    "restore": "Wiederherstellen",
+    "unblur": "Entschärfen",
+    "colorize": "Kolorieren",
+    "gallery": "Galerie"
+  },
+  "alerts": {
+    "deleteAllPhotos": {
+      "title": "Alle Fotos Löschen",
+      "message": "Dies wird alle Fotos in Ihrer Galerie dauerhaft löschen. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "confirm": "Alle Löschen"
+    },
+    "deleteImage": {
+      "title": "Bild Löschen",
+      "message": "Sind Sie sicher, dass Sie dieses Bild dauerhaft löschen möchten?"
+    },
+    "photosDeleted": "Fotos Gelöscht",
+    "imageDeleted": "Bild gelöscht.",
+    "failedToDelete": "Fehler beim Löschen des Bildes.",
+    "restoreFailed": "Wiederherstellung Fehlgeschlagen",
+    "noPurchasesFound": "Keine früheren Käufe zum Wiederherstellen gefunden.",
+    "purchasesRestored": "Ihr Pro Abonnement wurde wiederhergestellt."
+  }
+}

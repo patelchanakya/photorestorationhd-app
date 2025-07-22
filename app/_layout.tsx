@@ -7,15 +7,32 @@ import '../global.css';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { LanguageProvider } from '@/i18n';
 import NetInfo from '@react-native-community/netinfo';
 import { QueryClient, QueryClientProvider, focusManager, onlineManager } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { AppState, AppStateStatus, Platform } from 'react-native';
+import { AppState, AppStateStatus, Platform, LogBox } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import Constants from 'expo-constants';
 // import { SuperwallProvider } from 'expo-superwall';
+
+// Configure LogBox for production
+if (!__DEV__) {
+  // Disable all LogBox logs in production
+  LogBox.ignoreAllLogs(true);
+  
+  // Disable yellow box warnings
+  console.disableYellowBox = true;
+  
+  // Override console methods to prevent logs in production
+  console.log = () => {};
+  console.warn = () => {};
+  console.error = () => {};
+  console.info = () => {};
+  console.debug = () => {};
+}
 
 // Create QueryClient instance
 const queryClient = new QueryClient({
@@ -78,14 +95,21 @@ export default function RootLayout() {
         const isExpoGo = Constants.appOwnership === 'expo';
         
         if (isExpoGo) {
-          console.log('⚠️ RevenueCat is not available in Expo Go. Using mock data.');
+          if (__DEV__) {
+            console.log('⚠️ RevenueCat is not available in Expo Go. Using mock data.');
+          }
           // Set default free state for Expo Go
           setIsPro(false);
           return;
         }
         
         // Set debug log level for development
-        Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+        if (__DEV__) {
+          Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+        } else {
+          // Set to error level in production to reduce logs
+          Purchases.setLogLevel(LOG_LEVEL.ERROR);
+        }
         
         // Configure RevenueCat with Apple API key
         if (Platform.OS === 'ios') {
@@ -93,27 +117,37 @@ export default function RootLayout() {
             const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY;
             
             if (!apiKey) {
-              console.error('❌ RevenueCat Apple API key not found in environment variables');
-              console.log('🔄 Continuing without RevenueCat...');
+              if (__DEV__) {
+                console.error('❌ RevenueCat Apple API key not found in environment variables');
+                console.log('🔄 Continuing without RevenueCat...');
+              }
               return;
             }
             
-            console.log('🔧 Configuring RevenueCat...');
+            if (__DEV__) {
+              console.log('🔧 Configuring RevenueCat...');
+            }
             await Purchases.configure({ 
               apiKey: apiKey
             });
             
-            console.log('✅ RevenueCat configured successfully');
+            if (__DEV__) {
+              console.log('✅ RevenueCat configured successfully');
+            }
             
             // Listen for customer info updates
             Purchases.addCustomerInfoUpdateListener((customerInfo) => {
-              console.log('📱 Customer info updated:', customerInfo);
+              if (__DEV__) {
+                console.log('📱 Customer info updated:', customerInfo);
+              }
               
               // Check if user has active pro entitlement
               const hasProEntitlement = customerInfo.entitlements.active['pro'] !== undefined;
               setIsPro(hasProEntitlement);
               
-              console.log('🔄 Pro status updated:', hasProEntitlement);
+              if (__DEV__) {
+                console.log('🔄 Pro status updated:', hasProEntitlement);
+              }
             });
             
             // Check initial subscription status
@@ -121,14 +155,20 @@ export default function RootLayout() {
             const hasProEntitlement = customerInfo.entitlements.active['pro'] !== undefined;
             setIsPro(hasProEntitlement);
             
-            console.log('🎯 Initial pro status:', hasProEntitlement);
+            if (__DEV__) {
+              console.log('🎯 Initial pro status:', hasProEntitlement);
+            }
           } catch (error) {
-            console.error('❌ RevenueCat configuration failed:', error);
-            console.log('🔄 Continuing without RevenueCat...');
+            if (__DEV__) {
+              console.error('❌ RevenueCat configuration failed:', error);
+              console.log('🔄 Continuing without RevenueCat...');
+            }
           }
         }
       } catch (error) {
-        console.error('❌ Failed to initialize RevenueCat:', error);
+        if (__DEV__) {
+          console.error('❌ Failed to initialize RevenueCat:', error);
+        }
         // Set default state on error
         setIsPro(false);
       }
@@ -150,9 +190,10 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <QueryClientProvider client={queryClient}>
-          {/* <SuperwallProvider apiKey="pk_9463ee79e9c6a66da3118d96b615f85d505d307dbce01cf3"> */}
-            <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <LanguageProvider>
+          <QueryClientProvider client={queryClient}>
+            {/* <SuperwallProvider apiKey="pk_9463ee79e9c6a66da3118d96b615f85d505d307dbce01cf3"> */}
+              <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
               <Stack>
                 <Stack.Screen name="index" options={{ headerShown: false, title: "Photo Restoration HD" }} />
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -167,7 +208,8 @@ export default function RootLayout() {
             </ThemeProvider>
           {/* </SuperwallProvider> */}
         </QueryClientProvider>
-      </GestureHandlerRootView>
+      </LanguageProvider>
+    </GestureHandlerRootView>
     </ErrorBoundary>
   );
 }

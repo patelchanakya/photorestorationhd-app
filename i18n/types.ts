@@ -1,0 +1,67 @@
+// This file will be updated as we add more translation keys
+export type TranslationKeys = 
+  // Settings
+  | 'settings.title'
+  | 'settings.connectSupport'
+  | 'settings.followUs'
+  | 'settings.emailSupport'
+  | 'settings.rateUs'
+  | 'settings.shareApp'
+  | 'settings.preferences'
+  | 'settings.language'
+  | 'settings.showFlashButton'
+  | 'settings.showFlashButtonDescription'
+  | 'settings.gridView'
+  | 'settings.gridViewDescription'
+  | 'settings.subscription'
+  | 'settings.proSubscription'
+  | 'settings.freePlan'
+  | 'settings.freeRestorations'
+  | 'settings.restorePurchases'
+  | 'settings.restorePurchasesDescription'
+  | 'settings.manageSubscription'
+  | 'settings.manageSubscriptionDescription'
+  | 'settings.storage'
+  | 'settings.deleteAllPhotos'
+  | 'settings.deleteAllPhotosDescription'
+  | 'settings.accountLegal'
+  | 'settings.privacyPolicy'
+  | 'settings.termsOfUse'
+  | 'settings.about'
+  | 'settings.version'
+  | 'settings.helpSupport'
+  | 'settings.helpSupportDescription'
+  
+  // Language picker
+  | 'language.selectLanguage'
+  | 'language.availableNow'
+  | 'language.nextIn'
+  
+  // Common
+  | 'common.ok'
+  | 'common.cancel'
+  | 'common.delete'
+  | 'common.save'
+  | 'common.done'
+  | 'common.error'
+  | 'common.loading'
+  | 'common.retry'
+  
+  // Home screen
+  | 'home.restore'
+  | 'home.unblur'
+  | 'home.colorize'
+  | 'home.gallery'
+  
+  // Alerts
+  | 'alerts.deleteAllPhotos.title'
+  | 'alerts.deleteAllPhotos.message'
+  | 'alerts.deleteAllPhotos.confirm'
+  | 'alerts.deleteImage.title'
+  | 'alerts.deleteImage.message'
+  | 'alerts.photosDeleted'
+  | 'alerts.imageDeleted'
+  | 'alerts.failedToDelete'
+  | 'alerts.restoreFailed'
+  | 'alerts.noPurchasesFound'
+  | 'alerts.purchasesRestored';

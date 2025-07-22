@@ -1,0 +1,72 @@
+{
+  "settings": {
+    "title": "Configurações",
+    "connectSupport": "Conectar & Suporte",
+    "followUs": "Siga-nos",
+    "emailSupport": "Suporte por E-mail",
+    "rateUs": "Gosta? Avalie-nos!",
+    "shareApp": "Compartilhar App",
+    "preferences": "Preferências",
+    "language": "Idioma",
+    "showFlashButton": "Mostrar Botão do Flash",
+    "showFlashButtonDescription": "Mostrar controle do flash na câmera",
+    "gridView": "Visualização em Grade",
+    "gridViewDescription": "Mostrar fotos em layout de grade",
+    "subscription": "Assinatura",
+    "proSubscription": "Assinatura Pro",
+    "freePlan": "Plano Gratuito",
+    "freeRestorations": "Restaurações Gratuitas",
+    "restorePurchases": "Restaurar Compras",
+    "restorePurchasesDescription": "Restaurar compras anteriores",
+    "manageSubscription": "Gerenciar Assinatura",
+    "manageSubscriptionDescription": "Alterar ou cancelar assinatura",
+    "storage": "Armazenamento",
+    "deleteAllPhotos": "Excluir Todas as Fotos",
+    "deleteAllPhotosDescription": "Remover permanentemente todas as imagens",
+    "accountLegal": "Conta & Legal",
+    "privacyPolicy": "Política de Privacidade",
+    "termsOfUse": "Termos de Uso",
+    "about": "Sobre",
+    "version": "Versão",
+    "helpSupport": "Ajuda & Suporte",
+    "helpSupportDescription": "Obter ajuda usando o app"
+  },
+  "language": {
+    "selectLanguage": "Selecionar Idioma",
+    "availableNow": "Disponível agora",
+    "nextIn": "Próximo em {{time}}"
+  },
+  "common": {
+    "ok": "OK",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "save": "Salvar",
+    "done": "Pronto",
+    "error": "Erro",
+    "loading": "Carregando",
+    "retry": "Tentar Novamente"
+  },
+  "home": {
+    "restore": "Restaurar",
+    "unblur": "Remover Desfoque",
+    "colorize": "Colorir",
+    "gallery": "Galeria"
+  },
+  "alerts": {
+    "deleteAllPhotos": {
+      "title": "Excluir Todas as Fotos",
+      "message": "Isso excluirá permanentemente todas as fotos da sua galeria. Esta ação não pode ser desfeita.",
+      "confirm": "Excluir Todas"
+    },
+    "deleteImage": {
+      "title": "Excluir Imagem",
+      "message": "Tem certeza de que deseja excluir permanentemente esta imagem?"
+    },
+    "photosDeleted": "Fotos Excluídas",
+    "imageDeleted": "Imagem excluída.",
+    "failedToDelete": "Falha ao excluir imagem.",
+    "restoreFailed": "Restauração Falhou",
+    "noPurchasesFound": "Nenhuma compra anterior encontrada para restaurar.",
+    "purchasesRestored": "Sua assinatura Pro foi restaurada."
+  }
+}

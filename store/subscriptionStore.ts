@@ -16,6 +16,7 @@ interface SubscriptionState {
   setExpirationDate: (date: string | null) => void;
   setAppUserId: (userId: string | null) => void;
   incrementFreeRestorations: () => Promise<void>;
+  decrementFreeRestorations: (restorationCreatedAt: string) => Promise<void>;
   resetDailyLimit: () => void;
   canRestore: () => Promise<boolean>;
   getRemainingRestorations: () => Promise<number>;
@@ -28,8 +29,8 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       isPro: false,
       isDeveloperMode: false, // Developer toggle for testing PRO features
       freeRestorationsUsed: 0,
-      freeRestorationsLimit: 3, // 3 free restorations per day
-      lastResetDate: new Date().toDateString(),
+      freeRestorationsLimit: 1, // 1 free restoration every 48 hours
+      lastResetDate: new Date().toISOString(),
       expirationDate: null,
       appUserId: null,
 
@@ -67,95 +68,108 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         // Don't increment if user is pro (including developer mode)
         const effectiveProStatus = state.isPro || state.isDeveloperMode;
         if (effectiveProStatus) {
-          console.log('✨ Pro user (or developer mode) - not incrementing free restoration count');
+          if (__DEV__) {
+            console.log('✨ Pro user (or developer mode) - not incrementing free restoration count');
+          }
           return;
         }
         
-        // Increment device-based usage
-        try {
-          const updatedUsage = await deviceTrackingService.incrementUsage();
-          if (updatedUsage) {
-            // Update local state to match device tracking
-            set({ 
-              freeRestorationsUsed: updatedUsage.free_restorations_used,
-              lastResetDate: new Date(updatedUsage.last_reset_date).toDateString()
-            });
-            console.log('✅ Device usage incremented:', updatedUsage.free_restorations_used);
+        // Increment device-based usage (now local-only)
+        const updatedUsage = await deviceTrackingService.incrementUsage();
+        
+        // Update local state to match device tracking
+        set({ 
+          freeRestorationsUsed: updatedUsage.free_restorations_used,
+          lastResetDate: updatedUsage.last_reset_date
+        });
+        
+        if (__DEV__) {
+          console.log('✅ Device usage incremented locally:', updatedUsage.free_restorations_used);
+        }
+      },
+
+      decrementFreeRestorations: async (restorationCreatedAt: string) => {
+        const state = get();
+        
+        // Don't decrement if user is pro (including developer mode)
+        const effectiveProStatus = state.isPro || state.isDeveloperMode;
+        if (effectiveProStatus) {
+          if (__DEV__) {
+            console.log('✨ Pro user (or developer mode) - not decrementing free restoration count');
           }
-        } catch (error) {
-          console.error('❌ Error incrementing device usage, updating local only:', error);
-          
-          // Fallback to local increment if device tracking fails
-          const today = new Date().toDateString();
-          if (state.lastResetDate !== today) {
-            console.log('🔄 New day - resetting restoration count');
-            set({ 
-              freeRestorationsUsed: 1, 
-              lastResetDate: today 
-            });
-          } else {
-            console.log('➕ Incrementing local restoration count:', state.freeRestorationsUsed + 1);
-            set({ 
-              freeRestorationsUsed: state.freeRestorationsUsed + 1 
-            });
+          return;
+        }
+        
+        // Check if the restoration was created within the current 48-hour window
+        const now = new Date();
+        const createdAt = new Date(restorationCreatedAt);
+        const lastReset = new Date(state.lastResetDate);
+        
+        // If the restoration was created before the last reset, don't decrement
+        if (createdAt < lastReset) {
+          if (__DEV__) {
+            console.log('⚠️ Restoration was created before current 48-hour window, not decrementing');
           }
+          return;
+        }
+        
+        // Check if we're still within the same 48-hour window
+        const hoursSinceReset = (now.getTime() - lastReset.getTime()) / (1000 * 60 * 60);
+        if (hoursSinceReset >= 48) {
+          if (__DEV__) {
+            console.log('⚠️ Outside current 48-hour window, not decrementing');
+          }
+          return;
+        }
+        
+        // Decrement device-based usage (now local-only)
+        const updatedUsage = await deviceTrackingService.decrementUsage();
+        
+        // Update local state to match device tracking
+        set({ 
+          freeRestorationsUsed: updatedUsage.free_restorations_used,
+          lastResetDate: updatedUsage.last_reset_date
+        });
+        
+        if (__DEV__) {
+          console.log('✅ Device usage decremented locally:', updatedUsage.free_restorations_used);
         }
       },
 
       resetDailyLimit: () => {
         set({ 
           freeRestorationsUsed: 0, 
-          lastResetDate: new Date().toDateString() 
+          lastResetDate: new Date().toISOString() 
         });
       },
 
       canRestore: async () => {
-        // 🧪 TEMPORARY: Always allow restorations for testing
-        console.log('🧪 Testing mode - unlimited restorations enabled');
-        return true;
-        
-        /* Original logic commented out for testing:
         const state = get();
         
-        // Pro users have unlimited restorations
-        if (state.isPro) {
-          console.log('✨ Pro user - can restore unlimited');
+        // Pro users (including developer mode) have unlimited restorations
+        const effectiveProStatus = state.isPro || state.isDeveloperMode;
+        if (effectiveProStatus) {
+          if (__DEV__) {
+            console.log('✨ Pro user - can restore unlimited');
+          }
           return true;
         }
         
-        // For free users, check device-based limits
-        try {
-          const canRestoreDevice = await deviceTrackingService.canRestore();
-          console.log(`🔍 Device tracking: can restore = ${canRestoreDevice}`);
-          
-          // Also update local state to match device tracking
-          const deviceUsage = await deviceTrackingService.getDeviceUsage();
-          if (deviceUsage) {
-            set({ 
-              freeRestorationsUsed: deviceUsage.free_restorations_used,
-              lastResetDate: new Date(deviceUsage.last_reset_date).toDateString()
-            });
-          }
-          
-          return canRestoreDevice;
-        } catch (error) {
-          console.error('❌ Error checking device limits, falling back to local:', error);
-          
-          // Fallback to local storage if device tracking fails
-          const today = new Date().toDateString();
-          if (state.lastResetDate !== today) {
-            set({ 
-              freeRestorationsUsed: 0, 
-              lastResetDate: today 
-            });
-            return true;
-          }
-          
-          const canRestore = state.freeRestorationsUsed < state.freeRestorationsLimit;
-          console.log(`🔍 Local fallback - can restore: ${canRestore} (used: ${state.freeRestorationsUsed}/${state.freeRestorationsLimit})`);
-          return canRestore;
+        // For free users, check device-based limits (now local-only)
+        const canRestoreDevice = await deviceTrackingService.canRestore();
+        
+        // Update local state to match device tracking
+        const deviceUsage = await deviceTrackingService.getDeviceUsage();
+        set({ 
+          freeRestorationsUsed: deviceUsage.free_restorations_used,
+          lastResetDate: deviceUsage.last_reset_date
+        });
+        
+        if (__DEV__) {
+          console.log(`🔍 Device tracking (local): can restore = ${canRestoreDevice}`);
         }
-        */
+        
+        return canRestoreDevice;
       },
 
       getRemainingRestorations: async () => {
@@ -167,15 +181,8 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           return 999; // Large number to indicate unlimited
         }
         
-        // For free users, get from device tracking
-        try {
-          const remaining = await deviceTrackingService.getRemainingRestorations();
-          return remaining;
-        } catch (error) {
-          console.error('❌ Error getting remaining restorations:', error);
-          // Fallback to local calculation
-          return Math.max(0, state.freeRestorationsLimit - state.freeRestorationsUsed);
-        }
+        // For free users, get from device tracking (now local-only)
+        return await deviceTrackingService.getRemainingRestorations();
       }
     }),
     {

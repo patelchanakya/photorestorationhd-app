@@ -15,11 +15,20 @@ try {
 }
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
-import { supabase, DeviceUsage } from './supabaseClient';
 
+// SecureStore keys for local storage
 const DEVICE_ID_KEY = 'device_id_persistent';
-const DEVICE_USAGE_CACHE_KEY = 'device_usage_cache';
-const FREE_RESTORATION_LIMIT = 3;
+const DEVICE_USAGE_LAST_RESET_KEY = 'device_usage_last_reset';
+const DEVICE_USAGE_COUNT_KEY = 'device_usage_count';
+
+const FREE_RESTORATION_LIMIT = 1; // 1 free restoration every 48 hours
+
+// Local interface for device usage (no longer tied to Supabase)
+interface LocalDeviceUsage {
+  device_id: string;
+  free_restorations_used: number;
+  last_reset_date: string;
+}
 
 export const deviceTrackingService = {
   /**
@@ -31,18 +40,24 @@ export const deviceTrackingService = {
       let storedId = await SecureStore.getItemAsync(DEVICE_ID_KEY);
       
       if (storedId) {
-        console.log('📱 Using secure stored device ID:', storedId.substring(0, 8) + '...');
+        if (__DEV__) {
+          console.log('📱 Using secure stored device ID:', storedId.substring(0, 8) + '...');
+        }
         return storedId;
       }
       
       // Migration: Check AsyncStorage for existing device ID
       const asyncStorageId = await AsyncStorage.getItem(DEVICE_ID_KEY);
       if (asyncStorageId) {
-        console.log('🔄 Migrating device ID from AsyncStorage to SecureStore');
+        if (__DEV__) {
+          console.log('🔄 Migrating device ID from AsyncStorage to SecureStore');
+        }
         await SecureStore.setItemAsync(DEVICE_ID_KEY, asyncStorageId);
         // Remove from AsyncStorage after successful migration
         await AsyncStorage.removeItem(DEVICE_ID_KEY);
-        console.log('✅ Device ID migration completed');
+        if (__DEV__) {
+          console.log('✅ Device ID migration completed');
+        }
         return asyncStorageId;
       }
 
@@ -51,11 +66,15 @@ export const deviceTrackingService = {
       
       // Store it in SecureStore for persistence across app reinstalls
       await SecureStore.setItemAsync(DEVICE_ID_KEY, deviceId);
-      console.log('📱 Generated new device ID and stored in SecureStore:', deviceId.substring(0, 8) + '...');
+      if (__DEV__) {
+        console.log('📱 Generated new device ID and stored in SecureStore:', deviceId.substring(0, 8) + '...');
+      }
       
       return deviceId;
     } catch (error) {
-      console.error('❌ Failed to get device ID:', error);
+      if (__DEV__) {
+        console.error('❌ Failed to get device ID:', error);
+      }
       // Fallback to a random ID if device info fails
       const fallbackId = `device-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       try {
@@ -89,96 +108,70 @@ export const deviceTrackingService = {
   },
 
   /**
-   * Get device usage data from Supabase with local cache fallback
+   * Get device usage data from local SecureStore only
    */
-  async getDeviceUsage(): Promise<DeviceUsage | null> {
+  async getDeviceUsage(): Promise<LocalDeviceUsage> {
     const deviceId = await this.getDeviceId();
     
     try {
-      // Try to get from Supabase first
-      const { data, error } = await supabase
-        .from('device_usage')
-        .select('*')
-        .eq('device_id', deviceId)
-        .single();
-
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-        console.error('❌ Supabase error:', error);
-        // Fall back to cache
-        return this.getCachedDeviceUsage();
-      }
-
-      if (data) {
-        // Cache the data locally
-        await this.cacheDeviceUsage(data);
-        
-        // Check if we need to reset daily limit
-        const today = new Date().toDateString();
-        const lastReset = new Date(data.last_reset_date).toDateString();
-        
-        if (today !== lastReset) {
-          // Reset the daily limit
-          return this.resetDailyLimit();
-        }
-        
-        return data;
-      }
-
-      // No data found, create new record
-      return this.createDeviceUsageRecord();
-    } catch (error) {
-      console.error('❌ Failed to get device usage:', error);
-      // Fall back to cache
-      return this.getCachedDeviceUsage();
-    }
-  },
-
-  /**
-   * Create a new device usage record
-   */
-  async createDeviceUsageRecord(): Promise<DeviceUsage | null> {
-    const deviceId = await this.getDeviceId();
-    
-    const newRecord: Omit<DeviceUsage, 'created_at' | 'updated_at'> = {
-      device_id: deviceId,
-      free_restorations_used: 0,
-      last_reset_date: new Date().toISOString(),
-    };
-
-    try {
-      const { data, error } = await supabase
-        .from('device_usage')
-        .insert(newRecord)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('❌ Failed to create device usage record:', error);
-        // Create a local cache entry
-        const localRecord = {
-          ...newRecord,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+      // Get last reset date and usage count from SecureStore
+      const lastResetStr = await SecureStore.getItemAsync(DEVICE_USAGE_LAST_RESET_KEY);
+      const usageCountStr = await SecureStore.getItemAsync(DEVICE_USAGE_COUNT_KEY);
+      
+      // If no data exists, initialize with defaults
+      if (!lastResetStr || !usageCountStr) {
+        const initialUsage: LocalDeviceUsage = {
+          device_id: deviceId,
+          free_restorations_used: 0,
+          last_reset_date: new Date().toISOString(),
         };
-        await this.cacheDeviceUsage(localRecord);
-        return localRecord;
-      }
-
-      if (data) {
-        await this.cacheDeviceUsage(data);
+        
+        // Save initial data
+        await SecureStore.setItemAsync(DEVICE_USAGE_LAST_RESET_KEY, initialUsage.last_reset_date);
+        await SecureStore.setItemAsync(DEVICE_USAGE_COUNT_KEY, '0');
+        
+        if (__DEV__) {
+          console.log('📱 Initialized new device usage record');
+        }
+        return initialUsage;
       }
       
-      return data;
-    } catch (error) {
-      console.error('❌ Failed to create device usage:', error);
-      // Create a local cache entry
-      const localRecord = {
-        ...newRecord,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+      const usage: LocalDeviceUsage = {
+        device_id: deviceId,
+        free_restorations_used: parseInt(usageCountStr, 10) || 0,
+        last_reset_date: lastResetStr,
       };
-      await this.cacheDeviceUsage(localRecord);
-      return localRecord;
+      
+      // Check if we need to reset 48-hour limit
+      const now = new Date();
+      const lastReset = new Date(usage.last_reset_date);
+      const hoursSinceReset = (now.getTime() - lastReset.getTime()) / (1000 * 60 * 60);
+      
+      if (hoursSinceReset >= 48) {
+        // Reset the 48-hour limit locally
+        usage.free_restorations_used = 0;
+        usage.last_reset_date = now.toISOString();
+        
+        // Update SecureStore
+        await SecureStore.setItemAsync(DEVICE_USAGE_LAST_RESET_KEY, usage.last_reset_date);
+        await SecureStore.setItemAsync(DEVICE_USAGE_COUNT_KEY, '0');
+        
+        if (__DEV__) {
+          console.log('🔄 Reset 48-hour limit locally');
+        }
+      }
+      
+      return usage;
+    } catch (error) {
+      if (__DEV__) {
+        console.error('❌ Failed to get device usage from SecureStore:', error);
+      }
+      // Return default usage if SecureStore fails
+      return {
+        device_id: deviceId,
+        free_restorations_used: 0,
+        last_reset_date: new Date().toISOString(),
+      };
     }
   },
 
@@ -188,147 +181,96 @@ export const deviceTrackingService = {
   async canRestore(): Promise<boolean> {
     const usage = await this.getDeviceUsage();
     
-    if (!usage) {
-      // If we can't get usage data, allow the restoration
-      console.warn('⚠️ Could not get device usage, allowing restoration');
-      return true;
-    }
-
     const canRestore = usage.free_restorations_used < FREE_RESTORATION_LIMIT;
-    console.log(`🔍 Device can restore: ${canRestore} (used: ${usage.free_restorations_used}/${FREE_RESTORATION_LIMIT})`);
+    if (__DEV__) {
+      console.log(`🔍 Device can restore: ${canRestore} (used: ${usage.free_restorations_used}/${FREE_RESTORATION_LIMIT})`);
+    }
     
     return canRestore;
   },
 
   /**
-   * Increment the device's restoration count
+   * Increment the device's restoration count (local only)
    */
-  async incrementUsage(): Promise<DeviceUsage | null> {
-    const deviceId = await this.getDeviceId();
+  async incrementUsage(): Promise<LocalDeviceUsage> {
     const currentUsage = await this.getDeviceUsage();
-    
-    if (!currentUsage) {
-      console.error('❌ No device usage found to increment');
-      return null;
-    }
-
     const newCount = currentUsage.free_restorations_used + 1;
 
     try {
-      const { data, error } = await supabase
-        .from('device_usage')
-        .update({ 
-          free_restorations_used: newCount,
-          updated_at: new Date().toISOString()
-        })
-        .eq('device_id', deviceId)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('❌ Failed to increment usage:', error);
-        // Update cache anyway
-        const updatedUsage = {
-          ...currentUsage,
-          free_restorations_used: newCount,
-          updated_at: new Date().toISOString()
-        };
-        await this.cacheDeviceUsage(updatedUsage);
-        return updatedUsage;
-      }
-
-      if (data) {
-        await this.cacheDeviceUsage(data);
-      }
+      // Update SecureStore
+      await SecureStore.setItemAsync(DEVICE_USAGE_COUNT_KEY, newCount.toString());
       
-      console.log(`➕ Incremented device usage: ${newCount}/${FREE_RESTORATION_LIMIT}`);
-      return data;
-    } catch (error) {
-      console.error('❌ Failed to increment usage:', error);
-      // Update cache anyway
-      const updatedUsage = {
+      const updatedUsage: LocalDeviceUsage = {
         ...currentUsage,
         free_restorations_used: newCount,
-        updated_at: new Date().toISOString()
       };
-      await this.cacheDeviceUsage(updatedUsage);
-      return updatedUsage;
-    }
-  },
-
-  /**
-   * Reset the daily limit for a device
-   */
-  async resetDailyLimit(): Promise<DeviceUsage | null> {
-    const deviceId = await this.getDeviceId();
-
-    try {
-      const { data, error } = await supabase
-        .from('device_usage')
-        .update({ 
-          free_restorations_used: 0,
-          last_reset_date: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('device_id', deviceId)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('❌ Failed to reset daily limit:', error);
-        return null;
-      }
-
-      if (data) {
-        await this.cacheDeviceUsage(data);
-      }
       
-      console.log('🔄 Reset daily limit for device');
-      return data;
-    } catch (error) {
-      console.error('❌ Failed to reset daily limit:', error);
-      return null;
-    }
-  },
-
-  /**
-   * Cache device usage data locally
-   */
-  async cacheDeviceUsage(usage: DeviceUsage): Promise<void> {
-    try {
-      await AsyncStorage.setItem(DEVICE_USAGE_CACHE_KEY, JSON.stringify(usage));
-    } catch (error) {
-      console.error('❌ Failed to cache device usage:', error);
-    }
-  },
-
-  /**
-   * Get cached device usage data
-   */
-  async getCachedDeviceUsage(): Promise<DeviceUsage | null> {
-    try {
-      const cached = await AsyncStorage.getItem(DEVICE_USAGE_CACHE_KEY);
-      if (cached) {
-        const usage = JSON.parse(cached) as DeviceUsage;
-        
-        // Check if we need to reset daily limit based on cached data
-        const today = new Date().toDateString();
-        const lastReset = new Date(usage.last_reset_date).toDateString();
-        
-        if (today !== lastReset) {
-          // Reset in cache
-          usage.free_restorations_used = 0;
-          usage.last_reset_date = new Date().toISOString();
-          await this.cacheDeviceUsage(usage);
-        }
-        
-        console.log('📱 Using cached device usage');
-        return usage;
+      if (__DEV__) {
+        console.log(`➕ Incremented device usage locally: ${newCount}/${FREE_RESTORATION_LIMIT}`);
       }
-      return null;
+      return updatedUsage;
     } catch (error) {
-      console.error('❌ Failed to get cached device usage:', error);
-      return null;
+      if (__DEV__) {
+        console.error('❌ Failed to increment usage in SecureStore:', error);
+      }
+      // Return updated object even if SecureStore fails
+      return {
+        ...currentUsage,
+        free_restorations_used: newCount,
+      };
+    }
+  },
+
+  /**
+   * Decrement the device's restoration count (only if within current 48-hour window)
+   */
+  async decrementUsage(): Promise<LocalDeviceUsage> {
+    const currentUsage = await this.getDeviceUsage();
+    
+    // Don't decrement if already at 0
+    if (currentUsage.free_restorations_used === 0) {
+      if (__DEV__) {
+        console.log('⚠️ Usage count already at 0, cannot decrement');
+      }
+      return currentUsage;
+    }
+
+    // Check if we're still within the same 48-hour window
+    const now = new Date();
+    const lastReset = new Date(currentUsage.last_reset_date);
+    const hoursSinceReset = (now.getTime() - lastReset.getTime()) / (1000 * 60 * 60);
+    
+    if (hoursSinceReset >= 48) {
+      if (__DEV__) {
+        console.log('⚠️ Outside 48-hour window, not decrementing');
+      }
+      return currentUsage;
+    }
+
+    const newCount = Math.max(0, currentUsage.free_restorations_used - 1);
+
+    try {
+      // Update SecureStore
+      await SecureStore.setItemAsync(DEVICE_USAGE_COUNT_KEY, newCount.toString());
+      
+      const updatedUsage: LocalDeviceUsage = {
+        ...currentUsage,
+        free_restorations_used: newCount,
+      };
+      
+      if (__DEV__) {
+        console.log(`➖ Decremented device usage locally: ${newCount}/${FREE_RESTORATION_LIMIT}`);
+      }
+      return updatedUsage;
+    } catch (error) {
+      if (__DEV__) {
+        console.error('❌ Failed to decrement usage in SecureStore:', error);
+      }
+      // Return updated object even if SecureStore fails
+      return {
+        ...currentUsage,
+        free_restorations_used: newCount,
+      };
     }
   },
 
@@ -337,38 +279,72 @@ export const deviceTrackingService = {
    */
   async getRemainingRestorations(): Promise<number> {
     const usage = await this.getDeviceUsage();
-    
-    if (!usage) {
-      return FREE_RESTORATION_LIMIT;
-    }
-
     return Math.max(0, FREE_RESTORATION_LIMIT - usage.free_restorations_used);
   },
 
   /**
-   * Sync local usage with remote (for future use)
+   * Get time remaining until next free restoration (in milliseconds)
    */
-  async syncWithRemote(): Promise<void> {
-    const cached = await this.getCachedDeviceUsage();
-    if (!cached) return;
+  async getTimeUntilNextFreeRestoration(): Promise<number> {
+    const usage = await this.getDeviceUsage();
+    
+    // If user hasn't used their free restoration, it's available now
+    if (usage.free_restorations_used === 0) {
+      return 0;
+    }
+    
+    const now = new Date();
+    const lastReset = new Date(usage.last_reset_date);
+    const hoursSinceReset = (now.getTime() - lastReset.getTime()) / (1000 * 60 * 60);
+    
+    // If 48 hours have passed, restoration is available now
+    if (hoursSinceReset >= 48) {
+      return 0;
+    }
+    
+    // Calculate time remaining until 48 hours from last reset
+    const hoursRemaining = 48 - hoursSinceReset;
+    return Math.ceil(hoursRemaining * 60 * 60 * 1000); // Convert to milliseconds
+  },
 
+  /**
+   * Get formatted time remaining until next free restoration
+   */
+  async getFormattedTimeUntilNext(): Promise<string> {
+    const msRemaining = await this.getTimeUntilNextFreeRestoration();
+    
+    if (msRemaining === 0) {
+      return 'Available now';
+    }
+    
+    const hours = Math.floor(msRemaining / (1000 * 60 * 60));
+    const minutes = Math.floor((msRemaining % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (hours === 0) {
+      return `${minutes}m`;
+    } else if (hours < 24) {
+      return `${hours}h ${minutes}m`;
+    } else {
+      const days = Math.floor(hours / 24);
+      const remainingHours = hours % 24;
+      return `${days}d ${remainingHours}h`;
+    }
+  },
+
+  /**
+   * Reset usage data (for testing purposes)
+   */
+  async resetUsageData(): Promise<void> {
     try {
-      const deviceId = await this.getDeviceId();
-      const { error } = await supabase
-        .from('device_usage')
-        .upsert({
-          device_id: deviceId,
-          free_restorations_used: cached.free_restorations_used,
-          last_reset_date: cached.last_reset_date,
-        });
-
-      if (error) {
-        console.error('❌ Failed to sync with remote:', error);
-      } else {
-        console.log('✅ Synced device usage with remote');
+      await SecureStore.deleteItemAsync(DEVICE_USAGE_LAST_RESET_KEY);
+      await SecureStore.deleteItemAsync(DEVICE_USAGE_COUNT_KEY);
+      if (__DEV__) {
+        console.log('🧹 Reset all usage data');
       }
     } catch (error) {
-      console.error('❌ Failed to sync:', error);
+      if (__DEV__) {
+        console.error('❌ Failed to reset usage data:', error);
+      }
     }
   }
 };

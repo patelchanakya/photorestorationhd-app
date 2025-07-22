@@ -2,9 +2,10 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import { photoRestorationKeys } from '@/hooks/usePhotoRestoration';
 import { photoStorage } from '@/services/storage';
 import { localStorageHelpers } from '@/services/supabase';
+import { deviceTrackingService } from '@/services/deviceTracking';
 import { useRestorationStore } from '@/store/restorationStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
-import { restorePurchases } from '@/services/revenuecat';
+import { restorePurchasesDetailed } from '@/services/revenuecat';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
@@ -13,8 +14,11 @@ import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import * as StoreReview from 'expo-store-review';
 import * as WebBrowser from 'expo-web-browser';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useTranslation, getSupportedLanguages } from '@/i18n';
+import { LanguageSelectionModal } from '@/components/LanguageSelectionModal';
 import {
+  ActivityIndicator,
   Alert,
   Platform,
   SafeAreaView,
@@ -37,8 +41,34 @@ export default function SettingsModalScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { showFlashButton, toggleFlashButton, setRestorationCount, galleryViewMode, setGalleryViewMode } = useRestorationStore();
-  const { isPro, isDeveloperMode, toggleDeveloperMode, getEffectiveProStatus, freeRestorationsUsed, freeRestorationsLimit, expirationDate } = useSubscriptionStore();
+  const { isPro, getEffectiveProStatus, freeRestorationsUsed, freeRestorationsLimit, expirationDate } = useSubscriptionStore();
+  
+  // Local loading states
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [timeUntilNext, setTimeUntilNext] = useState<string>('Available now');
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const { t, currentLanguage } = useTranslation();
+  const supportedLanguages = getSupportedLanguages();
+  
+  // Get current language info
+  const getCurrentLanguageInfo = () => {
+    return supportedLanguages.find(lang => lang.code === currentLanguage) || supportedLanguages[0];
+  };
 
+  // Update countdown timer for free users
+  useEffect(() => {
+    const updateCountdown = async () => {
+      if (!isPro) {
+        const formattedTime = await deviceTrackingService.getFormattedTimeUntilNext();
+        setTimeUntilNext(formattedTime);
+      }
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, [isPro]);
 
   // Format bytes to human readable
   const formatBytes = (bytes: number): string => {
@@ -101,7 +131,9 @@ export default function SettingsModalScreen() {
                 [{ text: 'OK', style: 'default' }]
               );
             } catch (error) {
-              console.error('Error deleting all photos:', error);
+              if (__DEV__) {
+                console.error('Error deleting all photos:', error);
+              }
               await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
               
               Alert.alert(
@@ -135,34 +167,49 @@ export default function SettingsModalScreen() {
   // Subscription handlers
   const handleRestorePurchases = async () => {
     try {
-      Alert.alert(
-        'Restore Purchases',
-        'Restoring your previous purchases...',
-        [{ text: 'OK' }]
-      );
+      // Add haptic feedback
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       
-      const success = await restorePurchases();
+      setIsRestoring(true);
       
-      if (success) {
-        Alert.alert(
-          'Success',
-          'Your purchases have been restored!',
-          [{ text: 'OK' }]
-        );
+      const result = await restorePurchasesDetailed();
+      
+      if (result.success) {
+        if (result.hasActiveEntitlements) {
+          Alert.alert(
+            'Restored!',
+            t('alerts.purchasesRestored'),
+            [{ text: 'Great!' }]
+          );
+        } else {
+          Alert.alert(
+            'No Purchases Found',
+            t('alerts.noPurchasesFound'),
+            [{ text: t('common.ok') }]
+          );
+        }
       } else {
-        Alert.alert(
-          'No Purchases Found',
-          'No previous purchases were found to restore.',
-          [{ text: 'OK' }]
-        );
+        // Only show error alert for actual errors, not cancellations
+        if (result.error !== 'cancelled') {
+          Alert.alert(
+            t('alerts.restoreFailed'),
+            result.errorMessage || 'Unable to restore purchases. Please try again.',
+            [{ text: t('common.ok') }]
+          );
+        }
       }
     } catch (error) {
-      console.error('Error restoring purchases:', error);
+      // Only log errors in development builds
+      if (__DEV__) {
+        console.error('Error restoring purchases:', error);
+      }
       Alert.alert(
-        'Error',
+        t('common.error'),
         'Failed to restore purchases. Please try again.',
-        [{ text: 'OK' }]
+        [{ text: t('common.ok') }]
       );
+    } finally {
+      setIsRestoring(false);
     }
   };
 
@@ -174,11 +221,13 @@ export default function SettingsModalScreen() {
       
       await Linking.openURL(url);
     } catch (error) {
-      console.error('Error opening subscription management:', error);
+      if (__DEV__) {
+        console.error('Error opening subscription management:', error);
+      }
       Alert.alert(
-        'Error',
+        t('common.error'),
         'Unable to open subscription management. Please check your device settings.',
-        [{ text: 'OK' }]
+        [{ text: t('common.ok') }]
       );
     }
   };
@@ -198,7 +247,11 @@ export default function SettingsModalScreen() {
       }
       return 'Active';
     }
-    return `Free (${freeRestorationsUsed}/${freeRestorationsLimit} used today)`;
+    const status = `Free (${freeRestorationsUsed}/${freeRestorationsLimit} used)`;
+    if (timeUntilNext === 'Available now') {
+      return status;
+    }
+    return `${status} • Next in ${timeUntilNext}`;
   };
 
   // Social media URLs
@@ -228,7 +281,9 @@ export default function SettingsModalScreen() {
       });
       
     } catch (error) {
-      console.error(`Error opening ${platform}:`, error);
+      if (__DEV__) {
+        console.error(`Error opening ${platform}:`, error);
+      }
       // Fallback haptic feedback for error
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
@@ -274,13 +329,19 @@ export default function SettingsModalScreen() {
       const result = await Share.share(shareOptions);
       
       if (result.action === Share.sharedAction) {
-        console.log('App shared successfully');
+        if (__DEV__) {
+          console.log('App shared successfully');
+        }
       } else if (result.action === Share.dismissedAction) {
-        console.log('Share dismissed');
+        if (__DEV__) {
+          console.log('Share dismissed');
+        }
       }
       
     } catch (error) {
-      console.error('Error sharing app:', error);
+      if (__DEV__) {
+        console.error('Error sharing app:', error);
+      }
       // Fallback haptic feedback for error
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       
@@ -291,10 +352,12 @@ export default function SettingsModalScreen() {
         Alert.alert(
           'Link Copied',
           'The app link has been copied to your clipboard!',
-          [{ text: 'OK', style: 'default' }]
+          [{ text: t('common.ok'), style: 'default' }]
         );
       } catch (clipboardError) {
-        console.error('Error copying to clipboard:', clipboardError);
+        if (__DEV__) {
+          console.error('Error copying to clipboard:', clipboardError);
+        }
       }
     }
   };
@@ -334,12 +397,14 @@ Best regards`;
         Alert.alert(
           'Email Copied',
           'Support email address has been copied to your clipboard!\n\nphotorestorationhd@gmail.com',
-          [{ text: 'OK', style: 'default' }]
+          [{ text: t('common.ok'), style: 'default' }]
         );
       }
       
     } catch (error) {
-      console.error('Error opening email:', error);
+      if (__DEV__) {
+        console.error('Error opening email:', error);
+      }
       // Fallback haptic feedback for error
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       
@@ -349,14 +414,16 @@ Best regards`;
         Alert.alert(
           'Email Copied',
           'Support email address has been copied to your clipboard!\n\nphotorestorationhd@gmail.com',
-          [{ text: 'OK', style: 'default' }]
+          [{ text: t('common.ok'), style: 'default' }]
         );
       } catch (clipboardError) {
-        console.error('Error copying email to clipboard:', clipboardError);
+        if (__DEV__) {
+          console.error('Error copying email to clipboard:', clipboardError);
+        }
         Alert.alert(
           'Contact Support',
           'Please contact us at: photorestorationhd@gmail.com',
-          [{ text: 'OK', style: 'default' }]
+          [{ text: t('common.ok'), style: 'default' }]
         );
       }
     }
@@ -388,7 +455,7 @@ Best regards`;
             Alert.alert(
               'Rate Us',
               'Thank you for using Photo Restoration HD! Please rate us on the App Store.',
-              [{ text: 'OK', style: 'default' }]
+              [{ text: t('common.ok'), style: 'default' }]
             );
           }
         }
@@ -402,20 +469,22 @@ Best regards`;
           Alert.alert(
             'Rate Us',
             'Thank you for using Photo Restoration HD! Please rate us on Google Play Store.',
-            [{ text: 'OK', style: 'default' }]
+            [{ text: t('common.ok'), style: 'default' }]
           );
         }
       }
       
     } catch (error) {
-      console.error('Error opening rating:', error);
+      if (__DEV__) {
+        console.error('Error opening rating:', error);
+      }
       // Fallback haptic feedback for error
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       
       Alert.alert(
         'Rate Us',
         'Thank you for using Photo Restoration HD! Please rate us on the App Store.',
-        [{ text: 'OK', style: 'default' }]
+        [{ text: t('common.ok'), style: 'default' }]
       );
     }
   };
@@ -465,7 +534,7 @@ Best regards`;
         }}>
           <View style={{ width: 32 }} />
           <Text style={{ color: 'white', fontSize: 18, fontWeight: '600' }}>
-            Settings
+            {t('settings.title')}
           </Text>
           <TouchableOpacity
             onPress={handleClose}
@@ -495,7 +564,7 @@ Best regards`;
                 fontWeight: '600', 
                 marginBottom: 16 
               }}>
-                Connect & Support
+                {t('settings.connectSupport')}
               </Text>
               
               <View style={{ 
@@ -524,7 +593,7 @@ Best regards`;
                     <Ionicons name="people" size={18} color="#f97316" />
                   </View>
                   <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
-                    Follow Us
+                    {t('settings.followUs')}
                   </Text>
                   <View style={{ flexDirection: 'row', gap: 12 }}>
                     <AnimatedTouchableOpacity
@@ -596,7 +665,7 @@ Best regards`;
                     <Ionicons name="mail" size={18} color="#f97316" />
                   </View>
                   <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
-                    E-mail Support
+                    {t('settings.emailSupport')}
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </AnimatedTouchableOpacity>
@@ -627,7 +696,7 @@ Best regards`;
                     <Ionicons name="star" size={18} color="#f97316" />
                   </View>
                   <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
-                    Like Us? Rate us!
+                    {t('settings.rateUs')}
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </AnimatedTouchableOpacity>
@@ -656,7 +725,7 @@ Best regards`;
                     <Ionicons name="share-social" size={18} color="#f97316" />
                   </View>
                   <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
-                    Share App
+                    {t('settings.shareApp')}
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </AnimatedTouchableOpacity>
@@ -671,7 +740,7 @@ Best regards`;
                 fontWeight: '600', 
                 marginBottom: 16 
               }}>
-                Preferences
+                {t('settings.preferences')}
               </Text>
               
               <View style={{ 
@@ -681,13 +750,16 @@ Best regards`;
               }}>
                 
                 {/* Language */}
-                <TouchableOpacity style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: 'rgba(255,255,255,0.1)'
-                }}>
+                <TouchableOpacity 
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    padding: 16,
+                    borderBottomWidth: 1,
+                    borderBottomColor: 'rgba(255,255,255,0.1)'
+                  }}
+                  onPress={() => setShowLanguageModal(true)}
+                >
                   <View style={{
                     width: 36,
                     height: 36,
@@ -700,11 +772,11 @@ Best regards`;
                     <Ionicons name="globe" size={18} color="#f97316" />
                   </View>
                   <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
-                    Language
+                    {t('settings.language')}
                   </Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Text style={{ fontSize: 20 }}>🇬🇧</Text>
-                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 15 }}>English</Text>
+                    <Text style={{ fontSize: 20 }}>{getCurrentLanguageInfo().flag}</Text>
+                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 15 }}>{getCurrentLanguageInfo().nativeName}</Text>
                   </View>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" style={{ marginLeft: 8 }} />
                 </TouchableOpacity>
@@ -731,10 +803,10 @@ Best regards`;
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      Show Flash Button
+                      {t('settings.showFlashButton')}
                     </Text>
                     <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                      Display flash toggle on camera
+                      {t('settings.showFlashButtonDescription')}
                     </Text>
                   </View>
                   <View style={{
@@ -781,10 +853,10 @@ Best regards`;
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      Grid View
+                      {t('settings.gridView')}
                     </Text>
                     <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                      Show photos in grid layout
+                      {t('settings.gridViewDescription')}
                     </Text>
                   </View>
                   <View style={{
@@ -816,7 +888,7 @@ Best regards`;
                 fontWeight: '600', 
                 marginBottom: 16 
               }}>
-                Subscription
+                {t('settings.subscription')}
               </Text>
               
               <View style={{ 
@@ -850,7 +922,7 @@ Best regards`;
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      {isPro ? 'Pro Subscription' : 'Free Plan'}
+                      {isPro ? t('settings.proSubscription') : t('settings.freePlan')}
                     </Text>
                     <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
                       {getSubscriptionStatus()}
@@ -865,9 +937,11 @@ Best regards`;
                     alignItems: 'center',
                     padding: 16,
                     borderBottomWidth: 1,
-                    borderBottomColor: 'rgba(255,255,255,0.1)'
+                    borderBottomColor: 'rgba(255,255,255,0.1)',
+                    opacity: isRestoring ? 0.7 : 1
                   }}
                   onPress={handleRestorePurchases}
+                  disabled={isRestoring}
                 >
                   <View style={{
                     width: 36,
@@ -878,18 +952,81 @@ Best regards`;
                     justifyContent: 'center',
                     marginRight: 12
                   }}>
-                    <IconSymbol name="arrow.clockwise" size={18} color="#f97316" />
+                    {isRestoring ? (
+                      <ActivityIndicator size="small" color="#f97316" />
+                    ) : (
+                      <IconSymbol name="arrow.clockwise" size={18} color="#f97316" />
+                    )}
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      Restore Purchases
+                      {isRestoring ? t('common.loading') : t('settings.restorePurchases')}
                     </Text>
                     <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                      Restore previous purchases
+                      {isRestoring ? t('common.loading') : t('settings.restorePurchasesDescription')}
                     </Text>
                   </View>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </TouchableOpacity>
+
+                {/* Free Restoration Status */}
+                {!isPro && (
+                  <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    padding: 16,
+                    borderBottomWidth: 1,
+                    borderBottomColor: 'rgba(255,255,255,0.1)'
+                  }}>
+                    <View style={{
+                      width: 36,
+                      height: 36,
+                      backgroundColor: freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' 
+                        ? 'rgba(239,68,68,0.2)' 
+                        : 'rgba(34,197,94,0.2)',
+                      borderRadius: 18,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: 12
+                    }}>
+                      <IconSymbol 
+                        name={freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' 
+                          ? "clock" 
+                          : "gift"} 
+                        size={18} 
+                        color={freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' 
+                          ? "#ef4444" 
+                          : "#22c55e"} 
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
+                        {t('settings.freeRestorations')}
+                      </Text>
+                      <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
+                        1 every 48 hours • {timeUntilNext === 'Available now' ? t('language.availableNow') : t('language.nextIn', { time: timeUntilNext })}
+                      </Text>
+                    </View>
+                    <View style={{
+                      backgroundColor: freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' 
+                        ? 'rgba(239,68,68,0.2)' 
+                        : 'rgba(34,197,94,0.2)',
+                      borderRadius: 8,
+                      paddingHorizontal: 8,
+                      paddingVertical: 4
+                    }}>
+                      <Text style={{
+                        color: freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' 
+                          ? '#ef4444' 
+                          : '#22c55e',
+                        fontSize: 12,
+                        fontWeight: '600'
+                      }}>
+                        {freeRestorationsUsed}/{freeRestorationsLimit}
+                      </Text>
+                    </View>
+                  </View>
+                )}
 
                 {/* Manage Subscription */}
                 {isPro && (
@@ -914,10 +1051,10 @@ Best regards`;
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                        Manage Subscription
+                        {t('settings.manageSubscription')}
                       </Text>
                       <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                        Change or cancel subscription
+                        {t('settings.manageSubscriptionDescription')}
                       </Text>
                     </View>
                     <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
@@ -934,7 +1071,7 @@ Best regards`;
                 fontWeight: '600', 
                 marginBottom: 16 
               }}>
-                Storage
+                {t('settings.storage')}
               </Text>
               
               <View style={{ 
@@ -965,126 +1102,14 @@ Best regards`;
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      Delete All Photos
+                      {t('settings.deleteAllPhotos')}
                     </Text>
                     <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                      Permanently remove all images
+                      {t('settings.deleteAllPhotosDescription')}
                     </Text>
                   </View>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Developer Section */}
-            <View style={{ marginBottom: 32 }}>
-              <Text style={{ 
-                color: 'rgba(245,158,11,1)', // Amber color for developer section
-                fontSize: 16, 
-                fontWeight: '600', 
-                marginBottom: 16 
-              }}>
-                Developer
-              </Text>
-              
-              <View style={{ 
-                backgroundColor: 'rgba(245,158,11,0.1)', // Amber tinted background
-                borderRadius: 12, 
-                overflow: 'hidden',
-                borderWidth: 1,
-                borderColor: 'rgba(245,158,11,0.3)'
-              }}>
-                
-                {/* Developer PRO Mode Toggle */}
-                <TouchableOpacity 
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16
-                  }}
-                  onPress={toggleDeveloperMode}
-                >
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(245,158,11,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
-                    <IconSymbol name="hammer.fill" size={18} color="#f59e0b" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      Developer PRO Mode
-                    </Text>
-                    <Text style={{ color: 'rgba(245,158,11,0.8)', fontSize: 14 }}>
-                      Enable PRO features for testing
-                    </Text>
-                  </View>
-                  <View style={{
-                    width: 44,
-                    height: 24,
-                    backgroundColor: isDeveloperMode ? '#f59e0b' : 'rgba(255,255,255,0.2)',
-                    borderRadius: 12,
-                    alignItems: 'center',
-                    justifyContent: isDeveloperMode ? 'flex-end' : 'flex-start',
-                    flexDirection: 'row',
-                    paddingHorizontal: 2
-                  }}>
-                    <View style={{
-                      width: 20,
-                      height: 20,
-                      backgroundColor: 'white',
-                      borderRadius: 10
-                    }} />
-                  </View>
-                </TouchableOpacity>
-
-                {/* Status Indicator */}
-                <View style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 16,
-                  paddingTop: 0
-                }}>
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(245,158,11,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
-                    <IconSymbol name="info.circle" size={18} color="#f59e0b" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      Effective PRO Status
-                    </Text>
-                    <Text style={{ color: getEffectiveProStatus() ? '#10b981' : 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                      {getEffectiveProStatus() ? 
-                        (isPro ? 'Real PRO Subscription Active' : 'Developer Mode Active') : 
-                        'Free Plan'}
-                    </Text>
-                  </View>
-                  <View style={{
-                    backgroundColor: getEffectiveProStatus() ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)',
-                    borderRadius: 8,
-                    paddingHorizontal: 8,
-                    paddingVertical: 4
-                  }}>
-                    <Text style={{
-                      color: getEffectiveProStatus() ? '#10b981' : '#ef4444',
-                      fontSize: 12,
-                      fontWeight: '600'
-                    }}>
-                      {getEffectiveProStatus() ? 'PRO' : 'FREE'}
-                    </Text>
-                  </View>
-                </View>
               </View>
             </View>
 
@@ -1096,7 +1121,7 @@ Best regards`;
                 fontWeight: '600', 
                 marginBottom: 16 
               }}>
-                Account & Legal
+                {t('settings.accountLegal')}
               </Text>
               
               <View style={{ 
@@ -1105,31 +1130,6 @@ Best regards`;
                 overflow: 'hidden' 
               }}>
                 
-                {/* Restore Purchases */}
-                <TouchableOpacity style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: 'rgba(255,255,255,0.1)'
-                }}>
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
-                    <Ionicons name="refresh" size={18} color="#f97316" />
-                  </View>
-                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
-                    Restore Purchases
-                  </Text>
-                  <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
-                </TouchableOpacity>
-
                 {/* Privacy Policy */}
                 <TouchableOpacity style={{
                   flexDirection: 'row',
@@ -1150,7 +1150,7 @@ Best regards`;
                     <Ionicons name="lock-closed" size={18} color="#f97316" />
                   </View>
                   <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
-                    Privacy Policy
+                    {t('settings.privacyPolicy')}
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </TouchableOpacity>
@@ -1173,7 +1173,7 @@ Best regards`;
                     <Ionicons name="document-text" size={18} color="#f97316" />
                   </View>
                   <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
-                    Terms of Use
+                    {t('settings.termsOfUse')}
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </TouchableOpacity>
@@ -1188,7 +1188,7 @@ Best regards`;
                 fontWeight: '600', 
                 marginBottom: 16 
               }}>
-                About
+                {t('settings.about')}
               </Text>
               
               <View style={{ 
@@ -1217,7 +1217,7 @@ Best regards`;
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      Version
+                      {t('settings.version')}
                     </Text>
                     <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
                       1.0.0
@@ -1244,10 +1244,10 @@ Best regards`;
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      Help & Support
+                      {t('settings.helpSupport')}
                     </Text>
                     <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                      Get help using the app
+                      {t('settings.helpSupportDescription')}
                     </Text>
                   </View>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
@@ -1256,6 +1256,12 @@ Best regards`;
             </View>
 
           </View>
+          
+          {/* Language Selection Modal */}
+          <LanguageSelectionModal 
+            visible={showLanguageModal}
+            onClose={() => setShowLanguageModal(false)}
+          />
           
           {/* Version Info */}
           <View style={{ 

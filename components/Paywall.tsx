@@ -9,9 +9,10 @@ import {
   ScrollView,
 } from 'react-native';
 import { IconSymbol } from './ui/IconSymbol';
-import { getOfferings, purchasePackage, RevenueCatOfferings } from '@/services/revenuecat';
+import { getOfferings, purchasePackage, restorePurchasesDetailed, RevenueCatOfferings } from '@/services/revenuecat';
 import { PurchasesPackage } from 'react-native-purchases';
 import Constants from 'expo-constants';
+import * as Haptics from 'expo-haptics';
 
 interface PaywallProps {
   visible: boolean;
@@ -23,6 +24,7 @@ export function Paywall({ visible, onClose, onSuccess }: PaywallProps) {
   const [offerings, setOfferings] = useState<RevenueCatOfferings>({});
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);
+  const [isRestoring, setIsRestoring] = useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -37,7 +39,9 @@ export function Paywall({ visible, onClose, onSuccess }: PaywallProps) {
       // Check if we're in Expo Go
       const isExpoGo = Constants.appOwnership === 'expo';
       if (isExpoGo) {
-        console.log('⚠️ Running in Expo Go - showing demo paywall');
+        if (__DEV__) {
+          console.log('⚠️ Running in Expo Go - showing demo paywall');
+        }
         // Set mock offerings for Expo Go demo
         setOfferings({});
         setLoading(false);
@@ -51,9 +55,14 @@ export function Paywall({ visible, onClose, onSuccess }: PaywallProps) {
       
       const fetchedOfferings = await getOfferings();
       setOfferings(fetchedOfferings);
-      console.log('💰 Loaded offerings for paywall:', fetchedOfferings);
+      if (__DEV__) {
+        console.log('💰 Loaded offerings for paywall:', fetchedOfferings);
+      }
     } catch (error) {
-      console.error('❌ Failed to load offerings:', error);
+      // Only log errors in development builds
+      if (__DEV__) {
+        console.error('❌ Failed to load offerings:', error);
+      }
       Alert.alert('Error', 'Failed to load subscription options. Please try again.');
     } finally {
       setLoading(false);
@@ -63,12 +72,16 @@ export function Paywall({ visible, onClose, onSuccess }: PaywallProps) {
   const handlePurchase = async (packageToPurchase: PurchasesPackage) => {
     try {
       setPurchasing(packageToPurchase.identifier);
-      console.log('🛒 Starting purchase for:', packageToPurchase.identifier);
+      if (__DEV__) {
+        console.log('🛒 Starting purchase for:', packageToPurchase.identifier);
+      }
       
       const success = await purchasePackage(packageToPurchase);
       
       if (success) {
-        console.log('✅ Purchase completed successfully');
+        if (__DEV__) {
+          console.log('✅ Purchase completed successfully');
+        }
         Alert.alert(
           'Welcome to Pro!',
           'You now have unlimited photo restorations!',
@@ -83,11 +96,20 @@ export function Paywall({ visible, onClose, onSuccess }: PaywallProps) {
           ]
         );
       } else {
-        console.log('❌ Purchase was not successful');
+        // Purchase was cancelled or failed - this is normal user behavior
+        if (__DEV__) {
+          console.log('🚫 Purchase was cancelled or not successful');
+        }
       }
     } catch (error) {
-      console.error('❌ Purchase error:', error);
-      Alert.alert('Purchase Failed', 'Something went wrong. Please try again.');
+      // Only log errors in development builds
+      if (__DEV__) {
+        console.error('❌ Purchase error:', error);
+      }
+      // Don't show error alert for user cancellations
+      if (!error.userCancelled && error.code !== '1') {
+        Alert.alert('Purchase Failed', 'Something went wrong. Please try again.');
+      }
     } finally {
       setPurchasing(null);
     }
@@ -274,46 +296,81 @@ export function Paywall({ visible, onClose, onSuccess }: PaywallProps) {
           <TouchableOpacity
             onPress={async () => {
               try {
-                console.log('🔄 Restoring purchases...');
-                const { restorePurchases } = await import('@/services/revenuecat');
-                const restored = await restorePurchases();
+                // Add haptic feedback
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 
-                if (restored) {
-                  console.log('✅ Purchases restored successfully');
-                  Alert.alert(
-                    'Restored!',
-                    'Your Pro subscription has been restored.',
-                    [
-                      {
-                        text: 'Great!',
-                        onPress: () => {
-                          onSuccess();
-                          onClose();
+                setIsRestoring(true);
+                
+                if (__DEV__) {
+                  console.log('🔄 Restoring purchases...');
+                }
+                const result = await restorePurchasesDetailed();
+                
+                if (result.success) {
+                  if (result.hasActiveEntitlements) {
+                    if (__DEV__) {
+                      console.log('✅ Purchases restored successfully');
+                    }
+                    Alert.alert(
+                      'Restored!',
+                      'Your Pro subscription has been restored.',
+                      [
+                        {
+                          text: 'Great!',
+                          onPress: () => {
+                            onSuccess();
+                            onClose();
+                          }
                         }
-                      }
-                    ]
-                  );
+                      ]
+                    );
+                  } else {
+                    Alert.alert(
+                      'No Purchases Found',
+                      'No previous purchases were found to restore.',
+                      [{ text: 'OK' }]
+                    );
+                  }
                 } else {
-                  Alert.alert(
-                    'No Purchases Found',
-                    'No previous purchases were found to restore.',
-                    [{ text: 'OK' }]
-                  );
+                  // Only show error alert for actual errors, not cancellations
+                  if (result.error !== 'cancelled') {
+                    Alert.alert(
+                      'Restore Failed',
+                      result.errorMessage || 'Unable to restore purchases. Please try again.',
+                      [{ text: 'OK' }]
+                    );
+                  }
                 }
               } catch (error) {
-                console.error('❌ Failed to restore purchases:', error);
+                // Only log errors in development builds
+                if (__DEV__) {
+                  console.error('❌ Failed to restore purchases:', error);
+                }
                 Alert.alert(
                   'Restore Failed',
                   'Unable to restore purchases. Please try again.',
                   [{ text: 'OK' }]
                 );
+              } finally {
+                setIsRestoring(false);
               }
             }}
             className="mt-4 py-3 px-6 items-center"
+            disabled={isRestoring}
+            style={{ opacity: isRestoring ? 0.7 : 1 }}
           >
-            <Text className="text-blue-600 dark:text-blue-400 font-medium">
-              Restore Purchases
-            </Text>
+            {isRestoring ? (
+              <View className="flex-row items-center">
+                <ActivityIndicator size="small" color="#3B82F6" />
+                <Text className="text-blue-600 dark:text-blue-400 font-medium ml-2">
+                  Restoring...
+                </Text>
+              </View>
+            ) : (
+              <Text className="text-blue-600 dark:text-blue-400 font-medium">
+                Restore Purchases
+              </Text>
+            )}
           </TouchableOpacity>
 
           {/* Footer */}

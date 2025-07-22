@@ -1,0 +1,72 @@
+{
+  "settings": {
+    "title": "Settings",
+    "connectSupport": "Connect & Support",
+    "followUs": "Follow Us",
+    "emailSupport": "E-mail Support",
+    "rateUs": "Like Us? Rate us!",
+    "shareApp": "Share App",
+    "preferences": "Preferences",
+    "language": "Language",
+    "showFlashButton": "Show Flash Button",
+    "showFlashButtonDescription": "Display flash toggle on camera",
+    "gridView": "Grid View",
+    "gridViewDescription": "Show photos in grid layout",
+    "subscription": "Subscription",
+    "proSubscription": "Pro Subscription",
+    "freePlan": "Free Plan",
+    "freeRestorations": "Free Restorations",
+    "restorePurchases": "Restore Purchases",
+    "restorePurchasesDescription": "Restore previous purchases",
+    "manageSubscription": "Manage Subscription",
+    "manageSubscriptionDescription": "Change or cancel subscription",
+    "storage": "Storage",
+    "deleteAllPhotos": "Delete All Photos",
+    "deleteAllPhotosDescription": "Permanently remove all images",
+    "accountLegal": "Account & Legal",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfUse": "Terms of Use",
+    "about": "About",
+    "version": "Version",
+    "helpSupport": "Help & Support",
+    "helpSupportDescription": "Get help using the app"
+  },
+  "language": {
+    "selectLanguage": "Select Language",
+    "availableNow": "Available now",
+    "nextIn": "Next in {{time}}"
+  },
+  "common": {
+    "ok": "OK",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "save": "Save",
+    "done": "Done",
+    "error": "Error",
+    "loading": "Loading",
+    "retry": "Retry"
+  },
+  "home": {
+    "restore": "Restore",
+    "unblur": "Unblur", 
+    "colorize": "Colorize",
+    "gallery": "Gallery"
+  },
+  "alerts": {
+    "deleteAllPhotos": {
+      "title": "Delete All Photos",
+      "message": "This will permanently delete all photos in your gallery. This action cannot be undone.",
+      "confirm": "Delete All"
+    },
+    "deleteImage": {
+      "title": "Delete Image",
+      "message": "Are you sure you want to permanently delete this image?"
+    },
+    "photosDeleted": "Photos Deleted",
+    "imageDeleted": "Image deleted.",
+    "failedToDelete": "Failed to delete image.",
+    "restoreFailed": "Restore Failed",
+    "noPurchasesFound": "No previous purchases were found to restore.",
+    "purchasesRestored": "Your Pro subscription has been restored."
+  }
+}
