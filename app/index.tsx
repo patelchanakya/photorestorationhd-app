@@ -2,17 +2,21 @@ import { ModeSelector } from '@/components/ModeSelector';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useRestorationHistory } from '@/hooks/useRestorationHistory';
 import { useRestorationStore } from '@/store/restorationStore';
+import { useAnimationStore } from '@/store/animationStore';
+import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, InteractionManager, Text, TouchableOpacity, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming, runOnJS } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import Constants from 'expo-constants';
 import { presentPaywall } from '@/services/revenuecat';
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
+const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
 // Define available modes
 const MODES = [
@@ -58,6 +62,12 @@ export default function MinimalCameraWithGalleryButton() {
   const restorationCount = useRestorationStore((state) => state.restorationCount);
   const showFlashButton = useRestorationStore((state) => state.showFlashButton);
   
+  // Use Zustand store for animation state
+  const { proAnimationDuration, isProAnimationActive } = useAnimationStore();
+  
+  // Use Zustand store for subscription state
+  const isPro = useSubscriptionStore((state) => state.isPro);
+  
   // Debug logging for badge and force initial sync
   useEffect(() => {
     console.log('📊 Badge State:', {
@@ -78,6 +88,9 @@ export default function MinimalCameraWithGalleryButton() {
   const glowOpacity = useSharedValue(0.3);
   const badgeScale = useSharedValue(1);
   const badgeOpacity = useSharedValue(1);
+  
+  // PRO button animation values
+  const proBorderProgress = useSharedValue(0);
 
   useEffect(() => {
     if (!permission) return;
@@ -107,7 +120,23 @@ export default function MinimalCameraWithGalleryButton() {
       -1,
       true
     );
-  }, [glowOpacity]);
+  }, []);
+  
+  // Separate effect for PRO button animation with Zustand state management
+  useEffect(() => {
+    // Only animate if user is NOT pro
+    if (isProAnimationActive && !isPro) {
+      console.log('🎨 Starting PRO animation with duration:', proAnimationDuration);
+      proBorderProgress.value = 0;
+      proBorderProgress.value = withRepeat(
+        withTiming(1, { duration: proAnimationDuration }),
+        -1,
+        false
+      );
+    } else {
+      proBorderProgress.value = 0;
+    }
+  }, [proAnimationDuration, isProAnimationActive, isPro]);
   
   // Animated styles
   const animatedCaptureStyle = useAnimatedStyle(() => {
@@ -134,6 +163,16 @@ export default function MinimalCameraWithGalleryButton() {
       opacity: badgeOpacity.value,
     };
   });
+  
+  const proRotatingGradientStyle = useAnimatedStyle(() => {
+    'worklet';
+    // Continuously increasing rotation without reset
+    const rotation = proBorderProgress.value * 360;
+    return {
+      transform: [{ rotate: `${rotation}deg` }],
+    };
+  });
+  
 
     
   // Camera functions
@@ -312,59 +351,117 @@ export default function MinimalCameraWithGalleryButton() {
                 </TouchableOpacity>
               </View>
 
-              {/* Pro Button */}
-              <TouchableOpacity
-                onPress={async () => {
-                  console.log('🎯 Pro button pressed - showing native paywall');
-                  
-                  // Check if we're in Expo Go
-                  const isExpoGo = Constants.appOwnership === 'expo';
-                  if (isExpoGo) {
-                    Alert.alert(
-                      'Demo Mode',
-                      'Purchases are not available in Expo Go. Build a development client to test real purchases.',
-                      [{ text: 'OK' }]
-                    );
-                    return;
-                  }
-                  
-                  // Use native paywall in production builds
-                  const success = await presentPaywall();
-                  if (success) {
-                    console.log('✅ Pro subscription activated via native paywall!');
-                    Alert.alert(
-                      'Welcome to Pro!',
-                      'You now have unlimited photo restorations!',
-                      [{ text: 'Awesome!' }]
-                    );
-                  }
-                }}
-                style={{ 
-                  width: 76, 
-                  height: 38, 
-                  backgroundColor: 'rgba(249, 115, 22, 0.08)',
-                  borderRadius: 19, 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  borderWidth: 1.5,
-                  borderColor: '#f97316',
-                  flexDirection: 'row',
-                  gap: 4,
-                  shadowColor: '#f97316',
-                  shadowOffset: { width: 0, height: 0 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 6,
-                  elevation: 3
-                }}
-              >
-                <IconSymbol name="crown" size={16} color="#f97316" />
-                <Text style={{ 
-                  color: '#f97316', 
-                  fontSize: 13, 
-                  fontWeight: '800', 
-                  letterSpacing: 0.3
-                }}>PRO</Text>
-              </TouchableOpacity>
+              {/* Pro Button - Conditional Rendering */}
+              <View style={{
+                width: 80,
+                height: 42,
+                borderRadius: 21,
+                overflow: 'hidden',
+                justifyContent: 'center',
+                alignItems: 'center',
+                position: 'relative',
+              }}>
+                {isPro ? (
+                  // PRO Member Button - Static with checkmark
+                  <TouchableOpacity
+                    onPress={() => {
+                      Alert.alert(
+                        'Already Pro!',
+                        'You have unlimited photo restorations!',
+                        [{ text: 'Awesome!' }]
+                      );
+                    }}
+                    style={{ 
+                      width: 80, 
+                      height: 42, 
+                      backgroundColor: '#10b981', // Green background for active pro
+                      borderRadius: 21, 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      flexDirection: 'row',
+                      gap: 4,
+                      borderWidth: 2,
+                      borderColor: '#ffffff',
+                    }}
+                  >
+                    <IconSymbol name="checkmark.circle.fill" size={16} color="#ffffff" />
+                    <Text style={{ 
+                      color: '#ffffff', 
+                      fontSize: 13, 
+                      fontWeight: '800', 
+                      letterSpacing: 0.3
+                    }}>PRO</Text>
+                  </TouchableOpacity>
+                ) : (
+                  // Non-PRO Button - Animated with crown
+                  <>
+                    {/* Rotating gradient background */}
+                    <AnimatedLinearGradient
+                      colors={['transparent', '#ffffff', 'transparent', '#ffffff', 'transparent']}
+                      locations={[0, 0.2, 0.3, 0.8, 1]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={[
+                        {
+                          position: 'absolute',
+                          width: 120,
+                          height: 120,
+                          borderRadius: 60,
+                        },
+                        proRotatingGradientStyle
+                      ]}
+                    />
+                    
+                    {/* Mask/Inner button */}
+                    <AnimatedTouchableOpacity
+                      onPress={async () => {
+                        console.log('🎯 Pro button pressed - showing native paywall');
+                        
+                        // Check if we're in Expo Go
+                        const isExpoGo = Constants.appOwnership === 'expo';
+                        if (isExpoGo) {
+                          Alert.alert(
+                            'Demo Mode',
+                            'Purchases are not available in Expo Go. Build a development client to test real purchases.',
+                            [{ text: 'OK' }]
+                          );
+                          return;
+                        }
+                        
+                        // Use native paywall in production builds
+                        const success = await presentPaywall();
+                        if (success) {
+                          console.log('✅ Pro subscription activated via native paywall!');
+                          Alert.alert(
+                            'Welcome to Pro!',
+                            'You now have unlimited photo restorations!',
+                            [{ text: 'Awesome!' }]
+                          );
+                        }
+                      }}
+                      style={{ 
+                        width: 76, 
+                        height: 38, 
+                        backgroundColor: 'black', // Solid background to mask the gradient
+                        borderRadius: 19, 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        flexDirection: 'row',
+                        gap: 4,
+                        margin: 2, // Creates the border effect
+                      }}
+                    >
+                      <IconSymbol name="crown" size={16} color="#f97316" />
+                      <Text style={{ 
+                        color: '#f97316', 
+                        fontSize: 13, 
+                        fontWeight: '800', 
+                        letterSpacing: 0.3
+                      }}>PRO</Text>
+                    </AnimatedTouchableOpacity>
+                  </>
+                )}
+              </View>
             </View>
 
           </View>
