@@ -37,9 +37,10 @@ export const localStorageHelpers = {
     try {
       const key = `restoration_${restoration.id}`;
       await AsyncStorage.setItem(key, JSON.stringify(restoration));
-      console.log('💾 Saved restoration to local storage:', restoration.id);
+      console.log('💾 Saved restoration to storage:', restoration.id);
     } catch (error) {
-      console.error('❌ Failed to save restoration to local storage:', error);
+      console.error('❌ Failed to save restoration to storage:', error);
+      throw error;
     }
   },
 
@@ -47,14 +48,15 @@ export const localStorageHelpers = {
     try {
       const key = `restoration_${id}`;
       const data = await AsyncStorage.getItem(key);
+      
       if (data) {
         const restoration = JSON.parse(data);
-        console.log('📱 Retrieved restoration from local storage:', id);
+        console.log('📱 Retrieved restoration from storage:', id);
         return restoration;
       }
       return null;
     } catch (error) {
-      console.error('❌ Failed to get restoration from local storage:', error);
+      console.error('❌ Failed to get restoration from storage:', error);
       return null;
     }
   },
@@ -77,11 +79,13 @@ export const localStorageHelpers = {
 
   async getAllLocalRestorations(): Promise<Restoration[]> {
     try {
-      const keys = await AsyncStorage.getAllKeys();
-      const restorationKeys = keys.filter(key => key.startsWith('restoration_'));
-      
       const restorations: Restoration[] = [];
       
+      // Get all restoration keys from AsyncStorage
+      const allKeys = await AsyncStorage.getAllKeys();
+      const restorationKeys = allKeys.filter(key => key.startsWith('restoration_'));
+      
+      // Fetch all restorations
       for (const key of restorationKeys) {
         try {
           const data = await AsyncStorage.getItem(key);
@@ -90,7 +94,7 @@ export const localStorageHelpers = {
             restorations.push(restoration);
           }
         } catch (error) {
-          console.warn('Failed to parse restoration from local storage:', key, error);
+          console.warn('Failed to parse restoration:', key, error);
         }
       }
       
@@ -106,9 +110,10 @@ export const localStorageHelpers = {
     try {
       const key = `restoration_${id}`;
       await AsyncStorage.removeItem(key);
-      console.log('🗑️ Deleted restoration from local storage:', id);
+      console.log('🗑️ Deleted restoration from storage:', id);
     } catch (error) {
-      console.error('❌ Failed to delete restoration from local storage:', error);
+      console.error('❌ Failed to delete restoration from storage:', error);
+      throw error;
     }
   },
 

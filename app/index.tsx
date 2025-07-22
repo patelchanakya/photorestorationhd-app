@@ -7,8 +7,10 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { InteractionManager, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, InteractionManager, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import Constants from 'expo-constants';
+import { presentPaywall } from '@/services/revenuecat';
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -24,7 +26,7 @@ type ModeType = typeof MODES[number]['id'];
 export default function MinimalCameraWithGalleryButton() {
   const [permission, requestPermission] = useCameraPermissions();
   const [enableTorch, setEnableTorch] = useState(false);
-  const [facing, setFacing] = useState<'front' | 'back'>('back');
+  const [facing] = useState<'front' | 'back'>('back');
   const [isAppReady, setIsAppReady] = useState(false);
   const [functionType, setFunctionType] = useState<ModeType>('restoration');
   const [showModeSelector, setShowModeSelector] = useState(false);
@@ -34,17 +36,22 @@ export default function MinimalCameraWithGalleryButton() {
   // Always fetch and sync restoration history on app start
   const { refetch } = useRestorationHistory();
   useEffect(() => {
-    // Clean up orphaned records on app start
-    import('@/services/supabase').then(({ localStorageHelpers }) => {
-      localStorageHelpers.cleanupOrphanedRecords().then((cleanedCount) => {
-        if (cleanedCount > 0) {
-          console.log(`🧹 Cleaned ${cleanedCount} orphaned records on app start`);
-          refetch({ cancelRefetch: false });
-        } else {
-          refetch({ cancelRefetch: false });
-        }
+    // Add a small delay to ensure QueryClient is fully initialized
+    const timer = setTimeout(() => {
+      // Clean up orphaned records on app start
+      import('@/services/supabase').then(({ localStorageHelpers }) => {
+        localStorageHelpers.cleanupOrphanedRecords().then((cleanedCount) => {
+          if (cleanedCount > 0) {
+            console.log(`🧹 Cleaned ${cleanedCount} orphaned records on app start`);
+            refetch({ cancelRefetch: false });
+          } else {
+            refetch({ cancelRefetch: false });
+          }
+        });
       });
-    });
+    }, 100); // Small delay to let providers initialize
+    
+    return () => clearTimeout(timer);
   }, [refetch]);
   
   // Use Zustand store for restorationCount and flash button visibility
@@ -271,7 +278,7 @@ export default function MinimalCameraWithGalleryButton() {
               {/* Settings Button */}
               <TouchableOpacity
                 onPress={() => router.push('/settings-modal')}
-                style={{ width: 52, height: 52, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 26, alignItems: 'center', justifyContent: 'center', zIndex: 100 }}
+                style={{ width: 52, height: 52, alignItems: 'center', justifyContent: 'center', zIndex: 100 }}
               >
                 <IconSymbol name="gear" size={28} color="#fff" />
               </TouchableOpacity>
@@ -308,8 +315,29 @@ export default function MinimalCameraWithGalleryButton() {
               {/* Pro Button */}
               <TouchableOpacity
                 onPress={async () => {
-                  const { showPaywall } = await import('@/services/superwall');
-                  await showPaywall('pro_button');
+                  console.log('🎯 Pro button pressed - showing native paywall');
+                  
+                  // Check if we're in Expo Go
+                  const isExpoGo = Constants.appOwnership === 'expo';
+                  if (isExpoGo) {
+                    Alert.alert(
+                      'Demo Mode',
+                      'Purchases are not available in Expo Go. Build a development client to test real purchases.',
+                      [{ text: 'OK' }]
+                    );
+                    return;
+                  }
+                  
+                  // Use native paywall in production builds
+                  const success = await presentPaywall();
+                  if (success) {
+                    console.log('✅ Pro subscription activated via native paywall!');
+                    Alert.alert(
+                      'Welcome to Pro!',
+                      'You now have unlimited photo restorations!',
+                      [{ text: 'Awesome!' }]
+                    );
+                  }
                 }}
                 style={{ 
                   width: 76, 
@@ -347,9 +375,9 @@ export default function MinimalCameraWithGalleryButton() {
               {/* Gallery Button with Count Badge */}
               <TouchableOpacity
                 onPress={() => router.push('/gallery-modal')}
-                style={{ position: 'absolute', left: 32, width: 64, height: 64, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 32, alignItems: 'center', justifyContent: 'center' }}
+                style={{ position: 'absolute', left: 32, width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' }}
               >
-                <IconSymbol name="photo" size={32} color="#fff" />
+                <IconSymbol name="rectangle.stack" size={32} color="#fff" />
                 {restorationCount > 0 && (
                   <View style={{ 
                     position: 'absolute', 
@@ -443,9 +471,11 @@ export default function MinimalCameraWithGalleryButton() {
               {/* Upload Button */}
               <TouchableOpacity
                 onPress={handleGalleryPress}
-                style={{ position: 'absolute', right: 32, width: 64, height: 64, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 32, alignItems: 'center', justifyContent: 'center' }}
+                style={{ position: 'absolute', right: 32, width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' }}
               >
-                <IconSymbol name="photo.badge.plus" size={32} color="#fff" />
+                <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                  <IconSymbol name="plus" size={32} color="#fff" />
+                </View>
               </TouchableOpacity>
             </View>
           </View>
@@ -458,6 +488,7 @@ export default function MinimalCameraWithGalleryButton() {
             onSelect={handleModeSelect}
             onClose={() => setShowModeSelector(false)}
           />
+
       </View>
     );
   }

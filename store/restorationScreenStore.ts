@@ -26,6 +26,12 @@ interface RestorationScreenStore {
   filesExist: boolean;
   setFilesExist: (exist: boolean) => void;
   
+  // Processing progress tracking
+  processingProgress: number;
+  setProcessingProgress: (progress: number) => void;
+  clearProcessingProgress: () => void;
+  completeProcessing: () => void;
+  
   // Reset all state
   resetState: () => void;
 }
@@ -37,6 +43,7 @@ const initialState = {
   allRestorations: [],
   isNavigating: false,
   filesExist: true,
+  processingProgress: 0,
 };
 
 export const useRestorationScreenStore = create<RestorationScreenStore>((set) => ({
@@ -48,6 +55,10 @@ export const useRestorationScreenStore = create<RestorationScreenStore>((set) =>
   setAllRestorations: (restorations) => set({ allRestorations: restorations }),
   setIsNavigating: (navigating) => set({ isNavigating: navigating }),
   setFilesExist: (exist) => set({ filesExist: exist }),
+  
+  setProcessingProgress: (progress) => set({ processingProgress: progress }),
+  clearProcessingProgress: () => set({ processingProgress: 0 }),
+  completeProcessing: () => set({ processingProgress: 100 }),
   
   resetState: () => set(initialState),
 }));

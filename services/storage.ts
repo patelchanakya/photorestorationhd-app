@@ -153,22 +153,50 @@ class PhotoStorage {
 
   // Export photo to camera roll
   async exportToCameraRoll(uri: string): Promise<void> {
+    console.log('🔄 Starting camera roll export for:', uri);
+    
+    // Validate MediaLibrary is available
+    if (!MediaLibrary) {
+      console.error('❌ MediaLibrary is not available');
+      throw new Error('Photo library functionality is not available. Please restart the app.');
+    }
+    
+    if (!MediaLibrary.getPermissionsAsync) {
+      console.error('❌ MediaLibrary.getPermissionsAsync is not available');
+      throw new Error('Photo library permissions not available. Please update the app.');
+    }
+    
     try {
+      // Check if file exists first
+      console.log('🔍 Checking if file exists...');
+      const fileInfo = await FileSystem.getInfoAsync(uri);
+      if (!fileInfo.exists) {
+        console.error('❌ File does not exist:', uri);
+        throw new Error('Photo file not found. Please try again.');
+      }
+      console.log('✅ File exists, size:', fileInfo.size);
+
       // First check if we already have permissions
+      console.log('🔍 Checking existing permissions...');
       const { status: existingStatus } = await MediaLibrary.getPermissionsAsync();
+      console.log('📱 Existing permission status:', existingStatus);
       
       let finalStatus = existingStatus;
       
       // Only request if we don't have permissions
       if (existingStatus !== 'granted') {
+        console.log('🔄 Requesting photo library permissions...');
         const { status: newStatus } = await MediaLibrary.requestPermissionsAsync();
         finalStatus = newStatus;
+        console.log('📱 New permission status:', finalStatus);
       }
       
       if (finalStatus !== 'granted') {
-        throw new Error('Camera roll permission not granted. Please enable in Settings.');
+        console.error('❌ Permission denied:', finalStatus);
+        throw new Error('Camera roll permission not granted. Please enable photo library access in iPhone Settings > Privacy & Security > Photos.');
       }
       
+      console.log('🔄 Processing image with ImageManipulator...');
       // Use ImageManipulator to create a new file with current timestamp
       const processedImage = await ImageManipulator.manipulateAsync(
         uri,
@@ -178,29 +206,46 @@ class PhotoStorage {
           format: ImageManipulator.SaveFormat.JPEG 
         }
       );
+      console.log('✅ Image processed, new URI:', processedImage.uri);
       
+      console.log('🔄 Creating asset in photo library...');
       // Save the processed image to library (will have current timestamp)
       const asset = await MediaLibrary.createAssetAsync(processedImage.uri);
+      console.log('📱 Asset created:', asset?.id);
       
       if (!asset) {
-        throw new Error('Failed to create asset');
+        console.error('❌ Failed to create asset - asset is null');
+        throw new Error('Failed to save photo to library');
       }
+      
+      console.log('✅ Photo saved to camera roll successfully!');
       
       // Clean up the temporary file created by ImageManipulator
       try {
         await FileSystem.deleteAsync(processedImage.uri, { idempotent: true });
+        console.log('🧹 Cleaned up temporary file');
       } catch (cleanupError) {
-        console.warn('Failed to clean up temporary file:', cleanupError);
+        console.warn('⚠️ Failed to clean up temporary file:', cleanupError);
       }
+      
     } catch (error: any) {
       console.error('❌ MediaLibrary save error:', error);
+      console.error('❌ Error type:', typeof error);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error stack:', error.stack);
       
-      // If it's the specific Expo Go error, provide clear guidance
+      // Provide more specific error messages
       if (error.message?.includes('NSPhotoLibraryAddUsageDescription')) {
         throw new Error('Photo library access not available in Expo Go. Please use the Share button instead, or test in a development build.');
+      } else if (error.message?.includes('permission')) {
+        throw new Error('Photo library access denied. Please enable in iPhone Settings > Privacy & Security > Photos.');
+      } else if (error.message?.includes('not found')) {
+        throw new Error('Photo file not found. Please try again.');
+      } else if (error.message?.includes('createAssetAsync')) {
+        throw new Error('Failed to save photo to library. Please check your photo library permissions.');
+      } else {
+        throw new Error(`Failed to save photo: ${error.message || 'Unknown error occurred'}`);
       }
-      
-      throw error;
     }
   }
 
@@ -243,7 +288,7 @@ class PhotoStorage {
     }
   }
 
-  // Get storage info
+  // Get storage info (simple version)
   async getStorageInfo(): Promise<{ used: number; count: number }> {
     let totalSize = 0;
     let restorationCount = 0;
@@ -277,6 +322,7 @@ class PhotoStorage {
       count: restorationCount,
     };
   }
+
 
   // Delete all photos from storage
   async deleteAllPhotos(): Promise<{ deletedCount: number }> {

@@ -12,6 +12,9 @@ import { QueryClient, QueryClientProvider, focusManager, onlineManager } from '@
 import { useEffect } from 'react';
 import { AppState, AppStateStatus, Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Purchases, { LOG_LEVEL } from 'react-native-purchases';
+import { useSubscriptionStore } from '@/store/subscriptionStore';
+import Constants from 'expo-constants';
 // import { SuperwallProvider } from 'expo-superwall';
 
 // Create QueryClient instance
@@ -59,10 +62,85 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
+  const { setIsPro } = useSubscriptionStore();
 
   // Set up network and app state management
   useOnlineManager();
   useAppState(onAppStateChange);
+
+  // Initialize RevenueCat after component mounts
+  useEffect(() => {
+    if (!loaded) return;
+    
+    async function initRevenueCat() {
+      try {
+        // Only initialize RevenueCat in development builds, not Expo Go
+        const isExpoGo = Constants.appOwnership === 'expo';
+        
+        if (isExpoGo) {
+          console.log('⚠️ RevenueCat is not available in Expo Go. Using mock data.');
+          // Set default free state for Expo Go
+          setIsPro(false);
+          return;
+        }
+        
+        // Set debug log level for development
+        Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+        
+        // Configure RevenueCat with Apple API key
+        if (Platform.OS === 'ios') {
+          try {
+            const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY;
+            
+            if (!apiKey) {
+              console.error('❌ RevenueCat Apple API key not found in environment variables');
+              console.log('🔄 Continuing without RevenueCat...');
+              return;
+            }
+            
+            console.log('🔧 Configuring RevenueCat...');
+            await Purchases.configure({ 
+              apiKey: apiKey
+            });
+            
+            console.log('✅ RevenueCat configured successfully');
+            
+            // Listen for customer info updates
+            Purchases.addCustomerInfoUpdateListener((customerInfo) => {
+              console.log('📱 Customer info updated:', customerInfo);
+              
+              // Check if user has active pro entitlement
+              const hasProEntitlement = customerInfo.entitlements.active['pro'] !== undefined;
+              setIsPro(hasProEntitlement);
+              
+              console.log('🔄 Pro status updated:', hasProEntitlement);
+            });
+            
+            // Check initial subscription status
+            const customerInfo = await Purchases.getCustomerInfo();
+            const hasProEntitlement = customerInfo.entitlements.active['pro'] !== undefined;
+            setIsPro(hasProEntitlement);
+            
+            console.log('🎯 Initial pro status:', hasProEntitlement);
+          } catch (error) {
+            console.error('❌ RevenueCat configuration failed:', error);
+            console.log('🔄 Continuing without RevenueCat...');
+          }
+        }
+      } catch (error) {
+        console.error('❌ Failed to initialize RevenueCat:', error);
+        // Set default state on error
+        setIsPro(false);
+      }
+    }
+    
+    // Add a small delay to ensure other providers are ready
+    const timer = setTimeout(() => {
+      initRevenueCat();
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [loaded, setIsPro]);
 
   if (!loaded) {
     // Async font loading only occurs in development.

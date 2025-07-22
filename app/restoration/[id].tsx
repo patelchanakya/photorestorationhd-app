@@ -52,6 +52,8 @@ export default function RestorationScreen() {
     setIsNavigating,
     filesExist,
     setFilesExist,
+    clearProcessingProgress,
+    completeProcessing,
     resetState
   } = useRestorationScreenStore();
   
@@ -147,10 +149,24 @@ export default function RestorationScreen() {
   useEffect(() => {
     if (photoRestoration.isSuccess && photoRestoration.data) {
       const restorationData = photoRestoration.data;
-      // Navigate to the completed restoration view
-      router.replace(`/restoration/${restorationData.id}`);
+      
+      // Immediately complete the progress animation
+      completeProcessing();
+      
+      // Add a small delay to show 100% completion before redirecting
+      setTimeout(() => {
+        // Navigate to the completed restoration view
+        router.replace(`/restoration/${restorationData.id}`);
+      }, 800); // 800ms delay to show completion
     }
-  }, [photoRestoration.isSuccess, photoRestoration.data]);
+  }, [photoRestoration.isSuccess, photoRestoration.data, completeProcessing]);
+  
+  // Clear progress immediately when error occurs
+  useEffect(() => {
+    if (photoRestoration.isError) {
+      clearProcessingProgress();
+    }
+  }, [photoRestoration.isError, clearProcessingProgress]);
   
   // Check if files exist when viewing existing restoration
   useEffect(() => {
@@ -255,10 +271,20 @@ export default function RestorationScreen() {
         Alert.alert(
           'Permission Required', 
           err.message || 'Please enable photo library permissions in Settings.',
-          [{ text: 'OK' }]
+          [
+            { text: 'Try Share Instead', onPress: handleShare },
+            { text: 'Cancel', style: 'cancel' }
+          ]
         );
       } else {
-        Alert.alert('Error', 'Failed to save photo to camera roll. Please try again.');
+        Alert.alert(
+          'Save Failed',
+          `Failed to save photo to camera roll: ${err.message || 'Unknown error'}`,
+          [
+            { text: 'Try Share Instead', onPress: handleShare },
+            { text: 'Cancel', style: 'cancel' }
+          ]
+        );
       }
     }
   };
@@ -328,31 +354,8 @@ export default function RestorationScreen() {
     }
   };
 
-  // Show loading state for new restorations or while loading existing ones
-  if (loading || photoRestoration.isPending) {
-    // For new restorations, use the enhanced processing screen
-    if (isNewRestoration && functionType) {
-      return (
-        <ProcessingScreen
-          functionType={functionType as 'restoration' | 'unblur' | 'colorize'}
-          isProcessing={photoRestoration.isPending}
-        />
-      );
-    }
-    
-    // For loading existing restorations, use simple loading
-    return (
-      <View className="flex-1 bg-gray-100 justify-center items-center px-6">
-        <ActivityIndicator size="large" color="#f97316" />
-        <Text className="text-gray-800 text-lg mt-4 text-center">
-          Loading...
-        </Text>
-      </View>
-    );
-  }
-
-  // Handle error state for new restorations
-  if (photoRestoration.isError) {
+  // Handle error state for new restorations immediately (only if currently processing)
+  if (photoRestoration.isError && isNewRestoration && !photoRestoration.isIdle) {
     const getErrorText = () => {
       switch (functionType) {
         case 'unblur':
@@ -382,6 +385,31 @@ export default function RestorationScreen() {
       </View>
     );
   }
+
+  // Show loading state for new restorations or while loading existing ones
+  if (loading || photoRestoration.isPending) {
+    // For new restorations, use the enhanced processing screen (only if no error)
+    if (isNewRestoration && functionType && !photoRestoration.isError) {
+      return (
+        <ProcessingScreen
+          functionType={functionType as 'restoration' | 'unblur' | 'colorize'}
+          isProcessing={photoRestoration.isPending}
+          isError={photoRestoration.isError}
+        />
+      );
+    }
+    
+    // For loading existing restorations, use simple loading
+    return (
+      <View className="flex-1 bg-gray-100 justify-center items-center px-6">
+        <ActivityIndicator size="large" color="#f97316" />
+        <Text className="text-gray-800 text-lg mt-4 text-center">
+          Loading...
+        </Text>
+      </View>
+    );
+  }
+
 
   if (!restoration || restoration.status !== 'completed') {
     return (

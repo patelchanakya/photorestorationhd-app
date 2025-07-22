@@ -20,14 +20,21 @@ import {
 import {
     Gesture
 } from 'react-native-gesture-handler';
-import {
+import Animated, { 
     useAnimatedStyle,
     useSharedValue,
-    withSpring
+    withSequence,
+    withTiming,
+    withSpring,
+    runOnJS
 } from 'react-native-reanimated';
+
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
-import { showPaywall } from '@/services/superwall';
+import Constants from 'expo-constants';
+import { presentPaywall } from '@/services/revenuecat';
+import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const HEADER_HEIGHT = 60;
@@ -35,15 +42,39 @@ const BOTTOM_HEIGHT = 80;
 const AVAILABLE_HEIGHT = SCREEN_HEIGHT - HEADER_HEIGHT - BOTTOM_HEIGHT;
 const CROP_SIZE = Math.min(SCREEN_WIDTH, AVAILABLE_HEIGHT) * 0.7;
 
-export default function CropModalScreen() {
+function CropModalScreen() {
   const router = useRouter();
   const { imageUri, functionType } = useLocalSearchParams();
   const [currentImageUri, setCurrentImageUri] = useState(imageUri ? decodeURIComponent(imageUri as string) : '');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showCropTool, setShowCropTool] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error] = useState<string | null>(null);
+  const [useImageLoading, setUseImageLoading] = useState(false);
+  const [buttonText, setButtonText] = useState('Use Image');
   const insets = useSafeAreaInsets();
+  
+  // Get screen dimensions for responsive design
+  const screenHeight = Dimensions.get('window').height;
+  const screenWidth = Dimensions.get('window').width;
+  const isSmallScreen = screenHeight < 700;
+  const isTinyScreen = screenHeight < 600;
+  
+  // Calculate responsive spacing - increased to prevent overlap
+  const buttonAreaHeight = isSmallScreen ? 200 : 240;
+  const toolbarSpacing = isSmallScreen ? 140 : 180;
+  
+  // Animation values for Use Image button
+  const buttonScale = useSharedValue(1);
+  const buttonOpacity = useSharedValue(1);
+  
+  // Animated styles
+  const animatedButtonStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: buttonScale.value }],
+    opacity: buttonOpacity.value,
+  }));
+  
   const { canRestore, incrementFreeRestorations } = useSubscriptionStore();
+  const photoRestoration = usePhotoRestoration();
   // We'll use Reanimated shared values for crop box in the next step
   
   const decodedUri = imageUri ? decodeURIComponent(imageUri as string) : '';
@@ -161,27 +192,66 @@ export default function CropModalScreen() {
   };
 
   const handleRestoration = async (imageUri: string) => {
-    // Check if user can restore
-    if (!canRestore()) {
-      // Show paywall if limit reached
-      const result = await showPaywall('restoration_limit');
-      if (!result || (result as any)?.type !== 'purchased' && (result as any)?.type !== 'restored') {
-        // User didn't purchase, don't proceed
+    // Start loading animation
+    setUseImageLoading(true);
+    buttonScale.value = withSequence(
+      withTiming(0.95, { duration: 100 }),
+      withSpring(1, { damping: 15 })
+    );
+    runOnJS(setButtonText)('Processing...');
+    
+    // Reset any previous error state before starting new restoration
+    photoRestoration.reset();
+    
+    // Check if user can restore (now async)
+    const canRestoreResult = await canRestore();
+    if (!canRestoreResult) {
+      console.log('🚫 User cannot restore - showing paywall');
+      
+      // Check if we're in Expo Go
+      const isExpoGo = Constants.appOwnership === 'expo';
+      if (isExpoGo) {
         Alert.alert(
-          'Restoration Limit Reached',
-          'You\'ve reached your daily limit of 3 free restorations. Upgrade to PRO for unlimited restorations!',
+          'Demo Mode',
+          'Purchases are not available in Expo Go. Build a development client to test real purchases.',
           [{ text: 'OK' }]
         );
         return;
       }
+      
+      // Use native paywall in production builds
+      const success = await presentPaywall();
+      if (success) {
+        console.log('✅ Pro subscription activated via native paywall!');
+        // Now that user is pro, proceed with restoration
+        router.replace(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(imageUri)}&functionType=${functionType}`);
+      } else {
+        // Reset button state if paywall was dismissed
+        setUseImageLoading(false);
+        runOnJS(setButtonText)('Use Image');
+      }
+      return;
     }
     
-    // Increment usage counter (only for free users)
-    incrementFreeRestorations();
+    console.log('✅ User can restore - proceeding with restoration');
     
-    // Proceed with restoration
-    router.replace(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(imageUri)}&functionType=${functionType}`);
+    // Increment usage counter (only for free users) - now async
+    await incrementFreeRestorations();
+    
+    // Success feedback
+    runOnJS(setButtonText)('Starting...');
+    buttonScale.value = withSequence(
+      withTiming(1.05, { duration: 100 }),
+      withSpring(1, { damping: 10 })
+    );
+    
+    // Small delay to show success state
+    setTimeout(() => {
+      // Proceed with restoration
+      router.replace(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(imageUri)}&functionType=${functionType}`);
+    }, 400);
   };
+
 
   // Pan gesture
   const pan = Gesture.Pan()
@@ -229,7 +299,7 @@ export default function CropModalScreen() {
       >
         <TouchableOpacity
           onPress={handleCancel}
-          className="w-10 h-10 rounded-full bg-white/10 justify-center items-center"
+          className="w-10 h-10 rounded-full justify-center items-center"
         >
           <IconSymbol name="xmark" size={20} color="#fff" />
         </TouchableOpacity>
@@ -241,31 +311,8 @@ export default function CropModalScreen() {
             Use image or crop
           </Text>
         </View>
-        {/* Rotate button in header (top right) */}
-        <TouchableOpacity
-          style={{
-            backgroundColor: '#222',
-            width: 44,
-            height: 44,
-            borderRadius: 22,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginLeft: 8,
-          }}
-          onPress={async () => {
-            try {
-              const result = await ImageManipulator.manipulateAsync(
-                currentImageUri,
-                [{ rotate: 90 }],
-                { compress: 1, format: ImageManipulator.SaveFormat.JPEG }
-              );
-              setCurrentImageUri(result.uri);
-            } catch (e) {}
-          }}
-          accessibilityLabel="Rotate Image"
-        >
-          <Ionicons name="refresh" size={22} color="#f97316" />
-        </TouchableOpacity>
+        {/* Placeholder to balance X button for perfect center alignment */}
+        <View className="w-10 h-10" />
       </View>
       {isProcessing ? (
         <View style={{ flex: 1, backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' }}>
@@ -286,10 +333,36 @@ export default function CropModalScreen() {
             key={currentImageUri}
             isVisible={true}
             imageUri={currentImageUri}
-            onEditingComplete={(cropped) => {
+            onEditingComplete={async (cropped) => {
+              console.log('🔍 ImageEditor onEditingComplete called with:', cropped);
+              console.log('🔍 Cropped URI:', cropped?.uri);
+              console.log('🔍 Cropped object keys:', cropped ? Object.keys(cropped) : 'cropped is null/undefined');
+              
               setShowCropTool(false);
-              if (cropped?.uri) {
-                handleRestoration(cropped.uri);
+              // Check for different possible URI properties
+              const croppedUri = cropped?.uri || cropped?.path || cropped?.url || cropped;
+              console.log('🔍 Final cropped URI to use:', croppedUri);
+              
+              if (croppedUri && typeof croppedUri === 'string') {
+                console.log('✅ Cropped URI exists, calling handleRestoration');
+                try {
+                  await handleRestoration(croppedUri);
+                  console.log('✅ handleRestoration completed successfully');
+                } catch (error) {
+                  console.error('❌ handleRestoration failed:', error);
+                  Alert.alert('Error', 'Failed to process cropped image. Please try again.');
+                }
+              } else {
+                console.log('❌ No valid cropped URI found');
+                console.log('🔍 Falling back to original image');
+                // Fallback: use original image if cropping failed
+                try {
+                  await handleRestoration(currentImageUri);
+                  console.log('✅ Fallback to original image successful');
+                } catch (error) {
+                  console.error('❌ Fallback also failed:', error);
+                  Alert.alert('Error', 'Failed to process image. Please try again.');
+                }
               }
             }}
             onEditingCancel={() => {
@@ -306,82 +379,176 @@ export default function CropModalScreen() {
         <View style={{ flex: 1, backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' }}>
           {currentImageUri ? (
             <>
-              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+              <View style={{ 
+                flex: 1, 
+                justifyContent: 'flex-start', 
+                alignItems: 'center', 
+                width: '100%', 
+                paddingTop: isSmallScreen ? 20 : 40,
+                paddingBottom: buttonAreaHeight, // Dynamic based on screen size
+                paddingHorizontal: 16,
+              }}>
                 <ImagePreview imageUri={currentImageUri} />
               </View>
+
+              {/* Crop/Rotate Buttons - Upper Row */}
               <View style={{
                 position: 'absolute',
                 left: 0,
                 right: 0,
-                bottom: insets.bottom + 24,
+                bottom: insets.bottom + 140,
                 flexDirection: 'row',
                 justifyContent: 'center',
                 alignItems: 'center',
-                gap: 16,
+                gap: isSmallScreen ? 16 : 20,
                 zIndex: 10,
                 paddingHorizontal: 16,
               }}>
-                {/* Crop button */}
+
+                {/* Crop Button */}
                 <TouchableOpacity
                   style={{
-                    backgroundColor: '#222',
-                    width: 44,
-                    height: 44,
-                    borderRadius: 22,
+                    width: isSmallScreen ? 70 : 80,
+                    height: isSmallScreen ? 40 : 44,
+                    borderRadius: 16,
                     alignItems: 'center',
                     justifyContent: 'center',
+                    backgroundColor: 'rgba(0,0,0,0.4)',
                     shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.12,
-                    shadowRadius: 2,
-                    elevation: 2,
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 8,
+                    elevation: 6,
+                    flexDirection: 'row',
                   }}
                   onPress={() => setShowCropTool(true)}
                   accessibilityLabel="Crop Image"
+                  activeOpacity={0.7}
                 >
-                  <Ionicons name="crop" size={22} color="#f97316" />
+                  {Platform.OS === 'ios' && (
+                    <BlurView 
+                      intensity={20} 
+                      tint="dark" 
+                      style={{ 
+                        position: 'absolute', 
+                        top: 0, 
+                        left: 0, 
+                        right: 0, 
+                        bottom: 0, 
+                        borderRadius: 16 
+                      }} 
+                    />
+                  )}
+                  <Ionicons name="crop" size={isSmallScreen ? 16 : 18} color="#f97316" />
+                  <Text style={{ color: '#f97316', fontSize: isSmallScreen ? 12 : 14, fontWeight: '600', marginLeft: 4 }}>
+                    Crop
+                  </Text>
                 </TouchableOpacity>
 
-                {/* Use Image button */}
-                <View style={{
-                  minWidth: 120,
-                  maxWidth: 180,
-                  height: 40,
-                  borderRadius: 16,
-                  overflow: 'hidden',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderWidth: 2,
-                  borderColor: '#f97316',
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.08,
-                  shadowRadius: 1,
-                  elevation: 1,
-                  backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'rgba(255,255,255,0.18)',
-                }}>
-                  {Platform.OS === 'ios' ? (
-                    <BlurView intensity={30} tint="light" style={{ ...StyleSheet.absoluteFillObject }} />
-                  ) : null}
-                  <TouchableOpacity
-                    style={{
-                      flex: 1,
-                      width: '100%',
-                      height: '100%',
+                {/* Rotate Button */}
+                <TouchableOpacity
+                  style={{
+                    width: isSmallScreen ? 80 : 90,
+                    height: isSmallScreen ? 40 : 44,
+                    borderRadius: 16,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: 'rgba(0,0,0,0.4)',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 8,
+                    elevation: 6,
+                    flexDirection: 'row',
+                  }}
+                  onPress={async () => {
+                    try {
+                      const result = await ImageManipulator.manipulateAsync(
+                        currentImageUri,
+                        [{ rotate: 90 }],
+                        { compress: 1, format: ImageManipulator.SaveFormat.JPEG }
+                      );
+                      setCurrentImageUri(result.uri);
+                    } catch (e) {}
+                  }}
+                  accessibilityLabel="Rotate Image"
+                  activeOpacity={0.7}
+                >
+                  {Platform.OS === 'ios' && (
+                    <BlurView 
+                      intensity={20} 
+                      tint="dark" 
+                      style={{ 
+                        position: 'absolute', 
+                        top: 0, 
+                        left: 0, 
+                        right: 0, 
+                        bottom: 0, 
+                        borderRadius: 16 
+                      }} 
+                    />
+                  )}
+                  <Ionicons name="refresh" size={isSmallScreen ? 16 : 18} color="#f97316" />
+                  <Text style={{ color: '#f97316', fontSize: isSmallScreen ? 12 : 14, fontWeight: '600', marginLeft: 4 }}>
+                    Rotate
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Restore Button - Lower Row */}
+              <View style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: insets.bottom + 64,
+                flexDirection: 'row',
+                justifyContent: 'center',
+                alignItems: 'center',
+                zIndex: 10,
+                paddingHorizontal: 16,
+              }}>
+                <AnimatedTouchableOpacity
+                  style={[
+                    {
+                      width: isSmallScreen ? 140 : 160,
+                      height: isSmallScreen ? 48 : 54,
+                      borderRadius: 28,
                       alignItems: 'center',
                       justifyContent: 'center',
-                      backgroundColor: 'rgba(249,115,22,0.25)',
-                      paddingHorizontal: 12,
-                    }}
-                    onPress={() => {
+                      backgroundColor: useImageLoading ? '#10b981' : '#f97316',
+                      shadowColor: useImageLoading ? '#10b981' : '#f97316',
+                      shadowOffset: { width: 0, height: 12 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 20,
+                      elevation: 12,
+                      flexDirection: 'row',
+                      borderWidth: 0.5,
+                      borderColor: useImageLoading ? 'rgba(16, 185, 129, 0.3)' : 'rgba(249, 115, 22, 0.3)',
+                    },
+                    animatedButtonStyle
+                  ]}
+                  onPress={() => {
+                    if (!useImageLoading) {
                       handleRestoration(currentImageUri);
-                    }}
-                    accessibilityLabel="Use Whole Image"
-                    activeOpacity={0.85}
-                  >
-                    <Text style={{ color: '#f97316', fontWeight: '500', fontSize: 15, letterSpacing: 0.1 }}>Use Image</Text>
-                  </TouchableOpacity>
-                </View>
+                    }
+                  }}
+                  accessibilityLabel="Use Whole Image"
+                  activeOpacity={useImageLoading ? 1 : 0.85}
+                  disabled={useImageLoading}
+                >
+                  {useImageLoading ? (
+                    <ActivityIndicator size="small" color="rgba(255, 255, 255, 0.9)" />
+                  ) : (
+                    <Text style={{ 
+                      color: 'rgba(255, 255, 255, 0.95)', 
+                      fontSize: isSmallScreen ? 16 : 18, 
+                      fontWeight: '600',
+                      letterSpacing: 0.3
+                    }}>
+                      Restore
+                    </Text>
+                  )}
+                </AnimatedTouchableOpacity>
               </View>
             </>
           ) : null}
@@ -392,6 +559,7 @@ export default function CropModalScreen() {
           <Text className="text-red-500 text-lg mt-4">{error}</Text>
         </View>
       )}
+
     </SafeAreaView>
   );
 }
@@ -495,8 +663,11 @@ function ImagePreview({ imageUri }: { imageUri: string }) {
         borderRadius: 16,
         backgroundColor: 'black',
         flexShrink: 1,
+        marginBottom: 40, // Add margin to prevent button overlap
       }}
     />
   );
 }
+
+export default CropModalScreen;
 

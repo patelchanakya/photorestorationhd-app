@@ -35,6 +35,27 @@ async function resizeImage(uri: string): Promise<string> {
 // Sleep helper for polling
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+// Helper function to detect content policy violations
+function isContentPolicyViolation(error: string): boolean {
+  const contentPolicyKeywords = [
+    'sensitive',
+    'inappropriate',
+    'policy',
+    'content',
+    'blocked',
+    'safety',
+    'harmful',
+    'violation',
+    'flagged',
+    'restricted',
+    'not allowed',
+    'prohibited'
+  ];
+  
+  const errorLower = error.toLowerCase();
+  return contentPolicyKeywords.some(keyword => errorLower.includes(keyword));
+}
+
 export async function restorePhoto(imageUri: string): Promise<string> {
   try {
     // Check if API token is available
@@ -65,12 +86,43 @@ export async function restorePhoto(imageUri: string): Promise<string> {
       await sleep(delay);
       
       const result = await replicate.predictions.get(prediction.id);
+      console.log(`🔄 Polling attempt ${attempts + 1}: status = ${result.status}`);
       
       if (result.status === 'succeeded') {
         // The output is a URL to the restored image
         return result.output as string;
       } else if (result.status === 'failed') {
-        throw new Error(result.error || 'Processing failed');
+        // Check if it's a content policy violation
+        const error = result.error || 'Processing failed';
+        
+        // Check for specific E005 error code (content flagged as sensitive)
+        if (error.includes('(E005)') || error.includes('flagged as sensitive')) {
+          console.log('🚫 Content flagged as sensitive (E005)');
+          throw new Error('Image cannot be processed due to content policy restrictions. Please try with a different image.');
+        }
+        
+        if (isContentPolicyViolation(error)) {
+          throw new Error('Image cannot be processed due to content policy restrictions. Please try with a different image.');
+        }
+        throw new Error(error);
+      } else if (result.status === 'canceled' || result.status === 'cancelled') {
+        // Often indicates content was flagged/blocked
+        throw new Error('Image processing was canceled due to content policy restrictions. Please try with a different image.');
+      } else if (result.status === 'blocked' || result.status === 'rejected') {
+        // Explicitly blocked content
+        throw new Error('Image cannot be processed due to content safety restrictions. Please try with a different image.');
+      } else if (result.status === 'processing' || result.status === 'starting') {
+        // Continue polling for these expected statuses
+        console.log(`⏳ Processing... (${result.status})`);
+      } else {
+        // Log unexpected status for debugging
+        console.warn(`⚠️ Unexpected status: ${result.status}`, result);
+        
+        // If it's been more than 20 attempts with unexpected status, treat as error
+        if (attempts > 20) {
+          console.error('🚫 Too many attempts with unexpected status, likely content issue');
+          throw new Error('Image processing encountered an unexpected issue. Please try with a different image.');
+        }
       }
       
       attempts++;
@@ -84,18 +136,27 @@ export async function restorePhoto(imageUri: string): Promise<string> {
       }
     }
     
-    throw new Error('Processing timeout - took longer than expected');
+    throw new Error('Processing took longer than expected. Please try again with a different image.');
   } catch (error) {
     console.error('Replicate restoration error:', error);
+    
+    // If it's already a content policy error, re-throw it
+    if (error instanceof Error && error.message.includes('content policy')) {
+      throw error;
+    }
     
     // Provide user-friendly error messages
     if (error instanceof Error) {
       if (error.message.includes('401') || error.message.includes('Unauthenticated')) {
-        throw new Error('Authentication failed. Please check your Replicate API token.');
+        throw new Error('Authentication failed. Please contact support.');
       } else if (error.message.includes('402') || error.message.includes('Payment Required')) {
-        throw new Error('Insufficient credits. Please check your Replicate account balance.');
+        throw new Error('Service temporarily unavailable. Please try again later.');
       } else if (error.message.includes('429') || error.message.includes('Too Many Requests')) {
-        throw new Error('Rate limit exceeded. Please try again in a few minutes.');
+        throw new Error('Too many requests. Please try again in a few minutes.');
+      } else if (error.message.includes('Network') || error.message.includes('fetch')) {
+        throw new Error('Network error. Please check your internet connection and try again.');
+      } else if (isContentPolicyViolation(error.message)) {
+        throw new Error('Image cannot be processed due to content policy restrictions. Please try with a different image.');
       }
     }
     

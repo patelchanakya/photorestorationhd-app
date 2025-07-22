@@ -59,7 +59,8 @@
           "savePhotosPermission": "Allow $(PRODUCT_NAME) to save restored photos to your photo library",
           "isAccessMediaLocationEnabled": true
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

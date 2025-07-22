@@ -3,6 +3,8 @@ import { photoRestorationKeys } from '@/hooks/usePhotoRestoration';
 import { photoStorage } from '@/services/storage';
 import { localStorageHelpers } from '@/services/supabase';
 import { useRestorationStore } from '@/store/restorationStore';
+import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { restorePurchases } from '@/services/revenuecat';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
@@ -35,13 +37,8 @@ export default function SettingsModalScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { showFlashButton, toggleFlashButton, setRestorationCount, galleryViewMode, setGalleryViewMode } = useRestorationStore();
+  const { isPro, freeRestorationsUsed, freeRestorationsLimit, expirationDate } = useSubscriptionStore();
 
-  // Query for storage info
-  const { data: storageInfo, isLoading: isLoadingStorage } = useQuery({
-    queryKey: ['storage-info'],
-    queryFn: () => photoStorage.getStorageInfo(),
-    refetchOnWindowFocus: true,
-  });
 
   // Format bytes to human readable
   const formatBytes = (bytes: number): string => {
@@ -51,6 +48,7 @@ export default function SettingsModalScreen() {
     if (bytes < 1073741824) return `${(bytes / 1048576).toFixed(1)} MB`;
     return `${(bytes / 1073741824).toFixed(2)} GB`;
   };
+
 
   // Delete all photos handler
   const handleDeleteAllPhotos = async () => {
@@ -71,7 +69,7 @@ export default function SettingsModalScreen() {
               await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
               
               // Delete all files and records
-              const [filesResult, recordsResult] = await Promise.all([
+              const [, recordsResult] = await Promise.all([
                 photoStorage.deleteAllPhotos(),
                 localStorageHelpers.deleteAllLocalRestorations(),
               ]);
@@ -132,6 +130,75 @@ export default function SettingsModalScreen() {
 
   const handleClose = () => {
     router.back();
+  };
+
+  // Subscription handlers
+  const handleRestorePurchases = async () => {
+    try {
+      Alert.alert(
+        'Restore Purchases',
+        'Restoring your previous purchases...',
+        [{ text: 'OK' }]
+      );
+      
+      const success = await restorePurchases();
+      
+      if (success) {
+        Alert.alert(
+          'Success',
+          'Your purchases have been restored!',
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert(
+          'No Purchases Found',
+          'No previous purchases were found to restore.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.error('Error restoring purchases:', error);
+      Alert.alert(
+        'Error',
+        'Failed to restore purchases. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    try {
+      const url = Platform.OS === 'ios' 
+        ? 'https://apps.apple.com/account/subscriptions'
+        : 'https://play.google.com/store/account/subscriptions';
+      
+      await Linking.openURL(url);
+    } catch (error) {
+      console.error('Error opening subscription management:', error);
+      Alert.alert(
+        'Error',
+        'Unable to open subscription management. Please check your device settings.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
+  // Format subscription status
+  const getSubscriptionStatus = () => {
+    if (isPro) {
+      if (expirationDate) {
+        const expDate = new Date(expirationDate);
+        const isExpired = expDate < new Date();
+        
+        if (isExpired) {
+          return 'Expired';
+        } else {
+          return `Active until ${expDate.toLocaleDateString()}`;
+        }
+      }
+      return 'Active';
+    }
+    return `Free (${freeRestorationsUsed}/${freeRestorationsLimit} used today)`;
   };
 
   // Social media URLs
@@ -405,18 +472,19 @@ Best regards`;
             style={{ 
               width: 32, 
               height: 32, 
-              backgroundColor: 'rgba(255,255,255,0.1)', 
-              borderRadius: 16, 
               alignItems: 'center', 
               justifyContent: 'center' 
             }}
           >
-            <IconSymbol name="xmark" size={18} color="#fff" />
+            <IconSymbol name="chevron.down" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
 
         {/* Content */}
-        <ScrollView style={{ flex: 1, paddingHorizontal: 16 }}>
+        <ScrollView 
+          style={{ flex: 1, paddingHorizontal: 16 }}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={{ paddingVertical: 20 }}>
             
             {/* Connect & Support Section */}
@@ -740,6 +808,124 @@ Best regards`;
               </View>
             </View>
 
+            {/* Subscription Section */}
+            <View style={{ marginBottom: 32 }}>
+              <Text style={{ 
+                color: 'rgba(249,115,22,1)', 
+                fontSize: 16, 
+                fontWeight: '600', 
+                marginBottom: 16 
+              }}>
+                Subscription
+              </Text>
+              
+              <View style={{ 
+                backgroundColor: 'rgba(255,255,255,0.05)', 
+                borderRadius: 12, 
+                overflow: 'hidden' 
+              }}>
+                
+                {/* Subscription Status */}
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: 16,
+                  borderBottomWidth: 1,
+                  borderBottomColor: 'rgba(255,255,255,0.1)'
+                }}>
+                  <View style={{
+                    width: 36,
+                    height: 36,
+                    backgroundColor: isPro ? 'rgba(34,197,94,0.2)' : 'rgba(249,115,22,0.2)',
+                    borderRadius: 18,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: 12
+                  }}>
+                    <IconSymbol 
+                      name={isPro ? "crown.fill" : "person.crop.circle"} 
+                      size={18} 
+                      color={isPro ? "#22c55e" : "#f97316"} 
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
+                      {isPro ? 'Pro Subscription' : 'Free Plan'}
+                    </Text>
+                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
+                      {getSubscriptionStatus()}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Restore Purchases */}
+                <TouchableOpacity 
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    padding: 16,
+                    borderBottomWidth: 1,
+                    borderBottomColor: 'rgba(255,255,255,0.1)'
+                  }}
+                  onPress={handleRestorePurchases}
+                >
+                  <View style={{
+                    width: 36,
+                    height: 36,
+                    backgroundColor: 'rgba(249,115,22,0.2)',
+                    borderRadius: 18,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: 12
+                  }}>
+                    <IconSymbol name="arrow.clockwise" size={18} color="#f97316" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
+                      Restore Purchases
+                    </Text>
+                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
+                      Restore previous purchases
+                    </Text>
+                  </View>
+                  <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
+                </TouchableOpacity>
+
+                {/* Manage Subscription */}
+                {isPro && (
+                  <TouchableOpacity 
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      padding: 16
+                    }}
+                    onPress={handleManageSubscription}
+                  >
+                    <View style={{
+                      width: 36,
+                      height: 36,
+                      backgroundColor: 'rgba(249,115,22,0.2)',
+                      borderRadius: 18,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: 12
+                    }}>
+                      <IconSymbol name="gear" size={18} color="#f97316" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
+                        Manage Subscription
+                      </Text>
+                      <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
+                        Change or cancel subscription
+                      </Text>
+                    </View>
+                    <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+
             {/* Storage Section */}
             <View style={{ marginBottom: 32 }}>
               <Text style={{ 
@@ -757,41 +943,6 @@ Best regards`;
                 overflow: 'hidden' 
               }}>
                 
-                {/* Storage Usage */}
-                <TouchableOpacity style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: 'rgba(255,255,255,0.1)'
-                }}>
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
-                    <IconSymbol name="chart.pie" size={18} color="#f97316" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      Storage Usage
-                    </Text>
-                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                      {isLoadingStorage ? (
-                        'Calculating...'
-                      ) : storageInfo ? (
-                        `${formatBytes(storageInfo.used)} • ${storageInfo.count} restoration${storageInfo.count !== 1 ? 's' : ''}`
-                      ) : (
-                        'No restorations stored'
-                      )}
-                    </Text>
-                  </View>
-                  <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
-                </TouchableOpacity>
 
                 {/* Delete All Photos */}
                 <TouchableOpacity 
@@ -939,8 +1090,7 @@ Best regards`;
                   flexDirection: 'row',
                   alignItems: 'center',
                   padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: 'rgba(255,255,255,0.1)'
+                  borderBottomWidth: 0
                 }}>
                   <View style={{
                     width: 36,

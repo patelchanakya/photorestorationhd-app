@@ -4,6 +4,7 @@ import { localStorageHelpers } from '@/services/supabase';
 import { useRestorationHistory, useRefreshHistory } from '@/hooks/useRestorationHistory';
 import { useRestorationStore } from '@/store/restorationStore';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import React, { useState, useEffect } from 'react';
 import {
     Dimensions,
@@ -166,7 +167,23 @@ export default function GalleryModalScreen() {
           <Text style={styles.emptyText}>Your restored photos will appear here</Text>
           <TouchableOpacity
             style={styles.emptyButton}
-            onPress={() => router.dismiss()}
+            onPress={async () => {
+              try {
+                const result = await ImagePicker.launchImageLibraryAsync({
+                  mediaTypes: ['images'],
+                  allowsEditing: false,
+                  quality: 1,
+                });
+
+                if (!result.canceled && result.assets[0]) {
+                  const imageUri = result.assets[0].uri;
+                  router.dismiss();
+                  router.push(`/crop-modal?imageUri=${encodeURIComponent(imageUri)}&functionType=restoration`);
+                }
+              } catch (error) {
+                console.error('Error picking image:', error);
+              }
+            }}
           >
             <Text style={styles.emptyButtonText}>Start Restoring</Text>
           </TouchableOpacity>
@@ -213,7 +230,7 @@ export default function GalleryModalScreen() {
               accessibilityLabel="Close gallery"
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <IconSymbol name="xmark" size={22} color="#888" />
+              <IconSymbol name="chevron.down" size={22} color="#888" />
             </TouchableOpacity>
           </View>
         </View>

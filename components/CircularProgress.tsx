@@ -3,12 +3,17 @@ import { View, Text } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  useAnimatedProps,
   withTiming,
   withRepeat,
   withSequence,
   interpolate,
+  withSpring,
 } from 'react-native-reanimated';
+import Svg, { Circle } from 'react-native-svg';
 import { IconSymbol } from './ui/IconSymbol';
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 interface CircularProgressProps {
   progress: number; // 0-100
@@ -34,40 +39,57 @@ export function CircularProgress({
   iconColor = '#f97316',
 }: CircularProgressProps) {
   const animatedProgress = useSharedValue(0);
-  const glowOpacity = useSharedValue(0.3);
+  const glowOpacity = useSharedValue(0.4);
   const iconScale = useSharedValue(1);
+  const containerFloat = useSharedValue(0);
+
+  // Calculate circle properties
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
 
   useEffect(() => {
-    // Animate progress
-    animatedProgress.value = withTiming(progress, {
-      duration: 800,
+    // Smooth progress animation with spring
+    animatedProgress.value = withSpring(progress, {
+      damping: 15,
+      stiffness: 100,
     });
 
-    // Glow effect
+    // Subtle breathing glow
     glowOpacity.value = withRepeat(
       withSequence(
-        withTiming(0.6, { duration: 1500 }),
-        withTiming(0.3, { duration: 1500 })
+        withTiming(0.6, { duration: 2000 }),
+        withTiming(0.4, { duration: 2000 })
       ),
       -1,
       true
     );
 
-    // Icon pulse
+    // Gentle icon pulse
     iconScale.value = withRepeat(
       withSequence(
-        withTiming(1.1, { duration: 1200 }),
-        withTiming(1, { duration: 1200 })
+        withTiming(1.05, { duration: 1800 }),
+        withTiming(1, { duration: 1800 })
+      ),
+      -1,
+      true
+    );
+
+    // Subtle floating animation
+    containerFloat.value = withRepeat(
+      withSequence(
+        withTiming(-2, { duration: 3000 }),
+        withTiming(2, { duration: 3000 })
       ),
       -1,
       true
     );
   }, [progress]);
 
-  const progressStyle = useAnimatedStyle(() => {
-    const angle = interpolate(animatedProgress.value, [0, 100], [0, 360]);
+  // Animated props for SVG circle
+  const animatedCircleProps = useAnimatedProps(() => {
+    const strokeDashoffset = circumference - (animatedProgress.value / 100) * circumference;
     return {
-      transform: [{ rotate: `${angle}deg` }],
+      strokeDashoffset,
     };
   });
 
@@ -79,57 +101,66 @@ export function CircularProgress({
     transform: [{ scale: iconScale.value }],
   }));
 
+  const containerStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: containerFloat.value }],
+  }));
+
+  const animatedProgressColor = useAnimatedStyle(() => {
+    // Subtle color shift from orange to green as progress increases
+    const colorProgress = animatedProgress.value / 100;
+    const red = Math.round(249 - colorProgress * (249 - 34));
+    const green = Math.round(115 + colorProgress * (197 - 115));
+    const blue = Math.round(22 + colorProgress * (34 - 22));
+    return {
+      color: `rgb(${red}, ${green}, ${blue})`,
+    };
+  });
+
   return (
-    <View style={{ width: size, height: size, justifyContent: 'center', alignItems: 'center' }}>
-      {/* Glow effect */}
+    <Animated.View style={[
+      { width: size, height: size, justifyContent: 'center', alignItems: 'center' },
+      containerStyle
+    ]}>
+      {/* Subtle glow effect (without shadow) */}
       <Animated.View
         style={[
           {
             position: 'absolute',
-            width: size + 20,
-            height: size + 20,
-            borderRadius: (size + 20) / 2,
+            width: size + 16,
+            height: size + 16,
+            borderRadius: (size + 16) / 2,
             backgroundColor: color,
-            shadowColor: color,
-            shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: 1,
-            shadowRadius: 20,
-            elevation: 20,
           },
           glowStyle,
         ]}
       />
 
-      {/* Background circle */}
-      <View
-        style={{
-          position: 'absolute',
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          borderWidth: strokeWidth,
-          borderColor: backgroundColor,
-        }}
-      />
-
-      {/* Progress circle using conic gradient approach */}
-      <Animated.View
-        style={[
-          {
-            position: 'absolute',
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            borderWidth: strokeWidth,
-            borderColor: 'transparent',
-            borderTopColor: color,
-            borderRightColor: progress > 25 ? color : 'transparent',
-            borderBottomColor: progress > 50 ? color : 'transparent',
-            borderLeftColor: progress > 75 ? color : 'transparent',
-          },
-          progressStyle,
-        ]}
-      />
+      {/* SVG Progress Circle */}
+      <Svg width={size} height={size} style={{ position: 'absolute' }}>
+        {/* Background circle */}
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={backgroundColor}
+          strokeWidth={strokeWidth}
+          fill="transparent"
+        />
+        
+        {/* Progress circle */}
+        <AnimatedCircle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={color}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          fill="transparent"
+          strokeDasharray={circumference}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          animatedProps={animatedCircleProps}
+        />
+      </Svg>
 
       {/* Content */}
       <View style={{ alignItems: 'center', justifyContent: 'center' }}>
@@ -139,16 +170,19 @@ export function CircularProgress({
           </Animated.View>
         )}
         {showPercentage && (
-          <Text style={{ 
-            fontSize: 16, 
-            fontWeight: 'bold', 
-            color: '#374151',
-            marginTop: icon ? 4 : 0
-          }}>
+          <Animated.Text style={[
+            { 
+              fontSize: 16, 
+              fontWeight: 'bold', 
+              color: '#374151',
+              marginTop: icon ? 4 : 0
+            },
+            animatedProgressColor
+          ]}>
             {Math.round(progress)}%
-          </Text>
+          </Animated.Text>
         )}
       </View>
-    </View>
+    </Animated.View>
   );
 }
