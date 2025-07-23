@@ -3,6 +3,7 @@ import { Modal, View, Text, TouchableOpacity, Pressable } from 'react-native';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 import { IconSymbol } from './ui/IconSymbol';
 import * as Haptics from 'expo-haptics';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface Mode {
   id: string;
@@ -19,6 +20,8 @@ interface ModeSelectorProps {
 }
 
 export function ModeSelector({ visible, modes, selectedMode, onSelect, onClose }: ModeSelectorProps) {
+  const { t } = useTranslation();
+  
   const handleModeSelect = (modeId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onSelect(modeId);
@@ -78,7 +81,7 @@ export function ModeSelector({ visible, modes, selectedMode, onSelect, onClose }
                 textAlign: 'center',
                 marginBottom: 20,
               }}>
-                Select Mode
+                {t('modes.selectMode')}
               </Text>
 
               {/* Mode Options */}
@@ -155,7 +158,7 @@ export function ModeSelector({ visible, modes, selectedMode, onSelect, onClose }
                   fontSize: 16,
                   fontWeight: '500',
                 }}>
-                  Cancel
+                  {t('modes.cancel')}
                 </Text>
               </TouchableOpacity>
             </Animated.View>

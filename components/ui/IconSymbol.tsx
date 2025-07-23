@@ -18,11 +18,24 @@ const MAPPING = {
   'bolt.fill': 'bolt',
   'bolt.slash': 'bolt', // MaterialIcons does not have a direct 'bolt.slash', use 'bolt' as closest
   'photo': 'photo',
+  'photo.stack': 'collections', // MaterialIcon for multiple photos/gallery
+  'camera': 'camera-alt',
+  'plus': 'add',
   'square.and.arrow.up': 'file-upload', // closest MaterialIcon for upload
   'house.fill': 'home',
   'paperplane.fill': 'send',
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
+  'chevron.down': 'keyboard-arrow-down',
+  'info.circle': 'info',
+  'questionmark.circle': 'help',
+  'arrow.clockwise': 'refresh',
+  'clock': 'access-time',
+  'gift': 'card-giftcard',
+  'crown.fill': 'star',
+  'person.crop.circle': 'person',
+  'square.grid.2x2': 'grid-view',
+  'exclamationmark.triangle': 'warning',
 } as IconMapping;
 
 /**

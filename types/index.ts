@@ -16,7 +16,7 @@ export interface Restoration {
   completed_at?: string;
   error_message?: string;
   prediction_id?: string;
-  function_type?: 'restoration' | 'unblur' | 'colorize';
+  function_type?: 'restoration' | 'unblur' | 'colorize' | 'descratch';
 }
 
 export interface RestorationInput {

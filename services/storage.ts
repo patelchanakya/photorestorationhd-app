@@ -28,11 +28,15 @@ class PhotoStorage {
         
         if (!dirInfo.exists) {
           await FileSystem.makeDirectoryAsync(dirPath, { intermediates: true });
-          console.log(`✅ Created directory: ${dirPath}`);
+          if (__DEV__) {
+            console.log(`✅ Created directory: ${dirPath}`);
+          }
         }
       }
     } catch (error) {
-      console.error('Failed to initialize storage directories:', error);
+      if (__DEV__) {
+        console.error('Failed to initialize storage directories:', error);
+      }
     }
   }
 
@@ -49,10 +53,14 @@ class PhotoStorage {
         to: destination
       });
       
-      console.log(`✅ Saved original photo: ${fileName}`);
+      if (__DEV__) {
+        console.log(`✅ Saved original photo: ${fileName}`);
+      }
       return fileName;
     } catch (error) {
-      console.error('Failed to save original photo:', error);
+      if (__DEV__) {
+        console.error('Failed to save original photo:', error);
+      }
       throw error;
     }
   }
@@ -65,17 +73,23 @@ class PhotoStorage {
       const fileName = originalFileName.replace('original_', 'restored_');
       const destination = `${this.basePath}restored/${fileName}`;
       
-      console.log(`⬇️ Downloading restored photo from: ${url}`);
+      if (__DEV__) {
+        console.log(`⬇️ Downloading restored photo from: ${url}`);
+      }
       const result = await FileSystem.downloadAsync(url, destination);
       
       if (result.status === 200) {
-        console.log(`✅ Saved restored photo: ${fileName}`);
+        if (__DEV__) {
+          console.log(`✅ Saved restored photo: ${fileName}`);
+        }
         return fileName;
       } else {
         throw new Error(`Download failed with status: ${result.status}`);
       }
     } catch (error) {
-      console.error('Failed to save restored photo:', error);
+      if (__DEV__) {
+        console.error('Failed to save restored photo:', error);
+      }
       throw error;
     }
   }
@@ -106,10 +120,14 @@ class PhotoStorage {
         to: destination
       });
       
-      console.log(`✅ Created thumbnail: ${fileName}`);
+      if (__DEV__) {
+        console.log(`✅ Created thumbnail: ${fileName}`);
+      }
       return fileName;
     } catch (error) {
-      console.error('Failed to create thumbnail:', error);
+      if (__DEV__) {
+        console.error('Failed to create thumbnail:', error);
+      }
       throw error;
     }
   }
@@ -145,7 +163,9 @@ class PhotoStorage {
         try {
           await FileSystem.deleteAsync(uri);
         } catch (error) {
-          console.warn('Failed to delete file:', uri, error);
+          if (__DEV__) {
+            console.warn('Failed to delete file:', uri, error);
+          }
         }
       })
     );
@@ -153,50 +173,74 @@ class PhotoStorage {
 
   // Export photo to camera roll
   async exportToCameraRoll(uri: string): Promise<void> {
-    console.log('🔄 Starting camera roll export for:', uri);
+    if (__DEV__) {
+      console.log('🔄 Starting camera roll export for:', uri);
+    }
     
     // Validate MediaLibrary is available
     if (!MediaLibrary) {
-      console.error('❌ MediaLibrary is not available');
+      if (__DEV__) {
+        console.error('❌ MediaLibrary is not available');
+      }
       throw new Error('Photo library functionality is not available. Please restart the app.');
     }
     
     if (!MediaLibrary.getPermissionsAsync) {
-      console.error('❌ MediaLibrary.getPermissionsAsync is not available');
+      if (__DEV__) {
+        console.error('❌ MediaLibrary.getPermissionsAsync is not available');
+      }
       throw new Error('Photo library permissions not available. Please update the app.');
     }
     
     try {
       // Check if file exists first
-      console.log('🔍 Checking if file exists...');
+      if (__DEV__) {
+        console.log('🔍 Checking if file exists...');
+      }
       const fileInfo = await FileSystem.getInfoAsync(uri);
       if (!fileInfo.exists) {
-        console.error('❌ File does not exist:', uri);
+        if (__DEV__) {
+          console.error('❌ File does not exist:', uri);
+        }
         throw new Error('Photo file not found. Please try again.');
       }
-      console.log('✅ File exists, size:', fileInfo.size);
+      if (__DEV__) {
+        console.log('✅ File exists, size:', fileInfo.size);
+      }
 
       // First check if we already have permissions
-      console.log('🔍 Checking existing permissions...');
+      if (__DEV__) {
+        console.log('🔍 Checking existing permissions...');
+      }
       const { status: existingStatus } = await MediaLibrary.getPermissionsAsync();
-      console.log('📱 Existing permission status:', existingStatus);
+      if (__DEV__) {
+        console.log('📱 Existing permission status:', existingStatus);
+      }
       
       let finalStatus = existingStatus;
       
       // Only request if we don't have permissions
       if (existingStatus !== 'granted') {
-        console.log('🔄 Requesting photo library permissions...');
+        if (__DEV__) {
+          console.log('🔄 Requesting photo library permissions...');
+        }
         const { status: newStatus } = await MediaLibrary.requestPermissionsAsync();
         finalStatus = newStatus;
-        console.log('📱 New permission status:', finalStatus);
+        if (__DEV__) {
+          console.log('📱 New permission status:', finalStatus);
+        }
       }
       
       if (finalStatus !== 'granted') {
-        console.error('❌ Permission denied:', finalStatus);
+        if (__DEV__) {
+          console.error('❌ Permission denied:', finalStatus);
+        }
         throw new Error('Camera roll permission not granted. Please enable photo library access in iPhone Settings > Privacy & Security > Photos.');
       }
       
-      console.log('🔄 Processing image with ImageManipulator...');
+      if (__DEV__) {
+        console.log('🔄 Processing image with ImageManipulator...');
+      }
       // Use ImageManipulator to create a new file with current timestamp
       const processedImage = await ImageManipulator.manipulateAsync(
         uri,
@@ -206,33 +250,49 @@ class PhotoStorage {
           format: ImageManipulator.SaveFormat.JPEG 
         }
       );
-      console.log('✅ Image processed, new URI:', processedImage.uri);
+      if (__DEV__) {
+        console.log('✅ Image processed, new URI:', processedImage.uri);
+      }
       
-      console.log('🔄 Creating asset in photo library...');
+      if (__DEV__) {
+        console.log('🔄 Creating asset in photo library...');
+      }
       // Save the processed image to library (will have current timestamp)
       const asset = await MediaLibrary.createAssetAsync(processedImage.uri);
-      console.log('📱 Asset created:', asset?.id);
+      if (__DEV__) {
+        console.log('📱 Asset created:', asset?.id);
+      }
       
       if (!asset) {
-        console.error('❌ Failed to create asset - asset is null');
+        if (__DEV__) {
+          console.error('❌ Failed to create asset - asset is null');
+        }
         throw new Error('Failed to save photo to library');
       }
       
-      console.log('✅ Photo saved to camera roll successfully!');
+      if (__DEV__) {
+        console.log('✅ Photo saved to camera roll successfully!');
+      }
       
       // Clean up the temporary file created by ImageManipulator
       try {
         await FileSystem.deleteAsync(processedImage.uri, { idempotent: true });
-        console.log('🧹 Cleaned up temporary file');
+        if (__DEV__) {
+          console.log('🧹 Cleaned up temporary file');
+        }
       } catch (cleanupError) {
-        console.warn('⚠️ Failed to clean up temporary file:', cleanupError);
+        if (__DEV__) {
+          console.warn('⚠️ Failed to clean up temporary file:', cleanupError);
+        }
       }
       
     } catch (error: any) {
-      console.error('❌ MediaLibrary save error:', error);
-      console.error('❌ Error type:', typeof error);
-      console.error('❌ Error message:', error.message);
-      console.error('❌ Error stack:', error.stack);
+      if (__DEV__) {
+        console.error('❌ MediaLibrary save error:', error);
+        console.error('❌ Error type:', typeof error);
+        console.error('❌ Error message:', error.message);
+        console.error('❌ Error stack:', error.stack);
+      }
       
       // Provide more specific error messages
       if (error.message?.includes('NSPhotoLibraryAddUsageDescription')) {
@@ -284,7 +344,9 @@ class PhotoStorage {
           .map(file => FileSystem.deleteAsync(`${cacheDir}${file}`, { idempotent: true }))
       );
     } catch (error) {
-      console.warn('Failed to clear cache:', error);
+      if (__DEV__) {
+        console.warn('Failed to clear cache:', error);
+      }
     }
   }
 
@@ -313,7 +375,9 @@ class PhotoStorage {
           }
         }
       } catch (error) {
-        console.warn(`Failed to read directory ${dir}:`, error);
+        if (__DEV__) {
+          console.warn(`Failed to read directory ${dir}:`, error);
+        }
       }
     }
 
@@ -341,15 +405,21 @@ class PhotoStorage {
             await FileSystem.deleteAsync(`${dirPath}${file}`, { idempotent: true });
             deletedCount++;
           } catch (error) {
-            console.warn(`Failed to delete file ${file}:`, error);
+            if (__DEV__) {
+              console.warn(`Failed to delete file ${file}:`, error);
+            }
           }
         }
       } catch (error) {
-        console.warn(`Failed to read directory ${dir}:`, error);
+        if (__DEV__) {
+          console.warn(`Failed to read directory ${dir}:`, error);
+        }
       }
     }
 
-    console.log(`🗑️ Deleted ${deletedCount} photo files`);
+    if (__DEV__) {
+      console.log(`🗑️ Deleted ${deletedCount} photo files`);
+    }
     return { deletedCount };
   }
 }

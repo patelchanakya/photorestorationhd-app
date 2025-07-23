@@ -7,7 +7,9 @@ const apiToken = process.env.EXPO_PUBLIC_REPLICATE_API_TOKEN;
 if (!apiToken) {
   console.error('EXPO_PUBLIC_REPLICATE_API_TOKEN is not set in environment variables');
 } else {
-  console.log('✅ Replicate API token loaded successfully');
+  if (__DEV__) {
+    console.log('✅ Replicate API token loaded successfully');
+  }
 }
 
 const replicate = new Replicate({
@@ -86,7 +88,9 @@ export async function restorePhoto(imageUri: string): Promise<string> {
       await sleep(delay);
       
       const result = await replicate.predictions.get(prediction.id);
-      console.log(`🔄 Polling attempt ${attempts + 1}: status = ${result.status}`);
+      if (__DEV__) {
+        console.log(`🔄 Polling attempt ${attempts + 1}: status = ${result.status}`);
+      }
       
       if (result.status === 'succeeded') {
         // The output is a URL to the restored image
@@ -97,7 +101,9 @@ export async function restorePhoto(imageUri: string): Promise<string> {
         
         // Check for specific E005 error code (content flagged as sensitive)
         if (error.includes('(E005)') || error.includes('flagged as sensitive')) {
-          console.log('🚫 Content flagged as sensitive (E005)');
+          if (__DEV__) {
+            console.log('🚫 Content flagged as sensitive (E005)');
+          }
           throw new Error('Image cannot be processed due to content policy restrictions. Please try with a different image.');
         }
         
@@ -113,14 +119,20 @@ export async function restorePhoto(imageUri: string): Promise<string> {
         throw new Error('Image cannot be processed due to content safety restrictions. Please try with a different image.');
       } else if (result.status === 'processing' || result.status === 'starting') {
         // Continue polling for these expected statuses
-        console.log(`⏳ Processing... (${result.status})`);
+        if (__DEV__) {
+          console.log(`⏳ Processing... (${result.status})`);
+        }
       } else {
         // Log unexpected status for debugging
-        console.warn(`⚠️ Unexpected status: ${result.status}`, result);
+        if (__DEV__) {
+          console.warn(`⚠️ Unexpected status: ${result.status}`, result);
+        }
         
         // If it's been more than 20 attempts with unexpected status, treat as error
         if (attempts > 20) {
-          console.error('🚫 Too many attempts with unexpected status, likely content issue');
+          if (__DEV__) {
+            console.error('🚫 Too many attempts with unexpected status, likely content issue');
+          }
           throw new Error('Image processing encountered an unexpected issue. Please try with a different image.');
         }
       }
@@ -138,7 +150,9 @@ export async function restorePhoto(imageUri: string): Promise<string> {
     
     throw new Error('Processing took longer than expected. Please try again with a different image.');
   } catch (error) {
-    console.error('Replicate restoration error:', error);
+    if (__DEV__) {
+      console.error('Replicate restoration error:', error);
+    }
     
     // If it's already a content policy error, re-throw it
     if (error instanceof Error && error.message.includes('content policy')) {
@@ -169,6 +183,8 @@ export async function cancelPrediction(predictionId: string): Promise<void> {
   try {
     await replicate.predictions.cancel(predictionId);
   } catch (error) {
-    console.error('Failed to cancel prediction:', error);
+    if (__DEV__) {
+      console.error('Failed to cancel prediction:', error);
+    }
   }
 }

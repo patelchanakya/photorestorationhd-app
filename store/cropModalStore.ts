@@ -37,33 +37,45 @@ export const useCropModalStore = create<CropModalState>((set, get) => ({
   
   // Individual setters
   setCurrentImageUri: (uri) => {
-    console.log('📸 CropModal: Setting current image URI:', uri);
+    if (__DEV__) {
+      console.log('📸 CropModal: Setting current image URI:', uri);
+    }
     set({ currentImageUri: uri });
   },
   
   setIsProcessing: (processing) => {
-    console.log('⚙️ CropModal: Setting processing:', processing);
+    if (__DEV__) {
+      console.log('⚙️ CropModal: Setting processing:', processing);
+    }
     set({ isProcessing: processing });
   },
   
   setShowCropTool: (show) => {
-    console.log('✂️ CropModal: Setting show crop tool:', show);
+    if (__DEV__) {
+      console.log('✂️ CropModal: Setting show crop tool:', show);
+    }
     set({ showCropTool: show });
   },
   
   setUseImageLoading: (loading) => {
-    console.log('🔄 CropModal: Setting use image loading:', loading);
+    if (__DEV__) {
+      console.log('🔄 CropModal: Setting use image loading:', loading);
+    }
     set({ useImageLoading: loading });
   },
   
   setButtonText: (text) => {
-    console.log('🔘 CropModal: Setting button text:', text);
+    if (__DEV__) {
+      console.log('🔘 CropModal: Setting button text:', text);
+    }
     set({ buttonText: text });
   },
   
   // Reset for new image - maintains consistency with existing patterns
   resetForNewImage: (imageUri) => {
-    console.log('🔄 CropModal: Resetting for new image:', imageUri);
+    if (__DEV__) {
+      console.log('🔄 CropModal: Resetting for new image:', imageUri);
+    }
     set({
       currentImageUri: imageUri,
       isProcessing: false,
@@ -75,7 +87,9 @@ export const useCropModalStore = create<CropModalState>((set, get) => ({
   
   // Complete reset - useful for cleanup
   reset: () => {
-    console.log('🧹 CropModal: Complete reset');
+    if (__DEV__) {
+      console.log('🧹 CropModal: Complete reset');
+    }
     set(initialState);
   },
 }));

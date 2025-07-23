@@ -22,14 +22,15 @@ export function useRestorationHistory(enabled: boolean = true, updateCount: bool
     queryKey: photoRestorationKeys.history(),
     queryFn: async (): Promise<RestorationHistoryItem[]> => {
       try {
-        console.log('🔍 Loading restoration history...');
-        
-        // Reduced delay for faster loading
-        await new Promise(resolve => setTimeout(resolve, 50));
+        if (__DEV__) {
+          console.log('🔍 Loading restoration history...');
+        }
         
         // Always use 'anonymous' since we don't have auth
         const restorations = await restorationService.getUserRestorations('anonymous');
-        console.log('✅ Loaded restoration history:', restorations.length, 'items');
+        if (__DEV__) {
+          console.log('✅ Loaded restoration history:', restorations.length, 'items');
+        }
         
         // Import photoStorage to check file existence
         const { photoStorage } = await import('@/services/storage');
@@ -46,7 +47,9 @@ export function useRestorationHistory(enabled: boolean = true, updateCount: bool
           }
         }
         
-        console.log(`✅ Valid restorations: ${validRestorations.length} out of ${restorations.length}`);
+        if (__DEV__) {
+          console.log(`✅ Valid restorations: ${validRestorations.length} out of ${restorations.length}`);
+        }
         
         const processedRestorations = validRestorations
           .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
@@ -64,13 +67,19 @@ export function useRestorationHistory(enabled: boolean = true, updateCount: bool
           
         // Update Zustand store with the count only if updateCount is true
         if (updateCount) {
-          console.log('[useRestorationHistory] Setting restoration count:', processedRestorations.length);
+          if (__DEV__) {
+            console.log('[useRestorationHistory] Setting restoration count:', processedRestorations.length);
+          }
           setRestorationCount(processedRestorations.length);
         }
-        console.log('📊 Processed restoration history:', processedRestorations.length, 'completed items');
+        if (__DEV__) {
+          console.log('📊 Processed restoration history:', processedRestorations.length, 'completed items');
+        }
         return processedRestorations;
       } catch (error) {
-        console.error('❌ Failed to load restoration history:', error);
+        if (__DEV__) {
+          console.error('❌ Failed to load restoration history:', error);
+        }
         setRestorationCount(0);
         return [];
       }

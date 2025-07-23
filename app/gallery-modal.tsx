@@ -59,7 +59,7 @@ export default function GalleryModalScreen() {
     thumbnail_filename: item.thumbnail_filename || undefined,
     status: item.status as 'completed',
     created_at: item.createdAt.toISOString(),
-    function_type: item.function_type as 'restoration' | 'unblur' | 'colorize' | undefined,
+    function_type: item.function_type as 'restoration' | 'unblur' | 'colorize' | 'descratch' | undefined,
   })) || [];
   
   // Refresh on mount and cleanup orphaned records
@@ -130,9 +130,9 @@ export default function GalleryModalScreen() {
         <View style={styles.cardContent}>
           <Text style={styles.cardTitle} numberOfLines={1}>
             {item.function_type === 'unblur' ? 'Unblurred' : 
-             item.function_type === 'colorize' ? 'Colorized' : 'Restored'}
+             item.function_type === 'colorize' ? 'Colorized' : 
+             item.function_type === 'descratch' ? 'Descratched' : 'Restored'}
           </Text>
-          <Text style={styles.cardSubtitle} numberOfLines={1}>{item.original_filename}</Text>
           <Text style={styles.cardDate}>{new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
         </View>
         <IconSymbol name="chevron.right" size={22} color="#bbb" style={styles.chevron} />
@@ -215,7 +215,7 @@ export default function GalleryModalScreen() {
           
           {/* Center section with title */}
           <View style={styles.headerCenterSection}>
-            <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">My Restorations</Text>
+            <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">PastPix</Text>
           </View>
           
           {/* Right section with badge and close */}
@@ -417,26 +417,16 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: 'bold',
     color: '#222',
     minWidth: 0,
-    marginBottom: 2,
-  },
-  cardSubtitle: {
-    fontSize: 13,
-    color: '#666',
-    marginTop: 0,
-    minWidth: 0,
-    maxWidth: '100%',
-    letterSpacing: 0.1,
-    lineHeight: 17,
-    marginBottom: 1,
+    marginBottom: 4,
   },
   cardDate: {
-    fontSize: 12,
-    color: '#aaa',
-    marginTop: 2,
+    fontSize: 14,
+    color: '#666',
+    marginTop: 0,
     letterSpacing: 0.1,
   },
   chevron: {

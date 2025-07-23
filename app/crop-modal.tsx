@@ -1,7 +1,7 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { ImageEditor } from 'expo-dynamic-image-crop';
+import { CustomImageCropper } from '@/components/CustomImageCropper';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -17,9 +17,6 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import {
-    Gesture
-} from 'react-native-gesture-handler';
 import Animated, { 
     useAnimatedStyle,
     useSharedValue,
@@ -108,114 +105,6 @@ function CropModalScreen() {
   // We'll use Reanimated shared values for crop box in the next step
   
   const decodedUri = imageUri ? decodeURIComponent(imageUri as string) : '';
-  
-  // Animation values
-  const scale = useSharedValue(1);
-  const translateX = useSharedValue(0);
-  const translateY = useSharedValue(0);
-  const savedScale = useSharedValue(1);
-  const savedTranslateX = useSharedValue(0);
-  const savedTranslateY = useSharedValue(0);
-
-  // Use shared values for crop box position
-  const cropX = useSharedValue(0); // No longer needed
-  const cropY = useSharedValue(0); // No longer needed
-
-  // Update shared values when cropBox changes (e.g. on image load)
-  useEffect(() => {
-    // cropX.value = cropBox.x; // No longer needed
-    // cropY.value = cropBox.y; // No longer needed
-  }, []);
-
-  // Debug: log crop box coordinates
-  useEffect(() => {
-    console.log('CropBox:', cropX.value, cropY.value);
-  }, [cropX.value, cropY.value]);
-
-  // Pan gesture for crop box
-  const panGesture = Gesture.Pan()
-    .onUpdate((e) => {
-      // Calculate new position
-      let newX = cropX.value + e.translationX;
-      let newY = cropY.value + e.translationY;
-      // Constrain within image bounds
-      newX = Math.max(0, Math.min(newX, SCREEN_WIDTH - CROP_SIZE)); // Constrain to image width
-      newY = Math.max(0, Math.min(newY, SCREEN_HEIGHT - CROP_SIZE)); // Constrain to image height
-      cropX.value = newX;
-      cropY.value = newY;
-    })
-    .onEnd(() => {
-      // Update React state at the end (optional, for future use)
-      // runOnJS(setCropBox)({ ...cropBox, x: cropX.value, y: cropY.value }); // No longer needed
-    });
-
-  // Animated style for crop box
-  const cropBoxStyle = useAnimatedStyle(() => ({
-    left: cropX.value,
-    top: cropY.value,
-    width: CROP_SIZE,
-    height: CROP_SIZE,
-    borderWidth: 3,
-    borderColor: '#f97316',
-    backgroundColor: 'rgba(255, 165, 0, 0.1)', // fallback color for visibility
-    position: 'absolute',
-    zIndex: 10,
-    borderStyle: 'dashed', // debug border
-  }));
-
-  // We'll implement performant crop box logic here in the next step
-
-  const handleCrop = async () => {
-    if (!decodedUri) return;
-    
-    setIsProcessing(true);
-    
-    try {
-      // Calculate the crop area in original image coordinates
-      const scaleRatio = 1; // ImageEditor handles scaling
-      
-      // Calculate visible area in display coordinates
-      const visibleWidth = CROP_SIZE / scale.value;
-      const visibleHeight = CROP_SIZE / scale.value;
-      
-      // Calculate center point in display coordinates
-      const centerX = SCREEN_WIDTH / 2 - translateX.value / scale.value;
-      const centerY = SCREEN_HEIGHT / 2 - translateY.value / scale.value;
-      
-      // Calculate crop origin in display coordinates
-      const cropX = centerX - visibleWidth / 2;
-      const cropY = centerY - visibleHeight / 2;
-      
-      // Convert to original image coordinates
-      const originX = Math.max(0, cropX * scaleRatio);
-      const originY = Math.max(0, cropY * scaleRatio);
-      const width = Math.min(visibleWidth * scaleRatio, 1); // Assuming imageSize.width is 1 for simplicity
-      const height = Math.min(visibleHeight * scaleRatio, 1); // Assuming imageSize.height is 1 for simplicity
-      
-      const result = await ImageManipulator.manipulateAsync(
-        decodedUri,
-        [
-          {
-            crop: {
-              originX: Math.round(originX),
-              originY: Math.round(originY),
-              width: Math.round(width),
-              height: Math.round(height),
-            },
-          },
-        ],
-        { compress: 1, format: ImageManipulator.SaveFormat.JPEG }
-      );
-      
-      // Navigate to restoration screen with cropped image
-      await handleRestoration(result.uri);
-    } catch (error) {
-      console.error('Error cropping image:', error);
-      Alert.alert('Error', 'Failed to crop the image. Please try again.');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
 
   const handleCancel = () => {
     router.back();
@@ -283,43 +172,6 @@ function CropModalScreen() {
   };
 
 
-  // Pan gesture
-  const pan = Gesture.Pan()
-    .onUpdate((e) => {
-      translateX.value = savedTranslateX.value + e.translationX;
-      translateY.value = savedTranslateY.value + e.translationY;
-    })
-    .onEnd(() => {
-      savedTranslateX.value = translateX.value;
-      savedTranslateY.value = translateY.value;
-    });
-
-  // Pinch gesture
-  const pinch = Gesture.Pinch()
-    .onUpdate((e) => {
-      scale.value = savedScale.value * e.scale;
-    })
-    .onEnd(() => {
-      savedScale.value = scale.value;
-      scale.value = withSpring(Math.max(0.5, Math.min(scale.value, 5)));
-    });
-
-  const composed = Gesture.Simultaneous(pan, pinch);
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        { translateX: translateX.value },
-        { translateY: translateY.value },
-        { scale: scale.value },
-      ],
-    };
-  });
-
-  useEffect(() => {
-    // Debug: log display size and crop box coordinates
-    console.log('DisplaySize:', SCREEN_WIDTH, SCREEN_HEIGHT, 'CropBox:', cropX.value, cropY.value);
-  }, [SCREEN_WIDTH, SCREEN_HEIGHT, cropX.value, cropY.value]);
 
   return (
     <SafeAreaView className="flex-1 bg-black justify-center items-center">
@@ -335,7 +187,7 @@ function CropModalScreen() {
         </TouchableOpacity>
         <View className="flex-1 mx-4">
           <Text className="text-white text-lg font-semibold text-center">
-            {functionType === 'unblur' ? 'Unblur' : functionType === 'colorize' ? 'Colorize' : 'Restore'}
+            {functionType === 'unblur' ? 'Unblur' : functionType === 'colorize' ? 'Colorize' : functionType === 'descratch' ? 'Descratch' : 'Restore'}
           </Text>
           <Text className="text-white/60 text-sm text-center mt-1">
             Use image or crop
@@ -359,25 +211,18 @@ function CropModalScreen() {
           alignItems: 'center',
           backgroundColor: 'black',
         }}>
-          <ImageEditor
-            key={currentImageUri}
-            isVisible={true}
+          <CustomImageCropper
             imageUri={currentImageUri}
-            onEditingComplete={async (cropped) => {
-              console.log('🔍 ImageEditor onEditingComplete called with:', cropped);
-              console.log('🔍 Cropped URI:', cropped?.uri);
-              console.log('🔍 Cropped object keys:', cropped ? Object.keys(cropped) : 'cropped is null/undefined');
+            onEditingComplete={(result) => {
+              console.log('🔍 CustomImageCropper onEditingComplete called with:', result);
+              console.log('🔍 Cropped URI:', result?.uri);
               
               setShowCropTool(false);
               
-              // Check for different possible URI properties
-              const croppedUri = cropped?.uri || cropped?.path || cropped?.url || cropped;
-              console.log('🔍 Final cropped URI to use:', croppedUri);
-              
-              if (croppedUri && typeof croppedUri === 'string') {
+              if (result?.uri) {
                 console.log('✅ Cropped URI exists, updating current image');
                 // Update the current image to the cropped version
-                resetForNewImage(croppedUri);
+                resetForNewImage(result.uri);
                 console.log('✅ Image updated to cropped version, returning to main crop modal view');
               } else {
                 console.log('❌ No valid cropped URI found, keeping original image');
@@ -389,15 +234,10 @@ function CropModalScreen() {
               // User can now see the cropped image and decide when to click "Restore"
             }}
             onEditingCancel={() => {
-              console.log('🔍 ImageEditor onEditingCancel called');
+              console.log('🔍 CustomImageCropper onEditingCancel called');
               setShowCropTool(false);
               // Return to main crop modal view with original image (no changes)
             }}
-            dynamicCrop={true}
-            // If the package supports a confirm/save button text prop, set it here:
-            // confirmButtonText="Crop"
-            // saveButtonText="Crop"
-            // doneButtonText="Crop"
           />
         </View>
       ) : (

@@ -60,6 +60,7 @@ export default function RestorationScreen() {
   // Use the photo restoration hook
   const photoRestoration = usePhotoRestoration();
   const decrementRestorationCount = useRestorationStore((state) => state.decrementRestorationCount);
+  const simpleSlider = useRestorationStore((state) => state.simpleSlider);
   
   // Check if this is a new restoration request
   const isNewRestoration = !!imageUri && !!functionType;
@@ -441,7 +442,8 @@ export default function RestorationScreen() {
           <View className="flex-1 mx-2">
             <Text className={`${isSmallDevice ? 'text-sm' : 'text-base'} font-semibold text-gray-900 text-center`} numberOfLines={1}>
               {restoration?.function_type === 'unblur' ? 'Unblurred Photo' : 
-               restoration?.function_type === 'colorize' ? 'Colorized Photo' : 'Restored Photo'}
+               restoration?.function_type === 'colorize' ? 'Colorized Photo' : 
+               restoration?.function_type === 'descratch' ? 'Descratched Photo' : 'Restored Photo'}
             </Text>
           </View>
           <TouchableOpacity onPress={showDeleteActionSheet} className="p-2 -mr-2">
@@ -480,6 +482,7 @@ export default function RestorationScreen() {
                 beforeUri={originalUri}
                 afterUri={restoredUri || originalUri}
                 style={{ marginVertical: isTinyDevice ? 10 : 20 }}
+                simpleSlider={simpleSlider}
               />
             </View>
 

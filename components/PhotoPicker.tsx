@@ -86,14 +86,20 @@ export function PhotoPicker({ onPhotoSelected, isProcessing = false, functionTyp
             style={{ flex: 1, borderRadius: 12, maxHeight: 384 }}
             resizeMode="contain"
             onError={(error) => {
-              console.error('❌ PhotoPicker RN image loading error:', error);
-              console.error('❌ Failed URI:', selectedImage);
+              if (__DEV__) {
+                console.error('❌ PhotoPicker RN image loading error:', error);
+                console.error('❌ Failed URI:', selectedImage);
+              }
             }}
             onLoad={() => {
-              console.log('✅ PhotoPicker RN image loaded:', selectedImage);
+              if (__DEV__) {
+                console.log('✅ PhotoPicker RN image loaded:', selectedImage);
+              }
             }}
             onLoadStart={() => {
-              console.log('🔄 PhotoPicker RN image loading started:', selectedImage);
+              if (__DEV__) {
+                console.log('🔄 PhotoPicker RN image loading started:', selectedImage);
+              }
             }}
           />
           {!isProcessing && (
@@ -130,7 +136,7 @@ export function PhotoPicker({ onPhotoSelected, isProcessing = false, functionTyp
               className="flex-1 min-h-32 bg-purple-600 rounded-2xl justify-center items-center p-4 shadow-lg active:scale-95"
               onPress={() => pickImage('gallery')}
             >
-              <IconSymbol name="photo" size={32} color="#fff" />
+              <IconSymbol name="photo.stack" size={32} color="#fff" />
               <Text className="text-white text-sm mt-2 font-semibold">From Gallery</Text>
             </TouchableOpacity>
           </View>

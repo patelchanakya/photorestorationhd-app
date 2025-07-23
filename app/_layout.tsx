@@ -16,6 +16,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import Constants from 'expo-constants';
+import { deviceTrackingService } from '@/services/deviceTracking';
 // import { SuperwallProvider } from 'expo-superwall';
 
 // Configure LogBox for production
@@ -173,6 +174,13 @@ export default function RootLayout() {
         setIsPro(false);
       }
     }
+    
+    // Initialize device tracking service
+    deviceTrackingService.initialize().catch((error) => {
+      if (__DEV__) {
+        console.error('❌ Failed to initialize device tracking service:', error);
+      }
+    });
     
     // Add a small delay to ensure other providers are ready
     const timer = setTimeout(() => {

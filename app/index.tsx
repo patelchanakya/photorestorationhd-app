@@ -22,7 +22,8 @@ const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 const MODES = [
   { id: 'restoration', name: 'Restore', icon: 'wand.and.stars' },
   { id: 'unblur', name: 'Unblur', icon: 'eye' },
-  { id: 'colorize', name: 'Colorize', icon: 'paintbrush' }
+  { id: 'colorize', name: 'Colorize', icon: 'paintbrush' },
+  { id: 'descratch', name: 'Descratch', icon: 'bandage' }
 ] as const;
 
 type ModeType = typeof MODES[number]['id'];
@@ -46,7 +47,9 @@ export default function MinimalCameraWithGalleryButton() {
       import('@/services/supabase').then(({ localStorageHelpers }) => {
         localStorageHelpers.cleanupOrphanedRecords().then((cleanedCount) => {
           if (cleanedCount > 0) {
-            console.log(`🧹 Cleaned ${cleanedCount} orphaned records on app start`);
+            if (__DEV__) {
+              console.log(`🧹 Cleaned ${cleanedCount} orphaned records on app start`);
+            }
             refetch({ cancelRefetch: false });
           } else {
             refetch({ cancelRefetch: false });
@@ -71,14 +74,18 @@ export default function MinimalCameraWithGalleryButton() {
   
   // Debug logging for badge and force initial sync
   useEffect(() => {
-    console.log('📊 Badge State:', {
-      restorationCount,
-    });
+    if (__DEV__) {
+      console.log('📊 Badge State:', {
+        restorationCount,
+      });
+    }
   }, [restorationCount]);
   
   // Force sync restoration count on mount
   useEffect(() => {
-    console.log('🚀 App mounted, forcing restoration history sync...');
+    if (__DEV__) {
+      console.log('🚀 App mounted, forcing restoration history sync...');
+    }
     refetch({ cancelRefetch: false });
   }, []);
   
@@ -103,11 +110,10 @@ export default function MinimalCameraWithGalleryButton() {
   useEffect(() => {
     // Defer heavy operations until after interactions complete
     InteractionManager.runAfterInteractions(() => {
-      // Reduced delay for faster loading
-      setTimeout(() => {
+      if (__DEV__) {
         console.log('📱 App is ready, enabling restoration history loading');
-        setIsAppReady(true);
-      }, 100);
+      }
+      setIsAppReady(true);
     });
   }, []);
   
@@ -127,7 +133,9 @@ export default function MinimalCameraWithGalleryButton() {
   useEffect(() => {
     // Only animate if user is NOT pro
     if (isProAnimationActive && !isPro) {
-      console.log('🎨 Starting PRO animation with duration:', proAnimationDuration);
+      if (__DEV__) {
+        console.log('🎨 Starting PRO animation with duration:', proAnimationDuration);
+      }
       proBorderProgress.value = 0;
       proBorderProgress.value = withRepeat(
         withTiming(1, { duration: proAnimationDuration }),
@@ -200,7 +208,9 @@ export default function MinimalCameraWithGalleryButton() {
         router.push(`/crop-modal?imageUri=${encodeURIComponent(photo.uri)}&functionType=${functionType}`);
       }
     } catch (error) {
-      console.error('Failed to take picture:', error);
+      if (__DEV__) {
+        console.error('Failed to take picture:', error);
+      }
     }
   }, [router, functionType, captureButtonScale, flashAnimation]);
 
@@ -218,7 +228,9 @@ export default function MinimalCameraWithGalleryButton() {
         router.push(`/crop-modal?imageUri=${encodeURIComponent(result.assets[0].uri)}&functionType=${functionType}`);
       }
     } catch (error) {
-      console.error('Gallery error:', error);
+      if (__DEV__) {
+        console.error('Gallery error:', error);
+      }
     }
   }, [router, functionType]);
 
@@ -232,8 +244,8 @@ export default function MinimalCameraWithGalleryButton() {
     setShowModeSelector(true);
   }, []);
 
-  // Make a mutable copy of MODES for ModeSelector
-  const mutableModes = MODES.map(mode => ({ ...mode }));
+  // Use translated modes for ModeSelector
+  const mutableModes = modes.map(mode => ({ ...mode }));
 
   // Update handleModeSelect to accept modeId: string
   const handleModeSelect = useCallback((modeId: string) => {
@@ -252,8 +264,8 @@ export default function MinimalCameraWithGalleryButton() {
   }, []);
 
   const getCurrentMode = useCallback(() => {
-    return MODES.find(mode => mode.id === functionType) || MODES[0];
-  }, [functionType]);
+    return modes.find(mode => mode.id === functionType) || modes[0];
+  }, [functionType, modes]);
 
 
   if (!permission || !isAppReady) {
@@ -416,7 +428,9 @@ export default function MinimalCameraWithGalleryButton() {
                     {/* Mask/Inner button */}
                     <AnimatedTouchableOpacity
                       onPress={async () => {
-                        console.log('🎯 Pro button pressed - showing native paywall');
+                        if (__DEV__) {
+                          console.log('🎯 Pro button pressed - showing native paywall');
+                        }
                         
                         // Check if we're in Expo Go
                         const isExpoGo = Constants.appOwnership === 'expo';
@@ -432,7 +446,9 @@ export default function MinimalCameraWithGalleryButton() {
                         // Use native paywall in production builds
                         const success = await presentPaywall();
                         if (success) {
-                          console.log('✅ Pro subscription activated via native paywall!');
+                          if (__DEV__) {
+                            console.log('✅ Pro subscription activated via native paywall!');
+                          }
                           Alert.alert(
                             'Welcome to Pro!',
                             'You now have unlimited photo restorations!',
@@ -572,7 +588,7 @@ export default function MinimalCameraWithGalleryButton() {
                 style={{ position: 'absolute', right: 32, width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' }}
               >
                 <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-                  <IconSymbol name="plus" size={32} color="#fff" />
+                  <IconSymbol name="photo.stack" size={32} color="#fff" />
                 </View>
               </TouchableOpacity>
             </View>

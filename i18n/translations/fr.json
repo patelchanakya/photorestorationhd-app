@@ -52,6 +52,14 @@
     "colorize": "Coloriser",
     "gallery": "Galerie"
   },
+  "modes": {
+    "selectMode": "Sélectionner le Mode",
+    "cancel": "Annuler",
+    "restore": "Restaurer",
+    "unblur": "Déflouter",
+    "colorize": "Coloriser",
+    "descratch": "Supprimer les Rayures"
+  },
   "alerts": {
     "deleteAllPhotos": {
       "title": "Supprimer Toutes les Photos",

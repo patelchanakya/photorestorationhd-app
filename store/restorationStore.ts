@@ -11,28 +11,45 @@ interface RestorationStore {
   galleryViewMode: 'grid' | 'list';
   setGalleryViewMode: (mode: 'grid' | 'list') => void;
   toggleGalleryViewMode: () => void;
+  simpleSlider: boolean;
+  setSimpleSlider: (simple: boolean) => void;
+  toggleSimpleSlider: () => void;
 }
 
 export const useRestorationStore = create<RestorationStore>((set) => ({
   restorationCount: 0,
   setRestorationCount: (count) => {
-    console.log('[Zustand] setRestorationCount called with:', count);
+    if (__DEV__) {
+      console.log('[Zustand] setRestorationCount called with:', count);
+    }
     set({ restorationCount: count });
   },
   incrementRestorationCount: () => set((state) => ({ restorationCount: state.restorationCount + 1 })),
   decrementRestorationCount: () => set((state) => ({ restorationCount: Math.max(0, state.restorationCount - 1) })),
   showFlashButton: true,
   setShowFlashButton: (show) => {
-    console.log('[Zustand] setShowFlashButton called with:', show);
+    if (__DEV__) {
+      console.log('[Zustand] setShowFlashButton called with:', show);
+    }
     set({ showFlashButton: show });
   },
   toggleFlashButton: () => set((state) => ({ showFlashButton: !state.showFlashButton })),
   galleryViewMode: 'list',
   setGalleryViewMode: (mode) => {
-    console.log('[Zustand] setGalleryViewMode called with:', mode);
+    if (__DEV__) {
+      console.log('[Zustand] setGalleryViewMode called with:', mode);
+    }
     set({ galleryViewMode: mode });
   },
   toggleGalleryViewMode: () => set((state) => ({ 
     galleryViewMode: state.galleryViewMode === 'list' ? 'grid' : 'list' 
   })),
+  simpleSlider: false,
+  setSimpleSlider: (simple) => {
+    if (__DEV__) {
+      console.log('[Zustand] setSimpleSlider called with:', simple);
+    }
+    set({ simpleSlider: simple });
+  },
+  toggleSimpleSlider: () => set((state) => ({ simpleSlider: !state.simpleSlider })),
 })); 

@@ -26,10 +26,14 @@ export const localStorageHelpers = {
         }
       }
       
-      console.log(`🧹 Cleaned up ${cleanedCount} orphaned restoration records`);
+      if (__DEV__) {
+        console.log(`🧹 Cleaned up ${cleanedCount} orphaned restoration records`);
+      }
       return cleanedCount;
     } catch (error) {
-      console.error('❌ Failed to cleanup orphaned records:', error);
+      if (__DEV__) {
+        console.error('❌ Failed to cleanup orphaned records:', error);
+      }
       return 0;
     }
   },
@@ -37,9 +41,13 @@ export const localStorageHelpers = {
     try {
       const key = `restoration_${restoration.id}`;
       await AsyncStorage.setItem(key, JSON.stringify(restoration));
-      console.log('💾 Saved restoration to storage:', restoration.id);
+      if (__DEV__) {
+        console.log('💾 Saved restoration to storage:', restoration.id);
+      }
     } catch (error) {
-      console.error('❌ Failed to save restoration to storage:', error);
+      if (__DEV__) {
+        console.error('❌ Failed to save restoration to storage:', error);
+      }
       throw error;
     }
   },
@@ -51,12 +59,16 @@ export const localStorageHelpers = {
       
       if (data) {
         const restoration = JSON.parse(data);
-        console.log('📱 Retrieved restoration from storage:', id);
+        if (__DEV__) {
+          console.log('📱 Retrieved restoration from storage:', id);
+        }
         return restoration;
       }
       return null;
     } catch (error) {
-      console.error('❌ Failed to get restoration from storage:', error);
+      if (__DEV__) {
+        console.error('❌ Failed to get restoration from storage:', error);
+      }
       return null;
     }
   },
@@ -67,12 +79,16 @@ export const localStorageHelpers = {
       if (existing) {
         const updated = { ...existing, ...updates };
         await this.saveRestoration(updated);
-        console.log('✅ Updated restoration in local storage:', id);
+        if (__DEV__) {
+          console.log('✅ Updated restoration in local storage:', id);
+        }
         return updated;
       }
       return null;
     } catch (error) {
-      console.error('❌ Failed to update restoration in local storage:', error);
+      if (__DEV__) {
+        console.error('❌ Failed to update restoration in local storage:', error);
+      }
       return null;
     }
   },
@@ -94,14 +110,20 @@ export const localStorageHelpers = {
             restorations.push(restoration);
           }
         } catch (error) {
-          console.warn('Failed to parse restoration:', key, error);
+          if (__DEV__) {
+            console.warn('Failed to parse restoration:', key, error);
+          }
         }
       }
       
-      console.log('📱 Retrieved', restorations.length, 'local restorations');
+      if (__DEV__) {
+        console.log('📱 Retrieved', restorations.length, 'local restorations');
+      }
       return restorations;
     } catch (error) {
-      console.error('❌ Failed to get all local restorations:', error);
+      if (__DEV__) {
+        console.error('❌ Failed to get all local restorations:', error);
+      }
       return [];
     }
   },
@@ -110,9 +132,13 @@ export const localStorageHelpers = {
     try {
       const key = `restoration_${id}`;
       await AsyncStorage.removeItem(key);
-      console.log('🗑️ Deleted restoration from storage:', id);
+      if (__DEV__) {
+        console.log('🗑️ Deleted restoration from storage:', id);
+      }
     } catch (error) {
-      console.error('❌ Failed to delete restoration from storage:', error);
+      if (__DEV__) {
+        console.error('❌ Failed to delete restoration from storage:', error);
+      }
       throw error;
     }
   },
@@ -126,10 +152,14 @@ export const localStorageHelpers = {
         await AsyncStorage.multiRemove(restorationKeys);
       }
       
-      console.log(`🗑️ Deleted ${restorationKeys.length} restoration records from local storage`);
+      if (__DEV__) {
+        console.log(`🗑️ Deleted ${restorationKeys.length} restoration records from local storage`);
+      }
       return { deletedCount: restorationKeys.length };
     } catch (error) {
-      console.error('❌ Failed to delete all restorations from local storage:', error);
+      if (__DEV__) {
+        console.error('❌ Failed to delete all restorations from local storage:', error);
+      }
       return { deletedCount: 0 };
     }
   },
@@ -139,7 +169,9 @@ export const localStorageHelpers = {
 export const restorationService = {
   // Create a new restoration record
   async create(data: Partial<Restoration>): Promise<Restoration> {
-    console.log('💾 Creating restoration record locally:', data);
+    if (__DEV__) {
+      console.log('💾 Creating restoration record locally:', data);
+    }
     
     // Always create with a local ID
     const restoration = {
@@ -159,18 +191,24 @@ export const restorationService = {
 
     // Save to local storage
     await localStorageHelpers.saveRestoration(restoration);
-    console.log('✅ Restoration saved locally:', restoration.id);
+    if (__DEV__) {
+      console.log('✅ Restoration saved locally:', restoration.id);
+    }
     
     return restoration;
   },
 
   // Update restoration record
   async update(id: string, data: Partial<Restoration>): Promise<Restoration> {
-    console.log('💾 Updating restoration:', id, data);
+    if (__DEV__) {
+      console.log('💾 Updating restoration:', id, data);
+    }
     
     const updatedRestoration = await localStorageHelpers.updateRestoration(id, data);
     if (updatedRestoration) {
-      console.log('✅ Restoration updated locally:', id);
+      if (__DEV__) {
+        console.log('✅ Restoration updated locally:', id);
+      }
       return updatedRestoration;
     }
     
@@ -180,13 +218,19 @@ export const restorationService = {
 
   // Get restoration by ID
   async getById(id: string): Promise<Restoration | null> {
-    console.log('📱 Getting restoration by ID:', id);
+    if (__DEV__) {
+      console.log('📱 Getting restoration by ID:', id);
+    }
     const restoration = await localStorageHelpers.getRestoration(id);
     
     if (restoration) {
-      console.log('✅ Restoration found:', id);
+      if (__DEV__) {
+        console.log('✅ Restoration found:', id);
+      }
     } else {
-      console.log('⚠️ Restoration not found:', id);
+      if (__DEV__) {
+        console.log('⚠️ Restoration not found:', id);
+      }
     }
     
     return restoration;
@@ -194,7 +238,9 @@ export const restorationService = {
 
   // Get all restorations for a user (now local only)
   async getUserRestorations(userId: string): Promise<Restoration[]> {
-    console.log('📱 Getting all restorations from local storage');
+    if (__DEV__) {
+      console.log('📱 Getting all restorations from local storage');
+    }
     
     try {
       const restorations = await localStorageHelpers.getAllLocalRestorations();
@@ -204,19 +250,27 @@ export const restorationService = {
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
       
-      console.log(`✅ Found ${sorted.length} restorations`);
+      if (__DEV__) {
+        console.log(`✅ Found ${sorted.length} restorations`);
+      }
       return sorted;
     } catch (error) {
-      console.error('❌ Failed to get restorations:', error);
+      if (__DEV__) {
+        console.error('❌ Failed to get restorations:', error);
+      }
       return [];
     }
   },
 
   // Delete a restoration
   async delete(id: string): Promise<void> {
-    console.log('🗑️ Deleting restoration:', id);
+    if (__DEV__) {
+      console.log('🗑️ Deleting restoration:', id);
+    }
     await localStorageHelpers.deleteRestoration(id);
-    console.log('✅ Restoration deleted');
+    if (__DEV__) {
+      console.log('✅ Restoration deleted');
+    }
   },
 
   // Get restoration statistics for a user

@@ -11,9 +11,10 @@ interface BeforeAfterSliderProps {
   beforeUri: string;
   afterUri: string;
   style?: any;
+  simpleSlider?: boolean;
 }
 
-export function BeforeAfterSlider({ beforeUri, afterUri, style }: BeforeAfterSliderProps) {
+export function BeforeAfterSlider({ beforeUri, afterUri, style, simpleSlider = false }: BeforeAfterSliderProps) {
   const [containerWidth, setContainerWidth] = useState(300);
   const sliderPosition = useSharedValue(0.5);
   const [dragging, setDragging] = useState(false);
@@ -78,7 +79,7 @@ export function BeforeAfterSlider({ beforeUri, afterUri, style }: BeforeAfterSli
           style={{ 
             height: SCREEN_WIDTH < 380 ? 280 : 320, 
             position: 'relative', 
-            backgroundColor: '#f5f5f5',
+            backgroundColor: '#ffffff',
             maxHeight: '100%'
           }}
           onLayout={(event) => {
@@ -131,43 +132,63 @@ export function BeforeAfterSlider({ beforeUri, afterUri, style }: BeforeAfterSli
               {
                 position: 'absolute',
                 top: 0,
-                width: 2,
+                width: 1,
                 height: '100%',
-                backgroundColor: '#aaa',
+                backgroundColor: '#f97316',
                 marginLeft: -1,
                 borderRadius: 1,
               },
               lineStyle,
             ]}
           />
-          {/* Single slider handle */}
-          <Animated.View
-            style={[
-              {
-                position: 'absolute',
-                top: '50%',
-                width: isSmallDevice ? 28 : 32,
-                height: isSmallDevice ? 28 : 32,
-                backgroundColor: 'transparent',
-                borderRadius: isSmallDevice ? 14 : 16,
-                marginTop: isSmallDevice ? -14 : -16,
-                justifyContent: 'center',
-                alignItems: 'center',
-              },
-              handleStyle,
-            ]}
-          >
-            <View style={{ 
-              flexDirection: 'row', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              width: isSmallDevice ? 28 : 32, 
-              height: isSmallDevice ? 28 : 32 
-            }}>
-              <IconSymbol name="chevron.left" size={isSmallDevice ? 14 : 16} color="#fff" style={{ marginRight: 0 }} />
-              <IconSymbol name="chevron.right" size={isSmallDevice ? 14 : 16} color="#fff" style={{ marginLeft: 0 }} />
-            </View>
-          </Animated.View>
+          {/* Small circle on line - only show if not simple slider */}
+          {!simpleSlider && (
+            <Animated.View
+              style={[
+                {
+                  position: 'absolute',
+                  top: '50%',
+                  width: 6,
+                  height: 6,
+                  backgroundColor: '#f97316',
+                  borderRadius: 3,
+                  marginTop: -3,
+                  marginLeft: -3,
+                },
+                lineStyle,
+              ]}
+            />
+          )}
+          {/* Single slider handle - only show arrows if not simple slider */}
+          {!simpleSlider && (
+            <Animated.View
+              style={[
+                {
+                  position: 'absolute',
+                  top: '50%',
+                  width: isSmallDevice ? 28 : 32,
+                  height: isSmallDevice ? 28 : 32,
+                  backgroundColor: 'transparent',
+                  borderRadius: isSmallDevice ? 14 : 16,
+                  marginTop: isSmallDevice ? -14 : -16,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                },
+                handleStyle,
+              ]}
+            >
+              <View style={{ 
+                flexDirection: 'row', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                width: isSmallDevice ? 18 : 20, 
+                height: isSmallDevice ? 18 : 20 
+              }}>
+                <IconSymbol name="chevron.left" size={isSmallDevice ? 11 : 12} color="#f97316" style={{ marginRight: -1 }} />
+                <IconSymbol name="chevron.right" size={isSmallDevice ? 11 : 12} color="#f97316" style={{ marginLeft: -1 }} />
+              </View>
+            </Animated.View>
+          )}
         </Animated.View>
       </PanGestureHandler>
       

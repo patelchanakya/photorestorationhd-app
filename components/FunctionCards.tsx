@@ -17,11 +17,13 @@ interface FunctionCard {
 interface FunctionCardsProps {
   onRestorationPress: () => void;
   onUnblurPress: () => void;
+  onColorizePress: () => void;
+  onDescratchPress: () => void;
 }
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
-export function FunctionCards({ onRestorationPress, onUnblurPress }: FunctionCardsProps) {
+export function FunctionCards({ onRestorationPress, onUnblurPress, onColorizePress, onDescratchPress }: FunctionCardsProps) {
   const cards: FunctionCard[] = [
     {
       id: 'restoration',
@@ -38,6 +40,22 @@ export function FunctionCards({ onRestorationPress, onUnblurPress }: FunctionCar
       icon: 'photo.fill',
       gradient: ['#8b5cf6', '#a78bfa'],
       onPress: onUnblurPress,
+    },
+    {
+      id: 'colorize',
+      title: 'Colorize',
+      description: 'Add color to B&W photos',
+      icon: 'paintbrush.fill',
+      gradient: ['#10b981', '#34d399'],
+      onPress: onColorizePress,
+    },
+    {
+      id: 'descratch',
+      title: 'Descratch',
+      description: 'Remove scratches & damage',
+      icon: 'bandage.fill',
+      gradient: ['#ef4444', '#f87171'],
+      onPress: onDescratchPress,
     },
   ];
 

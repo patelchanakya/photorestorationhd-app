@@ -5,7 +5,7 @@ import { localStorageHelpers } from '@/services/supabase';
 import { deviceTrackingService } from '@/services/deviceTracking';
 import { useRestorationStore } from '@/store/restorationStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
-import { restorePurchasesDetailed } from '@/services/revenuecat';
+import { restorePurchasesDetailed, presentPaywall } from '@/services/revenuecat';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
@@ -17,6 +17,7 @@ import * as WebBrowser from 'expo-web-browser';
 import React, { useState, useEffect } from 'react';
 import { useTranslation, getSupportedLanguages } from '@/i18n';
 import { LanguageSelectionModal } from '@/components/LanguageSelectionModal';
+import Constants from 'expo-constants';
 import {
   ActivityIndicator,
   Alert,
@@ -40,8 +41,8 @@ const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpaci
 export default function SettingsModalScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { showFlashButton, toggleFlashButton, setRestorationCount, galleryViewMode, setGalleryViewMode } = useRestorationStore();
-  const { isPro, getEffectiveProStatus, freeRestorationsUsed, freeRestorationsLimit, expirationDate } = useSubscriptionStore();
+  const { showFlashButton, toggleFlashButton, setRestorationCount, galleryViewMode, setGalleryViewMode, simpleSlider, setSimpleSlider } = useRestorationStore();
+  const { isPro, getEffectiveProStatus, freeRestorationsUsed, freeRestorationsLimit, expirationDate, isDeveloperMode, toggleDeveloperMode } = useSubscriptionStore();
   
   // Local loading states
   const [isRestoring, setIsRestoring] = useState(false);
@@ -232,21 +233,75 @@ export default function SettingsModalScreen() {
     }
   };
 
+  // Handle paywall presentation
+  const handleShowPaywall = async () => {
+    try {
+      if (__DEV__) {
+        console.log('🎯 Free restoration clicked - showing native paywall');
+      }
+      
+      // Check if we're in Expo Go
+      const isExpoGo = Constants.appOwnership === 'expo';
+      if (isExpoGo) {
+        Alert.alert(
+          'Demo Mode',
+          'Purchases are not available in Expo Go. Build a development client to test real purchases.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+      
+      // Use native paywall in production builds
+      const success = await presentPaywall();
+      if (success) {
+        if (__DEV__) {
+          console.log('✅ Pro subscription activated via native paywall!');
+        }
+        Alert.alert(
+          'Welcome to Pro!',
+          'You now have unlimited photo restorations!',
+          [{ text: 'Awesome!' }]
+        );
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.error('❌ Failed to present paywall:', error);
+      }
+      Alert.alert(
+        'Error',
+        'Unable to show subscription options. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
   // Format subscription status
   const getSubscriptionStatus = () => {
-    if (isPro) {
-      if (expirationDate) {
-        const expDate = new Date(expirationDate);
-        const isExpired = expDate < new Date();
-        
-        if (isExpired) {
-          return 'Expired';
-        } else {
-          return `Active until ${expDate.toLocaleDateString()}`;
-        }
+    const effectiveProStatus = getEffectiveProStatus();
+    
+    if (effectiveProStatus) {
+      // Handle developer mode
+      if (isDeveloperMode && !isPro) {
+        return 'Developer Mode (Testing PRO features)';
       }
-      return 'Active';
+      
+      // Handle actual pro subscription
+      if (isPro) {
+        if (expirationDate) {
+          const expDate = new Date(expirationDate);
+          const isExpired = expDate < new Date();
+          
+          if (isExpired) {
+            return 'Expired';
+          } else {
+            return `Active until ${expDate.toLocaleDateString()}`;
+          }
+        }
+        return 'Active';
+      }
     }
+    
+    // This should only be shown for free users now
     const status = `Free (${freeRestorationsUsed}/${freeRestorationsLimit} used)`;
     if (timeUntilNext === 'Available now') {
       return status;
@@ -556,6 +611,196 @@ Best regards`;
         >
           <View style={{ paddingVertical: 20 }}>
             
+            {/* Subscription Section */}
+            <View style={{ marginBottom: 32 }}>
+              <Text style={{ 
+                color: 'rgba(249,115,22,1)', 
+                fontSize: 16, 
+                fontWeight: '600', 
+                marginBottom: 16 
+              }}>
+                {t('settings.subscription')}
+              </Text>
+              
+              <View style={{ 
+                backgroundColor: 'rgba(255,255,255,0.05)', 
+                borderRadius: 12, 
+                overflow: 'hidden' 
+              }}>
+                
+                {/* Free Restoration Status */}
+                {!getEffectiveProStatus() && (
+                  <TouchableOpacity
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      padding: 16,
+                      borderBottomWidth: 1,
+                      borderBottomColor: 'rgba(255,255,255,0.1)'
+                    }}
+                    onPress={handleShowPaywall}
+                  >
+                    <View style={{
+                      width: 36,
+                      height: 36,
+                      backgroundColor: freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' 
+                        ? 'rgba(239,68,68,0.2)' 
+                        : 'rgba(34,197,94,0.2)',
+                      borderRadius: 18,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: 12
+                    }}>
+                      <IconSymbol 
+                        name={freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' 
+                          ? "clock" 
+                          : "gift"} 
+                        size={18} 
+                        color={freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' 
+                          ? "#ef4444" 
+                          : "#22c55e"} 
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
+                        {t('settings.freeRestorations')}
+                      </Text>
+                      <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
+                        1 every 48 hours • {timeUntilNext === 'Available now' ? t('language.availableNow') : t('language.nextIn', { time: timeUntilNext })}
+                      </Text>
+                    </View>
+                    <View style={{
+                      backgroundColor: freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' 
+                        ? 'rgba(239,68,68,0.2)' 
+                        : 'rgba(34,197,94,0.2)',
+                      borderRadius: 8,
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                      marginRight: 8
+                    }}>
+                      <Text style={{
+                        color: freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' 
+                          ? '#ef4444' 
+                          : '#22c55e',
+                        fontSize: 12,
+                        fontWeight: '600'
+                      }}>
+                        {freeRestorationsUsed}/{freeRestorationsLimit}
+                      </Text>
+                    </View>
+                    <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
+                  </TouchableOpacity>
+                )}
+
+                {/* Subscription Status - Only show for Pro users */}
+                {getEffectiveProStatus() && (
+                  <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    padding: 16,
+                    borderBottomWidth: 1,
+                    borderBottomColor: 'rgba(255,255,255,0.1)'
+                  }}>
+                    <View style={{
+                      width: 36,
+                      height: 36,
+                      backgroundColor: 'rgba(34,197,94,0.2)',
+                      borderRadius: 18,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: 12
+                    }}>
+                      <IconSymbol 
+                        name="crown.fill"
+                        size={18} 
+                        color="#22c55e"
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
+                        {t('settings.proSubscription')}
+                      </Text>
+                      <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
+                        {getSubscriptionStatus()}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                {/* Restore Purchases */}
+                <TouchableOpacity 
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    padding: 16,
+                    borderBottomWidth: isPro ? 1 : 0,
+                    borderBottomColor: 'rgba(255,255,255,0.1)',
+                    opacity: isRestoring ? 0.7 : 1
+                  }}
+                  onPress={handleRestorePurchases}
+                  disabled={isRestoring}
+                >
+                  <View style={{
+                    width: 36,
+                    height: 36,
+                    backgroundColor: 'rgba(249,115,22,0.2)',
+                    borderRadius: 18,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: 12
+                  }}>
+                    {isRestoring ? (
+                      <ActivityIndicator size="small" color="#f97316" />
+                    ) : (
+                      <IconSymbol name="arrow.clockwise" size={18} color="#f97316" />
+                    )}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
+                      {isRestoring ? t('common.loading') : t('settings.restorePurchases')}
+                    </Text>
+                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
+                      {isRestoring ? t('common.loading') : t('settings.restorePurchasesDescription')}
+                    </Text>
+                  </View>
+                  <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
+                </TouchableOpacity>
+
+                {/* Manage Subscription */}
+                {isPro && (
+                  <TouchableOpacity 
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      padding: 16
+                    }}
+                    onPress={handleManageSubscription}
+                  >
+                    <View style={{
+                      width: 36,
+                      height: 36,
+                      backgroundColor: 'rgba(249,115,22,0.2)',
+                      borderRadius: 18,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: 12
+                    }}>
+                      <IconSymbol name="gear" size={18} color="#f97316" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
+                        {t('settings.manageSubscription')}
+                      </Text>
+                      <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
+                        {t('settings.manageSubscriptionDescription')}
+                      </Text>
+                    </View>
+                    <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+            
             {/* Connect & Support Section */}
             <View style={{ marginBottom: 32 }}>
               <Text style={{ 
@@ -835,6 +1080,8 @@ Best regards`;
                     flexDirection: 'row',
                     alignItems: 'center',
                     padding: 16,
+                    borderBottomWidth: __DEV__ ? 1 : 0,
+                    borderBottomColor: 'rgba(255,255,255,0.1)'
                   }}>
                   <View style={{
                     width: 36,
@@ -877,72 +1124,17 @@ Best regards`;
                     }} />
                   </View>
                 </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Subscription Section */}
-            <View style={{ marginBottom: 32 }}>
-              <Text style={{ 
-                color: 'rgba(249,115,22,1)', 
-                fontSize: 16, 
-                fontWeight: '600', 
-                marginBottom: 16 
-              }}>
-                {t('settings.subscription')}
-              </Text>
-              
-              <View style={{ 
-                backgroundColor: 'rgba(255,255,255,0.05)', 
-                borderRadius: 12, 
-                overflow: 'hidden' 
-              }}>
                 
-                {/* Subscription Status */}
-                <View style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: 'rgba(255,255,255,0.1)'
-                }}>
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: isPro ? 'rgba(34,197,94,0.2)' : 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
-                    <IconSymbol 
-                      name={isPro ? "crown.fill" : "person.crop.circle"} 
-                      size={18} 
-                      color={isPro ? "#22c55e" : "#f97316"} 
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      {isPro ? t('settings.proSubscription') : t('settings.freePlan')}
-                    </Text>
-                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                      {getSubscriptionStatus()}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Restore Purchases */}
+                {/* Simple Slider Toggle */}
                 <TouchableOpacity 
+                  onPress={() => setSimpleSlider(!simpleSlider)}
                   style={{
                     flexDirection: 'row',
                     alignItems: 'center',
                     padding: 16,
-                    borderBottomWidth: 1,
-                    borderBottomColor: 'rgba(255,255,255,0.1)',
-                    opacity: isRestoring ? 0.7 : 1
-                  }}
-                  onPress={handleRestorePurchases}
-                  disabled={isRestoring}
-                >
+                    borderBottomWidth: __DEV__ ? 1 : 0,
+                    borderBottomColor: 'rgba(255,255,255,0.1)'
+                  }}>
                   <View style={{
                     width: 36,
                     height: 36,
@@ -952,116 +1144,93 @@ Best regards`;
                     justifyContent: 'center',
                     marginRight: 12
                   }}>
-                    {isRestoring ? (
-                      <ActivityIndicator size="small" color="#f97316" />
-                    ) : (
-                      <IconSymbol name="arrow.clockwise" size={18} color="#f97316" />
-                    )}
+                    <IconSymbol 
+                      name="slider.horizontal.3" 
+                      size={18} 
+                      color="#f97316" 
+                    />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      {isRestoring ? t('common.loading') : t('settings.restorePurchases')}
+                      Simple Slider
                     </Text>
                     <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                      {isRestoring ? t('common.loading') : t('settings.restorePurchasesDescription')}
+                      Clean line slider without arrows
                     </Text>
                   </View>
-                  <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
-                </TouchableOpacity>
-
-                {/* Free Restoration Status */}
-                {!isPro && (
                   <View style={{
-                    flexDirection: 'row',
+                    width: 44,
+                    height: 24,
+                    backgroundColor: simpleSlider ? '#f97316' : 'rgba(255,255,255,0.2)',
+                    borderRadius: 12,
                     alignItems: 'center',
-                    padding: 16,
-                    borderBottomWidth: 1,
-                    borderBottomColor: 'rgba(255,255,255,0.1)'
+                    justifyContent: simpleSlider ? 'flex-end' : 'flex-start',
+                    flexDirection: 'row',
+                    paddingHorizontal: 2
                   }}>
+                    <View style={{
+                      width: 20,
+                      height: 20,
+                      backgroundColor: 'white',
+                      borderRadius: 10
+                    }} />
+                  </View>
+                </TouchableOpacity>
+                
+                {/* Developer Mode Toggle - Only show in development */}
+                {__DEV__ && (
+                  <TouchableOpacity 
+                    onPress={toggleDeveloperMode}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      padding: 16,
+                    }}>
                     <View style={{
                       width: 36,
                       height: 36,
-                      backgroundColor: freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' 
-                        ? 'rgba(239,68,68,0.2)' 
-                        : 'rgba(34,197,94,0.2)',
+                      backgroundColor: 'rgba(139,92,246,0.2)',
                       borderRadius: 18,
                       alignItems: 'center',
                       justifyContent: 'center',
                       marginRight: 12
                     }}>
                       <IconSymbol 
-                        name={freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' 
-                          ? "clock" 
-                          : "gift"} 
+                        name="wrench.and.screwdriver" 
                         size={18} 
-                        color={freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' 
-                          ? "#ef4444" 
-                          : "#22c55e"} 
+                        color="#8b5cf6" 
                       />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                        {t('settings.freeRestorations')}
+                        Developer Mode
                       </Text>
                       <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                        1 every 48 hours • {timeUntilNext === 'Available now' ? t('language.availableNow') : t('language.nextIn', { time: timeUntilNext })}
+                        Enables PRO features for testing
                       </Text>
                     </View>
                     <View style={{
-                      backgroundColor: freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' 
-                        ? 'rgba(239,68,68,0.2)' 
-                        : 'rgba(34,197,94,0.2)',
-                      borderRadius: 8,
-                      paddingHorizontal: 8,
-                      paddingVertical: 4
-                    }}>
-                      <Text style={{
-                        color: freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' 
-                          ? '#ef4444' 
-                          : '#22c55e',
-                        fontSize: 12,
-                        fontWeight: '600'
-                      }}>
-                        {freeRestorationsUsed}/{freeRestorationsLimit}
-                      </Text>
-                    </View>
-                  </View>
-                )}
-
-                {/* Manage Subscription */}
-                {isPro && (
-                  <TouchableOpacity 
-                    style={{
+                      width: 44,
+                      height: 24,
+                      backgroundColor: isDeveloperMode ? '#8b5cf6' : 'rgba(255,255,255,0.2)',
+                      borderRadius: 12,
+                      alignItems: 'center',
+                      justifyContent: isDeveloperMode ? 'flex-end' : 'flex-start',
                       flexDirection: 'row',
-                      alignItems: 'center',
-                      padding: 16
-                    }}
-                    onPress={handleManageSubscription}
-                  >
-                    <View style={{
-                      width: 36,
-                      height: 36,
-                      backgroundColor: 'rgba(249,115,22,0.2)',
-                      borderRadius: 18,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: 12
+                      paddingHorizontal: 2
                     }}>
-                      <IconSymbol name="gear" size={18} color="#f97316" />
+                      <View style={{
+                        width: 20,
+                        height: 20,
+                        backgroundColor: 'white',
+                        borderRadius: 10
+                      }} />
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                        {t('settings.manageSubscription')}
-                      </Text>
-                      <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                        {t('settings.manageSubscriptionDescription')}
-                      </Text>
-                    </View>
-                    <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                   </TouchableOpacity>
                 )}
               </View>
             </View>
+
 
             {/* Storage Section */}
             <View style={{ marginBottom: 32 }}>

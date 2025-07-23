@@ -43,22 +43,30 @@ export function usePhotoRestoration() {
 
         // Call Replicate API
         const restoredUrl = await restorePhoto(imageUri);
-        console.log('🎉 Photo restored successfully, URL:', restoredUrl);
+        if (__DEV__) {
+          console.log('🎉 Photo restored successfully, URL:', restoredUrl);
+        }
 
         // Save restored photo locally
         const restoredFilename = await photoStorage.saveRestored(restoredUrl, originalFilename);
-        console.log('💾 Restored photo saved locally:', restoredFilename);
+        if (__DEV__) {
+          console.log('💾 Restored photo saved locally:', restoredFilename);
+        }
 
         // Get the URI for the restored photo
         const restoredUri = photoStorage.getPhotoUri('restored', restoredFilename);
-        console.log('📍 Restored photo URI:', restoredUri);
+        if (__DEV__) {
+          console.log('📍 Restored photo URI:', restoredUri);
+        }
 
         // Create thumbnails
         const thumbnailFilename = await photoStorage.createThumbnail(
           restoredUri,
           'restored'
         );
-        console.log('🖼️ Thumbnail created:', thumbnailFilename);
+        if (__DEV__) {
+          console.log('🖼️ Thumbnail created:', thumbnailFilename);
+        }
 
         // Update restoration record
         await restorationService.update(restoration.id, {
@@ -79,7 +87,9 @@ export function usePhotoRestoration() {
 
         return completedData;
       } catch (error) {
+        if (__DEV__) {
         console.error('Photo restoration failed:', error);
+      }
         throw error;
       }
     },
@@ -93,7 +103,9 @@ export function usePhotoRestoration() {
       incrementRestorationCount();
     },
     onError: (error) => {
-      console.error('Photo restoration failed:', error);
+      if (__DEV__) {
+        console.error('Photo restoration failed:', error);
+      }
     },
   });
 }

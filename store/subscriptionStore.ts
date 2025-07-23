@@ -35,24 +35,32 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       appUserId: null,
 
       setIsPro: (isPro) => {
-        console.log('🔄 Subscription store: Setting isPro to', isPro);
+        if (__DEV__) {
+          console.log('🔄 Subscription store: Setting isPro to', isPro);
+        }
         set({ isPro });
       },
 
       setExpirationDate: (date) => {
-        console.log('📅 Subscription store: Setting expiration date to', date);
+        if (__DEV__) {
+          console.log('📅 Subscription store: Setting expiration date to', date);
+        }
         set({ expirationDate: date });
       },
 
       setAppUserId: (userId) => {
-        console.log('👤 Subscription store: Setting app user ID to', userId);
+        if (__DEV__) {
+          console.log('👤 Subscription store: Setting app user ID to', userId);
+        }
         set({ appUserId: userId });
       },
 
       toggleDeveloperMode: () => {
         const state = get();
         const newDeveloperMode = !state.isDeveloperMode;
-        console.log('🧪 Developer mode toggled:', newDeveloperMode);
+        if (__DEV__) {
+          console.log('🧪 Developer mode toggled:', newDeveloperMode);
+        }
         set({ isDeveloperMode: newDeveloperMode });
       },
 
