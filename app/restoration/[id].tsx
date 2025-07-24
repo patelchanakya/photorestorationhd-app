@@ -569,6 +569,15 @@ export default function RestorationScreen() {
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     keyExtractor={(item) => item.id}
+                    removeClippedSubviews={true}
+                    initialNumToRender={5}
+                    maxToRenderPerBatch={3}
+                    windowSize={5}
+                    getItemLayout={(data, index) => ({
+                      length: isSmallDevice ? 58 : 70,
+                      offset: (isSmallDevice ? 58 : 70) * index,
+                      index,
+                    })}
                     renderItem={({ item }) => {
                       const thumbnailSize = isSmallDevice ? 50 : 60;
                       return (

@@ -249,6 +249,10 @@ export default function GalleryModalScreen() {
               numColumns={NUM_COLUMNS}
               keyExtractor={item => item.id}
               columnWrapperStyle={NUM_COLUMNS > 1 ? styles.gridRow : undefined}
+              removeClippedSubviews={true}
+              maxToRenderPerBatch={10}
+              windowSize={10}
+              initialNumToRender={12}
               renderItem={({ item, index }) => {
                 let thumbnailUri = undefined;
                 try {

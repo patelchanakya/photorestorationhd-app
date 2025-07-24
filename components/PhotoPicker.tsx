@@ -18,7 +18,7 @@ interface PhotoPickerProps {
   functionType?: string;
 }
 
-export function PhotoPicker({ onPhotoSelected, isProcessing = false, functionType = 'restoration' }: PhotoPickerProps) {
+const PhotoPickerComponent = ({ onPhotoSelected, isProcessing = false, functionType = 'restoration' }: PhotoPickerProps) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const router = useRouter();
 
@@ -144,4 +144,6 @@ export function PhotoPicker({ onPhotoSelected, isProcessing = false, functionTyp
       )}
     </View>
   );
-}
+};
+
+export const PhotoPicker = React.memo(PhotoPickerComponent);

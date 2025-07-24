@@ -14,7 +14,7 @@ interface BeforeAfterSliderProps {
   simpleSlider?: boolean;
 }
 
-export function BeforeAfterSlider({ beforeUri, afterUri, style, simpleSlider = false }: BeforeAfterSliderProps) {
+const BeforeAfterSliderComponent = ({ beforeUri, afterUri, style, simpleSlider = false }: BeforeAfterSliderProps) => {
   const [containerWidth, setContainerWidth] = useState(300);
   const sliderPosition = useSharedValue(0.5);
   const [dragging, setDragging] = useState(false);
@@ -194,4 +194,6 @@ export function BeforeAfterSlider({ beforeUri, afterUri, style, simpleSlider = f
       
     </View>
   );
-}
+};
+
+export const BeforeAfterSlider = React.memo(BeforeAfterSliderComponent);

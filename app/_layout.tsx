@@ -28,11 +28,69 @@ if (!__DEV__) {
   console.disableYellowBox = true;
   
   // Override console methods to prevent logs in production
+  const originalConsoleError = console.error;
   console.log = () => {};
   console.warn = () => {};
-  console.error = () => {};
+  console.error = (...args) => {
+    // Filter out specific errors we want to suppress
+    if (args.some(arg => 
+      typeof arg === 'string' && 
+      (arg.includes('RevenueCat') || 
+       arg.includes('BackendError') || 
+       arg.includes('😿') ||
+       arg.includes('SDK Configuration is not valid'))
+    )) {
+      return; // Suppress these specific errors
+    }
+    // For other errors, suppress them too in production
+  };
   console.info = () => {};
   console.debug = () => {};
+}
+
+// Also ignore specific warnings in development
+if (__DEV__) {
+  LogBox.ignoreLogs([
+    'RevenueCat',
+    'BackendError',
+    'SDK Configuration is not valid',
+    'MISSING_METADATA',
+    'Your products are configured in RevenueCat',
+    'The offerings',
+    'Product Issues',
+    'Offering Issues',
+    '⚠️',
+    '😿',
+  ]);
+  
+  // Override console methods for RevenueCat in dev too
+  const originalWarn = console.warn;
+  const originalError = console.error;
+  
+  console.warn = (...args) => {
+    if (args.some(arg => 
+      typeof arg === 'string' && 
+      (arg.includes('RevenueCat') || 
+       arg.includes('MISSING_METADATA') ||
+       arg.includes('App Store Connect'))
+    )) {
+      return;
+    }
+    originalWarn.apply(console, args);
+  };
+  
+  console.error = (...args) => {
+    if (args.some(arg => 
+      typeof arg === 'string' && 
+      (arg.includes('RevenueCat') || 
+       arg.includes('BackendError') || 
+       arg.includes('😿') ||
+       arg.includes('SDK Configuration is not valid'))
+    )) {
+      return;
+    }
+    originalError.apply(console, args);
+  };
 }
 
 // Create QueryClient instance
@@ -108,7 +166,7 @@ export default function RootLayout() {
         if (__DEV__) {
           Purchases.setLogLevel(LOG_LEVEL.WARN);
         } else {
-          // Set to error level in production to reduce logs
+          // Set to ERROR level in production
           Purchases.setLogLevel(LOG_LEVEL.ERROR);
         }
         
@@ -129,7 +187,9 @@ export default function RootLayout() {
               console.log('🔧 Configuring RevenueCat...');
             }
             await Purchases.configure({ 
-              apiKey: apiKey
+              apiKey: apiKey,
+              // Add additional configuration to prevent errors
+              useAmazon: false,
             });
             
             if (__DEV__) {

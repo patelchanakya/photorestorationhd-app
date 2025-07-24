@@ -12,7 +12,7 @@ interface ProcessingScreenProps {
   isError?: boolean;
 }
 
-export function ProcessingScreen({ functionType, isProcessing, isError }: ProcessingScreenProps) {
+const ProcessingScreenComponent = ({ functionType, isProcessing, isError }: ProcessingScreenProps) => {
   const { processingProgress, setProcessingProgress, clearProcessingProgress } = useRestorationScreenStore();
   
   // Track haptic feedback milestones to avoid duplicates
@@ -194,4 +194,6 @@ export function ProcessingScreen({ functionType, isProcessing, isError }: Proces
       </View>
     </LinearGradient>
   );
-}
+};
+
+export const ProcessingScreen = React.memo(ProcessingScreenComponent);
