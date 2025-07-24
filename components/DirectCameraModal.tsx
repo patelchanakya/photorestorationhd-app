@@ -395,9 +395,9 @@ export function DirectCameraModal({
               onPress={handleGalleryPress}
               style={{ position: 'absolute', left: 32, width: 56, height: 56, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' }}
             >
-              <IconSymbol name="photo" size={28} color="#fff" />
+              <IconSymbol name="photo" size={32} color="#fff" />
               {restorationCount > 0 && (
-                <View style={{ position: 'absolute', top: -4, right: -4, backgroundColor: '#f97316', borderRadius: 12, minWidth: 24, height: 24, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#000' }}>
+                <View style={{ position: 'absolute', top: -4, right: -4, backgroundColor: '#f97316', borderRadius: 12, minWidth: 24, height: 24, alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>
                     {restorationCount > 99 ? '99+' : restorationCount}
                   </Text>
@@ -430,7 +430,7 @@ export function DirectCameraModal({
               onPress={handleGalleryPress}
               style={{ position: 'absolute', right: 32, width: 56, height: 56, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' }}
             >
-              <IconSymbol name="square.and.arrow.up" size={28} color="#fff" />
+              <IconSymbol name="square.and.arrow.up" size={32} color="#fff" />
             </TouchableOpacity>
           </View>
         </View>

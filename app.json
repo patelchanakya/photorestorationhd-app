@@ -16,7 +16,6 @@
         "NSPhotoLibraryAddUsageDescription": "This app needs access to your photo library to save restored photos.",
         "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to select and save photos."
       },
-      "associatedDomains": [],
       "storeKitConfiguration": "./PastPix.storekit"
     },
     "web": {
@@ -62,6 +61,15 @@
       "eas": {
         "projectId": "1e1e5fa5-1114-4591-9765-2534344ca453"
       }
+    },
+    "android": {
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_MEDIA_LOCATION"
+      ],
+      "package": "com.chanakyap.photorestorationhdapp"
     }
   }
 }

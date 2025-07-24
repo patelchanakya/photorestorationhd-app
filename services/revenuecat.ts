@@ -208,6 +208,14 @@ export const restorePurchases = async (): Promise<boolean> => {
       console.log('✅ Purchases restored:', customerInfo);
     }
     
+    // Add null safety check
+    if (!customerInfo) {
+      if (__DEV__) {
+        console.log('⚠️ No customer info returned from restore');
+      }
+      return false;
+    }
+    
     // Check if restored purchases include pro entitlement
     const hasProEntitlement = customerInfo.entitlements.active['pro'] !== undefined;
     
@@ -250,6 +258,19 @@ export const restorePurchasesDetailed = async (): Promise<RestoreResult> => {
     
     if (__DEV__) {
       console.log('✅ Purchases restored:', customerInfo);
+    }
+    
+    // Add null safety check
+    if (!customerInfo) {
+      if (__DEV__) {
+        console.log('⚠️ No customer info returned from detailed restore');
+      }
+      return {
+        success: false,
+        hasActiveEntitlements: false,
+        error: 'network',
+        errorMessage: 'Unable to verify subscription status'
+      };
     }
     
     // Check if restored purchases include pro entitlement

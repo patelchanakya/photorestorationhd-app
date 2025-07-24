@@ -22,6 +22,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_MAX_WIDTH = 500;
+const ITEM_HEIGHT = 140; // Height of each grid item including padding
 
 // Responsive columns: 3 for phones, 4-6 for tablets
 const getNumColumns = () => {
@@ -253,6 +254,13 @@ export default function GalleryModalScreen() {
               maxToRenderPerBatch={10}
               windowSize={10}
               initialNumToRender={12}
+              getItemLayout={(data, index) => ({
+                length: ITEM_HEIGHT,
+                offset: ITEM_HEIGHT * Math.floor(index / NUM_COLUMNS),
+                index,
+              })}
+              updateCellsBatchingPeriod={50}
+              disableVirtualization={false}
               renderItem={({ item, index }) => {
                 let thumbnailUri = undefined;
                 try {
@@ -300,6 +308,11 @@ export default function GalleryModalScreen() {
               renderItem={renderItem}
               contentContainerStyle={{ paddingBottom: 0, paddingTop: 0 }}
               showsVerticalScrollIndicator={false}
+              removeClippedSubviews={true}
+              maxToRenderPerBatch={10}
+              windowSize={10}
+              initialNumToRender={8}
+              updateCellsBatchingPeriod={50}
             />
           </View>
         )}

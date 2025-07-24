@@ -99,6 +99,38 @@ npm run android    # Run on Android emulator
 npm run lint       # Check code quality (✅ All issues resolved)
 ```
 
+## Common Issues & Solutions
+
+### iOS Build Issues
+
+#### Associated Domains Capability Error
+**Problem**: `expo run:ios` works once, then fails with "Provisioning profile doesn't support the Associated Domains capability"
+
+**Root Cause**: 
+- Empty `associatedDomains: []` in app.json enables the capability in iOS project files
+- Removing it from app.json doesn't remove it from generated native files
+- Your provisioning profile doesn't have this capability enabled
+
+**Solution**:
+1. Remove `associatedDomains: []` from app.json
+2. Regenerate iOS project: `npx expo prebuild --clean --platform ios`
+3. Run again: `npx expo run:ios`
+
+**Prevention**:
+- Don't add capabilities you don't need
+- After removing capabilities from app.json, always run `prebuild --clean`
+- For local dev, `expo run:ios` is usually sufficient
+- For production, use EAS Build which handles provisioning automatically
+
+#### Switching iOS Simulators
+```bash
+# List available simulators
+xcrun simctl list devices | grep -E "iPhone|iPad"
+
+# Run on specific device
+npx expo run:ios --device "iPad Pro 13-inch (M4)"
+```
+
 ## Performance Optimization Tasks
 
 ### High Priority (Battery & Performance)
