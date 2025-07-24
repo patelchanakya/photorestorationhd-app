@@ -24,14 +24,89 @@ async function imageToBase64(uri: string): Promise<string> {
   return base64;
 }
 
-// Helper function to resize image if needed
-async function resizeImage(uri: string): Promise<string> {
-  const result = await ImageManipulator.manipulateAsync(
-    uri,
-    [{ resize: { width: 2048 } }], // Max width 2048px, height will scale proportionally
-    { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG }
-  );
-  return result.uri;
+// Helper function to get image info
+async function getImageInfo(uri: string): Promise<{width: number, height: number, size: number}> {
+  const info = await FileSystem.getInfoAsync(uri);
+  const fileSize = info.size || 0;
+  
+  // Get image dimensions using ImageManipulator without modifying the image
+  const result = await ImageManipulator.manipulateAsync(uri, [], {});
+  
+  return {
+    width: result.width || 0,
+    height: result.height || 0,
+    size: fileSize
+  };
+}
+
+// Helper function to process image only if absolutely necessary
+async function processImageIfNeeded(uri: string): Promise<string> {
+  try {
+    const info = await getImageInfo(uri);
+    const maxFileSize = 50 * 1024 * 1024; // 50MB reasonable limit
+    const maxDimension = 8192; // Very high limit for dimensions
+    
+    if (__DEV__) {
+      console.log(`📸 Image info: ${info.width}x${info.height}, ${(info.size / 1024 / 1024).toFixed(2)}MB`);
+    }
+    
+    // Only process if image is extremely large
+    if (info.size > maxFileSize || info.width > maxDimension || info.height > maxDimension) {
+      if (__DEV__) {
+        console.log('⚠️ Large image detected, applying minimal processing for API compatibility');
+      }
+      
+      // Use minimal compression and smart resizing only for oversized images
+      const transforms = [];
+      if (info.width > maxDimension || info.height > maxDimension) {
+        transforms.push({ resize: { width: maxDimension } });
+      }
+      
+      const result = await ImageManipulator.manipulateAsync(
+        uri,
+        transforms,
+        { 
+          compress: 0.95, // Minimal compression
+          format: ImageManipulator.SaveFormat.JPEG 
+        }
+      );
+      
+      if (__DEV__) {
+        console.log('✨ Processed large image with minimal quality loss');
+      }
+      
+      return result.uri;
+    }
+    
+    // For normal sized images, check if it's already JPEG
+    if (uri.toLowerCase().includes('.jpg') || uri.toLowerCase().includes('.jpeg')) {
+      if (__DEV__) {
+        console.log('🎯 Sending original JPEG at full quality');
+      }
+      return uri; // Send original untouched
+    }
+    
+    // Convert non-JPEG formats to JPEG with minimal compression
+    if (__DEV__) {
+      console.log('🔄 Converting to JPEG format with minimal compression');
+    }
+    
+    const result = await ImageManipulator.manipulateAsync(
+      uri,
+      [], // No resizing
+      { 
+        compress: 0.98, // Near-lossless compression
+        format: ImageManipulator.SaveFormat.JPEG 
+      }
+    );
+    
+    return result.uri;
+  } catch (error) {
+    if (__DEV__) {
+      console.warn('⚠️ Failed to analyze image, using original:', error);
+    }
+    return uri; // Fallback to original if analysis fails
+  }
 }
 
 // Sleep helper for polling
@@ -65,11 +140,11 @@ export async function restorePhoto(imageUri: string): Promise<string> {
       throw new Error('Replicate API token is not configured. Please check your environment variables.');
     }
 
-    // Resize image if needed
-    const resizedUri = await resizeImage(imageUri);
+    // Process image only if absolutely necessary (preserve original quality)
+    const processedUri = await processImageIfNeeded(imageUri);
     
     // Convert to base64
-    const base64 = await imageToBase64(resizedUri);
+    const base64 = await imageToBase64(processedUri);
     
     // Create prediction
     const prediction = await replicate.predictions.create({
