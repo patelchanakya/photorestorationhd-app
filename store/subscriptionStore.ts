@@ -5,14 +5,12 @@ import { deviceTrackingService } from '@/services/deviceTracking';
 
 interface SubscriptionState {
   isPro: boolean;
-  isDeveloperMode: boolean;
   freeRestorationsUsed: number;
   freeRestorationsLimit: number;
   lastResetDate: string;
   expirationDate: string | null;
   appUserId: string | null;
   setIsPro: (isPro: boolean) => void;
-  toggleDeveloperMode: () => void;
   setExpirationDate: (date: string | null) => void;
   setAppUserId: (userId: string | null) => void;
   incrementFreeRestorations: () => Promise<void>;
@@ -20,14 +18,12 @@ interface SubscriptionState {
   resetDailyLimit: () => void;
   canRestore: () => Promise<boolean>;
   getRemainingRestorations: () => Promise<number>;
-  getEffectiveProStatus: () => boolean;
 }
 
 export const useSubscriptionStore = create<SubscriptionState>()(
   persist(
     (set, get) => ({
       isPro: false,
-      isDeveloperMode: false, // Developer toggle for testing PRO features
       freeRestorationsUsed: 0,
       freeRestorationsLimit: 1, // 1 free restoration every 48 hours
       lastResetDate: new Date().toISOString(),
@@ -55,29 +51,14 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         set({ appUserId: userId });
       },
 
-      toggleDeveloperMode: () => {
-        const state = get();
-        const newDeveloperMode = !state.isDeveloperMode;
-        if (__DEV__) {
-          console.log('🧪 Developer mode toggled:', newDeveloperMode);
-        }
-        set({ isDeveloperMode: newDeveloperMode });
-      },
-
-      getEffectiveProStatus: () => {
-        const state = get();
-        const effectiveProStatus = state.isPro || state.isDeveloperMode;
-        return effectiveProStatus;
-      },
 
       incrementFreeRestorations: async () => {
         const state = get();
         
-        // Don't increment if user is pro (including developer mode)
-        const effectiveProStatus = state.isPro || state.isDeveloperMode;
-        if (effectiveProStatus) {
+        // Don't increment if user is pro
+        if (state.isPro) {
           if (__DEV__) {
-            console.log('✨ Pro user (or developer mode) - not incrementing free restoration count');
+            console.log('✨ Pro user - not incrementing free restoration count');
           }
           return;
         }
@@ -99,11 +80,10 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       decrementFreeRestorations: async (restorationCreatedAt: string) => {
         const state = get();
         
-        // Don't decrement if user is pro (including developer mode)
-        const effectiveProStatus = state.isPro || state.isDeveloperMode;
-        if (effectiveProStatus) {
+        // Don't decrement if user is pro
+        if (state.isPro) {
           if (__DEV__) {
-            console.log('✨ Pro user (or developer mode) - not decrementing free restoration count');
+            console.log('✨ Pro user - not decrementing free restoration count');
           }
           return;
         }
@@ -154,9 +134,8 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       canRestore: async () => {
         const state = get();
         
-        // Pro users (including developer mode) have unlimited restorations
-        const effectiveProStatus = state.isPro || state.isDeveloperMode;
-        if (effectiveProStatus) {
+        // Pro users have unlimited restorations
+        if (state.isPro) {
           if (__DEV__) {
             console.log('✨ Pro user - can restore unlimited');
           }
@@ -183,9 +162,8 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       getRemainingRestorations: async () => {
         const state = get();
         
-        // Pro users (including developer mode) have unlimited
-        const effectiveProStatus = state.isPro || state.isDeveloperMode;
-        if (effectiveProStatus) {
+        // Pro users have unlimited
+        if (state.isPro) {
           return 999; // Large number to indicate unlimited
         }
         
@@ -194,7 +172,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       }
     }),
     {
-      name: 'subscription-storage',
+      name: 'subscription-storage-v2', // Changed name to clear old cache
       storage: {
         getItem: async (name) => {
           const value = await AsyncStorage.getItem(name);

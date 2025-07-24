@@ -256,7 +256,7 @@ function CropModalScreen() {
                 <ImagePreview imageUri={currentImageUri} />
               </View>
 
-              {/* Crop/Rotate Buttons - Upper Row */}
+              {/* Edit Button - Upper Row */}
               <View style={{
                 position: 'absolute',
                 left: 0,
@@ -265,17 +265,16 @@ function CropModalScreen() {
                 flexDirection: 'row',
                 justifyContent: 'center',
                 alignItems: 'center',
-                gap: isSmallScreen ? 16 : 20,
                 zIndex: 10,
                 paddingHorizontal: 16,
               }}>
 
-                {/* Crop Button */}
+                {/* Edit Button */}
                 <TouchableOpacity
                   style={{
-                    width: isSmallScreen ? 70 : 80,
-                    height: isSmallScreen ? 40 : 44,
-                    borderRadius: 16,
+                    width: isSmallScreen ? 90 : 100,
+                    height: isSmallScreen ? 48 : 52,
+                    borderRadius: 18,
                     alignItems: 'center',
                     justifyContent: 'center',
                     backgroundColor: 'rgba(0,0,0,0.4)',
@@ -287,7 +286,7 @@ function CropModalScreen() {
                     flexDirection: 'row',
                   }}
                   onPress={() => setShowCropTool(true)}
-                  accessibilityLabel="Crop Image"
+                  accessibilityLabel="Edit Image"
                   activeOpacity={0.7}
                 >
                   {Platform.OS === 'ios' && (
@@ -300,62 +299,13 @@ function CropModalScreen() {
                         left: 0, 
                         right: 0, 
                         bottom: 0, 
-                        borderRadius: 16 
+                        borderRadius: 18 
                       }} 
                     />
                   )}
-                  <Ionicons name="crop" size={isSmallScreen ? 16 : 18} color="#f97316" />
-                  <Text style={{ color: '#f97316', fontSize: isSmallScreen ? 12 : 14, fontWeight: '600', marginLeft: 4 }}>
-                    Crop
-                  </Text>
-                </TouchableOpacity>
-
-                {/* Rotate Button */}
-                <TouchableOpacity
-                  style={{
-                    width: isSmallScreen ? 80 : 90,
-                    height: isSmallScreen ? 40 : 44,
-                    borderRadius: 16,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: 'rgba(0,0,0,0.4)',
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 8,
-                    elevation: 6,
-                    flexDirection: 'row',
-                  }}
-                  onPress={async () => {
-                    try {
-                      const result = await ImageManipulator.manipulateAsync(
-                        currentImageUri,
-                        [{ rotate: 90 }],
-                        { compress: 1, format: ImageManipulator.SaveFormat.JPEG }
-                      );
-                      resetForNewImage(result.uri);
-                    } catch (e) {}
-                  }}
-                  accessibilityLabel="Rotate Image"
-                  activeOpacity={0.7}
-                >
-                  {Platform.OS === 'ios' && (
-                    <BlurView 
-                      intensity={20} 
-                      tint="dark" 
-                      style={{ 
-                        position: 'absolute', 
-                        top: 0, 
-                        left: 0, 
-                        right: 0, 
-                        bottom: 0, 
-                        borderRadius: 16 
-                      }} 
-                    />
-                  )}
-                  <Ionicons name="refresh" size={isSmallScreen ? 16 : 18} color="#f97316" />
-                  <Text style={{ color: '#f97316', fontSize: isSmallScreen ? 12 : 14, fontWeight: '600', marginLeft: 4 }}>
-                    Rotate
+                  <Ionicons name="create-outline" size={isSmallScreen ? 18 : 20} color="#f97316" />
+                  <Text style={{ color: '#f97316', fontSize: isSmallScreen ? 14 : 16, fontWeight: '600', marginLeft: 6 }}>
+                    Edit
                   </Text>
                 </TouchableOpacity>
               </View>

@@ -15,18 +15,9 @@
         "ITSAppUsesNonExemptEncryption": false,
         "NSPhotoLibraryAddUsageDescription": "This app needs access to your photo library to save restored photos.",
         "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to select and save photos."
-      }
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
-      "permissions": [
-        "android.permission.CAMERA"
-      ],
-      "package": "com.chanakyap.photorestorationhdapp"
+      "associatedDomains": [],
+      "storeKitConfiguration": "./PastPix.storekit"
     },
     "web": {
       "bundler": "metro",

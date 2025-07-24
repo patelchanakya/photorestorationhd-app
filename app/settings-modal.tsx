@@ -42,7 +42,7 @@ export default function SettingsModalScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { showFlashButton, toggleFlashButton, setRestorationCount, galleryViewMode, setGalleryViewMode, simpleSlider, setSimpleSlider } = useRestorationStore();
-  const { isPro, getEffectiveProStatus, freeRestorationsUsed, freeRestorationsLimit, expirationDate, isDeveloperMode, toggleDeveloperMode } = useSubscriptionStore();
+  const { isPro, freeRestorationsUsed, freeRestorationsLimit, expirationDate } = useSubscriptionStore();
   
   // Local loading states
   const [isRestoring, setIsRestoring] = useState(false);
@@ -277,28 +277,18 @@ export default function SettingsModalScreen() {
 
   // Format subscription status
   const getSubscriptionStatus = () => {
-    const effectiveProStatus = getEffectiveProStatus();
-    
-    if (effectiveProStatus) {
-      // Handle developer mode
-      if (isDeveloperMode && !isPro) {
-        return 'Developer Mode (Testing PRO features)';
-      }
-      
-      // Handle actual pro subscription
-      if (isPro) {
-        if (expirationDate) {
-          const expDate = new Date(expirationDate);
-          const isExpired = expDate < new Date();
-          
-          if (isExpired) {
-            return 'Expired';
-          } else {
-            return `Active until ${expDate.toLocaleDateString()}`;
-          }
+    if (isPro) {
+      if (expirationDate) {
+        const expDate = new Date(expirationDate);
+        const isExpired = expDate < new Date();
+        
+        if (isExpired) {
+          return 'Expired';
+        } else {
+          return `Active until ${expDate.toLocaleDateString()}`;
         }
-        return 'Active';
       }
+      return 'Active';
     }
     
     // This should only be shown for free users now
@@ -629,7 +619,7 @@ Best regards`;
               }}>
                 
                 {/* Free Restoration Status */}
-                {!getEffectiveProStatus() && (
+                {!isPro && (
                   <TouchableOpacity
                     style={{
                       flexDirection: 'row',
@@ -693,7 +683,7 @@ Best regards`;
                 )}
 
                 {/* Subscription Status - Only show for Pro users */}
-                {getEffectiveProStatus() && (
+                {isPro && (
                   <View style={{
                     flexDirection: 'row',
                     alignItems: 'center',
@@ -1176,58 +1166,6 @@ Best regards`;
                     }} />
                   </View>
                 </TouchableOpacity>
-                
-                {/* Developer Mode Toggle - Only show in development */}
-                {__DEV__ && (
-                  <TouchableOpacity 
-                    onPress={toggleDeveloperMode}
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      padding: 16,
-                    }}>
-                    <View style={{
-                      width: 36,
-                      height: 36,
-                      backgroundColor: 'rgba(139,92,246,0.2)',
-                      borderRadius: 18,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: 12
-                    }}>
-                      <IconSymbol 
-                        name="wrench.and.screwdriver" 
-                        size={18} 
-                        color="#8b5cf6" 
-                      />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                        Developer Mode
-                      </Text>
-                      <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                        Enables PRO features for testing
-                      </Text>
-                    </View>
-                    <View style={{
-                      width: 44,
-                      height: 24,
-                      backgroundColor: isDeveloperMode ? '#8b5cf6' : 'rgba(255,255,255,0.2)',
-                      borderRadius: 12,
-                      alignItems: 'center',
-                      justifyContent: isDeveloperMode ? 'flex-end' : 'flex-start',
-                      flexDirection: 'row',
-                      paddingHorizontal: 2
-                    }}>
-                      <View style={{
-                        width: 20,
-                        height: 20,
-                        backgroundColor: 'white',
-                        borderRadius: 10
-                      }} />
-                    </View>
-                  </TouchableOpacity>
-                )}
               </View>
             </View>
 

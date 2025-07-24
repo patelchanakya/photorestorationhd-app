@@ -17,7 +17,6 @@ import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import Constants from 'expo-constants';
 import { deviceTrackingService } from '@/services/deviceTracking';
-// import { SuperwallProvider } from 'expo-superwall';
 
 // Configure LogBox for production
 if (!__DEV__) {
@@ -260,7 +259,6 @@ export default function RootLayout() {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <LanguageProvider>
           <QueryClientProvider client={queryClient}>
-            {/* <SuperwallProvider apiKey="pk_9463ee79e9c6a66da3118d96b615f85d505d307dbce01cf3"> */}
               <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
               <Stack>
                 <Stack.Screen name="index" options={{ headerShown: false, title: "Photo Restoration HD" }} />
@@ -274,7 +272,6 @@ export default function RootLayout() {
               </Stack>
               <StatusBar style="auto" />
             </ThemeProvider>
-          {/* </SuperwallProvider> */}
         </QueryClientProvider>
       </LanguageProvider>
     </GestureHandlerRootView>

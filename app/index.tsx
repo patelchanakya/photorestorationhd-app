@@ -91,8 +91,7 @@ export default function MinimalCameraWithGalleryButton() {
   const { proAnimationDuration, isProAnimationActive } = useAnimationStore();
   
   // Use Zustand store for subscription state
-  const getEffectiveProStatus = useSubscriptionStore((state) => state.getEffectiveProStatus);
-  const isPro = getEffectiveProStatus();
+  const isPro = useSubscriptionStore((state) => state.isPro);
   
   // Debug logging for badge and force initial sync
   useEffect(() => {

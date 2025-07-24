@@ -45,7 +45,7 @@ class PhotoStorage {
     try {
       await this.initializeStorage(); // Ensure directories exist
       
-      const fileName = `original_${Date.now()}.jpg`;
+      const fileName = `pastpix_${Date.now()}.jpg`;
       const destination = `${this.basePath}originals/${fileName}`;
       
       await FileSystem.copyAsync({
@@ -70,7 +70,7 @@ class PhotoStorage {
     try {
       await this.initializeStorage(); // Ensure directories exist
       
-      const fileName = originalFileName.replace('original_', 'restored_');
+      const fileName = originalFileName.replace('pastpix_', 'pastpix_restored_');
       const destination = `${this.basePath}restored/${fileName}`;
       
       if (__DEV__) {
@@ -105,7 +105,7 @@ class PhotoStorage {
         throw new Error(`Source file does not exist: ${uri}`);
       }
       
-      const fileName = `thumb_${type}_${Date.now()}.jpg`;
+      const fileName = `pastpix_thumb_${type}_${Date.now()}.jpg`;
       const destination = `${this.basePath}thumbnails/${fileName}`;
       
       // Create a small thumbnail (300px wide)
