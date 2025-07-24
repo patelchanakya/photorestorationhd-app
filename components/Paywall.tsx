@@ -32,9 +32,21 @@ export function Paywall({ visible, onClose, onSuccess }: PaywallProps) {
     }
   }, [visible]);
 
+  const handleClose = () => {
+    // Reset all states before closing to prevent RevenueCat backend errors
+    setPurchasing(null);
+    setIsRestoring(false);
+    onClose();
+  };
+
   const loadOfferings = async () => {
     try {
       setLoading(true);
+      
+      // Add timeout to prevent hanging on backend errors
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout')), 10000); // 10 second timeout
+      });
       
       // Check if we're in Expo Go
       const isExpoGo = Constants.appOwnership === 'expo';
@@ -97,9 +109,7 @@ export function Paywall({ visible, onClose, onSuccess }: PaywallProps) {
         );
       } else {
         // Purchase was cancelled or failed - this is normal user behavior
-        if (__DEV__) {
-          console.log('🚫 Purchase was cancelled or not successful');
-        }
+        // No need to log cancellations as they are expected user actions
       }
     } catch (error) {
       // Only log errors in development builds
@@ -108,7 +118,22 @@ export function Paywall({ visible, onClose, onSuccess }: PaywallProps) {
       }
       // Don't show error alert for user cancellations
       if (!error.userCancelled && error.code !== '1') {
-        Alert.alert('Purchase Failed', 'Something went wrong. Please try again.');
+        Alert.alert(
+          'Purchase Failed', 
+          'Something went wrong. Please try again.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Close paywall on error acknowledgment
+                handleClose();
+              }
+            }
+          ]
+        );
+      } else {
+        // For cancellations, just close the paywall
+        handleClose();
       }
     } finally {
       setPurchasing(null);
@@ -141,14 +166,14 @@ export function Paywall({ visible, onClose, onSuccess }: PaywallProps) {
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
     >
       <View className="flex-1 bg-white dark:bg-gray-900">
         {/* Header */}
         <View className="flex-row items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <View className="w-8" />
           <Text className="text-lg font-bold dark:text-white">Upgrade to Pro</Text>
-          <TouchableOpacity onPress={onClose} className="p-1">
+          <TouchableOpacity onPress={handleClose} className="p-1">
             <IconSymbol name="xmark" size={24} color="#666" />
           </TouchableOpacity>
         </View>

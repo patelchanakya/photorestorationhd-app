@@ -131,7 +131,7 @@ export default function GalleryModalScreen() {
           <Text style={styles.cardTitle} numberOfLines={1}>
             {item.function_type === 'unblur' ? 'Unblurred' : 
              item.function_type === 'colorize' ? 'Colorized' : 
-             item.function_type === 'descratch' ? 'Descratched' : 'Restored'}
+             item.function_type === 'descratch' ? 'Descratched' : 'Auto Restored'}
           </Text>
           <Text style={styles.cardDate}>{new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
         </View>

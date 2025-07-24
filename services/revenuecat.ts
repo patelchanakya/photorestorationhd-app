@@ -101,10 +101,7 @@ export const purchasePackage = async (packageToPurchase: PurchasesPackage): Prom
   } catch (error) {
     // Handle different error types
     if (error.code === '1' || error.userCancelled) {
-      // User cancelled - normal behavior, don't log as error
-      if (__DEV__) {
-        console.log('🚫 User cancelled purchase');
-      }
+      // User cancelled - normal behavior, no logging needed
       return false;
     }
     
@@ -356,10 +353,7 @@ export const presentPaywall = async (): Promise<boolean> => {
         return true;
         
       case PAYWALL_RESULT.CANCELLED:
-        // User cancelled - this is normal behavior, don't log as error
-        if (__DEV__) {
-          console.log('🚫 User cancelled paywall');
-        }
+        // User cancelled - this is normal behavior
         return false;
         
       case PAYWALL_RESULT.ERROR:
@@ -430,10 +424,7 @@ export const presentPaywallIfNeeded = async (requiredEntitlementIdentifier: stri
         return true;
         
       case PAYWALL_RESULT.CANCELLED:
-        // User cancelled - normal behavior, don't log as error
-        if (__DEV__) {
-          console.log('🚫 User cancelled paywall');
-        }
+        // User cancelled - normal behavior
         return false;
         
       default:
@@ -481,10 +472,7 @@ export const presentPaywallForOffering = async (offering: PurchasesOffering): Pr
         return true;
         
       case PAYWALL_RESULT.CANCELLED:
-        // User cancelled - normal behavior, don't log as error
-        if (__DEV__) {
-          console.log('🚫 User cancelled paywall');
-        }
+        // User cancelled - normal behavior
         return false;
         
       default:

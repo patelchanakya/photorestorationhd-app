@@ -364,7 +364,7 @@ export default function RestorationScreen() {
         case 'colorize':
           return 'Colorize failed';
         default:
-          return 'Restoration failed';
+          return 'Auto Restoration failed';
       }
     };
     
@@ -443,7 +443,7 @@ export default function RestorationScreen() {
             <Text className={`${isSmallDevice ? 'text-sm' : 'text-base'} font-semibold text-gray-900 text-center`} numberOfLines={1}>
               {restoration?.function_type === 'unblur' ? 'Unblurred Photo' : 
                restoration?.function_type === 'colorize' ? 'Colorized Photo' : 
-               restoration?.function_type === 'descratch' ? 'Descratched Photo' : 'Restored Photo'}
+               restoration?.function_type === 'descratch' ? 'Descratched Photo' : 'Auto Restored Photo'}
             </Text>
           </View>
           <TouchableOpacity onPress={showDeleteActionSheet} className="p-2 -mr-2">

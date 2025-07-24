@@ -53,6 +53,18 @@ export type TranslationKeys =
   | 'home.colorize'
   | 'home.gallery'
   
+  // Modes
+  | 'modes.selectMode'
+  | 'modes.cancel'
+  | 'modes.restore'
+  | 'modes.unblur'
+  | 'modes.colorize'
+  | 'modes.descratch'
+  | 'modes.restoreShort'
+  | 'modes.unblurShort'
+  | 'modes.colorizeShort'
+  | 'modes.descratchShort'
+  
   // Alerts
   | 'alerts.deleteAllPhotos.title'
   | 'alerts.deleteAllPhotos.message'

@@ -64,7 +64,6 @@ export function NativePaywall({
     
     // Don't show error for user cancellation
     if (error?.userCancelled) {
-      console.log('🚫 User cancelled purchase');
       return;
     }
     

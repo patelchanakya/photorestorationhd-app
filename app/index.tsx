@@ -8,27 +8,29 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { Alert, InteractionManager, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming, runOnJS } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import Constants from 'expo-constants';
 import { presentPaywall } from '@/services/revenuecat';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
-// Define available modes
-const MODES = [
-  { id: 'restoration', name: 'Restore', icon: 'wand.and.stars' },
-  { id: 'unblur', name: 'Unblur', icon: 'eye' },
-  { id: 'colorize', name: 'Colorize', icon: 'paintbrush' },
-  { id: 'descratch', name: 'Descratch', icon: 'bandage' }
+// Define available mode structure (names will be translated)
+const MODE_CONFIG = [
+  { id: 'restoration', translationKey: 'modes.restore', shortKey: 'modes.restoreShort', icon: 'arrow.clockwise' },
+  { id: 'unblur', translationKey: 'modes.unblur', shortKey: 'modes.unblurShort', icon: 'eye' },
+  { id: 'colorize', translationKey: 'modes.colorize', shortKey: 'modes.colorizeShort', icon: 'paintbrush' },
+  { id: 'descratch', translationKey: 'modes.descratch', shortKey: 'modes.descratchShort', icon: 'bandage' }
 ] as const;
 
-type ModeType = typeof MODES[number]['id'];
+type ModeType = typeof MODE_CONFIG[number]['id'];
 
 export default function MinimalCameraWithGalleryButton() {
+  const { t } = useTranslation();
   const [permission, requestPermission] = useCameraPermissions();
   const [enableTorch, setEnableTorch] = useState(false);
   const [facing] = useState<'front' | 'back'>('back');
@@ -37,6 +39,26 @@ export default function MinimalCameraWithGalleryButton() {
   const [showModeSelector, setShowModeSelector] = useState(false);
   const router = useRouter();
   const cameraRef = useRef<CameraView>(null);
+  
+  // Generate translated modes
+  const modes = useMemo(() => {
+    try {
+      return MODE_CONFIG.map(mode => ({
+        id: mode.id,
+        name: t(mode.translationKey),
+        shortName: t(mode.shortKey),
+        icon: mode.icon
+      }));
+    } catch (error) {
+      // Fallback to English if translation fails
+      return MODE_CONFIG.map(mode => ({
+        id: mode.id,
+        name: mode.translationKey.split('.')[1] || mode.id,
+        shortName: mode.shortKey.split('.')[1] || mode.id,
+        icon: mode.icon
+      }));
+    }
+  }, [t]);
   
   // Always fetch and sync restoration history on app start
   const { refetch } = useRestorationHistory();
@@ -357,7 +379,7 @@ export default function MinimalCameraWithGalleryButton() {
                 >
                   <IconSymbol name={getCurrentMode().icon} size={16} color="white" />
                   <Text style={{ color: 'white', fontSize: 15, fontWeight: '600' }}>
-                    {getCurrentMode().name}
+                    {getCurrentMode().shortName}
                   </Text>
                   <IconSymbol name="chevron.down" size={14} color="white" />
                 </Animated.View>

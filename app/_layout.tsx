@@ -104,9 +104,9 @@ export default function RootLayout() {
           return;
         }
         
-        // Set debug log level for development
+        // Set log level to reduce noise
         if (__DEV__) {
-          Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+          Purchases.setLogLevel(LOG_LEVEL.WARN);
         } else {
           // Set to error level in production to reduce logs
           Purchases.setLogLevel(LOG_LEVEL.ERROR);

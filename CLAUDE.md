@@ -98,3 +98,70 @@ npm run ios        # Run on iOS simulator
 npm run android    # Run on Android emulator
 npm run lint       # Check code quality (✅ All issues resolved)
 ```
+
+## Performance Optimization Tasks
+
+### High Priority (Battery & Performance)
+
+#### 🔋 Battery Drain - Infinite Animation Controls
+- [ ] **Add AppState listeners to infinite animations**:
+  - components/BottomCameraButton.tsx:24-34 (glow animation)
+  - app/index.tsx:142-152 (capture button glow) 
+  - app/index.tsx:154-170 (PRO button rotation)
+  - components/CircularProgress.tsx:57-85 (4 simultaneous animations)
+- [ ] **Create useBackgroundAwareAnimation hook** for centralized control
+- [ ] **Integrate polling cancellation with AppState** (services/replicate.ts)
+- **Impact**: 30-50% reduction in battery usage
+
+#### 🎯 React Optimization - Missing Memoization
+- [ ] **Add React.memo to heavy components**:
+  - components/BeforeAfterSlider.tsx
+  - components/ProcessingScreen.tsx
+  - components/PhotoPicker.tsx
+- [ ] **Add useMemo/useCallback for expensive operations**:
+  - app/gallery-modal.tsx (renderItem, renderSectionHeader, grouping logic)
+  - app/restoration/[id].tsx (missing callback optimizations)
+- **Impact**: Smoother UI interactions and reduced jank
+
+### Medium Priority (UI Performance)
+
+#### 📱 FlatList Performance
+- [ ] **Add missing FlatList optimizations** to gallery modal:
+  - getItemLayout for fixed-size items
+  - maxToRenderPerBatch and windowSize  
+  - removeClippedSubviews
+  - initialNumToRender
+- [ ] **Add performance props** to restoration screen horizontal list
+- **Impact**: Smoother scrolling in large galleries
+
+#### 🚀 App Launch Optimization
+- [ ] **Compress large image assets**:
+  - assets/images/icon.png (1.69MB → ~100KB)
+  - assets/images/splash-icon.png (1.26MB → ~50KB)
+- [ ] **Consider WebP format** for better compression
+- **Impact**: Faster app download and launch times
+
+### Low Priority (Code Quality)
+
+#### 🧹 Bundle Size Review
+- [ ] **Audit package.json dependencies** for unused packages
+- [ ] **Check for unused imports** across components
+- [ ] **Consider lazy loading** for heavy dependencies
+- **Impact**: Smaller app download size
+
+### ✅ Already Well Implemented (No Action Needed)
+
+The following optimizations are already properly implemented in the codebase:
+- **Cleanup functions in useEffect hooks** - Comprehensive cleanup across all components
+- **AppState management** - Proper listeners for camera and network management  
+- **Timer/interval cleanup** - All timeouts and intervals are properly cleaned up
+- **Animation infrastructure** - Solid foundation with Reanimated
+- **FlatList basics** - keyExtractor and basic optimization already in place
+- **Image resizing** - Already handled with proper loading screens during restoration
+
+### Implementation Notes
+- **Test on both iOS and Android** after each optimization
+- **Use React DevTools Profiler** to measure re-render improvements
+- **Monitor memory usage** with Flipper or similar tools
+- **Measure battery impact** using Xcode Instruments or Android Studio Profiler
+- **Keep performance metrics** before and after optimizations

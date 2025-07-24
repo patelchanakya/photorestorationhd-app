@@ -55,10 +55,14 @@
   "modes": {
     "selectMode": "Select Mode",
     "cancel": "Cancel",
-    "restore": "Restore",
+    "restore": "Auto Restore",
     "unblur": "Unblur",
     "colorize": "Colorize",
-    "descratch": "Descratch"
+    "descratch": "Descratch",
+    "restoreShort": "Auto",
+    "unblurShort": "Unblur",
+    "colorizeShort": "Colorize",
+    "descratchShort": "Descratch"
   },
   "alerts": {
     "deleteAllPhotos": {
