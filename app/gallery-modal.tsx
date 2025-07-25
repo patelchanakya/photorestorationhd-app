@@ -223,7 +223,7 @@ export default function GalleryModalScreen() {
           
           {/* Center section with title */}
           <View style={styles.headerCenterSection}>
-            <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">PastPix</Text>
+            <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">Clever</Text>
           </View>
           
           {/* Right section with badge and close */}

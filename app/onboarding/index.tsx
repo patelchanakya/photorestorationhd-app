@@ -38,7 +38,7 @@ interface OnboardingPage {
 const pages: OnboardingPage[] = [
   {
     id: 0,
-    title: 'Welcome to PastPix',
+    title: 'Are you ready?',
     subtitle: 'You will turn faded, cracked, damaged photos into memories that last forever',
     gradientColors: ['#0a0a0a', '#1a0b2e'],
     iconName: 'photo.on.rectangle',
