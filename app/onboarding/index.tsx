@@ -5,6 +5,7 @@ import { presentPaywall } from '@/services/revenuecat';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect, useRef, useState } from 'react';
 import { Dimensions, Image, Pressable, SafeAreaView, Text, View } from 'react-native';
 import Animated, {
@@ -80,6 +81,21 @@ export default function OnboardingScreen() {
   const [revealedScreens, setRevealedScreens] = useState<boolean[]>(new Array(pages.length).fill(false));
   const { completeOnboarding } = useOnboarding();
   const timeoutRef = useRef<NodeJS.Timeout>();
+
+  // Hide splash screen once onboarding is ready
+  useEffect(() => {
+    const hideSplash = async () => {
+      try {
+        await SplashScreen.hideAsync();
+      } catch (e) {
+        // Splash screen already hidden or other error
+      }
+    };
+    
+    // Small delay to ensure onboarding screen is fully rendered
+    const timer = setTimeout(hideSplash, 100);
+    return () => clearTimeout(timer);
+  }, []);
   
   // Animation values for Start Restoring button
   const buttonScale = useSharedValue(1);
@@ -464,6 +480,7 @@ function OnboardingPage({ page, index, scrollX, curtainRef }: OnboardingPageProp
                         borderRadius: 85,
                       }}
                       resizeMode="cover"
+                      fadeDuration={0}
                     />
                   </View>
                 ) : (

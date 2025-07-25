@@ -2,6 +2,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
 import 'react-native-reanimated';
 import '../global.css';
 
@@ -11,7 +12,7 @@ import { LanguageProvider } from '@/i18n';
 import NetInfo from '@react-native-community/netinfo';
 import { QueryClient, QueryClientProvider, focusManager, onlineManager } from '@tanstack/react-query';
 import React, { useEffect } from 'react';
-import { AppState, AppStateStatus, Platform, LogBox } from 'react-native';
+import { AppState, AppStateStatus, Platform, LogBox, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
@@ -20,14 +21,15 @@ import Constants from 'expo-constants';
 import { deviceTrackingService } from '@/services/deviceTracking';
 import { OnboardingProvider, useOnboarding } from '@/contexts/OnboardingContext';
 import { useRouter } from 'expo-router';
+import CustomSplashScreen from '@/components/CustomSplashScreen';
+
+// Prevent the splash screen from auto-hiding before asset loading is complete
+SplashScreen.preventAutoHideAsync();
 
 // Configure LogBox for production
 if (!__DEV__) {
   // Disable all LogBox logs in production
   LogBox.ignoreAllLogs(true);
-  
-  // Disable yellow box warnings
-  console.disableYellowBox = true;
   
   // Override console methods to prevent logs in production
   const originalConsoleError = console.error;
@@ -151,6 +153,7 @@ export default function RootLayout() {
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
   const { setIsPro } = useSubscriptionStore();
+  const [showCustomSplash, setShowCustomSplash] = React.useState(true);
 
   // Set up network and app state management
   useOnlineManager();
@@ -265,26 +268,41 @@ export default function RootLayout() {
     return () => clearTimeout(timer);
   }, [loaded, setIsPro]);
 
+  const onCustomSplashComplete = React.useCallback(() => {
+    // Don't hide the native splash yet - let the onboarding screen do it
+    setShowCustomSplash(false);
+  }, []);
+
   if (!loaded) {
     // Async font loading only occurs in development.
     return null;
   }
 
+  if (showCustomSplash) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#000000' }}>
+        <CustomSplashScreen onAnimationComplete={onCustomSplashComplete} />
+      </View>
+    );
+  }
+
   return (
-    <ErrorBoundary>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <OnboardingProvider>
-          <LanguageProvider>
-            <QueryClientProvider client={queryClient}>
-                <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                <OnboardingNavigator />
-                <StatusBar style="auto" />
-              </ThemeProvider>
-          </QueryClientProvider>
-        </LanguageProvider>
-        </OnboardingProvider>
-      </GestureHandlerRootView>
-    </ErrorBoundary>
+    <View style={{ flex: 1, backgroundColor: '#000000' }}>
+      <ErrorBoundary>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <OnboardingProvider>
+            <LanguageProvider>
+              <QueryClientProvider client={queryClient}>
+                  <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                  <OnboardingNavigator />
+                  <StatusBar style="auto" />
+                </ThemeProvider>
+            </QueryClientProvider>
+          </LanguageProvider>
+          </OnboardingProvider>
+        </GestureHandlerRootView>
+      </ErrorBoundary>
+    </View>
   );
 }
 

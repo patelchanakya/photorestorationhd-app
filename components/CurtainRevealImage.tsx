@@ -63,6 +63,7 @@ const CurtainRevealImage = forwardRef<CurtainRevealImageRef, CurtainRevealImageP
             borderRadius: 16,
           }}
           resizeMode="contain"
+          fadeDuration={0}
         />
         
         {/* Damaged image (curtain layer) */}
@@ -87,6 +88,7 @@ const CurtainRevealImage = forwardRef<CurtainRevealImageRef, CurtainRevealImageP
               height: imageSize,
             }}
             resizeMode="contain"
+            fadeDuration={0}
           />
         </Animated.View>
       </View>
