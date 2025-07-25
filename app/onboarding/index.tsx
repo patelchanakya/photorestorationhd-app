@@ -6,7 +6,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { Dimensions, Pressable, SafeAreaView, Text, View } from 'react-native';
+import { Dimensions, Image, Pressable, SafeAreaView, Text, View } from 'react-native';
 import Animated, {
   Extrapolate,
   interpolate,
@@ -14,7 +14,8 @@ import Animated, {
   runOnJS,
   useAnimatedScrollHandler,
   useAnimatedStyle,
-  useSharedValue
+  useSharedValue,
+  withSpring
 } from 'react-native-reanimated';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -35,14 +36,14 @@ const pages: OnboardingPage[] = [
     id: 0,
     title: 'Welcome to PastPix',
     subtitle: 'Turn faded, cracked, damaged photos into memories that last forever',
-    gradientColors: ['#1e1e1e', '#2a2a2a'],
+    gradientColors: ['#0a0a0a', '#1a0b2e'],
     iconName: 'photo.on.rectangle',
   },
   {
     id: 1,
     title: 'Fix Damaged Portraits',
     subtitle: 'Scratches, tears, water damage all fixed instantly',
-    gradientColors: ['#1a1a2e', '#16213e'],
+    gradientColors: ['#0d1421', '#1e3a8a'],
     beforeImage: require('@/assets/images/onboarding/before-4.jpg'),
     afterImage: require('@/assets/images/onboarding/after-4.png'),
   },
@@ -50,7 +51,7 @@ const pages: OnboardingPage[] = [
     id: 2,
     title: 'Repair Faces & Details',
     subtitle: 'Restore missing facial features, fix blurry faces, and bring back lost details',
-    gradientColors: ['#7c2d12', '#ea580c'],
+    gradientColors: ['#1a0b0b', '#dc2626'],
     beforeImage: require('@/assets/images/onboarding/before-2.jpg'),
     afterImage: require('@/assets/images/onboarding/after-2.png'),
   },
@@ -58,7 +59,7 @@ const pages: OnboardingPage[] = [
     id: 3,
     title: 'Enhance Colors & Clarity',
     subtitle: 'Bring vibrancy back to faded memories',
-    gradientColors: ['#4c1d95', '#7c3aed'],
+    gradientColors: ['#1e0a37', '#a855f7'],
     beforeImage: require('@/assets/images/onboarding/before-3.jpg'),
     afterImage: require('@/assets/images/onboarding/after-3.png'),
   },
@@ -66,7 +67,7 @@ const pages: OnboardingPage[] = [
     id: 4,
     title: 'Go Pro for Unlimited',
     subtitle: 'Try free or upgrade to Pro with weekly or monthly plans',
-    gradientColors: ['#1e1e1e', '#16a34a'],
+    gradientColors: ['#064e3b', '#10b981'],
     iconName: 'crown.fill',
   },
 ];
@@ -79,6 +80,10 @@ export default function OnboardingScreen() {
   const [revealedScreens, setRevealedScreens] = useState<boolean[]>(new Array(pages.length).fill(false));
   const { completeOnboarding } = useOnboarding();
   const timeoutRef = useRef<NodeJS.Timeout>();
+  
+  // Animation values for Start Restoring button
+  const buttonScale = useSharedValue(1);
+  const buttonOpacity = useSharedValue(1);
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -131,8 +136,28 @@ export default function OnboardingScreen() {
   };
 
   const handleStartRestoring = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    // Light haptic on press
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
+    // Scale down animation
+    buttonScale.value = withSpring(0.95, { damping: 20, stiffness: 300 });
+    
+    // Heavy haptic after short delay
+    setTimeout(() => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    }, 100);
+    
+    // Scale up with bounce
+    setTimeout(() => {
+      buttonScale.value = withSpring(1.05, { damping: 15, stiffness: 200 }, () => {
+        buttonScale.value = withSpring(1, { damping: 20, stiffness: 300 });
+      });
+    }, 150);
+    
     await completeOnboarding();
+    
+    // Success haptic
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     
     // Present paywall immediately, then navigate
     await presentPaywall();
@@ -194,24 +219,89 @@ export default function OnboardingScreen() {
             <View className="items-center">
               <Pressable
                 onPress={handleNext}
-                className="bg-blue-500 px-12 py-5 rounded-2xl w-full max-w-sm items-center"
+                style={{
+                  backgroundColor: 'transparent',
+                  paddingHorizontal: 48,
+                  paddingVertical: 20,
+                  borderRadius: 16,
+                  width: '100%',
+                  maxWidth: 350,
+                  alignItems: 'center',
+                }}
               >
-                <Text className="text-white text-xl font-bold">
+                <LinearGradient
+                  colors={['#f97316', '#ea580c']}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    borderRadius: 16,
+                  }}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                />
+                <Text 
+                  className="text-white text-xl font-bold"
+                  style={{
+                    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+                    textShadowOffset: { width: 0, height: 1 },
+                    textShadowRadius: 2,
+                  }}
+                >
                   Become a Memory Keeper
                 </Text>
               </Pressable>
             </View>
           ) : currentPage === pages.length - 1 ? (
-            // Last page: Big centered "Start Restoring" button
-            <View className="items-center">
-              <Pressable
-                onPress={handleStartRestoring}
-                className="bg-green-500 px-12 py-5 rounded-2xl w-full max-w-sm items-center"
+            // Last page: Big centered "Start Restoring" button with animation
+            <View className="items-center" style={{ width: '100%', maxWidth: 350 }}>
+              <Animated.View
+                style={[
+                  {
+                    transform: [{ scale: buttonScale }],
+                    opacity: buttonOpacity,
+                    width: '100%',
+                  }
+                ]}
               >
-                <Text className="text-white text-xl font-bold">
+                <Pressable
+                  onPress={handleStartRestoring}
+                  style={{
+                    backgroundColor: 'transparent',
+                    paddingHorizontal: 48,
+                    paddingVertical: 20,
+                    borderRadius: 16,
+                    width: '100%',
+                    alignItems: 'center',
+                  }}
+                >
+                <LinearGradient
+                  colors={['#10b981', '#059669']}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    borderRadius: 16,
+                  }}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                />
+                <Text 
+                  className="text-white text-xl font-bold"
+                  style={{
+                    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+                    textShadowOffset: { width: 0, height: 1 },
+                    textShadowRadius: 2,
+                  }}
+                >
                   Start Restoring
                 </Text>
               </Pressable>
+              </Animated.View>
             </View>
           ) : (
             // Middle pages: Skip and Next buttons
@@ -222,9 +312,36 @@ export default function OnboardingScreen() {
 
               <Pressable
                 onPress={handleNext}
-                className="bg-orange-500 px-8 py-4 rounded-full flex-row items-center"
+                style={{
+                  backgroundColor: 'transparent',
+                  paddingHorizontal: 24,
+                  paddingVertical: 12,
+                  borderRadius: 25,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                }}
               >
-                <Text className="text-white text-base font-semibold mr-2">
+                <LinearGradient
+                  colors={['#f97316', '#ea580c']}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    borderRadius: 25,
+                  }}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                />
+                <Text 
+                  className="text-white text-base font-semibold mr-2"
+                  style={{
+                    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+                    textShadowOffset: { width: 0, height: 1 },
+                    textShadowRadius: 2,
+                  }}
+                >
                   Next
                 </Text>
                 <IconSymbol
@@ -307,6 +424,13 @@ function OnboardingPage({ page, index, scrollX, curtainRef }: OnboardingPageProp
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
+        {/* Rich black overlay for depth */}
+        <LinearGradient
+          colors={['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.3)']}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        />
         <SafeAreaView className="flex-1 justify-center items-center px-8">
           <Animated.View style={animatedStyle} className="items-center">
             {/* Show image pairs for screens with before/after images */}
@@ -320,20 +444,68 @@ function OnboardingPage({ page, index, scrollX, curtainRef }: OnboardingPageProp
               </Animated.View>
             ) : page.iconName ? (
               <Animated.View style={iconAnimatedStyle} className="mb-16">
-                <View className="w-32 h-32 bg-white/10 rounded-full items-center justify-center">
-                  <IconSymbol
-                    name={page.iconName}
-                    size={64}
-                    color="white"
-                  />
-                </View>
+                {page.id === 0 ? (
+                  // First screen: Use app icon
+                  <View 
+                    className="w-40 h-40 rounded-full items-center justify-center overflow-hidden"
+                    style={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                      shadowColor: 'rgba(255, 255, 255, 0.2)',
+                      shadowOffset: { width: 0, height: 0 },
+                      shadowOpacity: 0.8,
+                      shadowRadius: 12,
+                    }}
+                  >
+                    <Image
+                      source={require('@/assets/images/icon.png')}
+                      style={{
+                        width: 170,
+                        height: 170,
+                        borderRadius: 85,
+                      }}
+                      resizeMode="cover"
+                    />
+                  </View>
+                ) : (
+                  // Other screens: Use system icons
+                  <View 
+                    className="w-40 h-40 rounded-full items-center justify-center"
+                    style={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                      shadowColor: 'rgba(255, 255, 255, 0.2)',
+                      shadowOffset: { width: 0, height: 0 },
+                      shadowOpacity: 0.8,
+                      shadowRadius: 12,
+                    }}
+                  >
+                    <IconSymbol
+                      name={page.iconName}
+                      size={80}
+                      color="white"
+                    />
+                  </View>
+                )}
               </Animated.View>
             ) : null}
 
-            <Text className="text-white text-3xl font-bold text-center mb-4">
+            <Text 
+              className="text-white text-3xl font-bold text-center mb-4"
+              style={{
+                textShadowColor: 'rgba(255, 255, 255, 0.3)',
+                textShadowOffset: { width: 0, height: 0 },
+                textShadowRadius: 10,
+              }}
+            >
               {page.title}
             </Text>
-            <Text className="text-gray-300 text-base text-center max-w-sm">
+            <Text 
+              className="text-gray-200 text-lg text-center max-w-sm"
+              style={{
+                textShadowColor: 'rgba(0, 0, 0, 0.8)',
+                textShadowOffset: { width: 0, height: 1 },
+                textShadowRadius: 3,
+              }}
+            >
               {page.subtitle}
             </Text>
           </Animated.View>
@@ -363,7 +535,7 @@ function PageIndicator({ index, scrollX, currentPage }: PageIndicatorProps) {
     const backgroundColor = interpolateColor(
       scrollX.value,
       inputRange,
-      ['#4a4a4a', '#f97316', '#4a4a4a']
+      ['rgba(255, 255, 255, 0.3)', '#f97316', 'rgba(255, 255, 255, 0.3)']
     );
 
     return {
@@ -374,8 +546,18 @@ function PageIndicator({ index, scrollX, currentPage }: PageIndicatorProps) {
 
   return (
     <Animated.View
-      style={animatedStyle}
-      className="h-2 rounded-full mx-1"
+      style={[
+        animatedStyle,
+        {
+          height: 8,
+          borderRadius: 4,
+          marginHorizontal: 4,
+          shadowColor: '#f97316',
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: currentPage === index ? 0.6 : 0,
+          shadowRadius: 8,
+        }
+      ]}
     />
   );
 }
