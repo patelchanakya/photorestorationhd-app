@@ -72,7 +72,7 @@ const BeforeAfterSliderComponent = ({ beforeUri, afterUri, style, simpleSlider =
   });
 
   return (
-    <View style={[{ backgroundColor: 'transparent' }, style]}>
+    <View style={[{ backgroundColor: 'rgba(0,0,0,0.01)' }, style]}>
       {/* Image container */}
       <PanGestureHandler onGestureEvent={gestureHandler}>
         <Animated.View 
@@ -168,7 +168,7 @@ const BeforeAfterSliderComponent = ({ beforeUri, afterUri, style, simpleSlider =
                   top: '50%',
                   width: isSmallDevice ? 28 : 32,
                   height: isSmallDevice ? 28 : 32,
-                  backgroundColor: 'transparent',
+                  backgroundColor: 'rgba(255,255,255,0.95)',
                   borderRadius: isSmallDevice ? 14 : 16,
                   marginTop: isSmallDevice ? -14 : -16,
                   justifyContent: 'center',
