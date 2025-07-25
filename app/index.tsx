@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Constants from 'expo-constants';
 import { presentPaywall } from '@/services/revenuecat';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
@@ -31,12 +32,14 @@ type ModeType = typeof MODE_CONFIG[number]['id'];
 
 export default function MinimalCameraWithGalleryButton() {
   const { t } = useTranslation();
+  const { showOnboarding } = useOnboarding();
   const [permission, requestPermission] = useCameraPermissions();
   const [enableTorch, setEnableTorch] = useState(false);
   const [facing] = useState<'front' | 'back'>('back');
   const [isAppReady, setIsAppReady] = useState(false);
   const [functionType, setFunctionType] = useState<ModeType>('restoration');
   const [showModeSelector, setShowModeSelector] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
   const router = useRouter();
   const cameraRef = useRef<CameraView>(null);
   
@@ -60,9 +63,14 @@ export default function MinimalCameraWithGalleryButton() {
     }
   }, [t]);
   
-  // Always fetch and sync restoration history on app start
+  // Only fetch and sync restoration history if not showing onboarding
   const { refetch } = useRestorationHistory();
   useEffect(() => {
+    // Skip loading if we're going to show onboarding
+    if (showOnboarding === true) {
+      return;
+    }
+
     // Add a small delay to ensure QueryClient is fully initialized
     const timer = setTimeout(() => {
       // Clean up orphaned records on app start
@@ -72,16 +80,18 @@ export default function MinimalCameraWithGalleryButton() {
             if (__DEV__) {
               console.log(`🧹 Cleaned ${cleanedCount} orphaned records on app start`);
             }
-            refetch({ cancelRefetch: false });
-          } else {
-            refetch({ cancelRefetch: false });
           }
+          // Always refetch once after cleanup (whether records were cleaned or not)
+          refetch({ cancelRefetch: false });
+        }).catch(() => {
+          // Fallback if cleanup fails
+          refetch({ cancelRefetch: false });
         });
       });
     }, 100); // Small delay to let providers initialize
     
     return () => clearTimeout(timer);
-  }, [refetch]);
+  }, [refetch, showOnboarding]);
   
   // Use Zustand store for restorationCount and flash button visibility
   const restorationCount = useRestorationStore((state) => state.restorationCount);
@@ -207,33 +217,96 @@ export default function MinimalCameraWithGalleryButton() {
     
   // Camera functions
   const handleCapture = useCallback(async () => {
-    if (!cameraRef.current) return;
+    if (__DEV__) {
+      console.log('📸 Camera capture requested');
+      console.log('📸 Camera ref exists:', !!cameraRef.current);
+      console.log('📸 Is capturing:', isCapturing);
+    }
     
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (!cameraRef.current) {
+      if (__DEV__) {
+        console.error('❌ Camera ref is null - camera not ready');
+      }
+      Alert.alert('Camera Error', 'Camera is not ready. Please try again.');
+      return;
+    }
     
-    // Animate capture button
-    captureButtonScale.value = withSequence(
-      withSpring(0.8),
-      withSpring(1)
-    );
-
-    // Flash animation
-    flashAnimation.value = withSequence(
-      withTiming(1, { duration: 100 }),
-      withTiming(0, { duration: 300 })
-    );
-
+    if (isCapturing) {
+      if (__DEV__) {
+        console.log('🚫 Camera capture blocked - already capturing');
+      }
+      return;
+    }
+    
+    setIsCapturing(true);
+    
     try {
+      if (__DEV__) {
+        console.log('📸 Starting camera capture...');
+      }
+      
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      
+      // Animate capture button
+      captureButtonScale.value = withSequence(
+        withSpring(0.8),
+        withSpring(1)
+      );
+
+      // Flash animation
+      flashAnimation.value = withSequence(
+        withTiming(1, { duration: 100 }),
+        withTiming(0, { duration: 300 })
+      );
+
       const photo = await cameraRef.current.takePictureAsync();
+      
+      if (__DEV__) {
+        console.log('📸 Photo captured:', photo ? 'Success' : 'Failed');
+        if (photo) {
+          console.log('📸 Photo URI:', photo.uri);
+        }
+      }
+      
       if (photo) {
         router.push(`/crop-modal?imageUri=${encodeURIComponent(photo.uri)}&functionType=${functionType}`);
+      } else {
+        throw new Error('No photo returned from camera');
       }
     } catch (error) {
       if (__DEV__) {
-        console.error('Failed to take picture:', error);
+        console.error('❌ Camera capture failed:', error);
+        console.error('❌ Error details:', JSON.stringify(error, null, 2));
       }
+      
+      // Reset capturing state immediately on error
+      setIsCapturing(false);
+      
+      // Show user-friendly error message
+      Alert.alert(
+        'Camera Error', 
+        'Failed to take photo. Please try again.',
+        [
+          { 
+            text: 'OK', 
+            onPress: () => {
+              // Ensure capturing state is reset
+              setIsCapturing(false);
+            }
+          }
+        ]
+      );
+      return; // Exit early, don't wait for timeout
     }
-  }, [router, functionType, captureButtonScale, flashAnimation]);
+    
+    // Success - reset capturing state after short delay
+    setTimeout(() => {
+      setIsCapturing(false);
+      if (__DEV__) {
+        console.log('📸 Camera capture complete, state reset');
+      }
+    }, 500); // Reduced from 1000ms to 500ms
+  }, [router, functionType, captureButtonScale, flashAnimation, isCapturing]);
 
   const handleGalleryPress = useCallback(async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -258,6 +331,15 @@ export default function MinimalCameraWithGalleryButton() {
   const toggleFlash = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setEnableTorch(current => !current);
+  }, []);
+
+  // Debug function to manually reset camera state (for testing)
+  const resetCameraState = useCallback(() => {
+    if (__DEV__) {
+      console.log('🔧 Manually resetting camera state');
+      setIsCapturing(false);
+      Alert.alert('Camera Reset', 'Camera state has been reset.');
+    }
   }, []);
 
   const handleModePress = useCallback(() => {
@@ -585,16 +667,18 @@ export default function MinimalCameraWithGalleryButton() {
                 />
                 <AnimatedTouchableOpacity
                   onPress={handleCapture}
+                  disabled={isCapturing}
                   style={[
                     {
                       width: 72,
                       height: 72,
                       borderRadius: 36,
-                      backgroundColor: '#f97316',
+                      backgroundColor: isCapturing ? '#9ca3af' : '#f97316',
                       borderWidth: 4,
                       borderColor: '#fff',
                       justifyContent: 'center',
                       alignItems: 'center',
+                      opacity: isCapturing ? 0.6 : 1,
                     },
                     animatedCaptureStyle,
                   ]}

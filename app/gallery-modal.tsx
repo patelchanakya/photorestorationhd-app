@@ -65,16 +65,23 @@ export default function GalleryModalScreen() {
   
   // Refresh on mount and cleanup orphaned records
   useEffect(() => {
-    console.log('🔄 Gallery Modal: Refreshing history on mount');
+    if (__DEV__) {
+      console.log('🔄 Gallery Modal: Refreshing history on mount');
+    }
     
     // Clean up orphaned records in the background
     localStorageHelpers.cleanupOrphanedRecords().then((cleanedCount) => {
       if (cleanedCount > 0) {
+        // Only refresh if cleanup actually removed records
+        refreshHistory();
+      } else {
+        // Otherwise, just refresh once
         refreshHistory();
       }
+    }).catch(() => {
+      // Fallback if cleanup fails
+      refreshHistory();
     });
-    
-    refreshHistory();
   }, []);
   
   // Debug restorations

@@ -83,12 +83,14 @@ function ProcessingAnimation({ selectedImage, functionType, isComplete = false, 
 
   // React to completion
   useEffect(() => {
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
+    
     if (isComplete) {
       // Complete progress quickly
       progress.value = withTiming(1, { duration: 500 });
       
       // Wait a moment then trigger success
-      setTimeout(() => {
+      const timeout1 = setTimeout(() => {
         // Remove blur effect
         blurIntensity.value = withTiming(0, { duration: 800 });
         
@@ -98,12 +100,18 @@ function ProcessingAnimation({ selectedImage, functionType, isComplete = false, 
           withTiming(1, { duration: 200 })
         );
         
-        setTimeout(() => {
+        const timeout2 = setTimeout(() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
           onComplete?.();
         }, 1000);
+        timeouts.push(timeout2);
       }, 600);
+      timeouts.push(timeout1);
     }
+    
+    return () => {
+      timeouts.forEach(timeout => clearTimeout(timeout));
+    };
   }, [isComplete, onComplete]);
   
   const animatedImageStyle = useAnimatedStyle(() => {

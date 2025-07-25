@@ -5,7 +5,7 @@ import { localStorageHelpers } from '@/services/supabase';
 import { deviceTrackingService } from '@/services/deviceTracking';
 import { useRestorationStore } from '@/store/restorationStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
-import { restorePurchasesDetailed, presentPaywall } from '@/services/revenuecat';
+import { restorePurchasesDetailed, presentPaywall, getAppUserId } from '@/services/revenuecat';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
@@ -48,6 +48,8 @@ export default function SettingsModalScreen() {
   const [isRestoring, setIsRestoring] = useState(false);
   const [timeUntilNext, setTimeUntilNext] = useState<string>('Available now');
   const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [revenueCatUserId, setRevenueCatUserId] = useState<string | null>(null);
+  const [msRemaining, setMsRemaining] = useState<number>(0);
   const { t, currentLanguage } = useTranslation();
   const supportedLanguages = getSupportedLanguages();
   
@@ -56,20 +58,76 @@ export default function SettingsModalScreen() {
     return supportedLanguages.find(lang => lang.code === currentLanguage) || supportedLanguages[0];
   };
 
+  // Format time remaining with seconds for live countdown
+  const formatTimeWithSeconds = (ms: number): string => {
+    if (ms === 0) {
+      return 'Available now';
+    }
+    
+    const hours = Math.floor(ms / (1000 * 60 * 60));
+    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((ms % (1000 * 60)) / 1000);
+    
+    if (hours === 0 && minutes === 0) {
+      return `${seconds}s`;
+    } else if (hours === 0) {
+      return `${minutes}m ${seconds}s`;
+    } else {
+      return `${hours}h ${minutes}m ${seconds}s`;
+    }
+  };
+
   // Update countdown timer for free users
   useEffect(() => {
-    const updateCountdown = async () => {
+    let interval: NodeJS.Timeout;
+    
+    const initializeCountdown = async () => {
       if (!isPro) {
-        const formattedTime = await deviceTrackingService.getFormattedTimeUntilNext();
-        setTimeUntilNext(formattedTime);
+        // Get initial time remaining from device tracking (only once)
+        const initialMsRemaining = await deviceTrackingService.getTimeUntilNextFreeRestoration();
+        setMsRemaining(initialMsRemaining);
+        setTimeUntilNext(formatTimeWithSeconds(initialMsRemaining));
+        
+        // Start live countdown that decrements locally every second
+        interval = setInterval(() => {
+          setMsRemaining(prev => {
+            const newMs = Math.max(0, prev - 1000); // Subtract 1 second
+            const formattedTime = formatTimeWithSeconds(newMs);
+            setTimeUntilNext(formattedTime);
+            return newMs;
+          });
+        }, 1000);
       }
     };
 
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 60000); // Update every minute
+    initializeCountdown();
 
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
   }, [isPro]);
+
+  // Fetch RevenueCat user ID on mount
+  useEffect(() => {
+    const fetchRevenueCatUserId = async () => {
+      try {
+        const userId = await getAppUserId();
+        setRevenueCatUserId(userId);
+        if (__DEV__) {
+          console.log('📱 RevenueCat User ID:', userId);
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.log('⚠️ Could not fetch RevenueCat User ID:', error);
+        }
+        setRevenueCatUserId('Unable to load ID');
+      }
+    };
+
+    fetchRevenueCatUserId();
+  }, []);
 
   // Format bytes to human readable
   const formatBytes = (bytes: number): string => {
@@ -419,12 +477,22 @@ export default function SettingsModalScreen() {
       });
 
       const subject = 'Photo Restoration HD - Support Request';
+      // Clean up the RevenueCat ID to show only the unique part
+      let supportId = 'Loading...';
+      if (revenueCatUserId) {
+        // Remove the $RCAnonymousID: prefix if present, otherwise use full ID
+        supportId = revenueCatUserId.replace('$RCAnonymousID:', '') || revenueCatUserId;
+      }
+      
       const body = `Hi there,
 
 I need help with Photo Restoration HD.
 
+SUPPORT ID: ${supportId}
 Device: ${Platform.OS} ${Platform.Version}
 App Version: 1.0.0
+
+Please include the Support ID above in your message so we can assist you quickly.
 
 Issue Description:
 [Please describe your issue here]
@@ -656,7 +724,7 @@ Best regards`;
                         {t('settings.freeRestorations')}
                       </Text>
                       <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                        1 every 48 hours • {timeUntilNext === 'Available now' ? t('language.availableNow') : t('language.nextIn', { time: timeUntilNext })}
+                        {timeUntilNext === 'Available now' ? t('language.availableNow') : t('language.nextIn', { time: timeUntilNext })}
                       </Text>
                     </View>
                     <View style={{
@@ -1332,33 +1400,6 @@ Best regards`;
                   </View>
                 </View>
 
-                {/* Help & Support */}
-                <TouchableOpacity style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 16
-                }}>
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
-                    <IconSymbol name="questionmark.circle" size={18} color="#f97316" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      {t('settings.helpSupport')}
-                    </Text>
-                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                      {t('settings.helpSupportDescription')}
-                    </Text>
-                  </View>
-                  <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
-                </TouchableOpacity>
               </View>
             </View>
 

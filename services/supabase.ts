@@ -29,6 +29,13 @@ export const localStorageHelpers = {
       if (__DEV__) {
         console.log(`🧹 Cleaned up ${cleanedCount} orphaned restoration records`);
       }
+      
+      // Clear restoration cache if any records were cleaned
+      if (cleanedCount > 0) {
+        const { restorationService } = await import('./supabase');
+        restorationService.clearRestorationCache();
+      }
+      
       return cleanedCount;
     } catch (error) {
       if (__DEV__) {
@@ -169,6 +176,8 @@ export const localStorageHelpers = {
 export const restorationService = {
   // Create a new restoration record
   async create(data: Partial<Restoration>): Promise<Restoration> {
+    // Clear cache when creating new restoration
+    this.clearRestorationCache();
     if (__DEV__) {
       console.log('💾 Creating restoration record locally:', data);
     }
@@ -200,6 +209,8 @@ export const restorationService = {
 
   // Update restoration record
   async update(id: string, data: Partial<Restoration>): Promise<Restoration> {
+    // Clear cache when updating restoration
+    this.clearRestorationCache();
     if (__DEV__) {
       console.log('💾 Updating restoration:', id, data);
     }
@@ -236,12 +247,59 @@ export const restorationService = {
     return restoration;
   },
 
-  // Get all restorations for a user (now local only)
-  async getUserRestorations(userId: string): Promise<Restoration[]> {
+  // Cache for restoration data
+  _restorationCache: {
+    data: null as Restoration[] | null,
+    timestamp: 0,
+    promise: null as Promise<Restoration[]> | null,
+  },
+
+  // Get all restorations for a user (now local only with caching)
+  async getUserRestorations(_userId: string): Promise<Restoration[]> {
+    const now = Date.now();
+    const CACHE_DURATION = 2000; // 2 seconds cache
+    
+    // Return cached data if it's recent
+    if (this._restorationCache.data && (now - this._restorationCache.timestamp) < CACHE_DURATION) {
+      if (__DEV__) {
+        console.log('📦 Using cached restoration data');
+      }
+      return this._restorationCache.data;
+    }
+    
+    // If there's already a request in progress, return that promise
+    if (this._restorationCache.promise) {
+      if (__DEV__) {
+        console.log('⏳ Waiting for existing restoration request');
+      }
+      return this._restorationCache.promise;
+    }
+    
     if (__DEV__) {
       console.log('📱 Getting all restorations from local storage');
     }
     
+    // Create new request
+    this._restorationCache.promise = this._fetchRestorations();
+    
+    try {
+      const result = await this._restorationCache.promise;
+      
+      // Cache the result
+      this._restorationCache.data = result;
+      this._restorationCache.timestamp = now;
+      this._restorationCache.promise = null;
+      
+      return result;
+    } catch (error) {
+      // Clear the promise on error
+      this._restorationCache.promise = null;
+      throw error;
+    }
+  },
+
+  // Internal method to fetch restorations
+  async _fetchRestorations(): Promise<Restoration[]> {
     try {
       const restorations = await localStorageHelpers.getAllLocalRestorations();
       
@@ -262,8 +320,17 @@ export const restorationService = {
     }
   },
 
+  // Clear the cache (call when data changes)
+  clearRestorationCache() {
+    this._restorationCache.data = null;
+    this._restorationCache.timestamp = 0;
+    this._restorationCache.promise = null;
+  },
+
   // Delete a restoration
   async delete(id: string): Promise<void> {
+    // Clear cache when deleting restoration
+    this.clearRestorationCache();
     if (__DEV__) {
       console.log('🗑️ Deleting restoration:', id);
     }

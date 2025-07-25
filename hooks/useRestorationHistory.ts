@@ -86,12 +86,12 @@ export function useRestorationHistory(enabled: boolean = true, updateCount: bool
     },
     enabled,
     initialData: [],
-    staleTime: 1000 * 60 * 2, // 2 minutes
+    staleTime: 1000 * 5, // 5 seconds - short cache to prevent immediate duplicates
     gcTime: 1000 * 60 * 60 * 24, // 24 hours
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    refetchOnMount: false, // Prevent automatic refetch on mount
+    refetchOnWindowFocus: false, // Prevent refetch on focus
   });
 }
 

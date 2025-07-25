@@ -315,22 +315,22 @@ function CropModalScreen() {
                 position: 'absolute',
                 left: 0,
                 right: 0,
-                bottom: insets.bottom + 64,
+                bottom: insets.bottom + 40, // Moved lower (was 64)
                 flexDirection: 'row',
                 justifyContent: 'center',
                 alignItems: 'center',
                 zIndex: 10,
-                paddingHorizontal: 16,
+                paddingHorizontal: 20, // Increased padding for bigger button
               }}>
                 <AnimatedTouchableOpacity
                   style={[
                     {
-                      width: isSmallScreen ? 140 : 160,
-                      height: isSmallScreen ? 48 : 54,
-                      borderRadius: 28,
+                      width: '100%', // Full width like other buttons
+                      height: isSmallScreen ? 56 : 64, // Bigger height to match other buttons
+                      borderRadius: 16, // Match rounded corners of other buttons
                       alignItems: 'center',
                       justifyContent: 'center',
-                      backgroundColor: useImageLoading ? '#10b981' : '#f97316',
+                      backgroundColor: useImageLoading ? '#10b981' : '#f97316', // Keep orange color
                       shadowColor: useImageLoading ? '#10b981' : '#f97316',
                       shadowOffset: { width: 0, height: 12 },
                       shadowOpacity: 0.3,
@@ -347,7 +347,7 @@ function CropModalScreen() {
                       handleRestoration(currentImageUri);
                     }
                   }}
-                  accessibilityLabel="Use Whole Image"
+                  accessibilityLabel="Start Restoration"
                   activeOpacity={useImageLoading ? 1 : 0.85}
                   disabled={useImageLoading}
                 >
@@ -355,12 +355,16 @@ function CropModalScreen() {
                     <ActivityIndicator size="small" color="rgba(255, 255, 255, 0.9)" />
                   ) : (
                     <Text style={{ 
-                      color: 'rgba(255, 255, 255, 0.95)', 
-                      fontSize: isSmallScreen ? 16 : 18, 
-                      fontWeight: '600',
+                      color: '#ffffff', 
+                      fontSize: isSmallScreen ? 18 : 20, // Bigger font size
+                      fontWeight: 'bold', // Bold text
                       letterSpacing: 0.3
                     }}>
-                      Restore
+                      {functionType === 'restoration' ? 'Restore Photo' :
+                       functionType === 'unblur' ? 'Unblur Photo' :
+                       functionType === 'colorize' ? 'Colorize Photo' :
+                       functionType === 'descratch' ? 'Descratch Photo' : 
+                       'Fix Photo'}
                     </Text>
                   )}
                 </AnimatedTouchableOpacity>

@@ -10,13 +10,15 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { LanguageProvider } from '@/i18n';
 import NetInfo from '@react-native-community/netinfo';
 import { QueryClient, QueryClientProvider, focusManager, onlineManager } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { AppState, AppStateStatus, Platform, LogBox } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import Constants from 'expo-constants';
 import { deviceTrackingService } from '@/services/deviceTracking';
+import { OnboardingProvider, useOnboarding } from '@/contexts/OnboardingContext';
+import { useRouter } from 'expo-router';
 
 // Configure LogBox for production
 if (!__DEV__) {
@@ -143,6 +145,7 @@ export default function RootLayout() {
   useOnlineManager();
   useAppState(onAppStateChange);
 
+
   // Initialize RevenueCat after component mounts
   useEffect(() => {
     if (!loaded) return;
@@ -257,24 +260,57 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <LanguageProvider>
-          <QueryClientProvider client={queryClient}>
-              <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-              <Stack>
-                <Stack.Screen name="index" options={{ headerShown: false, title: "Photo Restoration HD" }} />
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="restoration/[id]" options={{ headerShown: false }} />
-                <Stack.Screen name="gallery-modal" options={{ presentation: 'modal', headerShown: false }} />
-                <Stack.Screen name="settings-modal" options={{ presentation: 'modal', headerShown: false }} />
-                <Stack.Screen name="crop-modal" options={{ presentation: 'modal', headerShown: false }} />
-                <Stack.Screen name="gallery-image/[id]" options={{ presentation: 'modal', headerShown: false }} />
-                <Stack.Screen name="+not-found" />
-              </Stack>
-              <StatusBar style="auto" />
-            </ThemeProvider>
-        </QueryClientProvider>
-      </LanguageProvider>
-    </GestureHandlerRootView>
+        <OnboardingProvider>
+          <LanguageProvider>
+            <QueryClientProvider client={queryClient}>
+                <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                <OnboardingNavigator />
+                <StatusBar style="auto" />
+              </ThemeProvider>
+          </QueryClientProvider>
+        </LanguageProvider>
+        </OnboardingProvider>
+      </GestureHandlerRootView>
     </ErrorBoundary>
+  );
+}
+
+function OnboardingNavigator() {
+  const { showOnboarding } = useOnboarding();
+  const router = useRouter();
+
+  if (__DEV__) {
+    console.log('🚀 OnboardingNavigator: showOnboarding =', showOnboarding);
+  }
+
+  useEffect(() => {
+    if (showOnboarding === true) {
+      if (__DEV__) {
+        console.log('🔄 Navigating to onboarding...');
+      }
+      router.replace('/onboarding');
+    }
+  }, [showOnboarding, router]);
+
+  if (showOnboarding === null) {
+    if (__DEV__) {
+      console.log('⏳ OnboardingNavigator: Still checking onboarding status...');
+    }
+    // Still checking onboarding status
+    return null;
+  }
+
+  return (
+    <Stack>
+      <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+      <Stack.Screen name="index" options={{ headerShown: false, title: "Photo Restoration HD" }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="restoration/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="gallery-modal" options={{ presentation: 'modal', headerShown: false }} />
+      <Stack.Screen name="settings-modal" options={{ presentation: 'modal', headerShown: false }} />
+      <Stack.Screen name="crop-modal" options={{ presentation: 'modal', headerShown: false }} />
+      <Stack.Screen name="gallery-image/[id]" options={{ presentation: 'modal', headerShown: false }} />
+      <Stack.Screen name="+not-found" />
+    </Stack>
   );
 }
