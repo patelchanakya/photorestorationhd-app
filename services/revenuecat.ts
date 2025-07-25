@@ -87,14 +87,13 @@ export const purchasePackage = async (packageToPurchase: PurchasesPackage): Prom
       console.log('✅ Purchase successful:', customerInfo);
     }
     
-    // Check if the purchase gave access to pro features
-    const hasProEntitlement = customerInfo.entitlements.active['pro'] !== undefined;
+    // Check if the purchase gave access to pro features using isActive property
+    const proEntitlement = customerInfo.entitlements.active['pro'];
+    const hasProEntitlement = proEntitlement?.isActive === true;
     
-    // Update the subscription store
-    useSubscriptionStore.getState().setIsPro(hasProEntitlement);
-    
+    // Note: Store update handled by CustomerInfo listener in _layout.tsx
     if (__DEV__) {
-      console.log('🔄 Updated pro status after purchase:', hasProEntitlement);
+      console.log('🔄 Purchase completed, pro status:', hasProEntitlement);
     }
     
     return hasProEntitlement;
@@ -159,17 +158,25 @@ export const checkSubscriptionStatus = async (): Promise<boolean> => {
     const customerInfo = await getCustomerInfo();
     
     if (!customerInfo) {
+      // Only update store in error case where CustomerInfo is unavailable
+      useSubscriptionStore.getState().setIsPro(false);
       return false;
     }
     
-    // Check if user has active pro entitlement
-    const hasProEntitlement = customerInfo.entitlements.active['pro'] !== undefined;
+    // Check if user has active pro entitlement using isActive property
+    const proEntitlement = customerInfo.entitlements.active['pro'];
+    const hasProEntitlement = proEntitlement?.isActive === true;
     
-    // Update the subscription store
-    useSubscriptionStore.getState().setIsPro(hasProEntitlement);
-    
+    // Note: Store update handled by CustomerInfo listener in _layout.tsx
     if (__DEV__) {
       console.log('🔍 Subscription status check:', hasProEntitlement);
+      if (proEntitlement) {
+        console.log('🔍 Pro entitlement details:', {
+          isActive: proEntitlement.isActive,
+          willRenew: proEntitlement.willRenew,
+          expirationDate: proEntitlement.expirationDate
+        });
+      }
     }
     
     return hasProEntitlement;
@@ -178,7 +185,8 @@ export const checkSubscriptionStatus = async (): Promise<boolean> => {
     if (__DEV__) {
       console.error('❌ Failed to check subscription status:', error);
     }
-    return false;
+    // On error, don't change current state - let user keep current access level
+    return useSubscriptionStore.getState().isPro;
   }
 };
 
@@ -216,14 +224,13 @@ export const restorePurchases = async (): Promise<boolean> => {
       return false;
     }
     
-    // Check if restored purchases include pro entitlement
-    const hasProEntitlement = customerInfo.entitlements.active['pro'] !== undefined;
+    // Check if restored purchases include pro entitlement using isActive property
+    const proEntitlement = customerInfo.entitlements.active['pro'];
+    const hasProEntitlement = proEntitlement?.isActive === true;
     
-    // Update the subscription store
-    useSubscriptionStore.getState().setIsPro(hasProEntitlement);
-    
+    // Note: Store update handled by CustomerInfo listener in _layout.tsx
     if (__DEV__) {
-      console.log('🔄 Pro status after restore:', hasProEntitlement);
+      console.log('🔄 Restore completed, pro status:', hasProEntitlement);
     }
     
     return hasProEntitlement;
@@ -273,14 +280,13 @@ export const restorePurchasesDetailed = async (): Promise<RestoreResult> => {
       };
     }
     
-    // Check if restored purchases include pro entitlement
-    const hasProEntitlement = customerInfo.entitlements.active['pro'] !== undefined;
+    // Check if restored purchases include pro entitlement using isActive property
+    const proEntitlement = customerInfo.entitlements.active['pro'];
+    const hasProEntitlement = proEntitlement?.isActive === true;
     
-    // Update the subscription store
-    useSubscriptionStore.getState().setIsPro(hasProEntitlement);
-    
+    // Note: Store update handled by CustomerInfo listener in _layout.tsx
     if (__DEV__) {
-      console.log('🔄 Pro status after restore:', hasProEntitlement);
+      console.log('🔄 Detailed restore completed, pro status:', hasProEntitlement);
     }
     
     return {
@@ -524,7 +530,8 @@ export const getSubscriptionExpirationDate = async (): Promise<Date | null> => {
     
     const proEntitlement = customerInfo.entitlements.active['pro'];
     
-    if (proEntitlement && proEntitlement.expirationDate) {
+    // Only return expiration date if entitlement is active
+    if (proEntitlement?.isActive && proEntitlement.expirationDate) {
       return new Date(proEntitlement.expirationDate);
     }
     
@@ -535,6 +542,53 @@ export const getSubscriptionExpirationDate = async (): Promise<Date | null> => {
       console.error('❌ Failed to get expiration date:', error);
     }
     return null;
+  }
+};
+
+// Validate premium access before granting features - follows RevenueCat best practices
+export const validatePremiumAccess = async (): Promise<boolean> => {
+  try {
+    if (isExpoGo()) {
+      // In Expo Go, allow access for testing
+      if (__DEV__) {
+        console.log('⚠️ Allowing premium access in Expo Go for testing');
+      }
+      return true;
+    }
+    
+    // Call getCustomerInfo() as recommended by RevenueCat docs
+    // "It's safe to call getCustomerInfo() frequently throughout your app"
+    const customerInfo = await getCustomerInfo();
+    
+    if (!customerInfo) {
+      // Only update store in error case where CustomerInfo is unavailable
+      useSubscriptionStore.getState().setIsPro(false);
+      return false;
+    }
+    
+    // Check entitlement using isActive property for accuracy
+    const proEntitlement = customerInfo.entitlements.active['pro'];
+    const hasValidAccess = proEntitlement?.isActive === true;
+    
+    // Note: Store update handled by CustomerInfo listener in _layout.tsx
+    if (__DEV__) {
+      console.log('🔐 Premium access validation:', hasValidAccess);
+      if (proEntitlement && !hasValidAccess) {
+        console.log('🔐 Pro entitlement exists but not active:', {
+          isActive: proEntitlement.isActive,
+          willRenew: proEntitlement.willRenew,
+          expirationDate: proEntitlement.expirationDate
+        });
+      }
+    }
+    
+    return hasValidAccess;
+  } catch (error) {
+    if (__DEV__) {
+      console.error('❌ Failed to validate premium access:', error);
+    }
+    // On error, return current state to avoid disrupting user experience
+    return useSubscriptionStore.getState().isPro;
   }
 };
 

@@ -31,7 +31,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { useCropModalStore } from '@/store/cropModalStore';
 import Constants from 'expo-constants';
-import { presentPaywall } from '@/services/revenuecat';
+import { presentPaywall, validatePremiumAccess } from '@/services/revenuecat';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -121,6 +121,12 @@ function CropModalScreen() {
     
     // Reset any previous error state before starting new restoration
     photoRestoration.reset();
+    
+    // Validate premium access first - follows RevenueCat best practices
+    const hasValidAccess = await validatePremiumAccess();
+    if (__DEV__) {
+      console.log('🔐 Premium access validation before restoration:', hasValidAccess);
+    }
     
     // Check if user can restore (now async)
     const canRestoreResult = await canRestore();

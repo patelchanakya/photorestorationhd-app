@@ -13,7 +13,7 @@ import { Alert, InteractionManager, Text, TouchableOpacity, View } from 'react-n
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming, runOnJS } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import Constants from 'expo-constants';
-import { presentPaywall } from '@/services/revenuecat';
+import { presentPaywall, validatePremiumAccess } from '@/services/revenuecat';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 
@@ -269,6 +269,12 @@ export default function MinimalCameraWithGalleryButton() {
       }
       
       if (photo) {
+        // Validate premium access before proceeding to crop - follows RevenueCat best practices
+        const hasAccess = await validatePremiumAccess();
+        if (__DEV__) {
+          console.log('📸 Premium access validation after capture:', hasAccess);
+        }
+        
         router.push(`/crop-modal?imageUri=${encodeURIComponent(photo.uri)}&functionType=${functionType}`);
       } else {
         throw new Error('No photo returned from camera');
@@ -319,6 +325,12 @@ export default function MinimalCameraWithGalleryButton() {
       });
 
       if (!result.canceled && result.assets[0]) {
+        // Validate premium access before proceeding to crop - follows RevenueCat best practices
+        const hasAccess = await validatePremiumAccess();
+        if (__DEV__) {
+          console.log('📱 Premium access validation after gallery selection:', hasAccess);
+        }
+        
         router.push(`/crop-modal?imageUri=${encodeURIComponent(result.assets[0].uri)}&functionType=${functionType}`);
       }
     } catch (error) {

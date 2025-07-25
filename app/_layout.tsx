@@ -15,6 +15,7 @@ import { AppState, AppStateStatus, Platform, LogBox } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { checkSubscriptionStatus } from '@/services/revenuecat';
 import Constants from 'expo-constants';
 import { deviceTrackingService } from '@/services/deviceTracking';
 import { OnboardingProvider, useOnboarding } from '@/contexts/OnboardingContext';
@@ -132,6 +133,16 @@ function onAppStateChange(status: AppStateStatus) {
   if (Platform.OS !== 'web') {
     focusManager.setFocused(status === 'active');
   }
+  
+  // Refresh subscription status when app becomes active - RevenueCat best practice
+  if (status === 'active') {
+    // Don't await this to avoid blocking app activation
+    checkSubscriptionStatus().catch((error) => {
+      if (__DEV__) {
+        console.log('🔄 Failed to refresh subscription status on app active:', error);
+      }
+    });
+  }
 }
 
 export default function RootLayout() {
@@ -204,8 +215,9 @@ export default function RootLayout() {
                 console.log('📱 Customer info updated:', customerInfo);
               }
               
-              // Check if user has active pro entitlement
-              const hasProEntitlement = customerInfo.entitlements.active['pro'] !== undefined;
+              // Check if user has active pro entitlement using isActive property
+              const proEntitlement = customerInfo.entitlements.active['pro'];
+              const hasProEntitlement = proEntitlement?.isActive === true;
               setIsPro(hasProEntitlement);
               
               if (__DEV__) {
@@ -215,7 +227,8 @@ export default function RootLayout() {
             
             // Check initial subscription status
             const customerInfo = await Purchases.getCustomerInfo();
-            const hasProEntitlement = customerInfo.entitlements.active['pro'] !== undefined;
+            const proEntitlement = customerInfo.entitlements.active['pro'];
+            const hasProEntitlement = proEntitlement?.isActive === true;
             setIsPro(hasProEntitlement);
             
             if (__DEV__) {

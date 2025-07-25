@@ -16,6 +16,7 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import * as Haptics from 'expo-haptics';
 import { presentPaywall } from '@/services/revenuecat';
+import CurtainRevealImage, { CurtainRevealImageRef } from '@/components/CurtainRevealImage';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -24,7 +25,8 @@ interface OnboardingPage {
   title: string;
   subtitle: string;
   icon?: string;
-  image?: any;
+  beforeImage?: any;
+  afterImage?: any;
   gradientColors: [string, string];
   iconName?: React.ComponentProps<typeof IconSymbol>['name'];
 }
@@ -32,27 +34,37 @@ interface OnboardingPage {
 const pages: OnboardingPage[] = [
   {
     id: 0,
-    title: 'Restore Any Photo',
-    subtitle: 'Turn faded, cracked, and damaged memories into treasures worth keeping',
+    title: 'Welcome to PastPix',
+    subtitle: 'Turn faded, cracked, damaged photos into memories that last forever',
     gradientColors: ['#1e1e1e', '#2a2a2a'],
     iconName: 'photo.on.rectangle',
   },
   {
     id: 1,
-    title: 'Fix Scratches & Tears',
-    subtitle: 'Remove those unsightly scratches, tears, and stains that ruin your precious photos',
+    title: 'Fix Even the Most Damaged Photos',
+    subtitle: 'Scratches, tears, water damage all fixed instantly',
     gradientColors: ['#1a1a2e', '#16213e'],
-    iconName: 'bandage',
+    beforeImage: require('@/assets/images/onboarding/before-4.jpg'),
+    afterImage: require('@/assets/images/onboarding/after-4.png'),
   },
   {
     id: 2,
     title: 'Repair Faces & Details',
     subtitle: 'Restore missing facial features, fix blurry faces, and bring back lost details',
     gradientColors: ['#7c2d12', '#ea580c'],
-    iconName: 'person.crop.rectangle',
+    beforeImage: require('@/assets/images/onboarding/before-2.jpg'),
+    afterImage: require('@/assets/images/onboarding/after-2.png'),
   },
   {
     id: 3,
+    title: 'Enhance Colors & Clarity',
+    subtitle: 'Bring vibrancy back to faded memories',
+    gradientColors: ['#4c1d95', '#7c3aed'],
+    beforeImage: require('@/assets/images/onboarding/before-3.jpg'),
+    afterImage: require('@/assets/images/onboarding/after-3.png'),
+  },
+  {
+    id: 4,
     title: 'Go Pro for Unlimited',
     subtitle: 'Try free or upgrade to Pro with weekly or monthly plans',
     gradientColors: ['#1e1e1e', '#16a34a'],
@@ -63,7 +75,9 @@ const pages: OnboardingPage[] = [
 export default function OnboardingScreen() {
   const scrollX = useSharedValue(0);
   const scrollRef = useRef<Animated.ScrollView>(null);
+  const curtainRefs = useRef<(CurtainRevealImageRef | null)[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
+  const [revealedScreens, setRevealedScreens] = useState<boolean[]>(new Array(pages.length).fill(false));
   const { completeOnboarding } = useOnboarding();
   const timeoutRef = useRef<NodeJS.Timeout>();
 
@@ -76,11 +90,34 @@ export default function OnboardingScreen() {
   });
 
   const handleNext = () => {
-    if (currentPage < pages.length - 1) {
-      scrollRef.current?.scrollTo({ x: (currentPage + 1) * SCREEN_WIDTH, animated: true });
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const currentPageData = pages[currentPage];
+    
+    // If current page has images and hasn't been revealed yet
+    if (currentPageData.beforeImage && currentPageData.afterImage && !revealedScreens[currentPage]) {
+      // Trigger curtain reveal
+      curtainRefs.current[currentPage]?.startReveal();
+      
+      // Mark as revealed
+      const newRevealedScreens = [...revealedScreens];
+      newRevealedScreens[currentPage] = true;
+      setRevealedScreens(newRevealedScreens);
+      
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      
+      // Auto-advance after animation completes
+      setTimeout(() => {
+        if (currentPage < pages.length - 1) {
+          scrollRef.current?.scrollTo({ x: (currentPage + 1) * SCREEN_WIDTH, animated: true });
+        }
+      }, 1200);
     } else {
-      handleComplete();
+      // Regular navigation for pages without images or already revealed
+      if (currentPage < pages.length - 1) {
+        scrollRef.current?.scrollTo({ x: (currentPage + 1) * SCREEN_WIDTH, animated: true });
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } else {
+        handleComplete();
+      }
     }
   };
 
@@ -150,6 +187,7 @@ export default function OnboardingScreen() {
             page={page}
             index={index}
             scrollX={scrollX}
+            curtainRef={(ref) => (curtainRefs.current[index] = ref)}
           />
         ))}
       </Animated.ScrollView>
@@ -172,9 +210,14 @@ export default function OnboardingScreen() {
           ) : (
             // Other pages: Skip and Next buttons
             <View className="flex-row justify-between items-center">
-              <Pressable onPress={handleSkip} className="p-4">
-                <Text className="text-gray-400 text-base">Skip</Text>
-              </Pressable>
+              {/* Hide skip button on first screen */}
+              {currentPage === 0 ? (
+                <View className="p-4" />
+              ) : (
+                <Pressable onPress={handleSkip} className="p-4">
+                  <Text className="text-gray-400 text-base">Skip</Text>
+                </Pressable>
+              )}
 
               <Pressable
                 onPress={handleNext}
@@ -201,9 +244,10 @@ interface OnboardingPageProps {
   page: OnboardingPage;
   index: number;
   scrollX: Animated.SharedValue<number>;
+  curtainRef?: (ref: CurtainRevealImageRef | null) => void;
 }
 
-function OnboardingPage({ page, index, scrollX }: OnboardingPageProps) {
+function OnboardingPage({ page, index, scrollX, curtainRef }: OnboardingPageProps) {
   const inputRange = [(index - 1) * SCREEN_WIDTH, index * SCREEN_WIDTH, (index + 1) * SCREEN_WIDTH];
 
   const animatedStyle = useAnimatedStyle(() => {
@@ -264,8 +308,17 @@ function OnboardingPage({ page, index, scrollX }: OnboardingPageProps) {
       >
         <SafeAreaView className="flex-1 justify-center items-center px-8">
           <Animated.View style={animatedStyle} className="items-center">
-            {page.iconName && (
-              <Animated.View style={iconAnimatedStyle} className="mb-8">
+            {/* Show image pairs for screens with before/after images */}
+            {page.beforeImage && page.afterImage ? (
+              <Animated.View style={iconAnimatedStyle} className="mb-16">
+                <CurtainRevealImage
+                  ref={curtainRef}
+                  beforeImage={page.beforeImage}
+                  afterImage={page.afterImage}
+                />
+              </Animated.View>
+            ) : page.iconName ? (
+              <Animated.View style={iconAnimatedStyle} className="mb-16">
                 <View className="w-32 h-32 bg-white/10 rounded-full items-center justify-center">
                   <IconSymbol
                     name={page.iconName}
@@ -274,12 +327,12 @@ function OnboardingPage({ page, index, scrollX }: OnboardingPageProps) {
                   />
                 </View>
               </Animated.View>
-            )}
+            ) : null}
 
-            <Text className="text-white text-4xl font-bold text-center mb-4">
+            <Text className="text-white text-3xl font-bold text-center mb-4">
               {page.title}
             </Text>
-            <Text className="text-gray-300 text-lg text-center max-w-xs">
+            <Text className="text-gray-300 text-base text-center max-w-sm">
               {page.subtitle}
             </Text>
           </Animated.View>
