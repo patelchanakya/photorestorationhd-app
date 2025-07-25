@@ -6,7 +6,6 @@ import { presentPaywall } from '@/services/revenuecat';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect, useRef, useState } from 'react';
 import { Dimensions, Image, Pressable, SafeAreaView, Text, View } from 'react-native';
 import Animated, {
@@ -19,7 +18,8 @@ import Animated, {
   useSharedValue,
   withSpring,
   withTiming,
-  withSequence
+  withSequence,
+  withDelay
 } from 'react-native-reanimated';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -47,7 +47,7 @@ const pages: OnboardingPage[] = [
     id: 1,
     title: 'Fix Damaged Portraits',
     subtitle: 'You will fix scratches, tears, and water damage instantly',
-    gradientColors: ['#0d1421', '#1e3a8a'],
+    gradientColors: ['#1f1f23', '#2d2d30'],
     beforeImage: require('@/assets/images/onboarding/before-4.jpg'),
     afterImage: require('@/assets/images/onboarding/after-4.png'),
   },
@@ -55,7 +55,7 @@ const pages: OnboardingPage[] = [
     id: 2,
     title: 'Repair Faces & Details',
     subtitle: 'You will restore missing facial features, fix blurry faces, and bring back lost details',
-    gradientColors: ['#1a0b0b', '#dc2626'],
+    gradientColors: ['#2d1b0e', '#8b4513'],
     beforeImage: require('@/assets/images/onboarding/before-2.jpg'),
     afterImage: require('@/assets/images/onboarding/after-2.png'),
   },
@@ -63,15 +63,15 @@ const pages: OnboardingPage[] = [
     id: 3,
     title: 'Enhance Colors & Clarity',
     subtitle: 'You will bring vibrancy back to faded memories',
-    gradientColors: ['#1e0a37', '#a855f7'],
+    gradientColors: ['#0f2a1e', '#16543e'],
     beforeImage: require('@/assets/images/onboarding/before-3.jpg'),
     afterImage: require('@/assets/images/onboarding/after-3.png'),
   },
   {
     id: 4,
-    title: 'Go Pro for Unlimited',
-    subtitle: 'Try free or upgrade to Pro with weekly or monthly plans',
-    gradientColors: ['#064e3b', '#10b981'],
+    title: 'Get Clever with Pro',
+    subtitle: 'Unlimited clever restorations for your precious memories',
+    gradientColors: ['#ea580c', '#f97316'],
     iconName: 'crown.fill',
   },
 ];
@@ -83,7 +83,8 @@ export default function OnboardingScreen() {
   const [currentPage, setCurrentPage] = useState(0);
   const [revealedScreens, setRevealedScreens] = useState<boolean[]>(new Array(pages.length).fill(false));
   const { completeOnboarding } = useOnboarding();
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<any>();
+  const autoAdvanceTimeoutRef = useRef<any>();
 
   // Animation values for Memory Keeper button
   const memoryKeeperScale = useSharedValue(1);
@@ -94,20 +95,6 @@ export default function OnboardingScreen() {
   const [showParticles, setShowParticles] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  // Hide splash screen once onboarding is ready
-  useEffect(() => {
-    const hideSplash = async () => {
-      try {
-        await SplashScreen.hideAsync();
-      } catch (e) {
-        // Splash screen already hidden or other error
-      }
-    };
-    
-    // Small delay to ensure onboarding screen is fully rendered
-    const timer = setTimeout(hideSplash, 100);
-    return () => clearTimeout(timer);
-  }, []);
   
   // Animation values for Start Restoring button
   const buttonScale = useSharedValue(1);
@@ -141,6 +128,9 @@ export default function OnboardingScreen() {
     
     // If current page has images and hasn't been revealed yet
     if (currentPageData.beforeImage && currentPageData.afterImage && !revealedScreens[currentPage]) {
+      // Initial light haptic
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      
       // Trigger curtain reveal
       curtainRefs.current[currentPage]?.startReveal();
       
@@ -149,9 +139,26 @@ export default function OnboardingScreen() {
       newRevealedScreens[currentPage] = true;
       setRevealedScreens(newRevealedScreens);
       
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      // Series of haptics during reveal
+      setTimeout(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      }, 200);
       
-      // No auto-advance - let users enjoy the transformation
+      setTimeout(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      }, 600);
+      
+      setTimeout(() => {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }, 1200);
+      
+      // Auto-advance after animation + 1.5 seconds delay
+      setTimeout(() => {
+        if (currentPage < pages.length - 1) {
+          scrollRef.current?.scrollTo({ x: (currentPage + 1) * SCREEN_WIDTH, animated: true });
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+      }, 3000); // 1.5s animation + 1.5s delay = 3s total
     } else {
       // Regular navigation for pages without images or already revealed
       if (currentPage < pages.length - 1) {
@@ -222,7 +229,7 @@ export default function OnboardingScreen() {
       setShowParticles(false);
       iconRotation.value = 0; // Reset rotation
       
-      // Re-enable button after navigation completes
+      // Re-enable scrolling after navigation completes
       setTimeout(() => {
         setIsAnimating(false);
       }, 300);
@@ -235,42 +242,72 @@ export default function OnboardingScreen() {
   };
 
   const handleComplete = async () => {
+    // Clean up all animations before navigation
+    memoryKeeperScale.value = 1;
+    memoryKeeperGlow.value = 0;
+    iconRotation.value = 0;
+    iconPulse.value = 1;
+    backgroundWave.value = 0;
+    setShowParticles(false);
+    setIsAnimating(false);
+    
+    // Clear timeouts
+    if (autoAdvanceTimeoutRef.current) {
+      clearTimeout(autoAdvanceTimeoutRef.current);
+    }
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
     await completeOnboarding();
     router.replace('/');
     
-    // Show paywall after navigating to home
-    timeoutRef.current = setTimeout(() => {
+    // Show paywall after navigating to home (non-blocking)
+    setTimeout(() => {
       presentPaywall();
-    }, 500);
+    }, 100);
   };
 
   const handleStartRestoring = async () => {
     // Light haptic on press
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
-    // Scale down animation
-    buttonScale.value = withSpring(0.95, { damping: 20, stiffness: 300 });
+    // PRIORITY: Clean up all animations immediately before navigation
+    memoryKeeperScale.value = 1;
+    memoryKeeperGlow.value = 0;
+    iconRotation.value = 0;
+    iconPulse.value = 1;
+    backgroundWave.value = 0;
+    buttonScale.value = 1;
+    buttonOpacity.value = 1;
     
-    // Heavy haptic after short delay
-    setTimeout(() => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    }, 100);
+    // Clear any pending timeouts
+    if (autoAdvanceTimeoutRef.current) {
+      clearTimeout(autoAdvanceTimeoutRef.current);
+      autoAdvanceTimeoutRef.current = undefined;
+    }
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = undefined;
+    }
     
-    // Scale up with bounce
-    setTimeout(() => {
-      buttonScale.value = withSpring(1.05, { damping: 15, stiffness: 200 }, () => {
-        buttonScale.value = withSpring(1, { damping: 20, stiffness: 300 });
-      });
-    }, 150);
+    // Reset particles state
+    setShowParticles(false);
+    setIsAnimating(false);
     
+    // Complete onboarding FIRST
     await completeOnboarding();
     
     // Success haptic
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     
-    // Present paywall immediately, then navigate
-    await presentPaywall();
+    // Navigate immediately - don't wait for paywall
     router.replace('/');
+    
+    // Present paywall after navigation (non-blocking)
+    setTimeout(() => {
+      presentPaywall();
+    }, 100);
   };
 
   // Cleanup on unmount
@@ -278,6 +315,9 @@ export default function OnboardingScreen() {
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
+      }
+      if (autoAdvanceTimeoutRef.current) {
+        clearTimeout(autoAdvanceTimeoutRef.current);
       }
     };
   }, []);
@@ -308,6 +348,7 @@ export default function OnboardingScreen() {
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         bounces={false}
+        scrollEnabled={!isAnimating}
       >
         {pages.map((page, index) => (
           <OnboardingPage
@@ -494,6 +535,7 @@ interface OnboardingPageProps {
 
 function OnboardingPage({ page, index, scrollX, curtainRef, iconRotation, iconPulse, backgroundWave }: OnboardingPageProps) {
   const inputRange = [(index - 1) * SCREEN_WIDTH, index * SCREEN_WIDTH, (index + 1) * SCREEN_WIDTH];
+  const flashOpacity = useSharedValue(0);
 
   const iconAnimatedStyleFirstPage = useAnimatedStyle(() => ({
     transform: [
@@ -505,6 +547,10 @@ function OnboardingPage({ page, index, scrollX, curtainRef, iconRotation, iconPu
   const backgroundWaveStyle = useAnimatedStyle(() => ({
     opacity: (backgroundWave?.value || 0) * 0.3,
     transform: [{ scale: 1 + (backgroundWave?.value || 0) * 0.1 }],
+  }));
+
+  const flashStyle = useAnimatedStyle(() => ({
+    opacity: flashOpacity.value,
   }));
 
   const animatedStyle = useAnimatedStyle(() => {
@@ -589,15 +635,47 @@ function OnboardingPage({ page, index, scrollX, curtainRef, iconRotation, iconPu
             ]}
           />
         )}
+        
+        {/* Flash effect overlay */}
+        <Animated.View
+          style={[
+            flashStyle,
+            {
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'white',
+              pointerEvents: 'none',
+            }
+          ]}
+        />
+        
         <SafeAreaView className="flex-1 justify-center items-center px-8">
           <Animated.View style={animatedStyle} className="items-center">
             {/* Show image pairs for screens with before/after images */}
             {page.beforeImage && page.afterImage ? (
               <Animated.View style={iconAnimatedStyle} className="mb-16">
                 <CurtainRevealImage
-                  ref={curtainRef}
+                  ref={(ref) => {
+                    if (curtainRef) curtainRef(ref);
+                    // Trigger flash when reveal starts
+                    if (ref) {
+                      const originalStartReveal = ref.startReveal;
+                      ref.startReveal = () => {
+                        // Flash effect
+                        flashOpacity.value = withSequence(
+                          withDelay(400, withTiming(0.6, { duration: 200 })),
+                          withTiming(0, { duration: 400 })
+                        );
+                        originalStartReveal();
+                      };
+                    }
+                  }}
                   beforeImage={page.beforeImage}
                   afterImage={page.afterImage}
+                  glowColor={page.gradientColors[1]}
                 />
               </Animated.View>
             ) : page.iconName ? (

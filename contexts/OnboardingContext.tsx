@@ -19,8 +19,8 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       console.log('💎 User isPro:', isPro);
     }
     
-    // Force show onboarding for debugging
-    const shouldShowOnboarding = true; // Temporarily force onboarding
+    // RESET: Back to production logic - only show onboarding for non-pro users
+    const shouldShowOnboarding = !isPro;
     
     if (__DEV__) {
       console.log('🎯 OnboardingContext: shouldShowOnboarding =', shouldShowOnboarding);

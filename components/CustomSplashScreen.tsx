@@ -65,28 +65,28 @@ export default function CustomSplashScreen({ onAnimationComplete }: CustomSplash
 
   useEffect(() => {
     const startAnimation = () => {
-      // Background fade in
-      backgroundOpacity.value = withTiming(1, { duration: 500 });
+      // Background fade in with subtle breathing animation
+      backgroundOpacity.value = withTiming(1, { duration: 800 });
 
       // Show welcome message typewriter (1 second delay)
       setTimeout(() => {
         setShowWelcome(true);
-        welcomeOpacity.value = withTiming(1, { duration: 300 });
+        welcomeOpacity.value = withTiming(1, { duration: 400 });
       }, 1000);
 
-      // Show testimonials typewriter (2 second delay)
+      // Show testimonials typewriter (2.5 second delay for better pacing)
       setTimeout(() => {
         setShowTestimonials(true);
-        testimonialsOpacity.value = withTiming(1, { duration: 300 });
-      }, 2000);
+        testimonialsOpacity.value = withTiming(1, { duration: 400 });
+      }, 2500);
 
-      // Start fade out after 15 seconds, complete after 16 seconds
+      // Start fade out after 14 seconds, complete after 15 seconds
       setTimeout(() => {
         containerOpacity.value = withTiming(0, { duration: 1000 }, () => {
           'worklet';
           runOnJS(onAnimationComplete)();
         });
-      }, 15000);
+      }, 14000);
     };
 
     startAnimation();
@@ -96,14 +96,14 @@ export default function CustomSplashScreen({ onAnimationComplete }: CustomSplash
     <Animated.View style={[{ flex: 1 }, containerAnimatedStyle]}>
       <Animated.View style={[{ flex: 1 }, backgroundAnimatedStyle]}>
         <LinearGradient
-          colors={['#0a0a0a', '#1a0b2e', '#0d1421']}
+          colors={['#0a0a0a', '#1a0b2e', '#0d1421', '#0a0a0a']}
           style={{ flex: 1 }}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
-          {/* Rich overlay for depth */}
+          {/* Rich overlay for depth with subtle breathing effect */}
           <LinearGradient
-            colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.8)']}
+            colors={['rgba(0,0,0,0.9)', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.6)', 'rgba(0,0,0,0.9)']}
             style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -111,47 +111,49 @@ export default function CustomSplashScreen({ onAnimationComplete }: CustomSplash
 
           <View className="flex-1 justify-center items-center px-8">
             {/* Welcome Message */}
-            <Animated.View style={[welcomeAnimatedStyle, { marginBottom: 40 }]}>
+            <Animated.View style={[welcomeAnimatedStyle, { marginBottom: 60 }]}>
               {showWelcome && (
                 <TypeAnimation
                   sequence={[
                     { text: 'Clever' },
                   ]}
-                  typeSpeed={50}
+                  typeSpeed={70}
                   cursor={false}
                   style={{
                     color: 'white',
-                    fontSize: 28,
+                    fontSize: 34,
                     fontWeight: 'bold',
                     textAlign: 'center',
-                    textShadowColor: 'rgba(249, 115, 22, 0.3)',
+                    textShadowColor: 'rgba(249, 115, 22, 0.4)',
                     textShadowOffset: { width: 0, height: 0 },
-                    textShadowRadius: 10,
+                    textShadowRadius: 12,
+                    letterSpacing: 1,
                   }}
                 />
               )}
             </Animated.View>
 
             {/* Testimonials */}
-            <Animated.View style={[testimonialsAnimatedStyle, { marginTop: 20, paddingHorizontal: 20 }]}>
+            <Animated.View style={[testimonialsAnimatedStyle, { marginTop: 20, paddingHorizontal: 24, maxWidth: SCREEN_WIDTH * 0.9 }]}>
               {showTestimonials && (
                 <TypeAnimation
                   sequence={[
-                    { text: "Brought my grandmother's photo back to life!" },
-                    { text: "Brought my grandmother's photo back to life!\nAmazing! Fixed my water-damaged wedding photos" },
-                    { text: "Brought my grandmother's photo back to life!\nAmazing! Fixed my water-damaged wedding photos\nCan't believe how clear my old photos look now" },
-                    { text: "Brought my grandmother's photo back to life!\nAmazing! Fixed my water-damaged wedding photos\nCan't believe how clear my old photos look now\n5 stars - This app is pure magic!" },
-                    { text: "Brought my grandmother's photo back to life!\nAmazing! Fixed my water-damaged wedding photos\nCan't believe how clear my old photos look now\n5 stars - This app is pure magic!\nSaved my precious family memories" },
+                    { text: '"Your quality is good, got addicted to your app"' },
+                    { text: '"Your quality is good, got addicted to your app"\n\n"I\'ve helped a lot of people review pictures and it brings me so much happiness. It\'s been a little hobby for me."' },
+                    { text: '"Your quality is good, got addicted to your app"\n\n"I\'ve helped a lot of people review pictures and it brings me so much happiness. It\'s been a little hobby for me."\n\n"My mom cried when she saw her childhood photos restored"' },
+                    { text: '"Your quality is good, got addicted to your app"\n\n"I\'ve helped a lot of people review pictures and it brings me so much happiness. It\'s been a little hobby for me."\n\n"My mom cried when she saw her childhood photos restored"\n\n"Finally found what I was looking for"' },
+                    { text: '"Your quality is good, got addicted to your app"\n\n"I\'ve helped a lot of people review pictures and it brings me so much happiness. It\'s been a little hobby for me."\n\n"My mom cried when she saw her childhood photos restored"\n\n"Finally found what I was looking for"\n\n"This is therapeutic somehow"' },
                   ]}
-                  typeSpeed={40}
+                  typeSpeed={45}
                   cursor={true}
-                  blinkSpeed={500}
+                  blinkSpeed={600}
                   style={{
-                    color: 'rgba(255, 255, 255, 0.8)',
-                    fontSize: 16,
+                    color: 'rgba(255, 255, 255, 0.9)',
+                    fontSize: 17,
                     textAlign: 'center',
                     fontStyle: 'italic',
-                    lineHeight: 24,
+                    lineHeight: 32,
+                    fontWeight: '400',
                   }}
                 />
               )}

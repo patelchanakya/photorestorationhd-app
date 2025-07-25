@@ -2,7 +2,6 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import * as SplashScreen from 'expo-splash-screen';
 import 'react-native-reanimated';
 import '../global.css';
 
@@ -22,9 +21,6 @@ import { deviceTrackingService } from '@/services/deviceTracking';
 import { OnboardingProvider, useOnboarding } from '@/contexts/OnboardingContext';
 import { useRouter } from 'expo-router';
 import CustomSplashScreen from '@/components/CustomSplashScreen';
-
-// Prevent the splash screen from auto-hiding before asset loading is complete
-SplashScreen.preventAutoHideAsync();
 
 // Configure LogBox for production
 if (!__DEV__) {

@@ -63,22 +63,31 @@ export default function MinimalCameraWithGalleryButton() {
     }
   }, [t]);
   
-  // Only fetch and sync restoration history if not showing onboarding
+  // Only fetch and sync restoration history if not showing onboarding - DO THIS AFTER CAMERA IS READY
   const { refetch } = useRestorationHistory();
   useEffect(() => {
-    // Skip loading if we're going to show onboarding
+    // Skip loading completely if we're going to show onboarding
     if (showOnboarding === true) {
       return;
     }
 
-    // Add a small delay to ensure QueryClient is fully initialized
+    // PRIORITY: Wait until camera is ready before doing heavy operations
+    if (!isAppReady || !permission?.granted) {
+      return;
+    }
+
+    // Delay heavy operations to not block camera rendering
     const timer = setTimeout(() => {
-      // Clean up orphaned records on app start
+      if (__DEV__) {
+        console.log('📱 Camera is ready, now loading restoration history in background');
+      }
+      
+      // Clean up orphaned records on app start (in background)
       import('@/services/supabase').then(({ localStorageHelpers }) => {
         localStorageHelpers.cleanupOrphanedRecords().then((cleanedCount) => {
           if (cleanedCount > 0) {
             if (__DEV__) {
-              console.log(`🧹 Cleaned ${cleanedCount} orphaned records on app start`);
+              console.log(`🧹 Cleaned ${cleanedCount} orphaned records in background`);
             }
           }
           // Always refetch once after cleanup (whether records were cleaned or not)
@@ -88,10 +97,10 @@ export default function MinimalCameraWithGalleryButton() {
           refetch({ cancelRefetch: false });
         });
       });
-    }, 100); // Small delay to let providers initialize
+    }, 1000); // Wait 1 second after camera is ready
     
     return () => clearTimeout(timer);
-  }, [refetch, showOnboarding]);
+  }, [refetch, showOnboarding, isAppReady, permission?.granted]);
   
   // Use Zustand store for restorationCount and flash button visibility
   const restorationCount = useRestorationStore((state) => state.restorationCount);
@@ -139,13 +148,28 @@ export default function MinimalCameraWithGalleryButton() {
   }, [permission, requestPermission]);
   
   useEffect(() => {
-    // Defer heavy operations until after interactions complete
-    InteractionManager.runAfterInteractions(() => {
+    // Set app ready immediately - no waiting for interactions
+    if (__DEV__) {
+      console.log('📱 Setting app ready immediately for camera functionality');
+    }
+    
+    // RESET MECHANISM: Clean any leftover state from onboarding
+    setIsCapturing(false);
+    setShowModeSelector(false);
+    setEnableTorch(false);
+    
+    // Set ready state immediately
+    setIsAppReady(true);
+    
+    // Add aggressive fallback timeout just in case
+    const fallbackTimeout = setTimeout(() => {
       if (__DEV__) {
-        console.log('📱 App is ready, enabling restoration history loading');
+        console.log('🚨 Fallback timeout - forcing app ready state');
       }
       setIsAppReady(true);
-    });
+    }, 500);
+    
+    return () => clearTimeout(fallbackTimeout);
   }, []);
   
   useEffect(() => {
@@ -383,12 +407,25 @@ export default function MinimalCameraWithGalleryButton() {
   }, [functionType, modes]);
 
 
-  if (!permission || !isAppReady) {
+  // SIMPLIFIED: Only check permission - isAppReady is handled immediately
+  if (!permission) {
     return (
       <View style={{ flex: 1, backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' }}>
         <IconSymbol name="camera" size={64} color="#f97316" />
         <Text style={{ color: 'white', fontSize: 18, marginTop: 16 }}>
-          {!permission ? 'Checking camera permissions...' : 'Loading camera...'}
+          Checking camera permissions...
+        </Text>
+      </View>
+    );
+  }
+  
+  // Show loading only if app isn't ready AND we don't have permission yet
+  if (!isAppReady && permission.status !== 'granted') {
+    return (
+      <View style={{ flex: 1, backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' }}>
+        <IconSymbol name="camera" size={64} color="#f97316" />
+        <Text style={{ color: 'white', fontSize: 18, marginTop: 16 }}>
+          Getting camera ready...
         </Text>
       </View>
     );
