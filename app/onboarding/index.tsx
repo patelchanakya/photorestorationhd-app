@@ -1,22 +1,21 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { View, Text, Dimensions, Pressable, SafeAreaView, Image } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  interpolate,
-  Extrapolate,
-  runOnJS,
-  useAnimatedScrollHandler,
-  interpolateColor,
-} from 'react-native-reanimated';
-import { router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
+import CurtainRevealImage, { CurtainRevealImageRef } from '@/components/CurtainRevealImage';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import * as Haptics from 'expo-haptics';
 import { presentPaywall } from '@/services/revenuecat';
-import CurtainRevealImage, { CurtainRevealImageRef } from '@/components/CurtainRevealImage';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
+import { Dimensions, Pressable, SafeAreaView, Text, View } from 'react-native';
+import Animated, {
+  Extrapolate,
+  interpolate,
+  interpolateColor,
+  runOnJS,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue
+} from 'react-native-reanimated';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -41,7 +40,7 @@ const pages: OnboardingPage[] = [
   },
   {
     id: 1,
-    title: 'Fix Even the Most Damaged Photos',
+    title: 'Fix Damaged Portraits',
     subtitle: 'Scratches, tears, water damage all fixed instantly',
     gradientColors: ['#1a1a2e', '#16213e'],
     beforeImage: require('@/assets/images/onboarding/before-4.jpg'),
@@ -104,12 +103,7 @@ export default function OnboardingScreen() {
       
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
-      // Auto-advance after animation completes
-      setTimeout(() => {
-        if (currentPage < pages.length - 1) {
-          scrollRef.current?.scrollTo({ x: (currentPage + 1) * SCREEN_WIDTH, animated: true });
-        }
-      }, 1200);
+      // No auto-advance - let users enjoy the transformation
     } else {
       // Regular navigation for pages without images or already revealed
       if (currentPage < pages.length - 1) {
@@ -194,8 +188,20 @@ export default function OnboardingScreen() {
 
       <SafeAreaView className="absolute bottom-0 left-0 right-0">
         <View className="px-8 pb-8">
-          {/* Show different button layout for last page */}
-          {currentPage === pages.length - 1 ? (
+          {/* Show different button layouts for different screens */}
+          {currentPage === 0 ? (
+            // First page: Large centered "Become a Memory Keeper" button
+            <View className="items-center">
+              <Pressable
+                onPress={handleNext}
+                className="bg-blue-500 px-12 py-5 rounded-2xl w-full max-w-sm items-center"
+              >
+                <Text className="text-white text-xl font-bold">
+                  Become a Memory Keeper
+                </Text>
+              </Pressable>
+            </View>
+          ) : currentPage === pages.length - 1 ? (
             // Last page: Big centered "Start Restoring" button
             <View className="items-center">
               <Pressable
@@ -208,16 +214,11 @@ export default function OnboardingScreen() {
               </Pressable>
             </View>
           ) : (
-            // Other pages: Skip and Next buttons
+            // Middle pages: Skip and Next buttons
             <View className="flex-row justify-between items-center">
-              {/* Hide skip button on first screen */}
-              {currentPage === 0 ? (
-                <View className="p-4" />
-              ) : (
-                <Pressable onPress={handleSkip} className="p-4">
-                  <Text className="text-gray-400 text-base">Skip</Text>
-                </Pressable>
-              )}
+              <Pressable onPress={handleSkip} className="p-4">
+                <Text className="text-gray-400 text-base">Skip</Text>
+              </Pressable>
 
               <Pressable
                 onPress={handleNext}
