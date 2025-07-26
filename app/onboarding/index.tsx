@@ -244,7 +244,7 @@ export default function OnboardingScreen() {
       backgroundWave.value = withTiming(0, { duration: 800 });
     }, 2000);
     
-    // Navigate to next screen after 3 seconds (particles now finish faster)
+    // Navigate to next screen after 2.5 seconds (faster response)
     createTrackedTimeout(() => {
       scrollRef.current?.scrollTo({ x: SCREEN_WIDTH, animated: true });
       setShowParticles(false);
@@ -253,7 +253,7 @@ export default function OnboardingScreen() {
       createTrackedTimeout(() => {
         setIsAnimating(false);
       }, 300);
-    }, 3000);
+    }, 2500);
   };
 
   const handleSkip = () => {
@@ -837,11 +837,9 @@ function OnboardingPage({ page, index, scrollX, curtainRef, backgroundWave }: On
                   <View 
                     className="w-40 h-40 rounded-full items-center justify-center overflow-hidden"
                     style={{
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                      shadowColor: 'rgba(255, 255, 255, 0.2)',
-                      shadowOffset: { width: 0, height: 0 },
-                      shadowOpacity: 0.8,
-                      shadowRadius: 12,
+                      backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                      borderWidth: 1,
+                      borderColor: 'rgba(255, 255, 255, 0.3)',
                     }}
                   >
                     <Image
@@ -862,11 +860,9 @@ function OnboardingPage({ page, index, scrollX, curtainRef, backgroundWave }: On
                   <View 
                     className="w-40 h-40 rounded-full items-center justify-center"
                     style={{
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                      shadowColor: 'rgba(255, 255, 255, 0.2)',
-                      shadowOffset: { width: 0, height: 0 },
-                      shadowOpacity: 0.8,
-                      shadowRadius: 12,
+                      backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                      borderWidth: 1,
+                      borderColor: 'rgba(255, 255, 255, 0.3)',
                     }}
                   >
                     <IconSymbol

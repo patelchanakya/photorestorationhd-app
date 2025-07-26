@@ -476,7 +476,7 @@ export default function SettingsModalScreen() {
         emailScale.value = withSpring(1, { damping: 15, stiffness: 300 });
       });
 
-      const subject = 'Photo Restoration HD - Support Request';
+      const subject = 'Clever - Support Request';
       // Clean up the RevenueCat ID to show only the unique part
       let supportId = 'Loading...';
       if (revenueCatUserId) {
@@ -486,7 +486,7 @@ export default function SettingsModalScreen() {
       
       const body = `Hi there,
 
-I need help with Photo Restoration HD.
+I need help with Clever.
 
 SUPPORT ID: ${supportId}
 Device: ${Platform.OS} ${Platform.Version}
@@ -1306,13 +1306,15 @@ Best regards`;
               }}>
                 
                 {/* Privacy Policy */}
-                <TouchableOpacity style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: 'rgba(255,255,255,0.1)'
-                }}>
+                <TouchableOpacity 
+                  onPress={() => WebBrowser.openBrowserAsync('https://www.termsfeed.com/live/7ed3969a-77d3-45c5-8320-99ed066f8ea3')}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    padding: 16,
+                    borderBottomWidth: 1,
+                    borderBottomColor: 'rgba(255,255,255,0.1)'
+                  }}>
                   <View style={{
                     width: 36,
                     height: 36,
@@ -1331,11 +1333,13 @@ Best regards`;
                 </TouchableOpacity>
 
                 {/* Terms of Use */}
-                <TouchableOpacity style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 16
-                }}>
+                <TouchableOpacity 
+                  onPress={() => WebBrowser.openBrowserAsync('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    padding: 16
+                  }}>
                   <View style={{
                     width: 36,
                     height: 36,

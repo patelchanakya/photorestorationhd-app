@@ -211,13 +211,13 @@ export default function CustomSplashScreen({ onAnimationComplete }: CustomSplash
                   cursor={false}
                   style={{
                     color: 'white',
-                    fontSize: 52,
-                    fontFamily: 'PlayfairDisplay-Bold',
+                    fontSize: 58,
+                    fontFamily: 'PlayfairDisplay-SemiBold',
                     textAlign: 'center',
-                    textShadowColor: 'rgba(249, 115, 22, 0.4)',
-                    textShadowOffset: { width: 0, height: 0 },
-                    textShadowRadius: 20,
-                    letterSpacing: 3.5,
+                    textShadowColor: 'rgba(139, 92, 246, 0.6)',
+                    textShadowOffset: { width: 0, height: 2 },
+                    textShadowRadius: 25,
+                    letterSpacing: -1,
                   }}
                 />
               )}
@@ -298,7 +298,7 @@ export default function CustomSplashScreen({ onAnimationComplete }: CustomSplash
                     textAlign: 'center',
                     fontWeight: '500'
                   }}>
-                    Bringing old memories back to life
+                    Restore. Revive. Remember.
                   </Text>
                 </>
               )}
