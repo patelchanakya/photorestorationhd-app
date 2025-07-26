@@ -18,6 +18,7 @@ import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { checkSubscriptionStatus } from '@/services/revenuecat';
 import Constants from 'expo-constants';
 import { deviceTrackingService } from '@/services/deviceTracking';
+import { analyticsService } from '@/services/analytics';
 import { OnboardingProvider, useOnboarding } from '@/contexts/OnboardingContext';
 import { useRouter } from 'expo-router';
 import CustomSplashScreen from '@/components/CustomSplashScreen';
@@ -222,7 +223,16 @@ export default function RootLayout() {
               // Check if user has active pro entitlement using isActive property
               const proEntitlement = customerInfo.entitlements.active['pro'];
               const hasProEntitlement = proEntitlement?.isActive === true;
+              const wasProBefore = useSubscriptionStore.getState().isPro;
+              
               setIsPro(hasProEntitlement);
+              
+              // Track subscription events
+              if (hasProEntitlement && !wasProBefore) {
+                analyticsService.trackSubscriptionEvent('upgraded', 'pro');
+              } else if (!hasProEntitlement && wasProBefore) {
+                analyticsService.trackSubscriptionEvent('restored', 'free');
+              }
               
               if (__DEV__) {
                 console.log('🔄 Pro status updated:', hasProEntitlement);
@@ -258,6 +268,13 @@ export default function RootLayout() {
     deviceTrackingService.initialize().catch((error) => {
       if (__DEV__) {
         console.error('❌ Failed to initialize device tracking service:', error);
+      }
+    });
+
+    // Initialize analytics service
+    analyticsService.initialize().catch((error) => {
+      if (__DEV__) {
+        console.error('❌ Failed to initialize analytics service:', error);
       }
     });
     

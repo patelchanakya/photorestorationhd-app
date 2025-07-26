@@ -2,6 +2,7 @@ import { restorePhoto } from '@/services/replicate';
 import { photoStorage } from '@/services/storage';
 import { restorationService } from '@/services/supabase';
 import { useRestorationStore } from '@/store/restorationStore';
+import { analyticsService } from '@/services/analytics';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export interface RestorationResult {
@@ -26,8 +27,11 @@ export function usePhotoRestoration() {
   const incrementRestorationCount = useRestorationStore((state) => state.incrementRestorationCount);
 
   return useMutation({
-    mutationFn: async ({ imageUri, functionType }: { imageUri: string; functionType: 'restoration' | 'unblur' | 'colorize' }) => {
+    mutationFn: async ({ imageUri, functionType, imageSource }: { imageUri: string; functionType: 'restoration' | 'unblur' | 'colorize'; imageSource?: 'camera' | 'gallery' }) => {
       const startTime = Date.now();
+      
+      // Track restoration started
+      analyticsService.trackRestorationStarted(imageSource || 'gallery');
       
       try {
         // Save original photo locally
@@ -85,11 +89,26 @@ export function usePhotoRestoration() {
           createdAt: new Date(),
         };
 
+        // Track successful restoration
+        await analyticsService.trackRestorationCompleted(
+          true, 
+          imageSource || 'gallery', 
+          Date.now() - startTime
+        );
+
         return completedData;
       } catch (error) {
         if (__DEV__) {
         console.error('Photo restoration failed:', error);
       }
+        
+        // Track failed restoration
+        await analyticsService.trackRestorationCompleted(
+          false, 
+          imageSource || 'gallery', 
+          Date.now() - startTime
+        );
+        
         throw error;
       }
     },

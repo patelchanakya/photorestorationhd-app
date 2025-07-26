@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { onboardingUtils } from '@/utils/onboarding';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { analyticsService } from '@/services/analytics';
 
 interface OnboardingContextType {
   showOnboarding: boolean | null;
@@ -27,9 +28,17 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     }
     
     setShowOnboarding(shouldShowOnboarding);
+
+    // Track onboarding started for non-pro users
+    if (shouldShowOnboarding) {
+      analyticsService.trackOnboardingStarted();
+    }
   }, [isPro]);
 
   const completeOnboarding = async () => {
+    // Track onboarding completion
+    analyticsService.trackOnboardingCompleted();
+    
     // Don't save completion state, just hide onboarding for this session
     setShowOnboarding(false);
   };

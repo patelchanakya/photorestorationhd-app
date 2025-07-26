@@ -42,7 +42,7 @@ const CROP_SIZE = Math.min(SCREEN_WIDTH, AVAILABLE_HEIGHT) * 0.7;
 
 function CropModalScreen() {
   const router = useRouter();
-  const { imageUri, functionType } = useLocalSearchParams();
+  const { imageUri, functionType, imageSource } = useLocalSearchParams();
   const [error] = useState<string | null>(null);
   
   // Use Zustand store for state management
@@ -149,7 +149,7 @@ function CropModalScreen() {
       if (success) {
         console.log('✅ Pro subscription activated via native paywall!');
         // Now that user is pro, proceed with restoration
-        router.replace(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(imageUri)}&functionType=${functionType}`);
+        router.replace(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(imageUri)}&functionType=${functionType}&imageSource=${imageSource || 'gallery'}`);
       } else {
         // Reset button state if paywall was dismissed
         setUseImageLoading(false);
@@ -173,7 +173,7 @@ function CropModalScreen() {
     // Small delay to show success state
     setTimeout(() => {
       // Proceed with restoration
-      router.replace(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(imageUri)}&functionType=${functionType}`);
+      router.replace(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(imageUri)}&functionType=${functionType}&imageSource=${imageSource || 'gallery'}`);
     }, 400);
   };
 

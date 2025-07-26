@@ -418,7 +418,7 @@ export function CameraModal({ visible, onClose, onPhotoSelected, isProcessing = 
     if (!result.canceled && result.assets[0]) {
       const uri = result.assets[0].uri;
       // For both camera and gallery images, use crop modal for consistent UX
-      router.push(`/crop-modal?imageUri=${encodeURIComponent(uri)}&functionType=${functionType}`);
+      router.push(`/crop-modal?imageUri=${encodeURIComponent(uri)}&functionType=${functionType}&imageSource=${source}`);
       onClose();
     }
   };

@@ -501,7 +501,7 @@ export default function MinimalCameraWithGalleryButton() {
           console.log('📸 Premium access validation after capture:', hasAccess);
         }
         
-        router.push(`/crop-modal?imageUri=${encodeURIComponent(photo.uri)}&functionType=${functionType}`);
+        router.push(`/crop-modal?imageUri=${encodeURIComponent(photo.uri)}&functionType=${functionType}&imageSource=camera`);
       } else {
         throw new Error('No photo returned from camera');
       }
@@ -557,7 +557,7 @@ export default function MinimalCameraWithGalleryButton() {
           console.log('📱 Premium access validation after gallery selection:', hasAccess);
         }
         
-        router.push(`/crop-modal?imageUri=${encodeURIComponent(result.assets[0].uri)}&functionType=${functionType}`);
+        router.push(`/crop-modal?imageUri=${encodeURIComponent(result.assets[0].uri)}&functionType=${functionType}&imageSource=gallery`);
       }
     } catch (error) {
       if (__DEV__) {

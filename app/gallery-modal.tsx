@@ -188,7 +188,7 @@ export default function GalleryModalScreen() {
 
                 if (!result.canceled && result.assets[0]) {
                   const imageUri = result.assets[0].uri;
-                  router.push(`/crop-modal?imageUri=${encodeURIComponent(imageUri)}&functionType=restoration`);
+                  router.push(`/crop-modal?imageUri=${encodeURIComponent(imageUri)}&functionType=restoration&imageSource=gallery`);
                 }
               } catch (error) {
                 console.error('Error picking image:', error);
