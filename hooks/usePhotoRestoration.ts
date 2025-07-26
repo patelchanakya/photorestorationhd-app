@@ -1,8 +1,8 @@
+import { analyticsService } from '@/services/analytics';
 import { restorePhoto } from '@/services/replicate';
 import { photoStorage } from '@/services/storage';
 import { restorationService } from '@/services/supabase';
 import { useRestorationStore } from '@/store/restorationStore';
-import { analyticsService } from '@/services/analytics';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export interface RestorationResult {
@@ -93,20 +93,45 @@ export function usePhotoRestoration() {
         await analyticsService.trackRestorationCompleted(
           true, 
           imageSource || 'gallery', 
-          Date.now() - startTime
+          Date.now() - startTime,
+          functionType
         );
 
         return completedData;
       } catch (error) {
         if (__DEV__) {
-        console.error('Photo restoration failed:', error);
-      }
+          console.error('Photo restoration failed:', error);
+        }
+        
+        // Determine error type for analytics
+        let errorType: 'api_error' | 'network_error' | 'processing_error' | 'validation_error' = 'processing_error';
+        let errorMessage = 'Unknown error';
+        
+        if (error instanceof Error) {
+          errorMessage = error.message;
+          if (error.message.includes('network') || error.message.includes('fetch')) {
+            errorType = 'network_error';
+          } else if (error.message.includes('API') || error.message.includes('replicate')) {
+            errorType = 'api_error';
+          } else if (error.message.includes('validation') || error.message.includes('invalid')) {
+            errorType = 'validation_error';
+          }
+        }
+        
+        // Track restoration error
+        analyticsService.trackRestorationError(
+          errorType,
+          errorMessage,
+          imageSource || 'gallery',
+          functionType
+        );
         
         // Track failed restoration
         await analyticsService.trackRestorationCompleted(
           false, 
           imageSource || 'gallery', 
-          Date.now() - startTime
+          Date.now() - startTime,
+          functionType
         );
         
         throw error;

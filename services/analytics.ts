@@ -22,8 +22,8 @@ class AnalyticsService {
         return;
       }
 
-      // Initialize Mixpanel - using constructor with parameters
-      this.mixpanel = new Mixpanel(token, false, false); // token, trackAutomaticEvents, useNative
+      // Initialize Mixpanel - using non-deprecated pattern
+      this.mixpanel = new Mixpanel(token, false); // token, trackAutomaticEvents
       await this.mixpanel.init();
 
       // Set up user identification
@@ -98,9 +98,15 @@ class AnalyticsService {
   }
 
   private handleAppStateChange(nextAppState: AppStateStatus) {
-    if (nextAppState === 'active') {
+    // Only log in development and only for significant state changes
+    if (__DEV__ && (nextAppState === 'active' || nextAppState === 'background')) {
+      console.log('🔄 Analytics: App state changed to', nextAppState);
+    }
+    
+    // Only track session changes, don't interfere with other app state handlers
+    if (nextAppState === 'active' && !this.sessionStartTime) {
       this.startSession();
-    } else if (nextAppState === 'background' || nextAppState === 'inactive') {
+    } else if ((nextAppState === 'background' || nextAppState === 'inactive') && this.sessionStartTime) {
       this.endSession();
     }
   }
@@ -130,6 +136,15 @@ class AnalyticsService {
 
     const sessionDuration = Date.now() - this.sessionStartTime;
     const sessionId = this.sessionStartTime;
+
+    // Prevent tracking very short sessions (less than 500ms) - likely false triggers
+    if (sessionDuration < 500) {
+      if (__DEV__) {
+        console.log('⚠️ Analytics: Skipping very short session:', sessionDuration + 'ms');
+      }
+      this.sessionStartTime = null;
+      return;
+    }
 
     this.mixpanel.track('Session Ended', {
       timestamp: new Date().toISOString(),
@@ -238,7 +253,7 @@ class AnalyticsService {
     }
   }
 
-  async trackRestorationCompleted(success: boolean, imageSource: 'camera' | 'gallery', processingTime?: number) {
+  async trackRestorationCompleted(success: boolean, imageSource: 'camera' | 'gallery', processingTime?: number, functionType?: 'restoration' | 'unblur' | 'colorize' | 'descratch') {
     if (!this.isInitialized || !this.mixpanel) return;
 
     this.mixpanel.track('Restoration Completed', {
@@ -246,11 +261,17 @@ class AnalyticsService {
       session_id: this.sessionStartTime,
       success,
       image_source: imageSource,
+      function_type: functionType,
       processing_time_ms: processingTime,
       processing_time_seconds: processingTime ? Math.round(processingTime / 1000) : undefined,
     });
 
     if (success) {
+      // Track mode usage for successful restorations
+      if (functionType) {
+        this.trackModeUsed(functionType, imageSource);
+      }
+
       // Check if this is the user's first successful restoration
       const isFirstRestoration = await this.checkFirstRestoration();
       
@@ -312,6 +333,44 @@ class AnalyticsService {
       'subscription_type': planType || 'free',
       'subscription_updated_at': new Date().toISOString(),
     });
+  }
+
+  trackRestorationError(errorType: 'api_error' | 'network_error' | 'processing_error' | 'validation_error', errorMessage: string, imageSource: 'camera' | 'gallery', functionType?: string) {
+    if (!this.isInitialized || !this.mixpanel) return;
+
+    this.mixpanel.track('Restoration Error', {
+      timestamp: new Date().toISOString(),
+      session_id: this.sessionStartTime,
+      error_type: errorType,
+      error_message: errorMessage,
+      image_source: imageSource,
+      function_type: functionType,
+    });
+
+    if (__DEV__) {
+      console.log(`📊 Analytics: Restoration Error (${errorType}) - ${errorMessage}`);
+    }
+  }
+
+  trackModeUsed(functionType: 'restoration' | 'unblur' | 'colorize' | 'descratch', imageSource: 'camera' | 'gallery') {
+    if (!this.isInitialized || !this.mixpanel) return;
+
+    this.mixpanel.track('Mode Used', {
+      timestamp: new Date().toISOString(),
+      session_id: this.sessionStartTime,
+      function_type: functionType,
+      image_source: imageSource,
+    });
+
+    // Update user properties to track most used mode
+    this.mixpanel.getPeople().set({
+      'last_used_mode': functionType,
+      'last_mode_used_at': new Date().toISOString(),
+    });
+
+    if (__DEV__) {
+      console.log(`📊 Analytics: Mode Used - ${functionType} (${imageSource})`);
+    }
   }
 
   // Custom event tracking

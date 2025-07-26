@@ -1,12 +1,11 @@
-import Purchases, { 
-  CustomerInfo, 
-  Offerings, 
-  PurchasesPackage, 
-  PurchasesOffering 
-} from 'react-native-purchases';
-import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import Constants from 'expo-constants';
+import Purchases, {
+    CustomerInfo,
+    PurchasesOffering,
+    PurchasesPackage
+} from 'react-native-purchases';
+import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 
 export interface RevenueCatOfferings {
   monthly?: PurchasesPackage;
@@ -336,6 +335,13 @@ export const presentPaywall = async (): Promise<boolean> => {
     if (__DEV__) {
       console.log('🎯 Presenting native paywall...');
     }
+
+    // Track paywall presentation
+    const { analyticsService } = await import('@/services/analytics');
+    analyticsService.track('Paywall Shown', {
+      source: 'presentPaywall',
+      timestamp: new Date().toISOString(),
+    });
     
     // Try-catch specifically for the UI module
     let paywallResult: PAYWALL_RESULT;
@@ -367,6 +373,11 @@ export const presentPaywall = async (): Promise<boolean> => {
         if (__DEV__) {
           console.log('✅ Purchase completed via paywall');
         }
+        // Track successful purchase
+        analyticsService.track('Paywall Purchase Completed', {
+          source: 'presentPaywall',
+          timestamp: new Date().toISOString(),
+        });
         // Update subscription status
         await checkSubscriptionStatus();
         return true;
@@ -375,15 +386,30 @@ export const presentPaywall = async (): Promise<boolean> => {
         if (__DEV__) {
           console.log('✅ Purchases restored via paywall');
         }
+        // Track successful restore
+        analyticsService.track('Paywall Restore Completed', {
+          source: 'presentPaywall',
+          timestamp: new Date().toISOString(),
+        });
         // Update subscription status
         await checkSubscriptionStatus();
         return true;
         
       case PAYWALL_RESULT.CANCELLED:
+        // Track user cancellation
+        analyticsService.track('Paywall Cancelled', {
+          source: 'presentPaywall',
+          timestamp: new Date().toISOString(),
+        });
         // User cancelled - this is normal behavior
         return false;
         
       case PAYWALL_RESULT.ERROR:
+        // Track paywall error
+        analyticsService.track('Paywall Error', {
+          source: 'presentPaywall',
+          timestamp: new Date().toISOString(),
+        });
         // Only log errors in development builds
         if (__DEV__) {
           if (__DEV__) {
@@ -393,6 +419,11 @@ export const presentPaywall = async (): Promise<boolean> => {
         return false;
         
       case PAYWALL_RESULT.NOT_PRESENTED:
+        // Track paywall not presented
+        analyticsService.track('Paywall Not Presented', {
+          source: 'presentPaywall',
+          timestamp: new Date().toISOString(),
+        });
         if (__DEV__) {
           if (__DEV__) {
             console.log('⚠️ Paywall not presented');
@@ -401,6 +432,12 @@ export const presentPaywall = async (): Promise<boolean> => {
         return false;
         
       default:
+        // Track unknown result
+        analyticsService.track('Paywall Unknown Result', {
+          source: 'presentPaywall',
+          result: paywallResult,
+          timestamp: new Date().toISOString(),
+        });
         if (__DEV__) {
           if (__DEV__) {
             console.log('❓ Unknown paywall result:', paywallResult);

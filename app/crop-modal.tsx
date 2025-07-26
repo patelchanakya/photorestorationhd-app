@@ -1,8 +1,13 @@
+import { CustomImageCropper } from '@/components/CustomImageCropper';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
+import { analyticsService } from '@/services/analytics';
+import { presentPaywall, validatePremiumAccess } from '@/services/revenuecat';
+import { useCropModalStore } from '@/store/cropModalStore';
+import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { CustomImageCropper } from '@/components/CustomImageCropper';
-import * as ImageManipulator from 'expo-image-manipulator';
+import Constants from 'expo-constants';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -17,22 +22,17 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import Animated, { 
+import Animated, {
+    runOnJS,
     useAnimatedStyle,
     useSharedValue,
     withSequence,
-    withTiming,
     withSpring,
-    runOnJS
+    withTiming
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
-import { useCropModalStore } from '@/store/cropModalStore';
-import Constants from 'expo-constants';
-import { presentPaywall, validatePremiumAccess } from '@/services/revenuecat';
-import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const HEADER_HEIGHT = 60;
@@ -132,6 +132,13 @@ function CropModalScreen() {
     const canRestoreResult = await canRestore();
     if (!canRestoreResult) {
       console.log('🚫 User cannot restore - showing paywall');
+      
+      // Track 48-hour limit reached
+      analyticsService.track('48 Hour Limit Reached', {
+        function_type: functionType,
+        image_source: imageSource || 'gallery',
+        timestamp: new Date().toISOString(),
+      });
       
       // Check if we're in Expo Go
       const isExpoGo = Constants.appOwnership === 'expo';
