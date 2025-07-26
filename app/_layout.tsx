@@ -147,6 +147,11 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    'PlayfairDisplay-Regular': require('../assets/fonts/PlayfairDisplay-Regular.ttf'),
+    'PlayfairDisplay-Medium': require('../assets/fonts/PlayfairDisplay-Medium.ttf'),
+    'PlayfairDisplay-SemiBold': require('../assets/fonts/PlayfairDisplay-SemiBold.ttf'),
+    'PlayfairDisplay-Bold': require('../assets/fonts/PlayfairDisplay-Bold.ttf'),
+    'PlayfairDisplay-Italic': require('../assets/fonts/PlayfairDisplay-Italic.ttf'),
   });
   const { setIsPro } = useSubscriptionStore();
   const [showCustomSplash, setShowCustomSplash] = React.useState(true);
@@ -285,7 +290,7 @@ export default function RootLayout() {
   return (
     <View style={{ flex: 1, backgroundColor: '#000000' }}>
       <ErrorBoundary>
-        <GestureHandlerRootView style={{ flex: 1 }}>
+        <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#000000' }}>
           <OnboardingProvider>
             <LanguageProvider>
               <QueryClientProvider client={queryClient}>
@@ -329,7 +334,7 @@ function OnboardingNavigator() {
 
   return (
     <Stack>
-      <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+      <Stack.Screen name="onboarding" options={{ headerShown: false, contentStyle: { backgroundColor: '#000000' } }} />
       <Stack.Screen name="index" options={{ headerShown: false, title: "Photo Restoration HD" }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="restoration/[id]" options={{ headerShown: false }} />

@@ -1,14 +1,15 @@
 import CurtainRevealImage, { CurtainRevealImageRef } from '@/components/CurtainRevealImage';
-import { IconSymbol } from '@/components/ui/IconSymbol';
 import ParticleSystem from '@/components/ParticleSystem';
+import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { presentPaywall } from '@/services/revenuecat';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
-import { Dimensions, Image, Pressable, SafeAreaView, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Dimensions, Image, Pressable, SafeAreaView, Text, View, AppState, AppStateStatus } from 'react-native';
 import Animated, {
+  Easing,
   Extrapolate,
   interpolate,
   interpolateColor,
@@ -16,10 +17,11 @@ import Animated, {
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
+  withSequence,
   withSpring,
   withTiming,
-  withSequence,
-  withDelay
+  cancelAnimation
 } from 'react-native-reanimated';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -62,7 +64,7 @@ const pages: OnboardingPage[] = [
   {
     id: 3,
     title: 'Enhance Colors & Clarity',
-    subtitle: 'You will bring vibrancy back to faded memories',
+    subtitle: 'You will bring life back to faded memories',
     gradientColors: ['#0f2a1e', '#16543e'],
     beforeImage: require('@/assets/images/onboarding/before-3.jpg'),
     afterImage: require('@/assets/images/onboarding/after-3.png'),
@@ -70,7 +72,7 @@ const pages: OnboardingPage[] = [
   {
     id: 4,
     title: 'Get Clever with Pro',
-    subtitle: 'Unlimited clever restorations for your precious memories',
+    subtitle: 'Unlimited photo restorations for your precious memories',
     gradientColors: ['#ea580c', '#f97316'],
     iconName: 'crown.fill',
   },
@@ -85,12 +87,19 @@ export default function OnboardingScreen() {
   const { completeOnboarding } = useOnboarding();
   const timeoutRef = useRef<any>();
   const autoAdvanceTimeoutRef = useRef<any>();
+  const animationTimeoutsRef = useRef<NodeJS.Timeout[]>([]);
+  const isNavigatingRef = useRef(false);
+  const appStateRef = useRef(AppState.currentState);
+  
+  // Screen transition animation for smooth fade-in
+  const screenOpacity = useSharedValue(0);
+  const screenScale = useSharedValue(0.97);
+  const screenTranslateY = useSharedValue(10);
+  const isScreenMounted = useRef(false);
 
   // Animation values for Memory Keeper button
   const memoryKeeperScale = useSharedValue(1);
   const memoryKeeperGlow = useSharedValue(0);
-  const iconRotation = useSharedValue(0);
-  const iconPulse = useSharedValue(1);
   const backgroundWave = useSharedValue(0);
   const [showParticles, setShowParticles] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -108,6 +117,26 @@ export default function OnboardingScreen() {
     opacity: isAnimating ? 0.8 : 1,
   }));
 
+  const screenAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: screenOpacity.value,
+    transform: [
+      { scale: screenScale.value },
+      { translateY: screenTranslateY.value }
+    ],
+  }));
+
+  // Helper to create tracked timeout
+  const createTrackedTimeout = useCallback((fn: () => void, delay: number) => {
+    const id = setTimeout(fn, delay);
+    animationTimeoutsRef.current.push(id);
+    return id;
+  }, []);
+
+  // Clear all animation timeouts
+  const clearAnimationTimeouts = useCallback(() => {
+    animationTimeoutsRef.current.forEach(clearTimeout);
+    animationTimeoutsRef.current = [];
+  }, []);
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -120,7 +149,7 @@ export default function OnboardingScreen() {
   const handleNext = () => {
     const currentPageData = pages[currentPage];
     
-    // Special animation for first screen "Become a Memory Keeper"
+    // Special animation for first screen "Become Clever"
     if (currentPage === 0) {
       handleMemoryKeeperPress();
       return;
@@ -140,20 +169,20 @@ export default function OnboardingScreen() {
       setRevealedScreens(newRevealedScreens);
       
       // Series of haptics during reveal
-      setTimeout(() => {
+      createTrackedTimeout(() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       }, 200);
       
-      setTimeout(() => {
+      createTrackedTimeout(() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
       }, 600);
       
-      setTimeout(() => {
+      createTrackedTimeout(() => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }, 1200);
       
       // Auto-advance after animation + 1.5 seconds delay
-      setTimeout(() => {
+      createTrackedTimeout(() => {
         if (currentPage < pages.length - 1) {
           scrollRef.current?.scrollTo({ x: (currentPage + 1) * SCREEN_WIDTH, animated: true });
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -185,14 +214,6 @@ export default function OnboardingScreen() {
     // Start glow effect with pulsing
     memoryKeeperGlow.value = withTiming(1, { duration: 200 });
     
-    // Icon rotation - 5 full rotations (1800 degrees) over 2.5 seconds
-    iconRotation.value = withTiming(1800, { duration: 2500 });
-    iconPulse.value = withSequence(
-      withTiming(1.3, { duration: 400 }),
-      withTiming(1.1, { duration: 400 }),
-      withTiming(1.3, { duration: 400 }),
-      withTiming(1, { duration: 400 })
-    );
     
     // Extended background wave effect
     backgroundWave.value = withTiming(1, { duration: 2000 });
@@ -201,36 +222,35 @@ export default function OnboardingScreen() {
     setShowParticles(true);
     
     // Medium haptic after 100ms
-    setTimeout(() => {
+    createTrackedTimeout(() => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }, 100);
     
     // Scale back up with bounce after 150ms
-    setTimeout(() => {
+    createTrackedTimeout(() => {
       memoryKeeperScale.value = withSpring(1.05, { damping: 15, stiffness: 200 }, () => {
         memoryKeeperScale.value = withSpring(1, { damping: 20, stiffness: 300 });
       });
     }, 150);
     
     // Heavy haptic after 1.5 seconds
-    setTimeout(() => {
+    createTrackedTimeout(() => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     }, 1500);
     
     // Start fade out effects after 2 seconds
-    setTimeout(() => {
+    createTrackedTimeout(() => {
       memoryKeeperGlow.value = withTiming(0, { duration: 800 });
       backgroundWave.value = withTiming(0, { duration: 800 });
     }, 2000);
     
     // Navigate to next screen after 3 seconds (particles now finish faster)
-    setTimeout(() => {
+    createTrackedTimeout(() => {
       scrollRef.current?.scrollTo({ x: SCREEN_WIDTH, animated: true });
       setShowParticles(false);
-      iconRotation.value = 0; // Reset rotation
       
       // Re-enable scrolling after navigation completes
-      setTimeout(() => {
+      createTrackedTimeout(() => {
         setIsAnimating(false);
       }, 300);
     }, 3000);
@@ -242,16 +262,19 @@ export default function OnboardingScreen() {
   };
 
   const handleComplete = async () => {
+    // Prevent multiple navigation attempts
+    if (isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
+    
     // Clean up all animations before navigation
     memoryKeeperScale.value = 1;
     memoryKeeperGlow.value = 0;
-    iconRotation.value = 0;
-    iconPulse.value = 1;
     backgroundWave.value = 0;
     setShowParticles(false);
     setIsAnimating(false);
     
-    // Clear timeouts
+    // Clear all timeouts
+    clearAnimationTimeouts();
     if (autoAdvanceTimeoutRef.current) {
       clearTimeout(autoAdvanceTimeoutRef.current);
     }
@@ -269,19 +292,22 @@ export default function OnboardingScreen() {
   };
 
   const handleStartRestoring = async () => {
+    // Prevent multiple navigation attempts
+    if (isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
+    
     // Light haptic on press
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
     // PRIORITY: Clean up all animations immediately before navigation
     memoryKeeperScale.value = 1;
     memoryKeeperGlow.value = 0;
-    iconRotation.value = 0;
-    iconPulse.value = 1;
     backgroundWave.value = 0;
     buttonScale.value = 1;
     buttonOpacity.value = 1;
     
-    // Clear any pending timeouts
+    // Clear all timeouts
+    clearAnimationTimeouts();
     if (autoAdvanceTimeoutRef.current) {
       clearTimeout(autoAdvanceTimeoutRef.current);
       autoAdvanceTimeoutRef.current = undefined;
@@ -310,20 +336,150 @@ export default function OnboardingScreen() {
     }, 100);
   };
 
-  // Cleanup on unmount
+  // Initialize screen fade-in and pre-load assets
+  useEffect(() => {
+    // Pre-load the icon image to prevent lag
+    const iconUri = Image.resolveAssetSource(require('@/assets/images/icon.png')).uri;
+    if (iconUri) {
+      Image.prefetch(iconUri).catch(() => {});
+    }
+    
+    // Set mounted flag for cleanup protection  
+    isScreenMounted.current = true;
+    
+    // Start smooth entrance animation with delay
+    // Small delay to let splash screen fully fade out
+    screenOpacity.value = withDelay(
+      150,
+      withTiming(1, {
+        duration: 800,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1), // Custom ease-out curve
+      })
+    );
+    
+    // Scale animation with spring for natural feel
+    screenScale.value = withDelay(
+      150,
+      withSpring(1, {
+        damping: 20,
+        stiffness: 90,
+        mass: 1,
+      })
+    );
+    
+    // Subtle upward motion
+    screenTranslateY.value = withDelay(
+      150,
+      withTiming(0, {
+        duration: 800,
+        easing: Easing.out(Easing.quad),
+      })
+    );
+
+    // Cleanup on unmount
+    return () => {
+      isScreenMounted.current = false;
+      // Cancel animations to prevent flicker
+      screenOpacity.value = 1;
+      screenScale.value = 1;
+      screenTranslateY.value = 0;
+    };
+  }, []);
+
+  // Clear animations when page changes
+  useEffect(() => {
+    // Clear any ongoing animations when user navigates to a different page
+    clearAnimationTimeouts();
+    setIsAnimating(false);
+  }, [currentPage, clearAnimationTimeouts]);
+
+  // AppState handling for battery optimization during onboarding
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (appStateRef.current.match(/active/) && nextAppState.match(/inactive|background/)) {
+        // Going to background - cancel all animations and clear timeouts
+        if (__DEV__) {
+          console.log('🎭 Onboarding: App going to background - pausing animations');
+        }
+        
+        // Cancel all Reanimated animations
+        cancelAnimation(memoryKeeperScale);
+        cancelAnimation(memoryKeeperGlow);
+        cancelAnimation(backgroundWave);
+        cancelAnimation(buttonScale);
+        cancelAnimation(buttonOpacity);
+        
+        // Clear all timeouts to prevent battery drain
+        clearAnimationTimeouts();
+        if (autoAdvanceTimeoutRef.current) {
+          clearTimeout(autoAdvanceTimeoutRef.current);
+          autoAdvanceTimeoutRef.current = undefined;
+        }
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = undefined;
+        }
+        
+        // Disable particles
+        setShowParticles(false);
+        setIsAnimating(false);
+        
+      } else if (appStateRef.current.match(/inactive|background/) && nextAppState === 'active') {
+        // Coming to foreground - animations will naturally restart when user interacts
+        if (__DEV__) {
+          console.log('🎭 Onboarding: App returning to foreground');
+        }
+        
+        // Reset animation state
+        setIsAnimating(false);
+        setShowParticles(false);
+      }
+      
+      appStateRef.current = nextAppState;
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    
+    return () => {
+      subscription?.remove();
+    };
+  }, [clearAnimationTimeouts]);
+
+  // Comprehensive cleanup on unmount
   useEffect(() => {
     return () => {
+      // Clear all tracked animation timeouts
+      clearAnimationTimeouts();
+      
+      // Clear other timeouts
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
       if (autoAdvanceTimeoutRef.current) {
         clearTimeout(autoAdvanceTimeoutRef.current);
       }
+      
+      // Reset navigation guard
+      isNavigatingRef.current = false;
+      
+      // Cancel all animations to prevent state updates after unmount
+      cancelAnimation(memoryKeeperScale);
+      cancelAnimation(memoryKeeperGlow);
+      cancelAnimation(backgroundWave);
+      cancelAnimation(buttonScale);
+      cancelAnimation(buttonOpacity);
+      
+      // Reset animation values
+      memoryKeeperScale.value = 1;
+      memoryKeeperGlow.value = 0;
+      backgroundWave.value = 0;
+      buttonScale.value = 1;
+      buttonOpacity.value = 1;
     };
-  }, []);
+  }, [clearAnimationTimeouts]);
 
   return (
-    <View className="flex-1 bg-black">
+    <Animated.View style={[{ flex: 1, backgroundColor: '#000000' }, screenAnimatedStyle]}>
       {/* Page Indicators at Top */}
       <SafeAreaView className="absolute top-0 left-0 right-0 z-10">
         <View className="px-8 pt-4">
@@ -357,8 +513,6 @@ export default function OnboardingScreen() {
             index={index}
             scrollX={scrollX}
             curtainRef={(ref) => (curtainRefs.current[index] = ref)}
-            iconRotation={index === 0 ? iconRotation : undefined}
-            iconPulse={index === 0 ? iconPulse : undefined}
             backgroundWave={index === 0 ? backgroundWave : undefined}
           />
         ))}
@@ -368,9 +522,16 @@ export default function OnboardingScreen() {
         <View className="px-8 pb-8">
           {/* Show different button layouts for different screens */}
           {currentPage === 0 ? (
-            // First page: Large centered "Become a Memory Keeper" button
-            <View className="items-center">
-              <Animated.View style={memoryKeeperButtonStyle}>
+            // First page: Large centered "Become Clever" button
+            <View className="items-center" style={{ width: '100%', maxWidth: 350 }}>
+              <Animated.View 
+                style={[
+                  memoryKeeperButtonStyle,
+                  {
+                    width: '100%',
+                  }
+                ]}
+              >
                 <Pressable
                   onPress={isAnimating ? undefined : handleNext}
                   disabled={isAnimating}
@@ -380,7 +541,6 @@ export default function OnboardingScreen() {
                     paddingVertical: 20,
                     borderRadius: 16,
                     width: '100%',
-                    maxWidth: 350,
                     alignItems: 'center',
                     shadowColor: '#f97316',
                     shadowOffset: { width: 0, height: 0 },
@@ -407,7 +567,7 @@ export default function OnboardingScreen() {
                       textShadowRadius: 2,
                     }}
                   >
-                    Become a Memory Keeper
+                    Become Clever
                   </Text>
                 </Pressable>
               </Animated.View>
@@ -519,7 +679,7 @@ export default function OnboardingScreen() {
         centerX={SCREEN_WIDTH / 2} 
         centerY={SCREEN_HEIGHT - 120}
       />
-    </View>
+    </Animated.View>
   );
 }
 
@@ -528,21 +688,13 @@ interface OnboardingPageProps {
   index: number;
   scrollX: Animated.SharedValue<number>;
   curtainRef?: (ref: CurtainRevealImageRef | null) => void;
-  iconRotation?: Animated.SharedValue<number>;
-  iconPulse?: Animated.SharedValue<number>;
   backgroundWave?: Animated.SharedValue<number>;
 }
 
-function OnboardingPage({ page, index, scrollX, curtainRef, iconRotation, iconPulse, backgroundWave }: OnboardingPageProps) {
+function OnboardingPage({ page, index, scrollX, curtainRef, backgroundWave }: OnboardingPageProps) {
   const inputRange = [(index - 1) * SCREEN_WIDTH, index * SCREEN_WIDTH, (index + 1) * SCREEN_WIDTH];
   const flashOpacity = useSharedValue(0);
 
-  const iconAnimatedStyleFirstPage = useAnimatedStyle(() => ({
-    transform: [
-      { rotate: `${iconRotation?.value || 0}deg` },
-      { scale: iconPulse?.value || 1 }
-    ],
-  }));
 
   const backgroundWaveStyle = useAnimatedStyle(() => ({
     opacity: (backgroundWave?.value || 0) * 0.3,
@@ -679,7 +831,7 @@ function OnboardingPage({ page, index, scrollX, curtainRef, iconRotation, iconPu
                 />
               </Animated.View>
             ) : page.iconName ? (
-              <Animated.View style={page.id === 0 ? iconAnimatedStyleFirstPage : iconAnimatedStyle} className="mb-16">
+              <Animated.View style={iconAnimatedStyle} className="mb-16">
                 {page.id === 0 ? (
                   // First screen: Use app icon with special animation
                   <View 
@@ -695,12 +847,14 @@ function OnboardingPage({ page, index, scrollX, curtainRef, iconRotation, iconPu
                     <Image
                       source={require('@/assets/images/icon.png')}
                       style={{
-                        width: 170,
-                        height: 170,
-                        borderRadius: 85,
+                        width: 150,
+                        height: 150,
+                        borderRadius: 75,
+                        marginLeft: 6,
                       }}
                       resizeMode="cover"
                       fadeDuration={0}
+                      defaultSource={require('@/assets/images/icon.png')}
                     />
                   </View>
                 ) : (

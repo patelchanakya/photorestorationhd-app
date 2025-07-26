@@ -1,21 +1,22 @@
 import { ModeSelector } from '@/components/ModeSelector';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useRestorationHistory } from '@/hooks/useRestorationHistory';
-import { useRestorationStore } from '@/store/restorationStore';
+import { useTranslation } from '@/i18n/useTranslation';
+import { presentPaywall, validatePremiumAccess } from '@/services/revenuecat';
 import { useAnimationStore } from '@/store/animationStore';
+import { useRestorationStore } from '@/store/restorationStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import Constants from 'expo-constants';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
-import { Alert, InteractionManager, Text, TouchableOpacity, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming, runOnJS } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import Constants from 'expo-constants';
-import { presentPaywall, validatePremiumAccess } from '@/services/revenuecat';
-import { useTranslation } from '@/i18n/useTranslation';
-import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, AppState, AppStateStatus, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
@@ -40,8 +41,10 @@ export default function MinimalCameraWithGalleryButton() {
   const [functionType, setFunctionType] = useState<ModeType>('restoration');
   const [showModeSelector, setShowModeSelector] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [isCameraActive, setIsCameraActive] = useState(true);
   const router = useRouter();
   const cameraRef = useRef<CameraView>(null);
+  const appStateRef = useRef(AppState.currentState);
   
   // Generate translated modes
   const modes = useMemo(() => {
@@ -62,6 +65,53 @@ export default function MinimalCameraWithGalleryButton() {
       }));
     }
   }, [t]);
+  
+  // State persistence functions
+  const persistCameraState = useCallback(async () => {
+    if (__DEV__) {
+      console.log(`💾 persistCameraState() called - saving torch: ${enableTorch}, mode: ${functionType}`);
+    }
+    try {
+      await AsyncStorage.setItem('cameraState', JSON.stringify({
+        enableTorch,
+        functionType,
+        isCapturing: false, // Always reset capturing state
+      }));
+      if (__DEV__) {
+        console.log('💾 Camera state saved successfully');
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.error('Failed to persist camera state:', error);
+      }
+    }
+  }, [enableTorch, functionType]);
+
+  const restoreCameraState = useCallback(async () => {
+    if (__DEV__) {
+      console.log('🔄 restoreCameraState() called');
+    }
+    try {
+      const savedState = await AsyncStorage.getItem('cameraState');
+      if (savedState) {
+        const { enableTorch: savedTorch, functionType: savedMode } = JSON.parse(savedState);
+        if (__DEV__) {
+          console.log(`🔄 Restoring saved torch state: ${savedTorch}, mode: ${savedMode}`);
+          console.log(`🔦 setEnableTorch: current → ${savedTorch || false} (STATE RESTORE)`);
+        }
+        setEnableTorch(savedTorch || false);
+        setFunctionType(savedMode || 'restoration');
+      } else {
+        if (__DEV__) {
+          console.log('🔄 No saved camera state found');
+        }
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.error('Failed to restore camera state:', error);
+      }
+    }
+  }, []);
   
   // Only fetch and sync restoration history if not showing onboarding - DO THIS AFTER CAMERA IS READY
   const { refetch } = useRestorationHistory();
@@ -156,6 +206,9 @@ export default function MinimalCameraWithGalleryButton() {
     // RESET MECHANISM: Clean any leftover state from onboarding
     setIsCapturing(false);
     setShowModeSelector(false);
+    if (__DEV__) {
+      console.log('🔦 setEnableTorch: current → false (INITIAL RESET)');
+    }
     setEnableTorch(false);
     
     // Set ready state immediately
@@ -172,24 +225,155 @@ export default function MinimalCameraWithGalleryButton() {
     return () => clearTimeout(fallbackTimeout);
   }, []);
   
+  // Separate effect for initial state restoration (runs only once on mount)
   useEffect(() => {
-    // Subtle glow animation for capture button
-    glowOpacity.value = withRepeat(
-      withSequence(
-        withTiming(0.6, { duration: 1500 }),
-        withTiming(0.3, { duration: 1500 })
-      ),
-      -1,
-      true
-    );
-  }, []);
+    if (__DEV__) {
+      console.log('🔄 Initial state restoration on mount');
+    }
+    restoreCameraState();
+  }, []); // Empty dependency array - runs only once
+
+  // AppState handling for camera lifecycle
+  useEffect(() => {
+    if (__DEV__) {
+      console.log('🔄 Setting up AppState listener');
+    }
+    
+    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+      if (appStateRef.current.match(/active/) && nextAppState.match(/inactive|background/)) {
+        // Going to background
+        if (__DEV__) {
+          console.log('📱 App going to background - saving state');
+        }
+        
+        // Save state before backgrounding (inline to avoid dependency issues)
+        if (__DEV__) {
+          console.log(`💾 Saving state before background - torch: ${enableTorch}, mode: ${functionType}`);
+        }
+        try {
+          await AsyncStorage.setItem('cameraState', JSON.stringify({
+            enableTorch,
+            functionType,
+            isCapturing: false,
+          }));
+          if (__DEV__) {
+            console.log('💾 State saved successfully before background');
+          }
+        } catch (error) {
+          if (__DEV__) {
+            console.error('Failed to save state before background:', error);
+          }
+        }
+        
+        // Stop camera and animations
+        setIsCameraActive(false);
+        setIsCapturing(false); // Force reset capture state
+        
+        // Cancel all animations
+        if (__DEV__) {
+          console.log('🎨 Cancelling all animations for background (glow + PRO)');
+        }
+        cancelAnimation(glowOpacity);
+        cancelAnimation(proBorderProgress);
+        glowOpacity.value = 0;
+        proBorderProgress.value = 0;
+        
+      } else if (appStateRef.current.match(/inactive|background/) && nextAppState === 'active') {
+        // Coming to foreground
+        if (__DEV__) {
+          console.log('📱 App coming to foreground - restoring state');
+        }
+        
+        // Restore saved state (inline to avoid dependency issues)
+        if (__DEV__) {
+          console.log('🔄 Restoring state after foreground');
+        }
+        try {
+          const savedState = await AsyncStorage.getItem('cameraState');
+          if (savedState) {
+            const { enableTorch: savedTorch, functionType: savedMode } = JSON.parse(savedState);
+            if (__DEV__) {
+              console.log(`🔄 Restoring: torch=${savedTorch}, mode=${savedMode}`);
+              console.log(`🔦 setEnableTorch: → ${savedTorch || false} (FOREGROUND RESTORE)`);
+            }
+            setEnableTorch(savedTorch || false);
+            setFunctionType(savedMode || 'restoration');
+          } else {
+            if (__DEV__) {
+              console.log('🔄 No saved state found after foreground');
+            }
+          }
+        } catch (error) {
+          if (__DEV__) {
+            console.error('Failed to restore state after foreground:', error);
+          }
+        }
+        
+        // Re-initialize camera with delay
+        setTimeout(() => {
+          setIsCameraActive(true);
+          
+          // Restart animations
+          glowOpacity.value = withRepeat(
+            withSequence(
+              withTiming(0.6, { duration: 1500 }),
+              withTiming(0.3, { duration: 1500 })
+            ),
+            -1,
+            true
+          );
+          
+          // Restart Pro button animation if user is not Pro and animation should be active
+          if (isProAnimationActive && !isPro) {
+            if (__DEV__) {
+              console.log('🎨 Restarting PRO animation after foreground');
+              console.log(`🎨 Pro animation config: active=${isProAnimationActive}, isPro=${isPro}, duration=${proAnimationDuration}`);
+            }
+            proBorderProgress.value = 0;
+            proBorderProgress.value = withRepeat(
+              withTiming(1, { duration: proAnimationDuration }),
+              -1,
+              false
+            );
+          } else {
+            if (__DEV__) {
+              console.log('🎨 PRO animation NOT restarted after foreground');
+              console.log(`🎨 Reason: active=${isProAnimationActive}, isPro=${isPro}`);
+            }
+            proBorderProgress.value = 0;
+          }
+        }, 300); // Give camera time to initialize
+      }
+      
+      appStateRef.current = nextAppState;
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    
+    return () => {
+      subscription?.remove();
+    };
+  }, [isProAnimationActive, isPro, proAnimationDuration]); // Removed persistCameraState and restoreCameraState
   
-  // Separate effect for PRO button animation with Zustand state management
   useEffect(() => {
-    // Only animate if user is NOT pro
+    // Subtle glow animation for capture button - only when camera is active
+    if (isCameraActive) {
+      glowOpacity.value = withRepeat(
+        withSequence(
+          withTiming(0.6, { duration: 1500 }),
+          withTiming(0.3, { duration: 1500 })
+        ),
+        -1,
+        true
+      );
+    }
+  }, [isCameraActive]);
+  
+  // Initial PRO animation startup (runs once on mount)
+  useEffect(() => {
     if (isProAnimationActive && !isPro) {
       if (__DEV__) {
-        console.log('🎨 Starting PRO animation with duration:', proAnimationDuration);
+        console.log('🎨 Starting initial PRO animation on mount');
       }
       proBorderProgress.value = 0;
       proBorderProgress.value = withRepeat(
@@ -198,9 +382,24 @@ export default function MinimalCameraWithGalleryButton() {
         false
       );
     } else {
+      if (__DEV__) {
+        console.log('🎨 PRO animation disabled on mount - Pro user or animation inactive');
+      }
       proBorderProgress.value = 0;
     }
-  }, [proAnimationDuration, isProAnimationActive, isPro]);
+  }, []); // Run once on mount only
+  
+  // Cleanup on component unmount
+  useEffect(() => {
+    return () => {
+      // Save state when component unmounts
+      persistCameraState();
+      
+      // Cancel all animations
+      cancelAnimation(glowOpacity);
+      cancelAnimation(proBorderProgress);
+    };
+  }, [persistCameraState]);
   
   // Animated styles
   const animatedCaptureStyle = useAnimatedStyle(() => {
@@ -245,13 +444,16 @@ export default function MinimalCameraWithGalleryButton() {
       console.log('📸 Camera capture requested');
       console.log('📸 Camera ref exists:', !!cameraRef.current);
       console.log('📸 Is capturing:', isCapturing);
+      console.log('📸 Camera active:', isCameraActive);
     }
     
-    if (!cameraRef.current) {
+    // Add camera health check
+    if (!isCameraActive || !cameraRef.current) {
       if (__DEV__) {
-        console.error('❌ Camera ref is null - camera not ready');
+        console.log('📸 Camera not ready, attempting recovery');
       }
-      Alert.alert('Camera Error', 'Camera is not ready. Please try again.');
+      setIsCameraActive(false);
+      setTimeout(() => setIsCameraActive(true), 500);
       return;
     }
     
@@ -336,7 +538,7 @@ export default function MinimalCameraWithGalleryButton() {
         console.log('📸 Camera capture complete, state reset');
       }
     }, 500); // Reduced from 1000ms to 500ms
-  }, [router, functionType, captureButtonScale, flashAnimation, isCapturing]);
+  }, [router, functionType, captureButtonScale, flashAnimation, isCapturing, isCameraActive]);
 
   const handleGalleryPress = useCallback(async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -365,8 +567,17 @@ export default function MinimalCameraWithGalleryButton() {
   }, [router, functionType]);
 
   const toggleFlash = useCallback(() => {
+    if (__DEV__) {
+      console.log('🔦 Flash button clicked - USER INITIATED');
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setEnableTorch(current => !current);
+    setEnableTorch(current => {
+      const newValue = !current;
+      if (__DEV__) {
+        console.log(`🔦 setEnableTorch: ${current} → ${newValue} (USER CLICK)`);
+      }
+      return newValue;
+    });
   }, []);
 
   // Debug function to manually reset camera state (for testing)
@@ -452,12 +663,29 @@ export default function MinimalCameraWithGalleryButton() {
   if (permission.status === 'granted') {
     return (
       <View style={{ flex: 1, backgroundColor: 'black' }}>
-        <CameraView 
-          ref={cameraRef}
-          style={{ flex: 1 }} 
-          facing={facing}
-          enableTorch={enableTorch}
-        />
+        {isCameraActive ? (
+          <CameraView 
+            ref={cameraRef}
+            style={{ flex: 1 }} 
+            facing={facing}
+            enableTorch={enableTorch}
+            onCameraReady={() => {
+              if (__DEV__) {
+                console.log('📸 Camera ready after mount/resume');
+              }
+            }}
+            onMountError={(error) => {
+              if (__DEV__) {
+                console.error('Camera mount error:', error);
+              }
+              // Retry camera initialization
+              setIsCameraActive(false);
+              setTimeout(() => setIsCameraActive(true), 1000);
+            }}
+          />
+        ) : (
+          <View style={{ flex: 1, backgroundColor: 'black' }} />
+        )}
           
           {/* Flash overlay animation */}
           <Animated.View

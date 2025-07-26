@@ -44,7 +44,7 @@ export const useRestorationStore = create<RestorationStore>((set) => ({
   toggleGalleryViewMode: () => set((state) => ({ 
     galleryViewMode: state.galleryViewMode === 'list' ? 'grid' : 'list' 
   })),
-  simpleSlider: false,
+  simpleSlider: true,
   setSimpleSlider: (simple) => {
     if (__DEV__) {
       console.log('[Zustand] setSimpleSlider called with:', simple);

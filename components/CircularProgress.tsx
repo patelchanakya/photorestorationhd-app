@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, AppState, AppStateStatus } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -9,6 +9,7 @@ import Animated, {
   withSequence,
   interpolate,
   withSpring,
+  cancelAnimation,
 } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 import { IconSymbol } from './ui/IconSymbol';
@@ -42,18 +43,14 @@ export function CircularProgress({
   const glowOpacity = useSharedValue(0.4);
   const iconScale = useSharedValue(1);
   const containerFloat = useSharedValue(0);
+  const appStateRef = React.useRef(AppState.currentState);
 
   // Calculate circle properties
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
 
-  useEffect(() => {
-    // Smooth progress animation with spring
-    animatedProgress.value = withSpring(progress, {
-      damping: 15,
-      stiffness: 100,
-    });
-
+  // Start all infinite animations
+  const startInfiniteAnimations = React.useCallback(() => {
     // Subtle breathing glow
     glowOpacity.value = withRepeat(
       withSequence(
@@ -83,7 +80,47 @@ export function CircularProgress({
       -1,
       true
     );
-  }, [progress]);
+  }, []);
+
+  // Stop all infinite animations
+  const stopInfiniteAnimations = React.useCallback(() => {
+    cancelAnimation(glowOpacity);
+    cancelAnimation(iconScale);
+    cancelAnimation(containerFloat);
+    glowOpacity.value = 0.4;
+    iconScale.value = 1;
+    containerFloat.value = 0;
+  }, []);
+
+  useEffect(() => {
+    // Smooth progress animation with spring (not infinite)
+    animatedProgress.value = withSpring(progress, {
+      damping: 15,
+      stiffness: 100,
+    });
+
+    // Start infinite animations
+    startInfiniteAnimations();
+
+    // AppState handling for battery optimization
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (appStateRef.current.match(/active/) && nextAppState.match(/inactive|background/)) {
+        // Going to background - stop infinite animations
+        stopInfiniteAnimations();
+      } else if (appStateRef.current.match(/inactive|background/) && nextAppState === 'active') {
+        // Coming to foreground - restart infinite animations
+        startInfiniteAnimations();
+      }
+      appStateRef.current = nextAppState;
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    
+    return () => {
+      subscription?.remove();
+      stopInfiniteAnimations();
+    };
+  }, [progress, startInfiniteAnimations, stopInfiniteAnimations]);
 
   // Animated props for SVG circle
   const animatedCircleProps = useAnimatedProps(() => {

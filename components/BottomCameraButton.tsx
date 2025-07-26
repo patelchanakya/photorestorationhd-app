@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View, AppState, AppStateStatus } from 'react-native';
 import { IconSymbol } from './ui/IconSymbol';
 import Animated, { 
   useSharedValue, 
@@ -7,7 +7,8 @@ import Animated, {
   withSpring,
   withRepeat,
   withSequence,
-  withTiming
+  withTiming,
+  cancelAnimation
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
@@ -20,9 +21,10 @@ interface BottomCameraButtonProps {
 export function BottomCameraButton({ onPress }: BottomCameraButtonProps) {
   const scale = useSharedValue(1);
   const glowOpacity = useSharedValue(0.3);
+  const appStateRef = React.useRef(AppState.currentState);
 
-  React.useEffect(() => {
-    // Subtle glow animation
+  // Start glow animation
+  const startGlowAnimation = React.useCallback(() => {
     glowOpacity.value = withRepeat(
       withSequence(
         withTiming(0.6, { duration: 1500 }),
@@ -32,6 +34,31 @@ export function BottomCameraButton({ onPress }: BottomCameraButtonProps) {
       true
     );
   }, []);
+
+  React.useEffect(() => {
+    // Start initial animation
+    startGlowAnimation();
+
+    // AppState handling for battery optimization
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (appStateRef.current.match(/active/) && nextAppState.match(/inactive|background/)) {
+        // Going to background - cancel animation
+        cancelAnimation(glowOpacity);
+        glowOpacity.value = 0;
+      } else if (appStateRef.current.match(/inactive|background/) && nextAppState === 'active') {
+        // Coming to foreground - restart animation
+        startGlowAnimation();
+      }
+      appStateRef.current = nextAppState;
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    
+    return () => {
+      subscription?.remove();
+      cancelAnimation(glowOpacity);
+    };
+  }, [startGlowAnimation]);
 
   const animatedButtonStyle = useAnimatedStyle(() => {
     return {

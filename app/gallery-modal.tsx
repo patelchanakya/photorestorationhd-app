@@ -177,6 +177,9 @@ export default function GalleryModalScreen() {
             style={styles.emptyButton}
             onPress={async () => {
               try {
+                // Dismiss gallery modal BEFORE opening image picker
+                router.dismiss();
+                
                 const result = await ImagePicker.launchImageLibraryAsync({
                   mediaTypes: ['images'],
                   allowsEditing: false,
@@ -185,7 +188,6 @@ export default function GalleryModalScreen() {
 
                 if (!result.canceled && result.assets[0]) {
                   const imageUri = result.assets[0].uri;
-                  router.dismiss();
                   router.push(`/crop-modal?imageUri=${encodeURIComponent(imageUri)}&functionType=restoration`);
                 }
               } catch (error) {
