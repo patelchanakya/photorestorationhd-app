@@ -1,8 +1,8 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
+import * as Device from 'expo-device';
 import { Mixpanel } from 'mixpanel-react-native';
 import { AppState, AppStateStatus } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Device from 'expo-device';
-import Constants from 'expo-constants';
 
 class AnalyticsService {
   private mixpanel: Mixpanel | null = null;
@@ -153,6 +153,9 @@ class AnalyticsService {
 
     // Store session data for daily active users tracking
     await this.recordDailyActivity();
+
+    // Flush events to ensure they're sent
+    this.mixpanel.flush();
 
     this.sessionStartTime = null;
 
@@ -338,6 +341,11 @@ class AnalyticsService {
 
     if (this.sessionStartTime) {
       this.endSession();
+    }
+
+    // Flush any remaining events before destroying
+    if (this.mixpanel) {
+      this.mixpanel.flush();
     }
   }
 }

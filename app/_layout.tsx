@@ -1,27 +1,26 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import '../global.css';
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+import CustomSplashScreen from '@/components/CustomSplashScreen';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { OnboardingProvider, useOnboarding } from '@/contexts/OnboardingContext';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { LanguageProvider } from '@/i18n';
+import { analyticsService } from '@/services/analytics';
+import { deviceTrackingService } from '@/services/deviceTracking';
+import { checkSubscriptionStatus } from '@/services/revenuecat';
+import { useSubscriptionStore } from '@/store/subscriptionStore';
 import NetInfo from '@react-native-community/netinfo';
 import { QueryClient, QueryClientProvider, focusManager, onlineManager } from '@tanstack/react-query';
+import Constants from 'expo-constants';
 import React, { useEffect } from 'react';
-import { AppState, AppStateStatus, Platform, LogBox, View } from 'react-native';
+import { AppState, AppStateStatus, LogBox, Platform, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
-import { checkSubscriptionStatus } from '@/services/revenuecat';
-import Constants from 'expo-constants';
-import { deviceTrackingService } from '@/services/deviceTracking';
-import { analyticsService } from '@/services/analytics';
-import { OnboardingProvider, useOnboarding } from '@/contexts/OnboardingContext';
-import { useRouter } from 'expo-router';
-import CustomSplashScreen from '@/components/CustomSplashScreen';
 
 // Configure LogBox for production
 if (!__DEV__) {
@@ -283,7 +282,11 @@ export default function RootLayout() {
       initRevenueCat();
     }, 100);
     
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      // Cleanup analytics service
+      analyticsService.destroy();
+    };
   }, [loaded, setIsPro]);
 
   const onCustomSplashComplete = React.useCallback(() => {

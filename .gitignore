@@ -37,4 +37,42 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# iOS builds and artifacts
+*.ipa
+*.app
+ios/build/
+ios/Pods/
+ios/*.xcworkspace/xcuserdata/
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcodeproj/project.xcworkspace/xcuserdata/
+
+# Android builds and artifacts
+*.apk
+*.aab
+android/app/build/
+android/build/
+android/.gradle/
+android/app/release/
+android/app/debug/
+android/gradle.properties.local
+
+# Build and cache directories
+build*/
+.gradle/
+*.log
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing
+coverage/
+*.lcov
+
+# Temporary files
+*.tmp
+*.temp
+
 app-example
