@@ -2,6 +2,7 @@ import { CustomImageCropper } from '@/components/CustomImageCropper';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 import { analyticsService } from '@/services/analytics';
+import { networkStateService } from '@/services/networkState';
 import { presentPaywall, validatePremiumAccess } from '@/services/revenuecat';
 import { useCropModalStore } from '@/store/cropModalStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
@@ -111,7 +112,27 @@ function CropModalScreen() {
   };
 
   const handleRestoration = async (imageUri: string) => {
-    // Start loading animation
+    // Check internet connection first - before any UI changes
+    try {
+      const hasConnection = await networkStateService.testRealConnection();
+      if (!hasConnection) {
+        Alert.alert(
+          'Turn On Internet',
+          'Please turn on WiFi or cellular data to restore your photo.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+    } catch (error) {
+      Alert.alert(
+        'Connection Issue',
+        'Please check your internet connection and try again.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    // Start loading animation only after network check passes
     setUseImageLoading(true);
     buttonScale.value = withSequence(
       withTiming(0.95, { duration: 100 }),

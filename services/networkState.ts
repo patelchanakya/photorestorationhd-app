@@ -77,6 +77,31 @@ class NetworkStateManager implements NetworkStateService {
     }
   }
 
+  /**
+   * Perform a real network test by making an actual HTTP request
+   */
+  public async testRealConnection(): Promise<boolean> {
+    try {
+      // Try to fetch from a reliable endpoint with short timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
+      const response = await fetch('https://www.google.com/generate_204', {
+        method: 'GET',
+        signal: controller.signal,
+        cache: 'no-cache',
+      });
+      
+      clearTimeout(timeoutId);
+      return response.status === 204 || response.ok;
+    } catch (error) {
+      if (__DEV__) {
+        console.log('🌐 Real network test failed:', error);
+      }
+      return false;
+    }
+  }
+
   private notifyListeners() {
     this.listeners.forEach(callback => {
       try {

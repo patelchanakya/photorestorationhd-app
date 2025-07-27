@@ -1,6 +1,7 @@
 import Replicate from 'replicate';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
+import { networkStateService } from './networkState';
 
 // Validate API token
 const apiToken = process.env.EXPO_PUBLIC_REPLICATE_API_TOKEN;
@@ -112,6 +113,28 @@ async function processImageIfNeeded(uri: string): Promise<string> {
 // Sleep helper for polling
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+// Real network connectivity test
+async function testRealNetworkConnection(): Promise<boolean> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    
+    const response = await fetch('https://www.google.com/generate_204', {
+      method: 'GET',
+      signal: controller.signal,
+      cache: 'no-cache',
+    });
+    
+    clearTimeout(timeoutId);
+    return response.status === 204 || response.ok;
+  } catch (error) {
+    if (__DEV__) {
+      console.log('🌐 Real network test failed:', error);
+    }
+    return false;
+  }
+}
+
 // Helper function to detect content policy violations
 function isContentPolicyViolation(error: string): boolean {
   const contentPolicyKeywords = [
@@ -134,10 +157,22 @@ function isContentPolicyViolation(error: string): boolean {
 }
 
 export async function restorePhoto(imageUri: string): Promise<string> {
+  // Create an abort controller for proper timeout handling
+  const abortController = new AbortController();
+  const timeoutId = setTimeout(() => {
+    abortController.abort();
+  }, 180000); // 3 minute absolute timeout
+
   try {
     // Check if API token is available
     if (!apiToken) {
       throw new Error('Replicate API token is not configured. Please check your environment variables.');
+    }
+
+    // Test real network connection before starting
+    const hasConnection = await testRealNetworkConnection();
+    if (!hasConnection) {
+      throw new Error('No internet connection. Please check your connection and try again.');
     }
 
     // Process image only if absolutely necessary (preserve original quality)
@@ -146,7 +181,7 @@ export async function restorePhoto(imageUri: string): Promise<string> {
     // Convert to base64
     const base64 = await imageToBase64(processedUri);
     
-    // Create prediction
+    // Create prediction with abort signal
     const prediction = await replicate.predictions.create({
       model: "flux-kontext-apps/restore-image",
       input: {
@@ -162,7 +197,30 @@ export async function restorePhoto(imageUri: string): Promise<string> {
     while (attempts < maxAttempts) {
       await sleep(delay);
       
-      const result = await replicate.predictions.get(prediction.id);
+      // Check real network connectivity before polling
+      const hasRealConnection = await testRealNetworkConnection();
+      if (!hasRealConnection) {
+        throw new Error('Network connection lost during processing. Please check your internet connection and try again.');
+      }
+      
+      // Check if we've been aborted
+      if (abortController.signal.aborted) {
+        throw new Error('Photo restoration timed out. Please check your internet connection and try again.');
+      }
+
+      let result;
+      try {
+        result = await replicate.predictions.get(prediction.id);
+      } catch (networkError) {
+        // If it's a network error, throw immediately
+        if (networkError instanceof Error && 
+            (networkError.message.includes('fetch') || 
+             networkError.message.includes('network') ||
+             networkError.message.includes('timeout'))) {
+          throw new Error('Network error during processing. Please check your internet connection and try again.');
+        }
+        throw networkError;
+      }
       if (__DEV__) {
         console.log(`🔄 Polling attempt ${attempts + 1}: status = ${result.status}`);
       }
@@ -225,8 +283,16 @@ export async function restorePhoto(imageUri: string): Promise<string> {
     
     throw new Error('Processing took longer than expected. Please try again with a different image.');
   } catch (error) {
+    // Clean up timeout
+    clearTimeout(timeoutId);
+    
     if (__DEV__) {
       console.error('Replicate restoration error:', error);
+    }
+    
+    // Handle abort errors specifically
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Photo restoration timed out. Please check your internet connection and try again.');
     }
     
     // If it's already a content policy error, re-throw it
@@ -250,6 +316,9 @@ export async function restorePhoto(imageUri: string): Promise<string> {
     }
     
     throw error;
+  } finally {
+    // Always clean up timeout
+    clearTimeout(timeoutId);
   }
 }
 

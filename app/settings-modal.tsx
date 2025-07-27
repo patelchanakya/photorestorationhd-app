@@ -3,6 +3,8 @@ import { photoRestorationKeys } from '@/hooks/usePhotoRestoration';
 import { photoStorage } from '@/services/storage';
 import { localStorageHelpers } from '@/services/supabase';
 import { deviceTrackingService } from '@/services/deviceTracking';
+import { restorationTrackingService } from '@/services/restorationTracking';
+import { testSupabaseConnection } from '@/services/supabaseClient';
 import { useRestorationStore } from '@/store/restorationStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { restorePurchasesDetailed, presentPaywall, getAppUserId } from '@/services/revenuecat';
@@ -48,6 +50,8 @@ export default function SettingsModalScreen() {
   const [isRestoring, setIsRestoring] = useState(false);
   const [timeUntilNext, setTimeUntilNext] = useState<string>('Available now');
   const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [supabaseStatus, setSupabaseStatus] = useState<string>('');
+  const [isTestingSupabase, setIsTestingSupabase] = useState(false);
   const [revenueCatUserId, setRevenueCatUserId] = useState<string | null>(null);
   const [msRemaining, setMsRemaining] = useState<number>(0);
   const { t, currentLanguage } = useTranslation();
@@ -332,6 +336,51 @@ export default function SettingsModalScreen() {
       );
     }
   };
+
+  // Debug functions for TestFlight builds
+  const handleTestSupabase = async () => {
+    setIsTestingSupabase(true);
+    setSupabaseStatus('Testing connection...');
+    
+    try {
+      const result = await testSupabaseConnection();
+      if (result.success) {
+        setSupabaseStatus('✅ Connected successfully');
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else {
+        setSupabaseStatus(`❌ Failed: ${result.message}`);
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
+    } catch (error) {
+      setSupabaseStatus(`❌ Error: ${error instanceof Error ? error.message : 'Unknown'}`);
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setIsTestingSupabase(false);
+    }
+  };
+
+
+  const handleGetRestorationStats = async () => {
+    try {
+      const stats = await restorationTrackingService.getRestorationStats();
+      if (stats) {
+        Alert.alert(
+          'Restoration Stats',
+          `Total: ${stats.total}\nCompleted: ${stats.completed}\nFailed: ${stats.failed}\nPending: ${stats.pending}`,
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert('Stats Unavailable', 'Unable to fetch restoration statistics.', [{ text: 'OK' }]);
+      }
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        `Failed to get stats: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
 
   // Format subscription status
   const getSubscriptionStatus = () => {
@@ -1287,6 +1336,92 @@ Best regards`;
                 </TouchableOpacity>
               </View>
             </View>
+
+            {/* Debug Section (TestFlight only) */}
+            {!__DEV__ && (
+              <View style={{ marginBottom: 32 }}>
+                <Text style={{ 
+                  color: 'rgba(249,115,22,1)', 
+                  fontSize: 16, 
+                  fontWeight: '600', 
+                  marginBottom: 16 
+                }}>
+                  Debug (TestFlight)
+                </Text>
+                
+                <View style={{ 
+                  backgroundColor: 'rgba(255,255,255,0.05)', 
+                  borderRadius: 12, 
+                  overflow: 'hidden' 
+                }}>
+                  
+                  {/* Test Supabase Connection */}
+                  <TouchableOpacity 
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      padding: 16,
+                      borderBottomWidth: 1,
+                      borderBottomColor: 'rgba(255,255,255,0.1)'
+                    }}
+                    onPress={handleTestSupabase}
+                    disabled={isTestingSupabase}>
+                    <View style={{
+                      width: 36,
+                      height: 36,
+                      backgroundColor: 'rgba(59,130,246,0.2)',
+                      borderRadius: 18,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: 12
+                    }}>
+                      {isTestingSupabase ? (
+                        <ActivityIndicator size="small" color="#3b82f6" />
+                      ) : (
+                        <Ionicons name="cloud-outline" size={18} color="#3b82f6" />
+                      )}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
+                        Test Supabase Connection
+                      </Text>
+                      <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
+                        {supabaseStatus || 'Check if database is reachable'}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+
+                  {/* Get Restoration Stats */}
+                  <TouchableOpacity 
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      padding: 16
+                    }}
+                    onPress={handleGetRestorationStats}>
+                    <View style={{
+                      width: 36,
+                      height: 36,
+                      backgroundColor: 'rgba(168,85,247,0.2)',
+                      borderRadius: 18,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: 12
+                    }}>
+                      <Ionicons name="stats-chart-outline" size={18} color="#a855f7" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
+                        View Restoration Stats
+                      </Text>
+                      <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
+                        Show statistics from Supabase
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
 
             {/* Account & Legal Section */}
             <View style={{ marginBottom: 32 }}>

@@ -2,6 +2,8 @@ import { analyticsService } from '@/services/analytics';
 import { restorePhoto } from '@/services/replicate';
 import { photoStorage } from '@/services/storage';
 import { restorationService } from '@/services/supabase';
+import { restorationTrackingService } from '@/services/restorationTracking';
+import { networkStateService } from '@/services/networkState';
 import { useRestorationStore } from '@/store/restorationStore';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -29,7 +31,9 @@ export function usePhotoRestoration() {
   return useMutation({
     mutationFn: async ({ imageUri, functionType, imageSource }: { imageUri: string; functionType: 'restoration' | 'unblur' | 'colorize'; imageSource?: 'camera' | 'gallery' }) => {
       const startTime = Date.now();
+      let supabaseRestorationId: string | null = null;
       
+
       // Track restoration started
       analyticsService.trackRestorationStarted(imageSource || 'gallery');
       
@@ -37,7 +41,7 @@ export function usePhotoRestoration() {
         // Save original photo locally
         const originalFilename = await photoStorage.saveOriginal(imageUri);
 
-        // Create restoration record in database
+        // Create restoration record in local database (AsyncStorage)
         const restoration = await restorationService.create({
           user_id: 'anonymous',
           original_filename: originalFilename,
@@ -45,8 +49,21 @@ export function usePhotoRestoration() {
           function_type: functionType,
         });
 
-        // Call Replicate API
-        const restoredUrl = await restorePhoto(imageUri);
+        // Track restoration start in Supabase (metadata only)
+        supabaseRestorationId = await restorationTrackingService.trackRestorationStarted(
+          originalFilename,
+          functionType
+        );
+
+        // Call Replicate API with timeout (max 3 minutes)
+        const restorePromise = restorePhoto(imageUri);
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => {
+            reject(new Error('Photo restoration timed out. Please check your internet connection and try again.'));
+          }, 180000); // 3 minutes timeout
+        });
+        
+        const restoredUrl = await Promise.race([restorePromise, timeoutPromise]);
         if (__DEV__) {
           console.log('🎉 Photo restored successfully, URL:', restoredUrl);
         }
@@ -72,7 +89,7 @@ export function usePhotoRestoration() {
           console.log('🖼️ Thumbnail created:', thumbnailFilename);
         }
 
-        // Update restoration record
+        // Update restoration record in local database
         await restorationService.update(restoration.id, {
           restored_filename: restoredFilename,
           thumbnail_filename: thumbnailFilename,
@@ -80,6 +97,13 @@ export function usePhotoRestoration() {
           processing_time_ms: Date.now() - startTime,
           completed_at: new Date().toISOString(),
         });
+
+        // Update restoration tracking in Supabase (metadata only)
+        await restorationTrackingService.trackRestorationCompleted(
+          supabaseRestorationId,
+          true,
+          Date.now() - startTime
+        );
 
         const completedData: RestorationResult = {
           id: restoration.id,
@@ -109,7 +133,13 @@ export function usePhotoRestoration() {
         
         if (error instanceof Error) {
           errorMessage = error.message;
-          if (error.message.includes('network') || error.message.includes('fetch')) {
+          if (error.message.includes('network') || 
+              error.message.includes('fetch') || 
+              error.message.includes('internet connection') ||
+              error.message.includes('connection lost') ||
+              error.message.includes('timed out') ||
+              error.message.includes('timeout') ||
+              error.message.includes('Network request failed')) {
             errorType = 'network_error';
           } else if (error.message.includes('API') || error.message.includes('replicate')) {
             errorType = 'api_error';
@@ -126,6 +156,14 @@ export function usePhotoRestoration() {
           functionType
         );
         
+        // Track failed restoration in Supabase (metadata only)
+        await restorationTrackingService.trackRestorationCompleted(
+          supabaseRestorationId,
+          false,
+          Date.now() - startTime,
+          errorMessage
+        );
+
         // Track failed restoration
         await analyticsService.trackRestorationCompleted(
           false, 

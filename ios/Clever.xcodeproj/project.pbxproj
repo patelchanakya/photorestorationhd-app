@@ -9,27 +9,27 @@
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		484E2FE8E8702488745C33B4 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29463C062670F8177FA41606 /* ExpoModulesProvider.swift */; };
-		5F895CF31EAD1037C1F7EF10 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = E576CABE8E9B1F81118E34A2 /* PrivacyInfo.xcprivacy */; };
-		B206445DC4EB96BF1CF50121 /* libPods-Clever.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A42B6AE1D72D06DE433DAECB /* libPods-Clever.a */; };
+		93CF4D886799645BD5C7A488 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 328BB6BA650C5563771DC9A1 /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
+		DB0A9E230BD531DF011836D6 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = F9CAFA9FDB4ECD29825041CD /* PrivacyInfo.xcprivacy */; };
+		EBD7DD998ADD4D61F6789D5F /* libPods-Clever.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DA2389CE965647172354E640 /* libPods-Clever.a */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		06FFEDE652089D0CD501A2FC /* Pods-Clever.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Clever.release.xcconfig"; path = "Target Support Files/Pods-Clever/Pods-Clever.release.xcconfig"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* Clever.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Clever.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = Clever/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Clever/Info.plist; sourceTree = "<group>"; };
-		29463C062670F8177FA41606 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-Clever/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		9D9FC9F205DE9818CA534E0A /* Pods-Clever.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Clever.debug.xcconfig"; path = "Target Support Files/Pods-Clever/Pods-Clever.debug.xcconfig"; sourceTree = "<group>"; };
-		A42B6AE1D72D06DE433DAECB /* libPods-Clever.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Clever.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		328BB6BA650C5563771DC9A1 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-Clever/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		659883D534D3AC04BD0B13EF /* Pods-Clever.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Clever.debug.xcconfig"; path = "Target Support Files/Pods-Clever/Pods-Clever.debug.xcconfig"; sourceTree = "<group>"; };
+		93556B3F16F59466E0EDB123 /* Pods-Clever.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Clever.release.xcconfig"; path = "Target Support Files/Pods-Clever/Pods-Clever.release.xcconfig"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = Clever/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		E576CABE8E9B1F81118E34A2 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = Clever/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		DA2389CE965647172354E640 /* libPods-Clever.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Clever.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Clever/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* Clever-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "Clever-Bridging-Header.h"; path = "Clever/Clever-Bridging-Header.h"; sourceTree = "<group>"; };
+		F9CAFA9FDB4ECD29825041CD /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = Clever/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,7 +37,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B206445DC4EB96BF1CF50121 /* libPods-Clever.a in Frameworks */,
+				EBD7DD998ADD4D61F6789D5F /* libPods-Clever.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -53,36 +53,44 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				E576CABE8E9B1F81118E34A2 /* PrivacyInfo.xcprivacy */,
+				F9CAFA9FDB4ECD29825041CD /* PrivacyInfo.xcprivacy */,
 			);
 			name = Clever;
+			sourceTree = "<group>";
+		};
+		2076E9D5D60BBBCC9BE830AF /* ExpoModulesProviders */ = {
+			isa = PBXGroup;
+			children = (
+				54A33FA299AE26D71FB09E2B /* Clever */,
+			);
+			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				A42B6AE1D72D06DE433DAECB /* libPods-Clever.a */,
+				DA2389CE965647172354E640 /* libPods-Clever.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		396614C5372291D1BD9382D7 /* ExpoModulesProviders */ = {
+		3949B1B44EBDD7815D5732D2 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				E806E3AE8E18108B5F5E1F54 /* Clever */,
-			);
-			name = ExpoModulesProviders;
-			sourceTree = "<group>";
-		};
-		4E48F4C1EC8B4FEB7843D1B8 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				9D9FC9F205DE9818CA534E0A /* Pods-Clever.debug.xcconfig */,
-				06FFEDE652089D0CD501A2FC /* Pods-Clever.release.xcconfig */,
+				659883D534D3AC04BD0B13EF /* Pods-Clever.debug.xcconfig */,
+				93556B3F16F59466E0EDB123 /* Pods-Clever.release.xcconfig */,
 			);
 			name = Pods;
 			path = Pods;
+			sourceTree = "<group>";
+		};
+		54A33FA299AE26D71FB09E2B /* Clever */ = {
+			isa = PBXGroup;
+			children = (
+				328BB6BA650C5563771DC9A1 /* ExpoModulesProvider.swift */,
+			);
+			name = Clever;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -99,8 +107,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				4E48F4C1EC8B4FEB7843D1B8 /* Pods */,
-				396614C5372291D1BD9382D7 /* ExpoModulesProviders */,
+				3949B1B44EBDD7815D5732D2 /* Pods */,
+				2076E9D5D60BBBCC9BE830AF /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -124,14 +132,6 @@
 			path = Clever/Supporting;
 			sourceTree = "<group>";
 		};
-		E806E3AE8E18108B5F5E1F54 /* Clever */ = {
-			isa = PBXGroup;
-			children = (
-				29463C062670F8177FA41606 /* ExpoModulesProvider.swift */,
-			);
-			name = Clever;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -140,13 +140,13 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "Clever" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				7B27BBF185B74E5B3423E66A /* [Expo] Configure project */,
+				430B15FDD07A13D5BDA1FDE1 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				7213ECDE360188250D2DB51D /* [CP] Embed Pods Frameworks */,
+				762B3F467442EAEA0555F33A /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -166,8 +166,8 @@
 				LastUpgradeCheck = 1130;
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
+						DevelopmentTeam = A2RT2K8Z89;
 						LastSwiftMigration = 1250;
-						DevelopmentTeam = "A2RT2K8Z89";
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -198,7 +198,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				5F895CF31EAD1037C1F7EF10 /* PrivacyInfo.xcprivacy in Resources */,
+				DB0A9E230BD531DF011836D6 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -242,25 +242,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		7213ECDE360188250D2DB51D /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Clever/Pods-Clever-frameworks.sh",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Clever/Pods-Clever-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		7B27BBF185B74E5B3423E66A /* [Expo] Configure project */ = {
+		430B15FDD07A13D5BDA1FDE1 /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -278,6 +260,24 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-Clever/expo-configure-project.sh\"\n";
+		};
+		762B3F467442EAEA0555F33A /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Clever/Pods-Clever-frameworks.sh",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Clever/Pods-Clever-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
 		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -347,7 +347,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				484E2FE8E8702488745C33B4 /* ExpoModulesProvider.swift in Sources */,
+				93CF4D886799645BD5C7A488 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -356,12 +356,15 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9D9FC9F205DE9818CA534E0A /* Pods-Clever.debug.xcconfig */;
+			baseConfigurationReference = 659883D534D3AC04BD0B13EF /* Pods-Clever.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Clever/Clever.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = A2RT2K8Z89;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -387,20 +390,20 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
-				DEVELOPMENT_TEAM = "A2RT2K8Z89";
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
 			};
 			name = Debug;
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 06FFEDE652089D0CD501A2FC /* Pods-Clever.release.xcconfig */;
+			baseConfigurationReference = 93556B3F16F59466E0EDB123 /* Pods-Clever.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Clever/Clever.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = A2RT2K8Z89;
 				INFOPLIST_FILE = Clever/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -420,9 +423,6 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
-				DEVELOPMENT_TEAM = "A2RT2K8Z89";
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
 			};
 			name = Release;
 		};

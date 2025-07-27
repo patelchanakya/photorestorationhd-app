@@ -12,6 +12,8 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { LanguageProvider } from '@/i18n';
 import { analyticsService } from '@/services/analytics';
 import { deviceTrackingService } from '@/services/deviceTracking';
+import { restorationTrackingService } from '@/services/restorationTracking';
+import { networkStateService } from '@/services/networkState';
 import { checkSubscriptionStatus } from '@/services/revenuecat';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import NetInfo from '@react-native-community/netinfo';
@@ -270,6 +272,14 @@ export default function RootLayout() {
       }
     });
 
+    // Set up network monitoring for restoration sync
+    const unsubscribeNetworkMonitor = networkStateService.subscribe(async (isOnline) => {
+      if (isOnline) {
+        // Sync pending restoration operations when coming online
+        await restorationTrackingService.syncPendingOperations();
+      }
+    });
+
     // Initialize analytics service
     analyticsService.initialize().catch((error) => {
       if (__DEV__) {
@@ -286,6 +296,8 @@ export default function RootLayout() {
       clearTimeout(timer);
       // Cleanup analytics service
       analyticsService.destroy();
+      // Cleanup network monitor
+      unsubscribeNetworkMonitor();
     };
   }, [loaded, setIsPro]);
 

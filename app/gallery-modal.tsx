@@ -1,22 +1,22 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { useRefreshHistory, useRestorationHistory } from '@/hooks/useRestorationHistory';
 import { photoStorage } from '@/services/storage';
 import { localStorageHelpers } from '@/services/supabase';
-import { useRestorationHistory, useRefreshHistory } from '@/hooks/useRestorationHistory';
 import { useRestorationStore } from '@/store/restorationStore';
-import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import React, { useState, useEffect } from 'react';
+import { useRouter } from 'expo-router';
+import React, { useEffect } from 'react';
 import {
-    Dimensions,
-    FlatList,
-    Platform,
-    Image as RNImage,
-    SafeAreaView,
-    SectionList,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  FlatList,
+  Platform,
+  Image as RNImage,
+  SafeAreaView,
+  SectionList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
@@ -225,7 +225,7 @@ export default function GalleryModalScreen() {
           
           {/* Center section with title */}
           <View style={styles.headerCenterSection}>
-            <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">Clever</Text>
+            <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">My Restorations</Text>
           </View>
           
           {/* Right section with badge and close */}

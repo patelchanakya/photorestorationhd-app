@@ -4,8 +4,27 @@ import 'react-native-url-polyfill/auto';
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
 
+// Production-safe logging function
+const logSupabaseIssue = (message: string, error?: any) => {
+  // Always log to console in development
+  if (__DEV__) {
+    console.warn('⚠️ Supabase:', message, error);
+  } else {
+    // In production, we could send to analytics or crash reporting
+    // For now, just ensure the error doesn't crash the app
+    try {
+      console.warn('⚠️ Supabase:', message);
+    } catch (e) {
+      // Failsafe - do nothing if console.warn fails
+    }
+  }
+};
+
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('⚠️ Supabase URL or Anon Key not configured');
+  logSupabaseIssue('URL or Anon Key not configured', { 
+    hasUrl: !!supabaseUrl, 
+    hasKey: !!supabaseAnonKey 
+  });
 }
 
 // Create a single supabase client for interacting with your database
@@ -14,6 +33,45 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: false, // We're not using auth, so disable session persistence
   },
 });
+
+// Export the logging function for use in other services
+export { logSupabaseIssue };
+
+// Health check function to test Supabase connectivity
+export const testSupabaseConnection = async (): Promise<{ success: boolean; message: string }> => {
+  try {
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return { 
+        success: false, 
+        message: 'Missing Supabase credentials' 
+      };
+    }
+
+    // Simple query to test connection - just get count of device_usage table
+    const { data, error } = await supabase
+      .from('device_usage')
+      .select('device_id', { count: 'exact', head: true });
+
+    if (error) {
+      logSupabaseIssue('Connection test failed', error);
+      return { 
+        success: false, 
+        message: `Connection error: ${error.message}` 
+      };
+    }
+
+    return { 
+      success: true, 
+      message: 'Connection successful' 
+    };
+  } catch (error) {
+    logSupabaseIssue('Connection test exception', error);
+    return { 
+      success: false, 
+      message: `Exception: ${error instanceof Error ? error.message : 'Unknown error'}` 
+    };
+  }
+};
 
 // Type definitions for our database tables
 export interface Database {

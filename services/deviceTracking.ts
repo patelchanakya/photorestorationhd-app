@@ -17,7 +17,7 @@ try {
 }
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
-import { supabase, Database } from './supabaseClient';
+import { supabase, Database, logSupabaseIssue } from './supabaseClient';
 import { networkStateService } from './networkState';
 
 // SecureStore keys for local storage
@@ -158,9 +158,7 @@ export const deviceTrackingService = {
             return this.processUsageData(supabaseUsage);
           }
         } catch (error) {
-          if (__DEV__) {
-            console.warn('⚠️ Failed to get usage from Supabase, falling back to local:', error);
-          }
+          logSupabaseIssue('Failed to get usage from Supabase, falling back to local', error);
         }
       }
       
@@ -181,9 +179,7 @@ export const deviceTrackingService = {
           try {
             await this.createDeviceUsageInSupabase(initialUsage);
           } catch (error) {
-            if (__DEV__) {
-              console.warn('⚠️ Failed to create initial usage in Supabase:', error);
-            }
+            logSupabaseIssue('Failed to create initial usage in Supabase', error);
           }
         }
         
@@ -238,9 +234,7 @@ export const deviceTrackingService = {
         try {
           await this.updateDeviceUsageInSupabase(resetUsage);
         } catch (error) {
-          if (__DEV__) {
-            console.warn('⚠️ Failed to update reset in Supabase:', error);
-          }
+          logSupabaseIssue('Failed to update reset in Supabase', error);
           // Queue operation for later sync
           await this.queueOperation('reset', usage.device_id, resetUsage);
         }
@@ -321,9 +315,7 @@ export const deviceTrackingService = {
       await SecureStore.setItemAsync(DEVICE_USAGE_LAST_RESET_KEY, usage.last_reset_date);
       await SecureStore.setItemAsync(DEVICE_USAGE_COUNT_KEY, usage.free_restorations_used.toString());
     } catch (error) {
-      if (__DEV__) {
-        console.warn('⚠️ Failed to update local cache:', error);
-      }
+      logSupabaseIssue('Failed to update local cache', error);
     }
   },
 
@@ -348,9 +340,7 @@ export const deviceTrackingService = {
         console.log(`📝 Queued ${type} operation for offline sync`);
       }
     } catch (error) {
-      if (__DEV__) {
-        console.warn('⚠️ Failed to queue operation:', error);
-      }
+      logSupabaseIssue('Failed to queue operation', error);
     }
   },
 
@@ -382,9 +372,7 @@ export const deviceTrackingService = {
               break;
           }
         } catch (error) {
-          if (__DEV__) {
-            console.warn(`⚠️ Failed to sync ${op.type} operation:`, error);
-          }
+          logSupabaseIssue(`Failed to sync ${op.type} operation`, error);
           // Keep failed operations for retry
           continue;
         }
@@ -396,9 +384,7 @@ export const deviceTrackingService = {
         console.log('✅ Synced pending operations to Supabase');
       }
     } catch (error) {
-      if (__DEV__) {
-        console.warn('⚠️ Failed to sync pending operations:', error);
-      }
+      logSupabaseIssue('Failed to sync pending operations', error);
     }
   },
 
@@ -441,9 +427,7 @@ export const deviceTrackingService = {
       try {
         await this.updateDeviceUsageInSupabase(updatedUsage);
       } catch (error) {
-        if (__DEV__) {
-          console.warn('⚠️ Failed to increment usage in Supabase:', error);
-        }
+        logSupabaseIssue('Failed to increment usage in Supabase', error);
         // Queue operation for later sync
         await this.queueOperation('increment', currentUsage.device_id, updatedUsage);
       }
@@ -458,63 +442,6 @@ export const deviceTrackingService = {
     return updatedUsage;
   },
 
-  /**
-   * Decrement the device's restoration count (only if within current 48-hour window)
-   */
-  async decrementUsage(): Promise<DeviceUsage> {
-    const currentUsage = await this.getDeviceUsage();
-    
-    // Don't decrement if already at 0
-    if (currentUsage.free_restorations_used === 0) {
-      if (__DEV__) {
-        console.log('⚠️ Usage count already at 0, cannot decrement');
-      }
-      return currentUsage;
-    }
-
-    // Check if we're still within the same 48-hour window
-    const now = new Date();
-    const lastReset = new Date(currentUsage.last_reset_date);
-    const hoursSinceReset = (now.getTime() - lastReset.getTime()) / (1000 * 60 * 60);
-    
-    if (hoursSinceReset >= 48) {
-      if (__DEV__) {
-        console.log('⚠️ Outside 48-hour window, not decrementing');
-      }
-      return currentUsage;
-    }
-
-    const newCount = Math.max(0, currentUsage.free_restorations_used - 1);
-    
-    const updatedUsage: DeviceUsage = {
-      ...currentUsage,
-      free_restorations_used: newCount,
-    };
-    
-    // Update local cache
-    await this.updateLocalCache(updatedUsage);
-    
-    // Update Supabase if online
-    if (networkStateService.isOnline) {
-      try {
-        await this.updateDeviceUsageInSupabase(updatedUsage);
-      } catch (error) {
-        if (__DEV__) {
-          console.warn('⚠️ Failed to decrement usage in Supabase:', error);
-        }
-        // Queue operation for later sync
-        await this.queueOperation('decrement', currentUsage.device_id, updatedUsage);
-      }
-    } else {
-      // Queue operation for when online
-      await this.queueOperation('decrement', currentUsage.device_id, updatedUsage);
-    }
-    
-    if (__DEV__) {
-      console.log(`➖ Decremented device usage: ${newCount}/${FREE_RESTORATION_LIMIT}`);
-    }
-    return updatedUsage;
-  },
 
   /**
    * Get remaining free restorations for the device
@@ -573,43 +500,6 @@ export const deviceTrackingService = {
     }
   },
 
-  /**
-   * Reset usage data (for testing purposes)
-   */
-  async resetUsageData(): Promise<void> {
-    try {
-      const deviceId = await this.getDeviceId();
-      
-      // Clear local cache
-      await SecureStore.deleteItemAsync(DEVICE_USAGE_LAST_RESET_KEY);
-      await SecureStore.deleteItemAsync(DEVICE_USAGE_COUNT_KEY);
-      
-      // Clear Supabase record if online
-      if (networkStateService.isOnline) {
-        try {
-          await supabase
-            .from('device_usage')
-            .delete()
-            .eq('device_id', deviceId);
-        } catch (error) {
-          if (__DEV__) {
-            console.warn('⚠️ Failed to reset usage data in Supabase:', error);
-          }
-        }
-      }
-      
-      // Clear pending operations
-      await AsyncStorage.removeItem(PENDING_OPERATIONS_KEY);
-      
-      if (__DEV__) {
-        console.log('🧹 Reset all usage data');
-      }
-    } catch (error) {
-      if (__DEV__) {
-        console.error('❌ Failed to reset usage data:', error);
-      }
-    }
-  },
 
   /**
    * Get network status
