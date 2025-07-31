@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f6fa',
-    paddingTop: Platform.OS === 'android' ? 32 : 0,
+    paddingTop: 0,
   },
   modalContent: {
     flex: 1,

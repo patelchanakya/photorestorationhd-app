@@ -25,19 +25,12 @@
       "env": {
         "EXPO_PUBLIC_REPLICATE_API_TOKEN": "r8_BMHpGxbcdpbkbENSDDoylUYxcfyZ0oh3sH0Rz",
         "EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY": "appl_fuVkQwFoJZzKnLgwEncDKqrDDxP",
-        "EXPO_PUBLIC_SUPABASE_URL": "http://192.168.0.19:54321",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
+        "EXPO_PUBLIC_SUPABASE_URL": "https://jmiimwbdugghuhgturac.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptaWltd2JkdWdnaHVoZ3R1cmFjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI1Njk1OTgsImV4cCI6MjA2ODE0NTU5OH0.M6H93cUzt5qp9qENYsAchNKraU_RPEKaRTL1cN9fkIc"
       }
     },
     "production": {
-      "autoIncrement": true,
-      "env": {
-        "EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY": "appl_fuVkQwFoJZzKnLgwEncDKqrDDxP",
-        "EXPO_PUBLIC_REPLICATE_API_TOKEN": "r8_BMHpGxbcdpbkbENSDDoylUYxcfyZ0oh3sH0Rz",
-        "EXPO_PUBLIC_SUPABASE_URL": "https://jmiimwbdugghuhgturac.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptaWltd2JkdWdnaHVoZ3R1cmFjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI1Njk1OTgsImV4cCI6MjA2ODE0NTU5OH0.M6H93cUzt5qp9qENYsAchNKraU_RPEKaRTL1cN9fkIc",
-        "EXPO_PUBLIC_MIXPANEL_TOKEN": "9c6e9f97b3c587ca2313df81ac2495de"
-      }
+      "autoIncrement": true
     }
   },
   "submit": {

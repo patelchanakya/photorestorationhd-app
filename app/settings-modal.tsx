@@ -452,31 +452,15 @@ export default function SettingsModalScreen() {
         shareScale.value = withSpring(1, { damping: 15, stiffness: 300 });
       });
 
-      // App Store URLs (use placeholders during development)
-      const appStoreUrls = {
-        ios: 'https://apps.apple.com/app/photo-restoration-hd/id[APP_ID]',
-        android: 'https://play.google.com/store/apps/details?id=com.photorestorationhd.app',
-        fallback: 'https://photorestorationhd.com' // Fallback URL
-      };
+      // App Store URL for iOS
+      const appStoreUrl = 'https://apps.apple.com/app/photo-restoration-hd/id6748838784';
 
-      const shareOptions = Platform.select({
-        ios: {
-          title: 'Photo Restoration HD',
-          message: 'Transform your old photos with AI! ✨',
-          url: appStoreUrls.ios,
-          subject: 'Check out this amazing photo restoration app!'
-        },
-        android: {
-          title: 'Photo Restoration HD',
-          message: `Transform your old photos with AI! Check out Photo Restoration HD ✨\n\n${appStoreUrls.android}`,
-          dialogTitle: 'Share Photo Restoration HD'
-        },
-        default: {
-          title: 'Photo Restoration HD',
-          message: `Transform your old photos with AI! Check out Photo Restoration HD ✨\n\n${appStoreUrls.fallback}`,
-          dialogTitle: 'Share Photo Restoration HD'
-        }
-      });
+      const shareOptions = {
+        title: 'Clever',
+        message: 'Transform your old photos with AI! ✨',
+        url: appStoreUrl,
+        subject: 'Check out this amazing photo restoration app!'
+      };
 
       const result = await Share.share(shareOptions);
       
@@ -499,8 +483,7 @@ export default function SettingsModalScreen() {
       
       // Fallback: copy URL to clipboard
       try {
-        const fallbackUrl = 'https://photorestorationhd.com';
-        await Clipboard.setStringAsync(fallbackUrl);
+        await Clipboard.setStringAsync(appStoreUrl);
         Alert.alert(
           'Link Copied',
           'The app link has been copied to your clipboard!',
@@ -539,7 +522,7 @@ I need help with Clever.
 
 SUPPORT ID: ${supportId}
 Device: ${Platform.OS} ${Platform.Version}
-App Version: 1.0.0
+App Version: 1.0.4
 
 Please include the Support ID above in your message so we can assist you quickly.
 
@@ -602,35 +585,20 @@ Best regards`;
         rateScale.value = withSpring(1, { damping: 15, stiffness: 300 });
       });
 
-      if (Platform.OS === 'ios') {
-        // Check if native review is available
-        const isAvailable = await StoreReview.isAvailableAsync();
-        if (isAvailable) {
-          await StoreReview.requestReview();
-        } else {
-          // Fallback to App Store
-          const appStoreUrl = 'https://apps.apple.com/app/photo-restoration-hd/id[APP_ID]?action=write-review';
-          const canOpen = await Linking.canOpenURL(appStoreUrl);
-          if (canOpen) {
-            await Linking.openURL(appStoreUrl);
-          } else {
-            Alert.alert(
-              'Rate Us',
-              'Thank you for using Photo Restoration HD! Please rate us on the App Store.',
-              [{ text: t('common.ok'), style: 'default' }]
-            );
-          }
-        }
+      // Check if native review is available
+      const isAvailable = await StoreReview.isAvailableAsync();
+      if (isAvailable) {
+        await StoreReview.requestReview();
       } else {
-        // Android: Direct to Play Store rating
-        const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.photorestorationhd.app&showAllReviews=true';
-        const canOpen = await Linking.canOpenURL(playStoreUrl);
+        // Fallback to App Store
+        const appStoreUrl = 'https://apps.apple.com/app/photo-restoration-hd/id6748838784?action=write-review';
+        const canOpen = await Linking.canOpenURL(appStoreUrl);
         if (canOpen) {
-          await Linking.openURL(playStoreUrl);
+          await Linking.openURL(appStoreUrl);
         } else {
           Alert.alert(
             'Rate Us',
-            'Thank you for using Photo Restoration HD! Please rate us on Google Play Store.',
+            'Thank you for using Clever! Please rate us on the App Store.',
             [{ text: t('common.ok'), style: 'default' }]
           );
         }
@@ -645,7 +613,7 @@ Best regards`;
       
       Alert.alert(
         'Rate Us',
-        'Thank you for using Photo Restoration HD! Please rate us on the App Store.',
+        'Thank you for using Clever! Please rate us on the App Store.',
         [{ text: t('common.ok'), style: 'default' }]
       );
     }
@@ -1337,8 +1305,8 @@ Best regards`;
               </View>
             </View>
 
-            {/* Debug Section (TestFlight only) */}
-            {!__DEV__ && (
+            {/* Debug Section (Development only) */}
+            {__DEV__ && (
               <View style={{ marginBottom: 32 }}>
                 <Text style={{ 
                   color: 'rgba(249,115,22,1)', 
@@ -1346,7 +1314,7 @@ Best regards`;
                   fontWeight: '600', 
                   marginBottom: 16 
                 }}>
-                  Debug (TestFlight)
+                  Debug (Development)
                 </Text>
                 
                 <View style={{ 
@@ -1534,7 +1502,7 @@ Best regards`;
                       {t('settings.version')}
                     </Text>
                     <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                      1.0.0
+                      1.0.4
                     </Text>
                   </View>
                 </View>
@@ -1550,20 +1518,6 @@ Best regards`;
             onClose={() => setShowLanguageModal(false)}
           />
           
-          {/* Version Info */}
-          <View style={{ 
-            alignItems: 'center', 
-            paddingVertical: 20,
-            marginTop: 10
-          }}>
-            <Text style={{ 
-              color: 'rgba(255,255,255,0.4)', 
-              fontSize: 14,
-              fontWeight: '400'
-            }}>
-              App version: 3.2 (1)
-            </Text>
-          </View>
           
         </ScrollView>
       </Animated.View>

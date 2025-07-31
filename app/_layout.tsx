@@ -367,7 +367,7 @@ function OnboardingNavigator() {
   return (
     <Stack>
       <Stack.Screen name="onboarding" options={{ headerShown: false, contentStyle: { backgroundColor: '#000000' } }} />
-      <Stack.Screen name="index" options={{ headerShown: false, title: "Photo Restoration HD" }} />
+      <Stack.Screen name="index" options={{ headerShown: false, title: "Clever" }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="restoration/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="gallery-modal" options={{ presentation: 'modal', headerShown: false }} />
