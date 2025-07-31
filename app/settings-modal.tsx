@@ -1,25 +1,25 @@
+import { LanguageSelectionModal } from '@/components/LanguageSelectionModal';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { photoRestorationKeys } from '@/hooks/usePhotoRestoration';
-import { photoStorage } from '@/services/storage';
-import { localStorageHelpers } from '@/services/supabase';
+import { getSupportedLanguages, useTranslation } from '@/i18n';
 import { deviceTrackingService } from '@/services/deviceTracking';
 import { restorationTrackingService } from '@/services/restorationTracking';
+import { getAppUserId, presentPaywall, restorePurchasesDetailed } from '@/services/revenuecat';
+import { photoStorage } from '@/services/storage';
+import { localStorageHelpers } from '@/services/supabase';
 import { testSupabaseConnection } from '@/services/supabaseClient';
 import { useRestorationStore } from '@/store/restorationStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
-import { restorePurchasesDetailed, presentPaywall, getAppUserId } from '@/services/revenuecat';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
+import Constants from 'expo-constants';
 import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import * as StoreReview from 'expo-store-review';
 import * as WebBrowser from 'expo-web-browser';
-import React, { useState, useEffect } from 'react';
-import { useTranslation, getSupportedLanguages } from '@/i18n';
-import { LanguageSelectionModal } from '@/components/LanguageSelectionModal';
-import Constants from 'expo-constants';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -1442,7 +1442,7 @@ Best regards`;
                 
                 {/* Privacy Policy */}
                 <TouchableOpacity 
-                  onPress={() => WebBrowser.openBrowserAsync('https://www.termsfeed.com/live/7ed3969a-77d3-45c5-8320-99ed066f8ea3')}
+                  onPress={() => WebBrowser.openBrowserAsync('https://cleverapp.lovable.app/privacy-policy')}
                   style={{
                     flexDirection: 'row',
                     alignItems: 'center',
