@@ -76,3 +76,28 @@ coverage/
 *.temp
 
 app-example
+
+# iOS native folder (for Expo prebuild)
+ios/
+android/
+
+# Random text files and notes
+*.txt
+*.md
+!README.md
+!CLAUDE.md
+*_reply.txt
+*_description.txt
+nomination_description.txt
+subscription_localizations.txt
+translations.md
+commands.md
+eas-env-commands.txt
+helpful_details.txt
+
+# Email drafts and temporary files
+*email*.txt
+*reply*.txt
+*_en.md
+*_es.md
+*.tmp.md
