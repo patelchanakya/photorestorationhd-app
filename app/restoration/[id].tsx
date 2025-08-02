@@ -6,6 +6,7 @@ import { photoStorage } from '@/services/storage';
 import { restorationService } from '@/services/supabase';
 import { useRestorationStore } from '@/store/restorationStore';
 import { useRestorationScreenStore } from '@/store/restorationScreenStore';
+import { useSubscriptionStore } from '@/store/subscriptionStore';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as FileSystem from 'expo-file-system';
@@ -61,6 +62,7 @@ export default function RestorationScreen() {
   const photoRestoration = usePhotoRestoration();
   const decrementRestorationCount = useRestorationStore((state) => state.decrementRestorationCount);
   const simpleSlider = useRestorationStore((state) => state.simpleSlider);
+  const { isPro } = useSubscriptionStore();
   
   // Check if this is a new restoration request
   const isNewRestoration = !!imageUri && !!functionType;
@@ -358,31 +360,27 @@ export default function RestorationScreen() {
 
   // Handle error state for new restorations immediately (only if currently processing)
   if (photoRestoration.isError && isNewRestoration && !photoRestoration.isIdle) {
-    const getErrorText = () => {
-      switch (functionType) {
-        case 'unblur':
-          return 'Unblur failed';
-        case 'colorize':
-          return 'Colorize failed';
-        default:
-          return 'Auto Restoration failed';
-      }
-    };
-    
     return (
       <View className="flex-1 bg-gray-100 justify-center items-center px-6">
         <IconSymbol name="exclamationmark.triangle" size={48} color="#ef4444" />
         <Text className="text-gray-800 text-lg mt-4 text-center">
-          {getErrorText()}
+          Cannot generate image
         </Text>
-        <Text className="text-gray-600 text-sm mt-2 text-center">
-          {photoRestoration.error?.message || 'Please try again'}
+        <Text className="text-gray-600 text-sm mt-2 text-center px-4">
+          {photoRestoration.error?.message || 'Please try again with a different image'}
         </Text>
+        {!isPro && (
+          <View className="mt-3 bg-green-50 px-4 py-2 rounded-lg">
+            <Text className="text-green-700 text-sm text-center">
+              ✓ Your free credit has been refunded
+            </Text>
+          </View>
+        )}
         <TouchableOpacity 
           className="mt-4 px-6 py-3 bg-orange-500 rounded-lg"
           onPress={() => router.back()}
         >
-          <Text className="text-white font-medium">Go Back</Text>
+          <Text className="text-white font-medium">Try Again</Text>
         </TouchableOpacity>
       </View>
     );

@@ -5,6 +5,7 @@ import { restorationService } from '@/services/supabase';
 import { restorationTrackingService } from '@/services/restorationTracking';
 import { networkStateService } from '@/services/networkState';
 import { useRestorationStore } from '@/store/restorationStore';
+import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export interface RestorationResult {
@@ -27,6 +28,7 @@ export const photoRestorationKeys = {
 export function usePhotoRestoration() {
   const queryClient = useQueryClient();
   const incrementRestorationCount = useRestorationStore((state) => state.incrementRestorationCount);
+  const { isPro, decrementFreeRestorations } = useSubscriptionStore();
 
   return useMutation({
     mutationFn: async ({ imageUri, functionType, imageSource }: { imageUri: string; functionType: 'restoration' | 'unblur' | 'colorize'; imageSource?: 'camera' | 'gallery' }) => {
@@ -171,6 +173,30 @@ export function usePhotoRestoration() {
           Date.now() - startTime,
           functionType
         );
+        
+        // Refund credit for free users on any error
+        if (!isPro) {
+          try {
+            // Pass current time since the restoration just failed
+            await decrementFreeRestorations(new Date().toISOString());
+            if (__DEV__) {
+              console.log('💳 Credit refunded to free user due to restoration error');
+            }
+            
+            // Track credit refund
+            analyticsService.track('Free Credit Refunded', {
+              error_type: errorType,
+              error_message: errorMessage,
+              function_type: functionType,
+              image_source: imageSource || 'gallery',
+              timestamp: new Date().toISOString(),
+            });
+          } catch (refundError) {
+            if (__DEV__) {
+              console.error('Failed to refund credit:', refundError);
+            }
+          }
+        }
         
         throw error;
       }
