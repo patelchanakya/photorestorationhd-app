@@ -25,7 +25,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
     (set, get) => ({
       isPro: false,
       freeRestorationsUsed: 0,
-      freeRestorationsLimit: 1, // 1 free restoration every 48 hours
+      freeRestorationsLimit: 3, // 3 free restorations every 48 hours
       lastResetDate: new Date().toISOString(),
       expirationDate: null,
       appUserId: null,
