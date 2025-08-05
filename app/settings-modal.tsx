@@ -522,7 +522,7 @@ I need help with Clever.
 
 SUPPORT ID: ${supportId}
 Device: ${Platform.OS} ${Platform.Version}
-App Version: 1.0.4
+App Version: 1.0.5
 
 Please include the Support ID above in your message so we can assist you quickly.
 
@@ -1502,7 +1502,7 @@ Best regards`;
                       {t('settings.version')}
                     </Text>
                     <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                      1.0.4
+                      1.0.5
                     </Text>
                   </View>
                 </View>

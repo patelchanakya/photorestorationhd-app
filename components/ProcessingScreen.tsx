@@ -93,15 +93,15 @@ const ProcessingScreenComponent = ({ functionType, isProcessing, isError }: Proc
       return;
     }
 
-    // Simulate progress over ~7 seconds
+    // Simulate progress over ~4.5 seconds
     const intervals = [
-      { progress: 10, delay: 200 },
-      { progress: 25, delay: 800 },
-      { progress: 45, delay: 1200 },
-      { progress: 65, delay: 1500 },
-      { progress: 80, delay: 1800 },
-      { progress: 90, delay: 2000 },
-      { progress: 95, delay: 500 },
+      { progress: 10, delay: 150 },
+      { progress: 25, delay: 600 },
+      { progress: 45, delay: 800 },
+      { progress: 65, delay: 1000 },
+      { progress: 80, delay: 1200 },
+      { progress: 90, delay: 1300 },
+      { progress: 95, delay: 400 },
     ];
 
     const timeouts: ReturnType<typeof setTimeout>[] = [];

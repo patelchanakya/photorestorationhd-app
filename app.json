@@ -2,7 +2,7 @@
   "expo": {
     "name": "Clever",
     "slug": "photorestorationhd-app",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "photorestorationhdapp",
@@ -50,6 +50,16 @@
       "eas": {
         "projectId": "1e1e5fa5-1114-4591-9765-2534344ca453"
       }
+    },
+    "android": {
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_MEDIA_LOCATION"
+      ],
+      "package": "com.chanakyap.photorestorationhdapp"
     }
   }
 }

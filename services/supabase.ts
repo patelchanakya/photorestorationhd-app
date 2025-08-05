@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Restoration } from '../types';
+import { photoStorage } from './storage';
 
 // This service now uses AsyncStorage exclusively for offline-first functionality
 // No Supabase dependency required
@@ -15,7 +16,6 @@ export const localStorageHelpers = {
         // Check if thumbnail exists
         let hasFiles = false;
         if (restoration.thumbnail_filename) {
-          const { photoStorage } = await import('./storage');
           hasFiles = await photoStorage.checkPhotoExists('thumbnail', restoration.thumbnail_filename);
         }
         
@@ -32,7 +32,6 @@ export const localStorageHelpers = {
       
       // Clear restoration cache if any records were cleaned
       if (cleanedCount > 0) {
-        const { restorationService } = await import('./supabase');
         restorationService.clearRestorationCache();
       }
       

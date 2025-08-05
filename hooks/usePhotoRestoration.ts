@@ -28,6 +28,7 @@ export const photoRestorationKeys = {
 export function usePhotoRestoration() {
   const queryClient = useQueryClient();
   const incrementRestorationCount = useRestorationStore((state) => state.incrementRestorationCount);
+  const incrementTotalRestorations = useRestorationStore((state) => state.incrementTotalRestorations);
   const { isPro, decrementFreeRestorations } = useSubscriptionStore();
 
   return useMutation({
@@ -35,6 +36,9 @@ export function usePhotoRestoration() {
       const startTime = Date.now();
       let supabaseRestorationId: string | null = null;
       
+      if (__DEV__) {
+        console.log(`🚀 [TIMING] Starting ${functionType} restoration at:`, new Date().toISOString());
+      }
 
       // Track restoration started
       analyticsService.trackRestorationStarted(imageSource || 'gallery');
@@ -58,7 +62,12 @@ export function usePhotoRestoration() {
         );
 
         // Call Replicate API with timeout (max 3 minutes)
-        const restorePromise = restorePhoto(imageUri);
+        const apiStartTime = Date.now();
+        if (__DEV__) {
+          console.log(`📡 [TIMING] Starting API call at: +${apiStartTime - startTime}ms`);
+        }
+        
+        const restorePromise = restorePhoto(imageUri, functionType);
         const timeoutPromise = new Promise<never>((_, reject) => {
           setTimeout(() => {
             reject(new Error('Photo restoration timed out. Please check your internet connection and try again.'));
@@ -66,8 +75,9 @@ export function usePhotoRestoration() {
         });
         
         const restoredUrl = await Promise.race([restorePromise, timeoutPromise]);
+        const apiEndTime = Date.now();
         if (__DEV__) {
-          console.log('🎉 Photo restored successfully, URL:', restoredUrl);
+          console.log(`🎉 [TIMING] API completed in ${apiEndTime - apiStartTime}ms, URL:`, restoredUrl);
         }
 
         // Save restored photo locally
@@ -116,10 +126,16 @@ export function usePhotoRestoration() {
         };
 
         // Track successful restoration
+        const totalTime = Date.now() - startTime;
+        if (__DEV__) {
+          console.log(`✅ [TIMING] Total restoration completed in ${totalTime}ms (${(totalTime/1000).toFixed(1)}s)`);
+          console.log(`📊 [TIMING] Breakdown: API=${apiEndTime - apiStartTime}ms, Total=${totalTime}ms`);
+        }
+        
         await analyticsService.trackRestorationCompleted(
           true, 
           imageSource || 'gallery', 
-          Date.now() - startTime,
+          totalTime,
           functionType
         );
 
@@ -209,6 +225,8 @@ export function usePhotoRestoration() {
       queryClient.invalidateQueries({ queryKey: photoRestorationKeys.history() });
       // Increment restoration count in Zustand
       incrementRestorationCount();
+      // Also increment total restorations for rating prompt
+      incrementTotalRestorations();
     },
     onError: (error) => {
       if (__DEV__) {

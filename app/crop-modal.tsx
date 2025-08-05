@@ -2,12 +2,12 @@ import { CustomImageCropper } from '@/components/CustomImageCropper';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 import { analyticsService } from '@/services/analytics';
+import { deviceTrackingService } from '@/services/deviceTracking';
 import { networkStateService } from '@/services/networkState';
 import { presentPaywall, validatePremiumAccess } from '@/services/revenuecat';
 import { useCropModalStore } from '@/store/cropModalStore';
+import { useRestorationStore } from '@/store/restorationStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
-import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import Constants from 'expo-constants';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -16,9 +16,7 @@ import {
     Alert,
     Dimensions,
     Image,
-    Platform,
     SafeAreaView,
-    StyleSheet,
     Text,
     TouchableOpacity,
     View
@@ -31,15 +29,10 @@ import Animated, {
     withSpring,
     withTiming
 } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const HEADER_HEIGHT = 60;
-const BOTTOM_HEIGHT = 80;
-const AVAILABLE_HEIGHT = SCREEN_HEIGHT - HEADER_HEIGHT - BOTTOM_HEIGHT;
-const CROP_SIZE = Math.min(SCREEN_WIDTH, AVAILABLE_HEIGHT) * 0.7;
 
 function CropModalScreen() {
   const router = useRouter();
@@ -52,8 +45,6 @@ function CropModalScreen() {
     isProcessing,
     showCropTool,
     useImageLoading,
-    buttonText,
-    setIsProcessing,
     setShowCropTool,
     setUseImageLoading,
     setButtonText,
@@ -79,17 +70,6 @@ function CropModalScreen() {
       reset();
     };
   }, [reset]);
-  const insets = useSafeAreaInsets();
-  
-  // Get screen dimensions for responsive design
-  const screenHeight = Dimensions.get('window').height;
-  const screenWidth = Dimensions.get('window').width;
-  const isSmallScreen = screenHeight < 700;
-  const isTinyScreen = screenHeight < 600;
-  
-  // Calculate responsive spacing - increased to prevent overlap
-  const buttonAreaHeight = isSmallScreen ? 200 : 240;
-  const toolbarSpacing = isSmallScreen ? 140 : 180;
   
   // Animation values for Use Image button
   const buttonScale = useSharedValue(1);
@@ -101,14 +81,16 @@ function CropModalScreen() {
     opacity: buttonOpacity.value,
   }));
   
-  const { canRestore, incrementFreeRestorations } = useSubscriptionStore();
+  const { canRestore, incrementFreeRestorations, isPro, hasSeenUpgradePrompt, setHasSeenUpgradePrompt } = useSubscriptionStore();
+  const { totalRestorations } = useRestorationStore();
   const photoRestoration = usePhotoRestoration();
-  // We'll use Reanimated shared values for crop box in the next step
-  
-  const decodedUri = imageUri ? decodeURIComponent(imageUri as string) : '';
 
   const handleCancel = () => {
-    router.back();
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/');
+    }
   };
 
   const handleRestoration = async (imageUri: string) => {
@@ -149,41 +131,110 @@ function CropModalScreen() {
       console.log('🔐 Premium access validation before restoration:', hasValidAccess);
     }
     
-    // Check if user can restore (now async)
-    const canRestoreResult = await canRestore();
-    if (!canRestoreResult) {
-      console.log('🚫 User cannot restore - showing paywall');
+    // Smart paywall logic - skip for Pro users (performance optimization)
+    if (isPro) {
+      if (__DEV__) {
+        console.log('✨ Pro user - proceeding with restoration');
+      }
+    } else {
+      // For free users only - check paywall triggers
+      const canRestoreResult = await canRestore();
       
-      // Track 48-hour limit reached
-      analyticsService.track('48 Hour Limit Reached', {
-        function_type: functionType,
-        image_source: imageSource || 'gallery',
-        timestamp: new Date().toISOString(),
-      });
+      // Show paywall after 1st restoration (once only)
+      if (totalRestorations >= 1 && !hasSeenUpgradePrompt) {
+        if (__DEV__) {
+          console.log('🎯 Showing upgrade prompt after 1st restoration');
+        }
+        
+        setHasSeenUpgradePrompt(true);
+        
+        // Track upgrade prompt after first restoration
+        analyticsService.track('Upgrade Prompt After First Restoration', {
+          function_type: functionType,
+          image_source: imageSource || 'gallery',
+          total_restorations: totalRestorations,
+          timestamp: new Date().toISOString(),
+        });
+        
+        const success = await presentPaywall();
+        if (success) {
+          if (__DEV__) {
+            console.log('✅ Pro subscription activated via upgrade prompt!');
+          }
+          // User is now pro, proceed with restoration
+        } else {
+          // User declined upgrade, check if they can still restore
+          if (!canRestoreResult) {
+            // They're maxed out and declined upgrade
+            setUseImageLoading(false);
+            runOnJS(setButtonText)('Use Image');
+            return;
+          }
+          // They can still restore with free credits
+        }
+      }
       
-      // Check if we're in Expo Go
-      const isExpoGo = Constants.appOwnership === 'expo';
-      if (isExpoGo) {
+      // Always show paywall when maxed out (with timer context)
+      if (!canRestoreResult) {
+        if (__DEV__) {
+          console.log('🚫 User maxed out - showing alert with timer and paywall');
+        }
+        
+        // Get timer info for context
+        const msRemaining = await deviceTrackingService.getTimeUntilNextFreeRestoration();
+        const hoursRemaining = Math.floor(msRemaining / (1000 * 60 * 60));
+        const minutesRemaining = Math.floor((msRemaining % (1000 * 60 * 60)) / (1000 * 60));
+        
+        // Track 48-hour limit reached
+        analyticsService.track('48 Hour Limit Reached', {
+          function_type: functionType,
+          image_source: imageSource || 'gallery',
+          hours_remaining: hoursRemaining,
+          timestamp: new Date().toISOString(),
+        });
+        
+        // Check if we're in Expo Go
+        const isExpoGo = Constants.appOwnership === 'expo';
+        if (isExpoGo) {
+          Alert.alert(
+            'Demo Mode',
+            'Purchases are not available in Expo Go. Build a development client to test real purchases.',
+            [{ text: 'OK' }]
+          );
+          setUseImageLoading(false);
+          runOnJS(setButtonText)('Use Image');
+          return;
+        }
+        
+        // Show alert with timer context first, then paywall
         Alert.alert(
-          'Demo Mode',
-          'Purchases are not available in Expo Go. Build a development client to test real purchases.',
-          [{ text: 'OK' }]
+          'Free Restorations Used',
+          `You've used all 3 free restorations. Next free restoration in ${hoursRemaining}h ${minutesRemaining}m, or get unlimited restorations with Pro!`,
+          [
+            { text: 'Wait', style: 'cancel', onPress: () => {
+              setUseImageLoading(false);
+              runOnJS(setButtonText)('Use Image');
+            }},
+            { 
+              text: 'Go Pro', 
+              onPress: async () => {
+                const success = await presentPaywall();
+                if (success) {
+                  if (__DEV__) {
+                    console.log('✅ Pro subscription activated via maxed out paywall!');
+                  }
+                  // User is now pro, restart the restoration process
+                  handleRestoration(imageUri);
+                } else {
+                  setUseImageLoading(false);
+                  runOnJS(setButtonText)('Use Image');
+                }
+              }
+            }
+          ]
         );
         return;
       }
-      
-      // Use native paywall in production builds
-      const success = await presentPaywall();
-      if (success) {
-        console.log('✅ Pro subscription activated via native paywall!');
-        // Now that user is pro, proceed with restoration
-        router.replace(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(imageUri)}&functionType=${functionType}&imageSource=${imageSource || 'gallery'}`);
-      } else {
-        // Reset button state if paywall was dismissed
-        setUseImageLoading(false);
-        runOnJS(setButtonText)('Use Image');
-      }
-      return;
     }
     
     console.log('✅ User can restore - proceeding with restoration');
@@ -224,7 +275,7 @@ function CropModalScreen() {
             {functionType === 'unblur' ? 'Unblur' : functionType === 'colorize' ? 'Colorize' : functionType === 'descratch' ? 'Descratch' : 'Restore'}
           </Text>
           <Text className="text-white/60 text-sm text-center mt-1">
-            Use image or crop
+            Use image or crop for better results
           </Text>
         </View>
         {/* Placeholder to balance X button for perfect center alignment */}
@@ -283,129 +334,112 @@ function CropModalScreen() {
                 justifyContent: 'flex-start', 
                 alignItems: 'center', 
                 width: '100%', 
-                paddingTop: isSmallScreen ? 20 : 40,
-                paddingBottom: buttonAreaHeight, // Dynamic based on screen size
+                paddingTop: 40, // Fixed padding always
+                paddingBottom: 200, // Fixed padding always
                 paddingHorizontal: 16,
               }}>
                 <ImagePreview imageUri={currentImageUri} />
               </View>
-
-              {/* Edit Button - Upper Row */}
-              <View style={{
-                position: 'absolute',
-                left: 0,
-                right: 0,
-                bottom: insets.bottom + 140,
-                flexDirection: 'row',
-                justifyContent: 'center',
-                alignItems: 'center',
-                zIndex: 10,
-                paddingHorizontal: 16,
-              }}>
-
-                {/* Edit Button */}
-                <TouchableOpacity
-                  style={{
-                    width: isSmallScreen ? 90 : 100,
-                    height: isSmallScreen ? 48 : 52,
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: 'rgba(0,0,0,0.4)',
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 8,
-                    elevation: 6,
-                    flexDirection: 'row',
-                  }}
-                  onPress={() => setShowCropTool(true)}
-                  accessibilityLabel="Edit Image"
-                  activeOpacity={0.7}
-                >
-                  {Platform.OS === 'ios' && (
-                    <BlurView 
-                      intensity={20} 
-                      tint="dark" 
-                      style={{ 
-                        position: 'absolute', 
-                        top: 0, 
-                        left: 0, 
-                        right: 0, 
-                        bottom: 0, 
-                        borderRadius: 18 
-                      }} 
-                    />
-                  )}
-                  <Ionicons name="create-outline" size={isSmallScreen ? 18 : 20} color="#f97316" />
-                  <Text style={{ color: '#f97316', fontSize: isSmallScreen ? 14 : 16, fontWeight: '600', marginLeft: 6 }}>
-                    Edit
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Restore Button - Lower Row */}
-              <View style={{
-                position: 'absolute',
-                left: 0,
-                right: 0,
-                bottom: insets.bottom + 40, // Moved lower (was 64)
-                flexDirection: 'row',
-                justifyContent: 'center',
-                alignItems: 'center',
-                zIndex: 10,
-                paddingHorizontal: 20, // Increased padding for bigger button
-              }}>
-                <AnimatedTouchableOpacity
-                  style={[
-                    {
-                      width: '100%', // Full width like other buttons
-                      height: isSmallScreen ? 56 : 64, // Bigger height to match other buttons
-                      borderRadius: 16, // Match rounded corners of other buttons
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: useImageLoading ? '#10b981' : '#f97316', // Keep orange color
-                      shadowColor: useImageLoading ? '#10b981' : '#f97316',
-                      shadowOffset: { width: 0, height: 12 },
-                      shadowOpacity: 0.3,
-                      shadowRadius: 20,
-                      elevation: 12,
-                      flexDirection: 'row',
-                      borderWidth: 0.5,
-                      borderColor: useImageLoading ? 'rgba(16, 185, 129, 0.3)' : 'rgba(249, 115, 22, 0.3)',
-                    },
-                    animatedButtonStyle
-                  ]}
-                  onPress={() => {
-                    if (!useImageLoading) {
-                      handleRestoration(currentImageUri);
-                    }
-                  }}
-                  accessibilityLabel="Start Restoration"
-                  activeOpacity={useImageLoading ? 1 : 0.85}
-                  disabled={useImageLoading}
-                >
-                  {useImageLoading ? (
-                    <ActivityIndicator size="small" color="rgba(255, 255, 255, 0.9)" />
-                  ) : (
-                    <Text style={{ 
-                      color: '#ffffff', 
-                      fontSize: isSmallScreen ? 18 : 20, // Bigger font size
-                      fontWeight: 'bold', // Bold text
-                      letterSpacing: 0.3
-                    }}>
-                      {functionType === 'restoration' ? 'Restore Photo' :
-                       functionType === 'unblur' ? 'Unblur Photo' :
-                       functionType === 'colorize' ? 'Colorize Photo' :
-                       functionType === 'descratch' ? 'Descratch Photo' : 
-                       'Fix Photo'}
-                    </Text>
-                  )}
-                </AnimatedTouchableOpacity>
-              </View>
             </>
           ) : null}
         </View>
+      )}
+
+      {/* Buttons positioned outside the image container */}
+      {currentImageUri && (
+        <>
+          {/* Crop Button */}
+          <View style={{
+            position: 'absolute',
+            left: 20,
+            right: 20,
+            bottom: 140,
+            height: 50,
+            flexDirection: 'row',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 10,
+          }}>
+            <TouchableOpacity
+              style={{
+                width: '100%',
+                height: 50,
+                borderRadius: 12,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                borderWidth: 1,
+                borderColor: 'rgba(255, 255, 255, 0.2)',
+                flexDirection: 'row',
+              }}
+              onPress={() => setShowCropTool(true)}
+              accessibilityLabel="Crop Image"
+              activeOpacity={0.7}
+            >
+              <IconSymbol name="crop" size={16} color="#fff" />
+              <Text style={{ 
+                color: '#ffffff', 
+                fontSize: 15, 
+                fontWeight: '600',
+                marginLeft: 6,
+              }}>
+                Crop
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Restore Button - Lower Row */}
+          <View style={{
+            position: 'absolute',
+            left: 20,
+            right: 20,
+            bottom: 60, // Fixed bottom position - completely independent
+            height: 56, // Fixed container height
+            flexDirection: 'row',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 10,
+          }}>
+            <AnimatedTouchableOpacity
+              style={[
+                {
+                  width: '100%',
+                  height: 56,
+                  borderRadius: 14,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: useImageLoading ? '#10b981' : '#f97316',
+                  flexDirection: 'row',
+                },
+                animatedButtonStyle
+              ]}
+              onPress={() => {
+                if (!useImageLoading) {
+                  handleRestoration(currentImageUri);
+                }
+              }}
+              accessibilityLabel="Start Restoration"
+              activeOpacity={useImageLoading ? 1 : 0.85}
+              disabled={useImageLoading}
+            >
+              {useImageLoading ? (
+                <ActivityIndicator size="small" color="rgba(255, 255, 255, 0.9)" />
+              ) : (
+                <Text style={{ 
+                  color: '#ffffff', 
+                  fontSize: 16,
+                  fontWeight: '600',
+                }}>
+                  {functionType === 'restoration' ? 'Restore Photo' :
+                   functionType === 'unblur' ? 'Unblur Photo' :
+                   functionType === 'colorize' ? 'Colorize Photo' :
+                   functionType === 'descratch' ? 'Descratch Photo' : 
+                   'Fix Photo'}
+                </Text>
+              )}
+            </AnimatedTouchableOpacity>
+          </View>
+        </>
       )}
       {error && (
         <View className="flex-1 justify-center items-center">
@@ -417,74 +451,6 @@ function CropModalScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  cropContainer: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT * 0.7,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  overlayContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 1,
-    pointerEvents: 'none',
-  },
-  overlay: {
-    position: 'absolute',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-  },
-  cropArea: {
-    position: 'absolute',
-    width: CROP_SIZE,
-    height: CROP_SIZE,
-    left: (SCREEN_WIDTH - CROP_SIZE) / 2,
-    top: (SCREEN_HEIGHT * 0.7 - CROP_SIZE) / 2,
-    borderWidth: 3,
-    borderColor: '#f97316',
-    backgroundColor: 'transparent',
-    shadowColor: '#f97316',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  corner: {
-    position: 'absolute',
-    width: 24,
-    height: 24,
-    borderColor: '#f97316',
-    borderRadius: 2,
-  },
-  topLeft: {
-    top: -3,
-    left: -3,
-    borderTopWidth: 5,
-    borderLeftWidth: 5,
-  },
-  topRight: {
-    top: -3,
-    right: -3,
-    borderTopWidth: 5,
-    borderRightWidth: 5,
-  },
-  bottomLeft: {
-    bottom: -3,
-    left: -3,
-    borderBottomWidth: 5,
-    borderLeftWidth: 5,
-  },
-  bottomRight: {
-    bottom: -3,
-    right: -3,
-    borderBottomWidth: 5,
-    borderRightWidth: 5,
-  },
-});
 
 // Helper component for responsive image preview
 function ImagePreview({ imageUri }: { imageUri: string }) {

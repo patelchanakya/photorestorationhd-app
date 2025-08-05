@@ -129,11 +129,21 @@ export default function GalleryModalScreen() {
         activeOpacity={0.7}
       >
         {thumbnailUri && (
-          <RNImage
-            source={{ uri: thumbnailUri }}
-            style={styles.thumbnail}
-            resizeMode="cover"
-          />
+          <View style={styles.thumbnail}>
+            {/* Blurred background image */}
+            <RNImage
+              source={{ uri: thumbnailUri }}
+              style={[styles.thumbnail, styles.thumbnailBackground]}
+              resizeMode="cover"
+              blurRadius={15}
+            />
+            {/* Main contained image on top */}
+            <RNImage
+              source={{ uri: thumbnailUri }}
+              style={[styles.thumbnail, styles.thumbnailForeground]}
+              resizeMode="contain"
+            />
+          </View>
         )}
         <View style={styles.cardContent}>
           <Text style={styles.cardTitle} numberOfLines={1}>
@@ -294,11 +304,21 @@ export default function GalleryModalScreen() {
                     activeOpacity={0.7}
                   >
                     {thumbnailUri && (
-                      <RNImage
-                        source={{ uri: thumbnailUri }}
-                        style={styles.gridImage}
-                        resizeMode="cover"
-                      />
+                      <>
+                        {/* Blurred background image */}
+                        <RNImage
+                          source={{ uri: thumbnailUri }}
+                          style={[styles.gridImage, styles.gridImageBackground]}
+                          resizeMode="cover"
+                          blurRadius={20}
+                        />
+                        {/* Main contained image on top */}
+                        <RNImage
+                          source={{ uri: thumbnailUri }}
+                          style={[styles.gridImage, styles.gridImageForeground]}
+                          resizeMode="contain"
+                        />
+                      </>
                     )}
                   </TouchableOpacity>
                 );
@@ -437,6 +457,17 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     marginRight: 16,
     backgroundColor: '#eee',
+    overflow: 'hidden',
+  },
+  thumbnailBackground: {
+    position: 'absolute',
+    opacity: 0.4,
+    marginRight: 0,
+  },
+  thumbnailForeground: {
+    position: 'relative',
+    backgroundColor: 'transparent',
+    marginRight: 0,
   },
   cardContent: {
     flex: 1,
@@ -600,6 +631,14 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 18,
     backgroundColor: '#eee',
+  },
+  gridImageBackground: {
+    position: 'absolute',
+    opacity: 0.3,
+  },
+  gridImageForeground: {
+    position: 'relative',
+    backgroundColor: 'transparent',
   },
   toggleRowBelowHeader: {
     flexDirection: 'row',

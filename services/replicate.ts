@@ -2,6 +2,7 @@ import Replicate from 'replicate';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { networkStateService } from './networkState';
+import { getModelConfig, type FunctionType } from './modelConfigs';
 
 // Validate API token
 const apiToken = process.env.EXPO_PUBLIC_REPLICATE_API_TOKEN;
@@ -156,7 +157,7 @@ function isContentPolicyViolation(error: string): boolean {
   return contentPolicyKeywords.some(keyword => errorLower.includes(keyword));
 }
 
-export async function restorePhoto(imageUri: string): Promise<string> {
+export async function restorePhoto(imageUri: string, functionType: FunctionType = 'restoration'): Promise<string> {
   // Create an abort controller for proper timeout handling
   const abortController = new AbortController();
   const timeoutId = setTimeout(() => {
@@ -181,12 +182,24 @@ export async function restorePhoto(imageUri: string): Promise<string> {
     // Convert to base64
     const base64 = await imageToBase64(processedUri);
     
+    // Get model configuration for the function type
+    const modelConfig = getModelConfig(functionType);
+    
+    if (__DEV__) {
+      console.log(`🔧 Using model for ${functionType}:`, modelConfig.model);
+      const inputParams = modelConfig.buildInput(base64);
+      // Log input params without base64 data to avoid cluttering logs
+      const logParams = { ...inputParams };
+      if (logParams.image) {
+        logParams.image = `[base64 image data: ${base64.length} chars]`;
+      }
+      console.log(`🔧 Input parameters:`, logParams);
+    }
+    
     // Create prediction with abort signal
     const prediction = await replicate.predictions.create({
-      model: "flux-kontext-apps/restore-image",
-      input: {
-        input_image: `data:image/jpeg;base64,${base64}`,
-      }
+      model: modelConfig.model,
+      input: modelConfig.buildInput(base64)
     });
 
     // Poll for completion: 1s intervals for first 10 seconds, then exponential backoff
@@ -230,7 +243,7 @@ export async function restorePhoto(imageUri: string): Promise<string> {
         return result.output as string;
       } else if (result.status === 'failed') {
         // Check if it's a content policy violation
-        const error = result.error || 'Processing failed';
+        const error = String(result.error) || 'Processing failed';
         
         // Check for specific E005 error code (content flagged as sensitive)
         if (error.includes('(E005)') || error.includes('flagged as sensitive')) {
@@ -244,10 +257,10 @@ export async function restorePhoto(imageUri: string): Promise<string> {
           throw new Error('Image cannot be processed due to content policy restrictions. Please try with a different image.');
         }
         throw new Error(error);
-      } else if (result.status === 'canceled' || result.status === 'cancelled') {
+      } else if ((result.status as string) === 'canceled' || (result.status as string) === 'cancelled') {
         // Often indicates content was flagged/blocked
         throw new Error('Image processing was canceled due to content policy restrictions. Please try with a different image.');
-      } else if (result.status === 'blocked' || result.status === 'rejected') {
+      } else if ((result.status as string) === 'blocked' || (result.status as string) === 'rejected') {
         // Explicitly blocked content
         throw new Error('Image cannot be processed due to content safety restrictions. Please try with a different image.');
       } else if (result.status === 'processing' || result.status === 'starting') {

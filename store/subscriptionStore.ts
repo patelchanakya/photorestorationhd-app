@@ -10,9 +10,11 @@ interface SubscriptionState {
   lastResetDate: string;
   expirationDate: string | null;
   appUserId: string | null;
+  hasSeenUpgradePrompt: boolean;
   setIsPro: (isPro: boolean) => void;
   setExpirationDate: (date: string | null) => void;
   setAppUserId: (userId: string | null) => void;
+  setHasSeenUpgradePrompt: (seen: boolean) => void;
   incrementFreeRestorations: () => Promise<void>;
   decrementFreeRestorations: (restorationCreatedAt: string) => Promise<void>;
   resetDailyLimit: () => void;
@@ -29,6 +31,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       lastResetDate: new Date().toISOString(),
       expirationDate: null,
       appUserId: null,
+      hasSeenUpgradePrompt: false,
 
       setIsPro: (isPro) => {
         if (__DEV__) {
@@ -49,6 +52,13 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           console.log('👤 Subscription store: Setting app user ID to', userId);
         }
         set({ appUserId: userId });
+      },
+
+      setHasSeenUpgradePrompt: (seen) => {
+        if (__DEV__) {
+          console.log('🎯 Subscription store: Setting hasSeenUpgradePrompt to', seen);
+        }
+        set({ hasSeenUpgradePrompt: seen });
       },
 
 

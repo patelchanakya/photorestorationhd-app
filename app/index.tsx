@@ -4,6 +4,7 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useRestorationHistory } from '@/hooks/useRestorationHistory';
 import { useTranslation } from '@/i18n/useTranslation';
 import { presentPaywall, validatePremiumAccess } from '@/services/revenuecat';
+import { localStorageHelpers } from '@/services/supabase';
 import { useAnimationStore } from '@/store/animationStore';
 import { useRestorationStore } from '@/store/restorationStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
@@ -133,19 +134,17 @@ export default function MinimalCameraWithGalleryButton() {
       }
       
       // Clean up orphaned records on app start (in background)
-      import('@/services/supabase').then(({ localStorageHelpers }) => {
-        localStorageHelpers.cleanupOrphanedRecords().then((cleanedCount) => {
-          if (cleanedCount > 0) {
-            if (__DEV__) {
-              console.log(`🧹 Cleaned ${cleanedCount} orphaned records in background`);
-            }
+      localStorageHelpers.cleanupOrphanedRecords().then((cleanedCount) => {
+        if (cleanedCount > 0) {
+          if (__DEV__) {
+            console.log(`🧹 Cleaned ${cleanedCount} orphaned records in background`);
           }
-          // Always refetch once after cleanup (whether records were cleaned or not)
-          refetch({ cancelRefetch: false });
-        }).catch(() => {
-          // Fallback if cleanup fails
-          refetch({ cancelRefetch: false });
-        });
+        }
+        // Always refetch once after cleanup (whether records were cleaned or not)
+        refetch({ cancelRefetch: false });
+      }).catch(() => {
+        // Fallback if cleanup fails
+        refetch({ cancelRefetch: false });
       });
     }, 1000); // Wait 1 second after camera is ready
     

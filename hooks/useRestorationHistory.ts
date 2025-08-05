@@ -1,4 +1,5 @@
 import { restorationService } from '@/services/supabase';
+import { photoStorage } from '@/services/storage';
 import { useRestorationStore } from '@/store/restorationStore';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { photoRestorationKeys } from './usePhotoRestoration';
@@ -32,8 +33,7 @@ export function useRestorationHistory(enabled: boolean = true, updateCount: bool
           console.log('✅ Loaded restoration history:', restorations.length, 'items');
         }
         
-        // Import photoStorage to check file existence
-        const { photoStorage } = await import('@/services/storage');
+        // Use imported photoStorage to check file existence
         
         // Filter and validate restorations
         const validRestorations = [];

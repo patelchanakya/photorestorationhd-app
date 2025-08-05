@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface RestorationStore {
   restorationCount: number;
@@ -14,9 +16,15 @@ interface RestorationStore {
   simpleSlider: boolean;
   setSimpleSlider: (simple: boolean) => void;
   toggleSimpleSlider: () => void;
+  hasShownRatingPrompt: boolean;
+  setHasShownRatingPrompt: (shown: boolean) => void;
+  totalRestorations: number;
+  incrementTotalRestorations: () => void;
 }
 
-export const useRestorationStore = create<RestorationStore>((set) => ({
+export const useRestorationStore = create<RestorationStore>()(
+  persist(
+    (set) => ({
   restorationCount: 0,
   setRestorationCount: (count) => {
     if (__DEV__) {
@@ -52,4 +60,38 @@ export const useRestorationStore = create<RestorationStore>((set) => ({
     set({ simpleSlider: simple });
   },
   toggleSimpleSlider: () => set((state) => ({ simpleSlider: !state.simpleSlider })),
-})); 
+  hasShownRatingPrompt: false,
+  setHasShownRatingPrompt: (shown) => {
+    if (__DEV__) {
+      console.log('[Zustand] setHasShownRatingPrompt called with:', shown);
+    }
+    set({ hasShownRatingPrompt: shown });
+  },
+  totalRestorations: 0,
+  incrementTotalRestorations: () => set((state) => ({ 
+    totalRestorations: state.totalRestorations + 1 
+  })),
+    }),
+    {
+      name: 'restoration-storage',
+      storage: {
+        getItem: async (name) => {
+          const value = await AsyncStorage.getItem(name);
+          return value ? JSON.parse(value) : null;
+        },
+        setItem: async (name, value) => {
+          await AsyncStorage.setItem(name, JSON.stringify(value));
+        },
+        removeItem: async (name) => {
+          await AsyncStorage.removeItem(name);
+        },
+      },
+      partialize: (state) => ({
+        hasShownRatingPrompt: state.hasShownRatingPrompt,
+        totalRestorations: state.totalRestorations,
+        galleryViewMode: state.galleryViewMode,
+        simpleSlider: state.simpleSlider,
+      }) as any,
+    }
+  )
+); 

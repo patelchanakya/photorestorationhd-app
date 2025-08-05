@@ -10,6 +10,7 @@ import { useSubscriptionStore } from '@/store/subscriptionStore';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as FileSystem from 'expo-file-system';
+import * as StoreReview from 'expo-store-review';
 import React, { useCallback, useEffect } from 'react';
 import {
   ActionSheetIOS,
@@ -62,6 +63,9 @@ export default function RestorationScreen() {
   const photoRestoration = usePhotoRestoration();
   const decrementRestorationCount = useRestorationStore((state) => state.decrementRestorationCount);
   const simpleSlider = useRestorationStore((state) => state.simpleSlider);
+  const totalRestorations = useRestorationStore((state) => state.totalRestorations);
+  const hasShownRatingPrompt = useRestorationStore((state) => state.hasShownRatingPrompt);
+  const setHasShownRatingPrompt = useRestorationStore((state) => state.setHasShownRatingPrompt);
   const { isPro } = useSubscriptionStore();
   
   // Check if this is a new restoration request
@@ -157,13 +161,34 @@ export default function RestorationScreen() {
       // Immediately complete the progress animation
       completeProcessing();
       
+      if (__DEV__) {
+        console.log(`🎯 [TIMING] API success received, waiting 150ms before navigation`);
+      }
+      
       // Add a small delay to show 100% completion before redirecting
       setTimeout(() => {
+        if (__DEV__) {
+          console.log(`🏁 [TIMING] Navigating to results screen`);
+        }
         // Navigate to the completed restoration view
         router.replace(`/restoration/${restorationData.id}`);
-      }, 800); // 800ms delay to show completion
+        
+        // Check if we should show rating prompt (after 3rd restoration)
+        if (totalRestorations >= 3 && !hasShownRatingPrompt) {
+          // Additional delay to let the restoration screen load
+          setTimeout(async () => {
+            if (await StoreReview.hasAction()) {
+              await StoreReview.requestReview();
+              setHasShownRatingPrompt(true);
+              if (__DEV__) {
+                console.log('📱 Showed rating prompt after 3rd restoration');
+              }
+            }
+          }, 1200); // Wait 1.2s after navigation
+        }
+      }, 150); // Brief delay to show 100% completion
     }
-  }, [photoRestoration.isSuccess, photoRestoration.data, completeProcessing]);
+  }, [photoRestoration.isSuccess, photoRestoration.data, completeProcessing, totalRestorations, hasShownRatingPrompt, setHasShownRatingPrompt]);
   
   // Clear progress immediately when error occurs
   useEffect(() => {

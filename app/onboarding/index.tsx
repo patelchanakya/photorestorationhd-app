@@ -2,8 +2,8 @@ import CurtainRevealImage, { CurtainRevealImageRef } from '@/components/CurtainR
 import ParticleSystem from '@/components/ParticleSystem';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { presentPaywall } from '@/services/revenuecat';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -87,6 +87,43 @@ export default function OnboardingScreen() {
   const { completeOnboarding } = useOnboarding();
   const timeoutRef = useRef<any>();
   const autoAdvanceTimeoutRef = useRef<any>();
+
+  // Function to open device gallery after onboarding
+  const openGallery = async () => {
+    try {
+      // Request media library permissions
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (status !== 'granted') {
+        // If permission denied, navigate to home screen instead
+        router.replace('/');
+        return;
+      }
+
+      // Open device photo library
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 1,
+        exif: false,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        // User selected a photo - navigate to crop modal
+        const imageUri = result.assets[0].uri;
+        router.replace(`/crop-modal?imageUri=${encodeURIComponent(imageUri)}&functionType=restoration&imageSource=gallery`);
+      } else {
+        // User cancelled gallery - navigate to home screen
+        router.replace('/');
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.error('Gallery opening failed:', error);
+      }
+      // Fallback to home screen on error
+      router.replace('/');
+    }
+  };
   const animationTimeoutsRef = useRef<NodeJS.Timeout[]>([]);
   const isNavigatingRef = useRef(false);
   const appStateRef = useRef(AppState.currentState);
@@ -283,12 +320,9 @@ export default function OnboardingScreen() {
     }
     
     await completeOnboarding();
-    router.replace('/');
     
-    // Show paywall after navigating to home (non-blocking)
-    setTimeout(() => {
-      presentPaywall();
-    }, 100);
+    // Open gallery after onboarding completion for first photo selection
+    await openGallery();
   };
 
   const handleStartRestoring = async () => {
@@ -327,13 +361,8 @@ export default function OnboardingScreen() {
     // Success haptic
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     
-    // Navigate immediately - don't wait for paywall
-    router.replace('/');
-    
-    // Present paywall after navigation (non-blocking)
-    setTimeout(() => {
-      presentPaywall();
-    }, 100);
+    // Open gallery after onboarding completion for first photo selection
+    await openGallery();
   };
 
   // Initialize screen fade-in and pre-load assets

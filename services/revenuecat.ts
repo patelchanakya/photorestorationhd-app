@@ -1,4 +1,5 @@
 import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { analyticsService } from '@/services/analytics';
 import Constants from 'expo-constants';
 import Purchases, {
     CustomerInfo,
@@ -266,10 +267,29 @@ export const restorePurchasesDetailed = async (): Promise<RestoreResult> => {
       console.log('✅ Purchases restored:', customerInfo);
     }
     
-    // Add null safety check
+    // Add null safety check - but customerInfo can be null even on successful restores
     if (!customerInfo) {
       if (__DEV__) {
         console.log('⚠️ No customer info returned from detailed restore');
+      }
+      
+      // Wait briefly and check subscription status via store to see if restore actually worked
+      // The CustomerInfo listener in _layout.tsx might have updated the store
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const currentProStatus = useSubscriptionStore.getState().isPro;
+      if (currentProStatus) {
+        if (__DEV__) {
+          console.log('✅ Restore appears successful despite null customerInfo - user has pro status');
+        }
+        return {
+          success: true,
+          hasActiveEntitlements: true
+        };
+      }
+      
+      if (__DEV__) {
+        console.log('❌ Restore failed - no customerInfo and user not pro');
       }
       return {
         success: false,
@@ -337,7 +357,6 @@ export const presentPaywall = async (): Promise<boolean> => {
     }
 
     // Track paywall presentation
-    const { analyticsService } = await import('@/services/analytics');
     analyticsService.track('Paywall Shown', {
       source: 'presentPaywall',
       timestamp: new Date().toISOString(),
