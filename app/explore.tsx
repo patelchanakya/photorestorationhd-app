@@ -6,7 +6,8 @@ import { HeroBackToLifeExamples } from '@/components/HeroBackToLifeExamples';
 import { QuickActionRail } from '@/components/QuickActionRail';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
-import { presentPaywall, restorePurchases, validatePremiumAccess, checkSubscriptionStatus, getSubscriptionExpirationDate } from '@/services/revenuecat';
+import { presentPaywall, restorePurchases, restorePurchasesSimple, validatePremiumAccess, checkSubscriptionStatus, getSubscriptionExpirationDate } from '@/services/revenuecat';
+import { UserIdPersistenceService } from '@/services/userIdPersistence';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import React from 'react';
@@ -89,17 +90,24 @@ export default function HomeGalleryLikeScreen() {
                     { 
                       text: 'Restore Purchases', 
                       onPress: async () => {
-                        const restored = await restorePurchases();
-                        if (restored) {
+                        const result = await restorePurchasesSimple();
+                        
+                        if (result.success && result.hasActiveEntitlements) {
                           Alert.alert(
                             'Restored!',
                             'Your Pro subscription has been restored successfully!',
                             [{ text: 'Great!' }]
                           );
-                        } else {
+                        } else if (result.success && !result.hasActiveEntitlements) {
                           Alert.alert(
                             'No Purchases Found',
                             'No previous purchases were found for this account.',
+                            [{ text: 'OK' }]
+                          );
+                        } else {
+                          Alert.alert(
+                            'Restore Failed',
+                            result.errorMessage || 'Unable to restore purchases. Please try again.',
                             [{ text: 'OK' }]
                           );
                         }
@@ -117,17 +125,24 @@ export default function HomeGalleryLikeScreen() {
                     { 
                       text: 'Restore', 
                       onPress: async () => {
-                        const restored = await restorePurchases();
-                        if (restored) {
+                        const result = await restorePurchasesSimple();
+                        
+                        if (result.success && result.hasActiveEntitlements) {
                           Alert.alert(
                             'Restored!',
                             'Your Pro subscription has been restored successfully!',
                             [{ text: 'Great!' }]
                           );
-                        } else {
+                        } else if (result.success && !result.hasActiveEntitlements) {
                           Alert.alert(
                             'No Purchases Found',
                             'No previous purchases were found for this account.',
+                            [{ text: 'OK' }]
+                          );
+                        } else {
+                          Alert.alert(
+                            'Restore Failed',
+                            result.errorMessage || 'Unable to restore purchases. Please try again.',
                             [{ text: 'OK' }]
                           );
                         }

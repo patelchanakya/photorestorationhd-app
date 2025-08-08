@@ -47,6 +47,7 @@
     "expo-store-review": "~8.1.5",
     "expo-symbols": "~0.4.5",
     "expo-system-ui": "~5.0.10",
+    "expo-video": "~2.2.2",
     "expo-web-browser": "~14.2.0",
     "mixpanel-react-native": "^3.1.2",
     "nativewind": "^4.1.23",
@@ -65,8 +66,7 @@
     "react-native-url-polyfill": "^2.0.0",
     "react-native-web": "~0.20.0",
     "replicate": "^1.0.1",
-    "zustand": "^5.0.6",
-    "expo-av": "~15.1.7"
+    "zustand": "^5.0.6"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

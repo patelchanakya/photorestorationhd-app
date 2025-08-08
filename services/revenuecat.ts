@@ -4,13 +4,25 @@ import Constants from 'expo-constants';
 import Purchases, {
     CustomerInfo,
     PurchasesOffering,
-    PurchasesPackage
+    PurchasesPackage,
+    PurchasesError,
+    PURCHASES_ERROR_CODE
 } from 'react-native-purchases';
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 
 export interface RevenueCatOfferings {
   monthly?: PurchasesPackage;
   weekly?: PurchasesPackage;
+}
+
+// Purchase error result types for better error handling
+export interface PurchaseResult {
+  success: boolean;
+  errorCode?: string;
+  errorMessage?: string;
+  userCancelled?: boolean;
+  shouldRetry?: boolean;
+  requiresRestore?: boolean;
 }
 
 // Helper to check if we're in Expo Go
@@ -68,6 +80,100 @@ export const getOfferings = async (): Promise<RevenueCatOfferings> => {
   }
 };
 
+// Enhanced purchase function that returns detailed error information
+export const purchasePackageEnhanced = async (packageToPurchase: PurchasesPackage): Promise<PurchaseResult> => {
+  try {
+    if (isExpoGo()) {
+      return {
+        success: false,
+        errorMessage: 'Cannot purchase in Expo Go'
+      };
+    }
+    
+    const { customerInfo } = await Purchases.purchasePackage(packageToPurchase);
+    
+    // Verify entitlement immediately
+    const proEntitlement = customerInfo.entitlements.active['pro'];
+    const hasProEntitlement = proEntitlement?.isActive === true;
+    
+    if (!hasProEntitlement) {
+      // Try refresh once
+      const refreshedInfo = await getCustomerInfo();
+      if (refreshedInfo) {
+        const refreshedEntitlement = refreshedInfo.entitlements.active['pro'];
+        if (refreshedEntitlement?.isActive === true) {
+          return { success: true };
+        }
+      }
+      return {
+        success: false,
+        errorMessage: 'Purchase succeeded but entitlement not active'
+      };
+    }
+    
+    return { success: true };
+  } catch (error: any) {
+    const purchaseError = error as PurchasesError;
+    
+    if (purchaseError.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR || 
+        purchaseError.userCancelled) {
+      return {
+        success: false,
+        userCancelled: true
+      };
+    }
+    
+    switch (purchaseError.code) {
+      case PURCHASES_ERROR_CODE.STORE_PROBLEM_ERROR:
+        return {
+          success: false,
+          errorCode: 'STORE_PROBLEM',
+          errorMessage: 'App Store temporarily unavailable',
+          shouldRetry: true
+        };
+        
+      case PURCHASES_ERROR_CODE.PRODUCT_ALREADY_PURCHASED_ERROR:
+        return {
+          success: false,
+          errorCode: 'ALREADY_PURCHASED',
+          errorMessage: 'You already own this subscription',
+          requiresRestore: true
+        };
+        
+      case PURCHASES_ERROR_CODE.RECEIPT_ALREADY_IN_USE_ERROR:
+        return {
+          success: false,
+          errorCode: 'RECEIPT_IN_USE',
+          errorMessage: 'Subscription owned by different Apple ID',
+          requiresRestore: true
+        };
+        
+      case PURCHASES_ERROR_CODE.PAYMENT_PENDING_ERROR:
+        return {
+          success: false,
+          errorCode: 'PAYMENT_PENDING',
+          errorMessage: 'Payment is being processed'
+        };
+        
+      case PURCHASES_ERROR_CODE.NETWORK_ERROR:
+        return {
+          success: false,
+          errorCode: 'NETWORK_ERROR',
+          errorMessage: 'Network connection issue',
+          shouldRetry: true
+        };
+        
+      default:
+        return {
+          success: false,
+          errorCode: purchaseError.code?.toString(),
+          errorMessage: 'Purchase failed. Please try again.'
+        };
+    }
+  }
+};
+
+// Original purchase function for backward compatibility
 export const purchasePackage = async (packageToPurchase: PurchasesPackage): Promise<boolean> => {
   try {
     if (isExpoGo()) {
@@ -87,9 +193,24 @@ export const purchasePackage = async (packageToPurchase: PurchasesPackage): Prom
       console.log('✅ Purchase successful:', customerInfo);
     }
     
-    // Check if the purchase gave access to pro features using isActive property
+    // BEST PRACTICE: Immediately verify entitlement after purchase
+    // Don't just assume success - check the actual entitlement status
     const proEntitlement = customerInfo.entitlements.active['pro'];
     const hasProEntitlement = proEntitlement?.isActive === true;
+    
+    if (!hasProEntitlement) {
+      // Purchase succeeded but entitlement not active - this shouldn't happen
+      // but we handle it gracefully
+      if (__DEV__) {
+        console.warn('⚠️ Purchase succeeded but entitlement not active');
+      }
+      // Try to refresh customer info once more
+      const refreshedInfo = await getCustomerInfo();
+      if (refreshedInfo) {
+        const refreshedEntitlement = refreshedInfo.entitlements.active['pro'];
+        return refreshedEntitlement?.isActive === true;
+      }
+    }
     
     // Note: Store update handled by CustomerInfo listener in _layout.tsx
     if (__DEV__) {
@@ -97,33 +218,85 @@ export const purchasePackage = async (packageToPurchase: PurchasesPackage): Prom
     }
     
     return hasProEntitlement;
-  } catch (error) {
-    // Handle different error types
-    if (error.code === '1' || error.userCancelled) {
-      // User cancelled - normal behavior, no logging needed
+  } catch (error: any) {
+    // Enhanced error handling with specific error codes
+    const purchaseError = error as PurchasesError;
+    
+    // User cancelled - this is normal behavior
+    if (purchaseError.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR || 
+        purchaseError.userCancelled) {
+      if (__DEV__) {
+        console.log('👤 User cancelled purchase');
+      }
       return false;
     }
     
-    // Only log actual errors in development builds
-    if (__DEV__) {
-      console.error('❌ Purchase failed:', error);
-      if (error.code === '2') {
+    // Handle specific error cases
+    switch (purchaseError.code) {
+      case PURCHASES_ERROR_CODE.STORE_PROBLEM_ERROR:
+        // Store connection issue - could retry
         if (__DEV__) {
-          console.log('🔒 Store problem');
+          console.error('🔒 Store problem - App Store unavailable');
         }
-      } else if (error.code === '3') {
+        break;
+        
+      case PURCHASES_ERROR_CODE.PURCHASE_NOT_ALLOWED_ERROR:
+        // Device/account restrictions
         if (__DEV__) {
-          console.log('💳 Purchase not allowed');
+          console.error('💳 Purchase not allowed on this device/account');
         }
-      } else if (error.code === '4') {
+        break;
+        
+      case PURCHASES_ERROR_CODE.PRODUCT_NOT_AVAILABLE_FOR_PURCHASE_ERROR:
+        // Product configuration issue
         if (__DEV__) {
-          console.log('🚫 Product not available for purchase');
+          console.error('🚫 Product not available for purchase');
         }
-      } else if (error.code === '5') {
+        break;
+        
+      case PURCHASES_ERROR_CODE.PRODUCT_ALREADY_PURCHASED_ERROR:
+        // User already owns this - should restore instead
         if (__DEV__) {
-          console.log('🔑 Product already purchased');
+          console.log('🔑 Product already purchased - attempting restore');
         }
-      }
+        // Automatically attempt restore for better UX
+        try {
+          const customerInfo = await Purchases.restorePurchases();
+          const proEntitlement = customerInfo.entitlements.active['pro'];
+          return proEntitlement?.isActive === true;
+        } catch (restoreError) {
+          if (__DEV__) {
+            console.error('Failed to auto-restore:', restoreError);
+          }
+        }
+        break;
+        
+      case PURCHASES_ERROR_CODE.RECEIPT_ALREADY_IN_USE_ERROR:
+        // Different Apple ID owns this subscription
+        if (__DEV__) {
+          console.error('🔐 Receipt already in use by different account');
+        }
+        break;
+        
+      case PURCHASES_ERROR_CODE.PAYMENT_PENDING_ERROR:
+        // Payment is being processed
+        if (__DEV__) {
+          console.log('⏳ Payment pending - user needs to complete payment');
+        }
+        break;
+        
+      case PURCHASES_ERROR_CODE.NETWORK_ERROR:
+        // Network issue - definitely should retry
+        if (__DEV__) {
+          console.error('🌐 Network error during purchase');
+        }
+        break;
+        
+      default:
+        // Unknown error
+        if (__DEV__) {
+          console.error('❌ Purchase failed with error:', purchaseError);
+        }
     }
     
     return false;
@@ -167,7 +340,15 @@ export const checkSubscriptionStatus = async (): Promise<boolean> => {
     const proEntitlement = customerInfo.entitlements.active['pro'];
     const hasProEntitlement = proEntitlement?.isActive === true;
     
-    // Note: Store update handled by CustomerInfo listener in _layout.tsx
+    // Update store if different from current value (for Apple ID switches)
+    const currentProStatus = useSubscriptionStore.getState().isPro;
+    if (hasProEntitlement !== currentProStatus) {
+      useSubscriptionStore.getState().setIsPro(hasProEntitlement);
+      if (__DEV__) {
+        console.log('🔄 Updated subscription status on check:', hasProEntitlement);
+      }
+    }
+    
     if (__DEV__) {
       console.log('🔍 Subscription status check:', hasProEntitlement);
       if (proEntitlement) {
@@ -273,23 +454,25 @@ export const restorePurchasesDetailed = async (): Promise<RestoreResult> => {
         console.log('⚠️ No customer info returned from detailed restore');
       }
       
-      // Wait briefly and check subscription status via store to see if restore actually worked
-      // The CustomerInfo listener in _layout.tsx might have updated the store
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Wait for store update with proper timeout instead of hardcoded delay
+      const waitForStoreUpdate = await waitForSubscriptionUpdate({
+        timeout: 3000,
+        checkInterval: 100,
+        expectedChange: true // We expect a change if restore is successful
+      });
       
-      const currentProStatus = useSubscriptionStore.getState().isPro;
-      if (currentProStatus) {
+      if (waitForStoreUpdate.success) {
         if (__DEV__) {
-          console.log('✅ Restore appears successful despite null customerInfo - user has pro status');
+          console.log('✅ Restore successful - store updated with PRO status');
         }
         return {
           success: true,
-          hasActiveEntitlements: true
+          hasActiveEntitlements: waitForStoreUpdate.isPro
         };
       }
       
       if (__DEV__) {
-        console.log('❌ Restore failed - no customerInfo and user not pro');
+        console.log('❌ Restore failed - no customerInfo and store not updated');
       }
       return {
         success: false,
@@ -659,5 +842,188 @@ export const getAppUserId = async (): Promise<string | null> => {
       console.error('❌ Failed to get app user ID:', error);
     }
     return null;
+  }
+};
+
+// Wait for subscription store update with timeout
+interface WaitForUpdateOptions {
+  timeout?: number; // Max time to wait in ms
+  checkInterval?: number; // How often to check in ms
+  expectedChange?: boolean; // If true, wait for a change. If false, just wait for stable state
+}
+
+interface WaitForUpdateResult {
+  success: boolean;
+  isPro: boolean;
+  timedOut: boolean;
+}
+
+export const waitForSubscriptionUpdate = async (options: WaitForUpdateOptions = {}): Promise<WaitForUpdateResult> => {
+  const { 
+    timeout = 3000, 
+    checkInterval = 100,
+    expectedChange = false 
+  } = options;
+  
+  const startTime = Date.now();
+  const initialProStatus = useSubscriptionStore.getState().isPro;
+  let lastProStatus = initialProStatus;
+  let stableCheckCount = 0;
+  const requiredStableChecks = 3; // Status must be stable for 3 checks
+  
+  if (__DEV__) {
+    console.log(`⏳ Waiting for subscription update (timeout: ${timeout}ms, expecting change: ${expectedChange})`);
+  }
+  
+  return new Promise((resolve) => {
+    const checkStatus = () => {
+      const currentProStatus = useSubscriptionStore.getState().isPro;
+      const elapsed = Date.now() - startTime;
+      
+      // Check if status is stable
+      if (currentProStatus === lastProStatus) {
+        stableCheckCount++;
+      } else {
+        stableCheckCount = 0;
+        lastProStatus = currentProStatus;
+      }
+      
+      // Success conditions
+      if (expectedChange && currentProStatus !== initialProStatus && stableCheckCount >= requiredStableChecks) {
+        // We expected a change and got one that's stable
+        if (__DEV__) {
+          console.log(`✅ Subscription status changed and stabilized: ${initialProStatus} → ${currentProStatus}`);
+        }
+        resolve({ success: true, isPro: currentProStatus, timedOut: false });
+        return;
+      }
+      
+      if (!expectedChange && stableCheckCount >= requiredStableChecks) {
+        // We just wanted a stable state and got one
+        if (__DEV__) {
+          console.log(`✅ Subscription status stable at: ${currentProStatus}`);
+        }
+        resolve({ success: true, isPro: currentProStatus, timedOut: false });
+        return;
+      }
+      
+      // Check for timeout
+      if (elapsed >= timeout) {
+        if (__DEV__) {
+          console.log(`⏱️ Subscription update wait timed out after ${timeout}ms`);
+        }
+        resolve({ 
+          success: false, 
+          isPro: currentProStatus, 
+          timedOut: true 
+        });
+        return;
+      }
+      
+      // Continue checking
+      setTimeout(checkStatus, checkInterval);
+    };
+    
+    // Start checking
+    checkStatus();
+  });
+};
+
+
+// Proper restore following RevenueCat docs - sync first, then restore
+export const restorePurchasesSimple = async (): Promise<RestoreResult> => {
+  try {
+    if (isExpoGo()) {
+      return {
+        success: false,
+        hasActiveEntitlements: false,
+        error: 'unknown',
+        errorMessage: 'Cannot restore purchases in Expo Go'
+      };
+    }
+    
+    if (__DEV__) {
+      console.log('🔄 Starting restore purchases...');
+    }
+    
+    // Store initial state
+    const initialProStatus = useSubscriptionStore.getState().isPro;
+    
+    // STEP 1: Sync purchases first (recommended by RevenueCat for anonymous users)
+    // This pulls past purchases from App Store and links anonymous IDs
+    try {
+      if (__DEV__) {
+        console.log('🔄 Syncing purchases with current Apple ID...');
+      }
+      await Purchases.syncPurchases();
+      
+      // Check if sync found purchases
+      const afterSyncInfo = await Purchases.getCustomerInfo();
+      const afterSyncPro = afterSyncInfo.entitlements.active['pro'];
+      const foundPurchasesFromSync = afterSyncPro?.isActive === true;
+      
+      if (foundPurchasesFromSync) {
+        if (__DEV__) {
+          console.log('✅ Sync found purchases, no need for restore');
+        }
+        
+        // Wait for listener to update
+        await waitForSubscriptionUpdate({
+          timeout: 2000,
+          checkInterval: 100,
+          expectedChange: !initialProStatus
+        });
+        
+        return {
+          success: true,
+          hasActiveEntitlements: true
+        };
+      }
+    } catch (syncError) {
+      if (__DEV__) {
+        console.log('⚠️ Sync failed, will try restore:', syncError);
+      }
+    }
+    
+    // STEP 2: If sync didn't find purchases, try restore (may prompt user)
+    if (__DEV__) {
+      console.log('🔄 Sync found no purchases, trying restore...');
+    }
+    
+    const restore = await Purchases.restorePurchases();
+    
+    // Wait for the listener to update the store
+    const storeUpdate = await waitForSubscriptionUpdate({
+      timeout: 3000,
+      checkInterval: 100,
+      expectedChange: !initialProStatus
+    });
+    
+    // Check the final status from store
+    const finalProStatus = useSubscriptionStore.getState().isPro;
+    
+    if (__DEV__) {
+      console.log('🔄 Restore complete:', {
+        hadProBefore: initialProStatus,
+        hasProNow: finalProStatus,
+        storeUpdated: storeUpdate.success
+      });
+    }
+    
+    return {
+      success: true,
+      hasActiveEntitlements: finalProStatus
+    };
+  } catch (error: any) {
+    if (__DEV__) {
+      console.error('❌ Restore failed:', error);
+    }
+    
+    return {
+      success: false,
+      hasActiveEntitlements: false,
+      error: 'unknown',
+      errorMessage: 'Failed to restore purchases. Please try again.'
+    };
   }
 };

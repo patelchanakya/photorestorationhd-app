@@ -1,7 +1,7 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { presentPaywall } from '@/services/revenuecat';
-import { Video } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -29,6 +29,25 @@ const DEFAULT_BACKGROUNDS: BackgroundItem[] = [
   { id: 'bg-5', title: 'Abstract', type: 'image', image: require('../assets/images/onboarding/after-3.png'), backgroundPrompt: 'abstract artistic background' },
   { id: 'bg-6', title: 'Sunset', type: 'image', image: require('../assets/images/onboarding/after-4.png'), backgroundPrompt: 'beautiful sunset sky' },
 ];
+
+// VideoView component with player hook
+const VideoViewWithPlayer = ({ video }: { video: any }) => {
+  const player = useVideoPlayer(video, (player) => {
+    player.loop = true;
+    player.muted = true;
+    player.play();
+  });
+
+  return (
+    <VideoView
+      player={player}
+      style={{ width: '100%', height: '100%' }}
+      contentFit="cover"
+      nativeControls={false}
+      allowsFullscreen={false}
+    />
+  );
+};
 
 export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { backgrounds?: BackgroundItem[] }) {
   const router = useRouter();
@@ -105,16 +124,7 @@ export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { bac
             >
               {/* Render video or image based on type */}
               {item.type === 'video' && item.video ? (
-                <Video
-                  source={item.video}
-                  style={{ width: '100%', height: '100%' }}
-                  resizeMode="cover"
-                  shouldPlay
-                  isLooping
-                  isMuted
-                  useNativeControls={false}
-                  rate={1.0}
-                />
+                <VideoViewWithPlayer video={item.video} />
               ) : (
                 <ExpoImage 
                   source={item.image} 

@@ -137,12 +137,29 @@ function onAppStateChange(status: AppStateStatus) {
   
   // Refresh subscription status when app becomes active - RevenueCat best practice
   if (status === 'active') {
-    // Don't await this to avoid blocking app activation
-    checkSubscriptionStatus().catch((error) => {
+    // SECURITY FIX: Force Apple ID check to prevent subscription leakage between Apple IDs
+    // When Apple ID switches without app restart, RevenueCat caches old anonymous ID
+    // This forces fresh check of current Apple ID's actual subscription status
+    try {
+      // Step 1: Invalidate cache to force fresh data fetch
+      Purchases.invalidateCustomerInfoCache();
+      
+      // Step 2: Force fresh check of current Apple ID's receipt
+      // This will trigger customer info listener with correct subscription status
+      Purchases.getCustomerInfo().then(() => {
+        if (__DEV__) {
+          console.log('✅ Forced fresh Apple ID subscription check on app active');
+        }
+      }).catch((error) => {
+        if (__DEV__) {
+          console.log('🔄 Failed to force fresh subscription check:', error);
+        }
+      });
+    } catch (error) {
       if (__DEV__) {
-        console.log('🔄 Failed to refresh subscription status on app active:', error);
+        console.log('🔄 Failed to invalidate customer info cache:', error);
       }
-    });
+    }
   }
 }
 
@@ -195,12 +212,16 @@ export default function RootLayout() {
           return;
         }
         
-        // Set log level to reduce noise
+        // BEST PRACTICE: Configure appropriate log levels
+        // Development: VERBOSE for debugging
+        // Production: ERROR only for critical issues
         if (__DEV__) {
-          Purchases.setLogLevel(LOG_LEVEL.WARN);
+          Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+          Purchases.setDebugLogsEnabled(true);
         } else {
-          // Set to ERROR level in production
+          // Production: Only log errors to avoid noise
           Purchases.setLogLevel(LOG_LEVEL.ERROR);
+          Purchases.setDebugLogsEnabled(false);
         }
         
         // Configure RevenueCat with Apple API key
@@ -216,9 +237,41 @@ export default function RootLayout() {
               return;
             }
             
-            if (__DEV__) {
-              console.log('🔧 Configuring RevenueCat...');
+            // Check if RevenueCat is already configured to prevent multiple configurations
+            try {
+              const isConfigured = await Purchases.isConfigured();
+              if (isConfigured) {
+                if (__DEV__) {
+                  console.log('✅ RevenueCat already configured, skipping...');
+                }
+                
+                // Just get current customer info and set up listener
+                const customerInfo = await Purchases.getCustomerInfo();
+                const proEntitlement = customerInfo.entitlements.active['pro'];
+                const hasProEntitlement = proEntitlement?.isActive === true;
+                setIsPro(hasProEntitlement);
+                
+                // Set up listener and skip to the end
+                const customerInfoListener = (customerInfo: any) => {
+                  const proEntitlement = customerInfo.entitlements.active['pro'];
+                  const hasProEntitlement = proEntitlement?.isActive === true;
+                  setIsPro(hasProEntitlement);
+                };
+                
+                const removeListener = Purchases.addCustomerInfoUpdateListener(customerInfoListener);
+                (global as any).__revenueCatListener = removeListener;
+                
+                return;
+              }
+            } catch (error) {
+              // RevenueCat not configured yet, continue with configuration
             }
+            
+            if (__DEV__) {
+              console.log('🔧 Configuring RevenueCat for first time...');
+            }
+            
+            // Configure RevenueCat ONLY if not already configured
             await Purchases.configure({ 
               apiKey: apiKey,
               // Add additional configuration to prevent errors
@@ -229,8 +282,20 @@ export default function RootLayout() {
               console.log('✅ RevenueCat configured successfully');
             }
             
-            // Listen for customer info updates
-            Purchases.addCustomerInfoUpdateListener((customerInfo) => {
+            // IMPORTANT: Check if we already have an anonymous ID to prevent creating duplicates
+            try {
+              const appUserID = await Purchases.getAppUserID();
+              if (__DEV__) {
+                console.log('📱 Current App User ID:', appUserID);
+              }
+            } catch (error) {
+              if (__DEV__) {
+                console.log('🆕 No existing App User ID, will use new anonymous ID');
+              }
+            }
+            
+            // Listen for customer info updates - STORE LISTENER FOR CLEANUP
+            const customerInfoListener = (customerInfo: any) => {
               if (__DEV__) {
                 console.log('📱 Customer info updated:', customerInfo);
               }
@@ -267,6 +332,8 @@ export default function RootLayout() {
               
               setIsPro(hasProEntitlement);
               
+              // DO NOT save PRO status to device - it should only come from Apple ID
+              
               // Track subscription events
               if (hasProEntitlement && !wasProBefore) {
                 analyticsService.trackSubscriptionEvent('upgraded', 'pro');
@@ -277,13 +344,63 @@ export default function RootLayout() {
               if (__DEV__) {
                 console.log('🔄 Pro status updated:', hasProEntitlement);
               }
-            });
+            };
             
-            // Check initial subscription status
+            // Add listener and store the removal function
+            const removeListener = Purchases.addCustomerInfoUpdateListener(customerInfoListener);
+            
+            // Store the removal function for cleanup
+            (global as any).__revenueCatListener = removeListener;
+            
+            // SECURITY FIX: Invalidate cache immediately on app startup
+            // This handles the case where users update the app and have stale cache
+            // Forces fresh check of current Apple ID's subscription status
+            if (__DEV__) {
+              console.log('🔒 Invalidating RevenueCat cache on startup for security');
+            }
+            Purchases.invalidateCustomerInfoCache();
+            
+            // Check initial subscription status with fresh data
             const customerInfo = await Purchases.getCustomerInfo();
             const proEntitlement = customerInfo.entitlements.active['pro'];
             const hasProEntitlement = proEntitlement?.isActive === true;
             setIsPro(hasProEntitlement);
+            
+            // AUTO-RESTORE: Silently sync purchases if no subscription found
+            // This improves UX for users switching devices or reinstalling
+            // syncPurchases() doesn't show prompts - recommended by RevenueCat
+            if (!hasProEntitlement) {
+              try {
+                if (__DEV__) {
+                  console.log('🔄 No subscription found, attempting silent restore...');
+                }
+                
+                // This is silent - no OS prompts will appear
+                await Purchases.syncPurchases();
+                // syncPurchases doesn't return customerInfo - need to fetch it separately
+                const syncedInfo = await Purchases.getCustomerInfo();
+                const syncedProEntitlement = syncedInfo.entitlements.active['pro'];
+                const hasSyncedPro = syncedProEntitlement?.isActive === true;
+                
+                if (hasSyncedPro) {
+                  // Found subscription via sync! Update state
+                  setIsPro(true);
+                  if (__DEV__) {
+                    console.log('✅ Auto-restore successful! Found active subscription');
+                  }
+                  analyticsService.trackSubscriptionEvent('auto_restored', 'pro');
+                } else {
+                  if (__DEV__) {
+                    console.log('ℹ️ No subscription found after sync - user needs to purchase');
+                  }
+                }
+              } catch (error) {
+                // Fail silently - user can manually restore if needed
+                if (__DEV__) {
+                  console.log('⚠️ Auto-restore failed silently:', error);
+                }
+              }
+            }
             
             if (__DEV__) {
               console.log('🎯 Initial pro status:', hasProEntitlement);
@@ -334,14 +451,14 @@ export default function RootLayout() {
                 (global as any).__sandboxCheckInterval = intervalId;
               }
             }
-          } catch (error) {
+          } catch (error: any) {
             if (__DEV__) {
               console.error('❌ RevenueCat configuration failed:', error);
               console.log('🔄 Continuing without RevenueCat...');
             }
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         if (__DEV__) {
           console.error('❌ Failed to initialize RevenueCat:', error);
         }
@@ -376,6 +493,31 @@ export default function RootLayout() {
     
     return () => {
       clearTimeout(timer);
+      
+      // CRITICAL: Remove RevenueCat listener to prevent memory leak
+      if ((global as any).__revenueCatListener) {
+        try {
+          (global as any).__revenueCatListener();
+          delete (global as any).__revenueCatListener;
+          if (__DEV__) {
+            console.log('🧹 Cleaned up RevenueCat listener');
+          }
+        } catch (error) {
+          if (__DEV__) {
+            console.error('Failed to cleanup RevenueCat listener:', error);
+          }
+        }
+      }
+      
+      // Cleanup sandbox interval if exists
+      if ((global as any).__sandboxCheckInterval) {
+        clearInterval((global as any).__sandboxCheckInterval);
+        delete (global as any).__sandboxCheckInterval;
+        if (__DEV__) {
+          console.log('🧹 Cleaned up sandbox check interval');
+        }
+      }
+      
       // Cleanup analytics service
       analyticsService.destroy();
       // Cleanup network monitor

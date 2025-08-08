@@ -1,7 +1,7 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { presentPaywall } from '@/services/revenuecat';
-import { Video } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -29,6 +29,25 @@ const DEFAULT_OUTFITS: OutfitItem[] = [
   { id: 'outfit-5', title: 'Vintage', type: 'image', image: require('../assets/images/onboarding/after-3.png'), outfitPrompt: 'vintage retro style' },
   { id: 'outfit-6', title: 'Modern', type: 'image', image: require('../assets/images/onboarding/after-4.png'), outfitPrompt: 'modern trendy outfit' },
 ];
+
+// VideoView component with player hook
+const VideoViewWithPlayer = ({ video }: { video: any }) => {
+  const player = useVideoPlayer(video, (player) => {
+    player.loop = true;
+    player.muted = true;
+    player.play();
+  });
+
+  return (
+    <VideoView
+      player={player}
+      style={{ width: '100%', height: '100%' }}
+      contentFit="cover"
+      nativeControls={false}
+      allowsFullscreen={false}
+    />
+  );
+};
 
 export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: OutfitItem[] }) {
   const router = useRouter();
@@ -105,16 +124,7 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
             >
               {/* Render video or image based on type */}
               {item.type === 'video' && item.video ? (
-                <Video
-                  source={item.video}
-                  style={{ width: '100%', height: '100%' }}
-                  resizeMode="cover"
-                  shouldPlay
-                  isLooping
-                  isMuted
-                  useNativeControls={false}
-                  rate={1.0}
-                />
+                <VideoViewWithPlayer video={item.video} />
               ) : (
                 <ExpoImage 
                   source={item.image} 

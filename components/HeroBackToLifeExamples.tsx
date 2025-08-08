@@ -1,7 +1,7 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { presentPaywall } from '@/services/revenuecat';
-import { Video } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -33,6 +33,26 @@ const DEFAULT_EXAMPLES: ExampleItem[] = [
   // { id: 'ex-a', image: require('../assets/images/onboarding/after-3.png'), title: 'Back to life', type: 'image' },
   // { id: 'ex-b', image: require('../assets/images/onboarding/after-4.png'), title: 'Back to life', type: 'image' },
 ];
+
+// VideoView component with player hook
+const VideoViewWithPlayer = ({ video, index, style }: { video: any; index: number; style: any }) => {
+  const player = useVideoPlayer(video, (player) => {
+    player.loop = true;
+    player.muted = true;
+    player.playbackRate = [1.0, 0.95, 1.05, 0.9, 1.1, 0.98][index] || 1.0;
+    player.play();
+  });
+
+  return (
+    <VideoView
+      player={player}
+      style={style}
+      contentFit="cover"
+      nativeControls={false}
+      allowsFullscreen={false}
+    />
+  );
+};
 
 async function pickVideo(isPro: boolean, animationPrompt?: string) {
   // Check current PRO status
@@ -150,16 +170,10 @@ const AnimatedTile = ({ item, index, isPro }: { item: ExampleItem; index: number
       >
         {/* Render video or image based on type */}
         {item.type === 'video' && item.video ? (
-          <Video
-            source={item.video}
+          <VideoViewWithPlayer 
+            video={item.video} 
+            index={index}
             style={{ width: '100%', height: '100%', opacity: 0.98 }}
-            resizeMode="cover"
-            shouldPlay
-            isLooping
-            isMuted
-            useNativeControls={false}
-            rate={[1.0, 0.95, 1.05, 0.9, 1.1, 0.98][index] || 1.0}
-            positionMillis={index * 1500}
           />
         ) : (
           <ExpoImage source={item.image} style={{ width: '100%', height: '100%', transform: [{ translateY: (item.yOffset ?? 32) }] }} contentFit="cover" transition={0} />

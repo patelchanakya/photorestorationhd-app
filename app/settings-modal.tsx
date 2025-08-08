@@ -4,7 +4,7 @@ import { photoRestorationKeys } from '@/hooks/usePhotoRestoration';
 import { getSupportedLanguages, useTranslation } from '@/i18n';
 import { deviceTrackingService } from '@/services/deviceTracking';
 import { restorationTrackingService } from '@/services/restorationTracking';
-import { getAppUserId, presentPaywall, restorePurchasesDetailed } from '@/services/revenuecat';
+import { getAppUserId, presentPaywall, restorePurchasesDetailed, restorePurchasesSimple } from '@/services/revenuecat';
 import { photoStorage } from '@/services/storage';
 import { localStorageHelpers } from '@/services/supabase';
 import { useRestorationStore } from '@/store/restorationStore';
@@ -232,7 +232,7 @@ export default function SettingsModalScreen() {
       
       setIsRestoring(true);
       
-      const result = await restorePurchasesDetailed();
+      const result = await restorePurchasesSimple();
       
       if (result.success) {
         if (result.hasActiveEntitlements) {
