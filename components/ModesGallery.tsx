@@ -46,8 +46,8 @@ export function ModesGallery() {
   return (
     <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 20 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <Text style={{ color: '#fff', fontSize: 20, fontWeight: '800' }}>Modes</Text>
-        <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12 }}>{filtered.length} presets</Text>
+        <Text style={{ color: '#EAEAEA', fontSize: 20, fontWeight: '800' }}>Modes</Text>
+        <Text style={{ color: '#BFC3CF', fontSize: 12 }}>{filtered.length} presets</Text>
       </View>
       {/* Category filters */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 6, gap: 8 }}>
@@ -75,7 +75,7 @@ export function ModesGallery() {
                 borderColor: isActive ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.12)'
               }}
             >
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>{c.label}</Text>
+              <Text style={{ color: '#EAEAEA', fontWeight: '700', fontSize: 13 }}>{c.label}</Text>
             </TouchableOpacity>
           );
         })}
@@ -88,13 +88,13 @@ export function ModesGallery() {
             key={p.id}
             onPress={() => openPicker(p.styleKey)}
             activeOpacity={0.9}
-            style={{ width: '48%', height: 150, borderRadius: 16, overflow: 'hidden', marginBottom: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}
+            style={{ width: '48%', height: 150, borderRadius: 16, overflow: 'hidden', marginBottom: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}
           >
             <ExpoImage source={p.image} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={0} />
-            <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: 10, backgroundColor: 'rgba(0,0,0,0.35)' }}>
-              <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }} numberOfLines={1}>{p.title}</Text>
+            <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: 10, backgroundColor: 'rgba(0,0,0,0.45)' }}>
+              <Text style={{ color: '#EAEAEA', fontWeight: '800', fontSize: 14 }} numberOfLines={1}>{p.title}</Text>
               {!!p.subtitle && (
-                <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 11 }} numberOfLines={1}>{p.subtitle}</Text>
+                <Text style={{ color: '#BFC3CF', fontSize: 11 }} numberOfLines={1}>{p.subtitle}</Text>
               )}
             </View>
           </TouchableOpacity>

@@ -45,7 +45,7 @@ export function HeroRepairTile({
     <TouchableOpacity
       onPress={handlePick}
       activeOpacity={0.9}
-      style={{ marginHorizontal: 16, marginTop: 8, marginBottom: 8, borderRadius: 22, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', height: 180 }}
+      style={{ marginHorizontal: 16, marginTop: 8, marginBottom: 8, borderRadius: 22, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', height: 180 }}
     >
       <ExpoImage
         source={image}
@@ -56,7 +56,7 @@ export function HeroRepairTile({
         cachePolicy="memory-disk"
       />
       <LinearGradient
-        colors={["rgba(0,0,0,0.12)", "rgba(0,0,0,0.55)"]}
+        colors={["rgba(0,0,0,0.15)", "rgba(0,0,0,0.65)"]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         style={{ position: 'absolute', inset: 0 as any }}
@@ -65,8 +65,8 @@ export function HeroRepairTile({
       {/* Content */}
       <View style={{ flex: 1, padding: 14 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' }}>
-            <IconSymbol name="wand.and.stars" size={20} color="#fff" />
+          <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}>
+            <IconSymbol name="wand.and.stars" size={20} color="#EAEAEA" />
           </View>
           <TouchableOpacity
             onPress={() => {
@@ -74,15 +74,15 @@ export function HeroRepairTile({
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }}
             activeOpacity={0.9}
-            style={{ paddingHorizontal: 12, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', backgroundColor: 'rgba(0,0,0,0.3)' }}
+            style={{ paddingHorizontal: 12, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(0,0,0,0.45)' }}
           >
-            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Video</Text>
+            <Text style={{ color: '#EAEAEA', fontWeight: '700', fontSize: 13 }}>Video</Text>
           </TouchableOpacity>
         </View>
 
         <View style={{ flex: 1, justifyContent: 'flex-end' }}>
-          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 20, textShadowColor: 'rgba(0,0,0,0.6)', textShadowRadius: 4 }}>{title}</Text>
-          <Text style={{ color: 'rgba(255,255,255,0.95)', fontSize: 13, marginTop: 2 }}>{subtitle}</Text>
+          <Text style={{ color: '#EAEAEA', fontWeight: '800', fontSize: 20, textShadowColor: 'rgba(0,0,0,0.6)', textShadowRadius: 4 }}>{title}</Text>
+          <Text style={{ color: '#BFC3CF', fontSize: 13, marginTop: 2 }}>{subtitle}</Text>
         </View>
       </View>
     </TouchableOpacity>
