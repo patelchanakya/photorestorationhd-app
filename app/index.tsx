@@ -790,7 +790,7 @@ export default function MinimalCameraWithGalleryButton() {
                   <>
                     {/* Rotating gradient background */}
                     <AnimatedLinearGradient
-                      colors={['transparent', '#f59e0b', 'transparent', '#f59e0b', 'transparent']}
+                      colors={['transparent', '#f97316', 'transparent', '#f97316', 'transparent']}
                       locations={[0, 0.2, 0.3, 0.8, 1]}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
@@ -848,11 +848,11 @@ export default function MinimalCameraWithGalleryButton() {
                         margin: 2, // Creates the border effect
                       }}
                     >
-                      <IconSymbol name="crown" size={16} color="#f59e0b" />
+                      <IconSymbol name="crown" size={16} color="#f97316" />
                       <Text style={{ 
-                        color: '#f59e0b', 
+                        color: '#f97316', 
                         fontSize: 13, 
-                        fontWeight: '800', 
+                        fontWeight: '700', 
                         letterSpacing: 0.3
                       }}>PRO</Text>
                     </AnimatedTouchableOpacity>

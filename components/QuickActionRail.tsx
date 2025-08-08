@@ -1,3 +1,4 @@
+import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React from 'react';
@@ -19,45 +20,105 @@ export function QuickActionRail() {
     <View
       style={{
         position: 'absolute',
-        left: 12,
-        right: 12,
-        bottom: (insets?.bottom || 0) + (Platform.OS === 'ios' ? 6 : 10),
+        left: 0,
+        right: 0,
+        bottom: 0,
+        alignItems: 'center',
+        paddingBottom: insets?.bottom || 0,
       }}
     >
-      {ACTIONS.map((a, index) => (
-        <TouchableOpacity
-          key={a.route}
-          onPress={() => go(a.route)}
-          activeOpacity={0.9}
-          accessibilityRole="button"
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      {/* Gradient fade at top */}
+      <LinearGradient
+        colors={['transparent', 'rgba(11,11,15,0.8)']}
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: 120,
+          zIndex: -1,
+        }}
+      />
+      
+      <View
+        style={{
+          marginHorizontal: 20,
+          marginBottom: 12,
+          backgroundColor: 'rgba(20,20,24,0.95)',
+          borderRadius: 20,
+          borderWidth: 1,
+          borderColor: 'rgba(255,255,255,0.1)',
+          overflow: 'hidden',
+          minWidth: '90%',
+          maxWidth: 400,
+        }}
+      >
+        {/* Rainbow gradient border effect */}
+        <LinearGradient
+          colors={['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#FD79A8', '#A29BFE']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
           style={{
-            height: 50,
-            borderRadius: 22,
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexDirection: 'row',
-            overflow: 'hidden',
-            shadowColor: '#000',
-            shadowOpacity: 0.25,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 6 },
-            marginTop: index === 0 ? 0 : 8,
+            position: 'absolute',
+            left: -1,
+            right: -1,
+            top: -1,
+            height: 3,
+            opacity: 0.8,
           }}
-        >
-          <LinearGradient
-            colors={[ '#FFB54D', '#FF7A00' ]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={{ ...StyleSheet.absoluteFillObject }}
-          />
-          <IconSymbol name={a.icon as any} size={18} color={'#0B0B0F'} />
-          <Text style={{ color: '#0B0B0F', fontWeight: '900', fontSize: 15, marginLeft: 8 }}>{a.label}</Text>
-          <View style={{ position: 'absolute', right: 12, width: 36, height: 36, borderRadius: 18, backgroundColor: '#0B0B0F', alignItems: 'center', justifyContent: 'center' }}>
-            <IconSymbol name={'chevron.right'} size={18} color={'#FFFFFF'} />
-          </View>
-        </TouchableOpacity>
-      ))}
+        />
+        
+        <View style={{ 
+          paddingHorizontal: 12, 
+          paddingVertical: 10,
+        }}>
+          {ACTIONS.map((a, index) => (
+            <TouchableOpacity
+              key={a.route}
+              onPress={() => go(a.route)}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              style={{
+                height: 54,
+                borderRadius: 14,
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexDirection: 'row',
+                backgroundColor: 'rgba(255,255,255,0.03)',
+                paddingHorizontal: 14,
+                marginTop: index === 0 ? 0 : 8,
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <View style={{ 
+                  width: 38, 
+                  height: 38, 
+                  borderRadius: 12, 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  backgroundColor: 'rgba(255,255,255,0.03)',
+                }}>
+                  <IconSymbol name={a.icon as any} size={20} color={'rgba(255,255,255,0.7)'} />
+                </View>
+                <View style={{ marginLeft: 12, flex: 1 }}>
+                  <Text style={{ color: '#FFFFFF', fontWeight: '600', fontSize: 15, letterSpacing: 0.2 }}>{a.label}</Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: 1 }}>Custom AI edits</Text>
+                </View>
+              </View>
+              <View style={{ 
+                width: 28, 
+                height: 28, 
+                borderRadius: 14, 
+                backgroundColor: 'rgba(255,255,255,0.05)',
+                alignItems: 'center', 
+                justifyContent: 'center' 
+              }}>
+                <IconSymbol name={'arrow.right'} size={14} color={'rgba(255,255,255,0.6)'} />
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
     </View>
   );
 }

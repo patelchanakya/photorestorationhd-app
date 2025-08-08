@@ -265,7 +265,7 @@ function CropModalScreen() {
           onPress={handleCancel}
           className="w-10 h-10 rounded-full justify-center items-center"
         >
-          <IconSymbol name="xmark" size={20} color="#fff" />
+          <IconSymbol name="xmark" size={20} color="rgba(255,255,255,0.2)" />
         </TouchableOpacity>
         <View className="flex-1 mx-4">
           <Text className="text-white text-lg font-semibold text-center">
@@ -360,8 +360,8 @@ function CropModalScreen() {
             <TouchableOpacity
               style={{
                 width: '100%',
-                height: 50,
-                borderRadius: 12,
+                height: 56,
+                borderRadius: 28,
                 alignItems: 'center',
                 justifyContent: 'center',
                 backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -373,12 +373,13 @@ function CropModalScreen() {
               accessibilityLabel="Crop Image"
               activeOpacity={0.7}
             >
-              <IconSymbol name="crop" size={16} color="#fff" />
+              <IconSymbol name="crop" size={18} color="#fff" />
               <Text style={{ 
                 color: '#ffffff', 
-                fontSize: 15, 
+                fontSize: 16, 
                 fontWeight: '600',
-                marginLeft: 6,
+                marginLeft: 8,
+                letterSpacing: 0.3,
               }}>
                 Crop
               </Text>
@@ -402,10 +403,10 @@ function CropModalScreen() {
                 {
                   width: '100%',
                   height: 56,
-                  borderRadius: 14,
+                  borderRadius: 28,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: useImageLoading ? '#10b981' : '#f97316',
+                  backgroundColor: useImageLoading ? 'rgba(249,115,22,0.5)' : '#f97316',
                   flexDirection: 'row',
                 },
                 animatedButtonStyle
@@ -426,12 +427,9 @@ function CropModalScreen() {
                   color: '#ffffff', 
                   fontSize: 16,
                   fontWeight: '600',
+                  letterSpacing: 0.3,
                 }}>
-                  {functionType === 'restoration' ? 'Restore Photo' :
-                   functionType === 'unblur' ? 'Unblur Photo' :
-                   functionType === 'colorize' ? 'Colorize Photo' :
-                   functionType === 'descratch' ? 'Descratch Photo' : 
-                   'Fix Photo'}
+                  Upload
                 </Text>
               )}
             </AnimatedTouchableOpacity>

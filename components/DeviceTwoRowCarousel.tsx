@@ -4,6 +4,7 @@ import * as MediaLibrary from 'expo-media-library';
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Dimensions, FlatList, Linking, Platform, Text, TouchableOpacity, View } from 'react-native';
+import { validatePremiumAccess } from '@/services/revenuecat';
 
 type FunctionType = 'restoration' | 'unblur' | 'colorize' | 'descratch';
 
@@ -155,6 +156,13 @@ export function DeviceTwoRowCarousel({ functionType }: DeviceTwoRowCarouselProps
                 activeOpacity={0.85}
                 onPress={async () => {
                   if (!asset) return;
+                  
+                  // Validate premium access before proceeding
+                  const hasAccess = await validatePremiumAccess();
+                  if (__DEV__) {
+                    console.log('📱 Premium access validation in carousel:', hasAccess);
+                  }
+                  
                   const info = await MediaLibrary.getAssetInfoAsync(asset.id);
                   const uri = info.localUri || info.uri;
                   if (uri) {
