@@ -7,21 +7,22 @@ import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Dimensions, Image, Pressable, SafeAreaView, Text, View, AppState, AppStateStatus } from 'react-native';
+import { AppState, AppStateStatus, Dimensions, Image, Pressable, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
-  Easing,
-  Extrapolate,
-  interpolate,
-  interpolateColor,
-  runOnJS,
-  useAnimatedScrollHandler,
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withSequence,
-  withSpring,
-  withTiming,
-  cancelAnimation
+    cancelAnimation,
+    Easing,
+    Extrapolate,
+    interpolate,
+    interpolateColor,
+    runOnJS,
+    useAnimatedScrollHandler,
+    useAnimatedStyle,
+    useSharedValue,
+    withDelay,
+    withSequence,
+    withSpring,
+    withTiming
 } from 'react-native-reanimated';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -95,8 +96,8 @@ export default function OnboardingScreen() {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       
       if (status !== 'granted') {
-        // If permission denied, navigate to home screen instead
-        router.replace('/');
+        // If permission denied, navigate to new home screen instead
+        router.replace('/explore');
         return;
       }
 
@@ -113,15 +114,15 @@ export default function OnboardingScreen() {
         const imageUri = result.assets[0].uri;
         router.replace(`/crop-modal?imageUri=${encodeURIComponent(imageUri)}&functionType=restoration&imageSource=gallery`);
       } else {
-        // User cancelled gallery - navigate to home screen
-        router.replace('/');
+        // User cancelled gallery - navigate to new home screen
+        router.replace('/explore');
       }
     } catch (error) {
       if (__DEV__) {
         console.error('Gallery opening failed:', error);
       }
-      // Fallback to home screen on error
-      router.replace('/');
+      // Fallback to new home screen on error
+      router.replace('/explore');
     }
   };
   const animationTimeoutsRef = useRef<NodeJS.Timeout[]>([]);
@@ -320,9 +321,8 @@ export default function OnboardingScreen() {
     }
     
     await completeOnboarding();
-    
-    // Open gallery after onboarding completion for first photo selection
-    await openGallery();
+    // Go straight to new home
+    router.replace('/explore');
   };
 
   const handleStartRestoring = async () => {
@@ -361,8 +361,8 @@ export default function OnboardingScreen() {
     // Success haptic
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     
-    // Open gallery after onboarding completion for first photo selection
-    await openGallery();
+    // Go straight to new home
+    router.replace('/explore');
   };
 
   // Initialize screen fade-in and pre-load assets

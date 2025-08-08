@@ -4,28 +4,28 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 import { photoStorage } from '@/services/storage';
 import { restorationService } from '@/services/supabase';
-import { useRestorationStore } from '@/store/restorationStore';
 import { useRestorationScreenStore } from '@/store/restorationScreenStore';
+import { useRestorationStore } from '@/store/restorationStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
+import * as FileSystem from 'expo-file-system';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
-import * as FileSystem from 'expo-file-system';
 import * as StoreReview from 'expo-store-review';
 import React, { useCallback, useEffect } from 'react';
 import {
-  ActionSheetIOS,
-  ActivityIndicator,
-  Alert,
-  Dimensions,
-  FlatList,
-  Image,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  Share,
-  Text,
-  TouchableOpacity,
-  View,
+    ActionSheetIOS,
+    ActivityIndicator,
+    Alert,
+    Dimensions,
+    FlatList,
+    Image,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    Share,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
@@ -564,12 +564,12 @@ export default function RestorationScreen() {
               setIsNavigating(true);
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
               
-              // Simply dismiss all modals and go back to the camera (home screen)
+                // Simply dismiss all modals and go back to new home screen
               if (router.canGoBack()) {
                 router.dismissAll();
               } else {
-                // If we can't go back, replace with home
-                router.replace('/');
+                // If we can't go back, replace with new home
+                router.replace('/explore');
               }
               
               // Reset navigation state after a delay

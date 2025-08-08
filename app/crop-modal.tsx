@@ -86,11 +86,8 @@ function CropModalScreen() {
   const photoRestoration = usePhotoRestoration();
 
   const handleCancel = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/');
-    }
+    if (router.canGoBack()) router.back();
+    else router.replace('/explore');
   };
 
   const handleRestoration = async (imageUri: string) => {

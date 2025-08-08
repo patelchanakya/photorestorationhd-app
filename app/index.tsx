@@ -17,6 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, AppState, AppStateStatus, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
@@ -661,7 +662,7 @@ export default function MinimalCameraWithGalleryButton() {
 
   if (permission.status === 'granted') {
     return (
-      <View style={{ flex: 1, backgroundColor: 'black' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: 'black' }} edges={['top', 'left', 'right']}>
         {isCameraActive ? (
           <CameraView 
             ref={cameraRef}
@@ -704,7 +705,7 @@ export default function MinimalCameraWithGalleryButton() {
 
 
           {/* Top Controls */}
-          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, paddingTop: 60, paddingHorizontal: 16, zIndex: 50 }}>
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, paddingTop: 12, paddingHorizontal: 16, zIndex: 50 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               {/* Settings Button */}
               <TouchableOpacity
@@ -863,7 +864,7 @@ export default function MinimalCameraWithGalleryButton() {
           </View>
 
           {/* Bottom Controls */}
-          <View style={{ position: 'absolute', bottom: 64, left: 0, right: 0, alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ position: 'absolute', bottom: 48, left: 0, right: 0, alignItems: 'center', justifyContent: 'center' }}>
             <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
               {/* Gallery Button with Count Badge */}
               <TouchableOpacity
@@ -984,7 +985,7 @@ export default function MinimalCameraWithGalleryButton() {
             onClose={() => setShowModeSelector(false)}
           />
 
-      </View>
+      </SafeAreaView>
     );
   }
 

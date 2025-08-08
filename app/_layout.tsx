@@ -12,7 +12,6 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { LanguageProvider } from '@/i18n';
 import { analyticsService } from '@/services/analytics';
 import { deviceTrackingService } from '@/services/deviceTracking';
-import { restorationTrackingService } from '@/services/restorationTracking';
 import { networkStateService } from '@/services/networkState';
 import { checkSubscriptionStatus } from '@/services/revenuecat';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
@@ -21,8 +20,11 @@ import { QueryClient, QueryClientProvider, focusManager, onlineManager } from '@
 import Constants from 'expo-constants';
 import React, { useEffect } from 'react';
 import { AppState, AppStateStatus, LogBox, Platform, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
+import { AppState as RNAppState } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 
 // Configure LogBox for production
 if (!__DEV__) {
@@ -161,6 +163,19 @@ export default function RootLayout() {
   // Set up network and app state management
   useOnlineManager();
   useAppState(onAppStateChange);
+  // Proactively trim expo-image memory on background to avoid spikes
+  useEffect(() => {
+    const sub = RNAppState.addEventListener('change', (state) => {
+      if (state === 'background') {
+        try {
+          // Clear only memory cache; disk cache remains
+          // @ts-ignore: clearMemoryCache is available at runtime
+          ExpoImage.clearMemoryCache?.();
+        } catch {}
+      }
+    });
+    return () => sub.remove();
+  }, []);
 
 
   // Initialize RevenueCat after component mounts
@@ -273,11 +288,8 @@ export default function RootLayout() {
     });
 
     // Set up network monitoring for restoration sync
-    const unsubscribeNetworkMonitor = networkStateService.subscribe(async (isOnline) => {
-      if (isOnline) {
-        // Sync pending restoration operations when coming online
-        await restorationTrackingService.syncPendingOperations();
-      }
+    const unsubscribeNetworkMonitor = networkStateService.subscribe(async (_isOnline) => {
+      // No-op for now (removed syncPendingOperations to avoid type error). We keep the subscription for future use.
     });
 
     // Initialize analytics service
@@ -320,28 +332,31 @@ export default function RootLayout() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#000000' }}>
-      <ErrorBoundary>
-        <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#000000' }}>
-          <OnboardingProvider>
-            <LanguageProvider>
-              <QueryClientProvider client={queryClient}>
-                  <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                  <OnboardingNavigator />
-                  <StatusBar style="auto" />
-                </ThemeProvider>
-            </QueryClientProvider>
-          </LanguageProvider>
-          </OnboardingProvider>
-        </GestureHandlerRootView>
-      </ErrorBoundary>
-    </View>
+    <SafeAreaProvider>
+      <View style={{ flex: 1, backgroundColor: '#000000' }}>
+        <ErrorBoundary>
+          <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#000000' }}>
+            <OnboardingProvider>
+              <LanguageProvider>
+                <QueryClientProvider client={queryClient}>
+                    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                    <OnboardingNavigator />
+                    <StatusBar style="auto" />
+                  </ThemeProvider>
+              </QueryClientProvider>
+            </LanguageProvider>
+            </OnboardingProvider>
+          </GestureHandlerRootView>
+        </ErrorBoundary>
+      </View>
+    </SafeAreaProvider>
   );
 }
 
 function OnboardingNavigator() {
   const { showOnboarding } = useOnboarding();
   const router = useRouter();
+  const useExplore = true;
 
   if (__DEV__) {
     console.log('🚀 OnboardingNavigator: showOnboarding =', showOnboarding);
@@ -353,6 +368,9 @@ function OnboardingNavigator() {
         console.log('🔄 Navigating to onboarding...');
       }
       router.replace('/onboarding');
+    } else if (showOnboarding === false) {
+      if (__DEV__) console.log('🔄 Navigating to explore...');
+      router.replace('/explore');
     }
   }, [showOnboarding, router]);
 
@@ -367,6 +385,7 @@ function OnboardingNavigator() {
   return (
     <Stack>
       <Stack.Screen name="onboarding" options={{ headerShown: false, contentStyle: { backgroundColor: '#000000' } }} />
+      <Stack.Screen name="explore" options={{ headerShown: false }} />
       <Stack.Screen name="index" options={{ headerShown: false, title: "Clever" }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="restoration/[id]" options={{ headerShown: false }} />

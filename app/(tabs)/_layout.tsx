@@ -1,6 +1,7 @@
 // COMMENTED OUT - Using single screen layout now
 /*
 import { Tabs } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import React from 'react';
 import { Platform } from 'react-native';
 
