@@ -18,13 +18,12 @@ import { useSubscriptionStore } from '@/store/subscriptionStore';
 import NetInfo from '@react-native-community/netinfo';
 import { QueryClient, QueryClientProvider, focusManager, onlineManager } from '@tanstack/react-query';
 import Constants from 'expo-constants';
+import { Image as ExpoImage } from 'expo-image';
 import React, { useEffect } from 'react';
-import { AppState, AppStateStatus, LogBox, Platform, View } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AppState, AppStateStatus, LogBox, Platform, AppState as RNAppState, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
-import { AppState as RNAppState } from 'react-native';
-import { Image as ExpoImage } from 'expo-image';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // Configure LogBox for production
 if (!__DEV__) {
@@ -130,7 +129,7 @@ function useAppState(onChange: (status: AppStateStatus) => void) {
   }, [onChange]);
 }
 
-// App state change handler
+// App state change handler - defined outside component to prevent re-creation
 function onAppStateChange(status: AppStateStatus) {
   if (Platform.OS !== 'web') {
     focusManager.setFocused(status === 'active');
@@ -393,6 +392,7 @@ function OnboardingNavigator() {
       <Stack.Screen name="settings-modal" options={{ presentation: 'modal', headerShown: false }} />
       <Stack.Screen name="crop-modal" options={{ presentation: 'modal', headerShown: false }} />
       <Stack.Screen name="gallery-image/[id]" options={{ presentation: 'modal', headerShown: false }} />
+      <Stack.Screen name="text-edits" options={{ headerShown: false }} />
       <Stack.Screen name="+not-found" />
     </Stack>
   );

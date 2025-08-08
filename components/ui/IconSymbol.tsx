@@ -35,7 +35,21 @@ const MAPPING = {
   'crown.fill': 'star',
   'person.crop.circle': 'person',
   'square.grid.2x2': 'grid-view',
+  'rectangle.stack': 'photo-library',
   'exclamationmark.triangle': 'warning',
+  // Additional mappings for action rail
+  'wand.and.stars': 'auto-awesome',
+  'eye': 'remove-red-eye',
+  'paintbrush': 'brush',
+  'bandage': 'healing',
+  'sparkle': 'auto-awesome',
+  'sparkles': 'auto-awesome',
+  'pencil': 'edit',
+  'square.and.pencil': 'edit',
+  'tshirt': 'checkroom',
+  'image': 'image',
+  'checkmark': 'check',
+  'checkmark.circle.fill': 'check-circle',
 } as IconMapping;
 
 /**

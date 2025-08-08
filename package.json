@@ -65,7 +65,8 @@
     "react-native-url-polyfill": "^2.0.0",
     "react-native-web": "~0.20.0",
     "replicate": "^1.0.1",
-    "zustand": "^5.0.6"
+    "zustand": "^5.0.6",
+    "expo-av": "~15.1.7"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

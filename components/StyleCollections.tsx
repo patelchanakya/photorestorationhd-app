@@ -1,0 +1,120 @@
+import { Image as ExpoImage } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { Dimensions, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+
+type StyleItem = {
+  id: string;
+  title: string;
+  subtitle?: string;
+  styleKey: string;
+  image: any; // require('...')
+};
+
+type SectionConfig = {
+  id: string;
+  title: string;
+  items: StyleItem[];
+};
+
+const CLOTHING: StyleItem[] = [
+  { id: 'c1', title: 'Wedding Attire', subtitle: 'Classic formal', styleKey: 'wedding_attire', image: require('../assets/images/onboarding/after-4.png') },
+  { id: 'c2', title: 'Sports Jersey', subtitle: 'Athletic vibe', styleKey: 'sports_jersey', image: require('../assets/images/onboarding/after-3.png') },
+  { id: 'c3', title: 'Formal Suit', subtitle: 'Sharp & clean', styleKey: 'formal_suit', image: require('../assets/images/onboarding/before-3.jpg') },
+  { id: 'c4', title: 'Casual Fit', subtitle: 'Relaxed look', styleKey: 'casual_fit', image: require('../assets/images/onboarding/before-2.jpg') },
+  { id: 'c5', title: 'Matching Outfits', subtitle: 'Match everyone’s clothes', styleKey: 'match_clothes', image: require('../assets/images/onboarding/after-2.png') },
+  { id: 'c6', title: 'Formal Dress', subtitle: 'Elegant gown', styleKey: 'formal_dress', image: require('../assets/images/onboarding/after-3.png') },
+  { id: 'c7', title: 'Men’s Formal', subtitle: 'Suit & tie', styleKey: 'formal_men', image: require('../assets/images/onboarding/before-4.jpg') },
+  { id: 'c8', title: 'Ceremonial Robe', subtitle: 'Cap/gown style', styleKey: 'ceremonial_robe', image: require('../assets/images/onboarding/after-2.png') },
+  { id: 'c9', title: 'Neutral Uniform', subtitle: 'Simple blazer/tie', styleKey: 'uniform_neutral', image: require('../assets/images/onboarding/before-2.jpg') },
+];
+
+const BACKGROUNDS: StyleItem[] = [
+  { id: 'b1', title: 'Heavenly', subtitle: 'Soft glow sky', styleKey: 'heavenly_bg', image: require('../assets/images/onboarding/after-2.png') },
+  { id: 'b2', title: 'Studio', subtitle: 'Neutral portrait', styleKey: 'studio_bg', image: require('../assets/images/onboarding/before-4.jpg') },
+  { id: 'b3', title: 'Vintage', subtitle: 'Timeless feel', styleKey: 'vintage_bg', image: require('../assets/images/onboarding/before-2.jpg') },
+  { id: 'b4', title: 'Outdoors', subtitle: 'Natural scene', styleKey: 'outdoor_bg', image: require('../assets/images/onboarding/after-3.png') },
+  { id: 'b5', title: 'Clean Gradient', subtitle: 'Simple, minimal', styleKey: 'clean_bg', image: require('../assets/images/onboarding/after-4.png') },
+];
+
+const EFFECTS: StyleItem[] = [
+  { id: 'e1', title: 'Repair', subtitle: 'Fix damage', styleKey: 'vintage_repair', image: require('../assets/images/onboarding/before-2.jpg') },
+  { id: 'e2', title: 'Unblur', subtitle: 'Sharpen details', styleKey: 'unblur', image: require('../assets/images/onboarding/after-3.png') },
+  { id: 'e3', title: 'Colorize', subtitle: 'Add color to B&W', styleKey: 'colorize', image: require('../assets/images/onboarding/after-4.png') },
+  { id: 'e4', title: 'Descratch', subtitle: 'Remove scratches', styleKey: 'descratch', image: require('../assets/images/onboarding/before-4.jpg') },
+  { id: 'e5', title: 'Hand‑color look', subtitle: 'Period‑correct tones', styleKey: 'hand_color', image: require('../assets/images/onboarding/before-3.jpg') },
+  { id: 'e6', title: 'De‑sepia', subtitle: 'Neutralize heavy sepia', styleKey: 'de_sepia', image: require('../assets/images/onboarding/before-2.jpg') },
+  { id: 'e7', title: 'De‑glare', subtitle: 'Reduce reflections', styleKey: 'de_glare', image: require('../assets/images/onboarding/after-2.png') },
+  { id: 'e8', title: 'Soft Vignette', subtitle: 'Gentle edge fade', styleKey: 'soft_vignette', image: require('../assets/images/onboarding/after-3.png') },
+  { id: 'e9', title: 'Memorial Crop', subtitle: 'Centered, 4:5 portrait', styleKey: 'memorial_crop', image: require('../assets/images/onboarding/after-4.png') },
+];
+
+const SECTIONS: SectionConfig[] = [
+  { id: 's1', title: 'Change clothes', items: CLOTHING },
+  { id: 's2', title: 'Change background', items: BACKGROUNDS },
+  // Break out effects into single-purpose rows for clarity
+  { id: 's3', title: 'Fix damage', items: [EFFECTS[0]] },
+  { id: 's4', title: 'Unblur', items: [EFFECTS[1]] },
+  { id: 's5', title: 'Colorize', items: [EFFECTS[2]] },
+  { id: 's6', title: 'Descratch', items: [EFFECTS[3]] },
+  { id: 's7', title: 'Hand‑color look', items: [EFFECTS[4]] },
+  { id: 's8', title: 'De‑sepia', items: [EFFECTS[5]] },
+  { id: 's9', title: 'De‑glare', items: [EFFECTS[6]] },
+  { id: 's10', title: 'Soft vignette', items: [EFFECTS[7]] },
+  { id: 's11', title: 'Memorial crop', items: [EFFECTS[8]] },
+];
+
+export function StyleCollections() {
+  const router = useRouter();
+  const { width: SCREEN_WIDTH } = Dimensions.get('window');
+  const H_PADDING = 12; // matches container padding
+  const GAP = 10; // gap between tiles
+  const PEEK = 36; // visible part of 3rd tile to hint scroll
+  const TILE_WIDTH = Math.max(140, Math.floor((SCREEN_WIDTH - H_PADDING * 2 - GAP - PEEK) / 2));
+  const TILE_HEIGHT = Math.round(TILE_WIDTH * 1.2);
+
+  const openPicker = async (styleKey: string) => {
+    const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (res.status !== 'granted') return;
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: false, quality: 1 });
+    if (!result.canceled && result.assets[0]) {
+      const uri = result.assets[0].uri;
+      router.push(`/crop-modal?imageUri=${encodeURIComponent(uri)}&functionType=restoration&styleKey=${encodeURIComponent(styleKey)}&imageSource=gallery`);
+    }
+  };
+
+  const PreviewTile = ({ item }: { item: StyleItem }) => (
+    <TouchableOpacity
+      onPress={() => openPicker(item.styleKey)}
+      activeOpacity={0.9}
+      style={{ width: TILE_WIDTH, height: TILE_HEIGHT, borderRadius: 18, overflow: 'hidden', marginRight: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', backgroundColor: '#0B0B0F' }}
+    >
+      <ExpoImage source={item.image} style={{ width: '100%', height: '100%' }} contentFit="contain" transition={0} />
+      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 52, backgroundColor: 'rgba(0,0,0,0.5)' }} />
+      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 12, paddingVertical: 10 }}>
+        <Text style={{ color: '#EAEAEA', fontSize: 15, fontWeight: '800', letterSpacing: -0.2 }} numberOfLines={1}>{item.title}</Text>
+        {!!item.subtitle && (
+          <Text style={{ color: '#BFC3CF', fontSize: 12, fontWeight: '500' }} numberOfLines={1}>{item.subtitle}</Text>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+
+  return (
+    <View style={{ paddingHorizontal: 12, paddingTop: 4, paddingBottom: 16 }}>
+      {SECTIONS.map((section) => (
+        <View key={section.id} style={{ marginBottom: 14 }}>
+          <Text style={{ color: '#EAEAEA', fontSize: 16, fontWeight: '800', marginBottom: 8 }}>{section.title}</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 8 }}>
+            {section.items.map((item) => (
+              <PreviewTile key={item.id} item={item} />
+            ))}
+          </ScrollView>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+

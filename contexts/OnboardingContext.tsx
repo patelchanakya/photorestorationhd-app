@@ -35,16 +35,21 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     }
   }, [isPro]);
 
-  const completeOnboarding = async () => {
+  const completeOnboarding = React.useCallback(async () => {
     // Track onboarding completion
     analyticsService.trackOnboardingCompleted();
     
     // Don't save completion state, just hide onboarding for this session
     setShowOnboarding(false);
-  };
+  }, []);
+
+  const contextValue = React.useMemo(
+    () => ({ showOnboarding, completeOnboarding }),
+    [showOnboarding, completeOnboarding]
+  );
 
   return (
-    <OnboardingContext.Provider value={{ showOnboarding, completeOnboarding }}>
+    <OnboardingContext.Provider value={contextValue}>
       {children}
     </OnboardingContext.Provider>
   );

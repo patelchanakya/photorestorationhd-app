@@ -2,7 +2,9 @@ import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { ModesFilterBar, type ModeCategory } from './ModesFilterBar';
 
 type ModePreset = {
   id: string;
@@ -25,11 +27,12 @@ const PRESETS: ModePreset[] = [
 
 export function ModesGallery() {
   const router = useRouter();
-  const [category, setCategory] = useState<'all' | 'repair' | 'clothing' | 'background' | 'style'>('all');
+  const [category, setCategory] = useState<ModeCategory>('all');
 
   const filtered = useMemo(() => {
-    if (category === 'all') return PRESETS;
-    return PRESETS.filter(p => p.category === category);
+    // Defensive: ensure we never return empty due to bad category
+    const list = category === 'all' ? PRESETS : PRESETS.filter(p => p.category === category);
+    return list.length > 0 ? list : PRESETS;
   }, [category]);
 
   const openPicker = async (styleKey: string) => {
@@ -43,61 +46,43 @@ export function ModesGallery() {
     }
   };
 
-  return (
-    <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 20 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <Text style={{ color: '#EAEAEA', fontSize: 20, fontWeight: '800' }}>Modes</Text>
-        <Text style={{ color: '#BFC3CF', fontSize: 12 }}>{filtered.length} presets</Text>
-      </View>
-      {/* Category filters */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 6, gap: 8 }}>
-        {([
-          { key: 'all', label: 'All' },
-          { key: 'repair', label: 'Repair' },
-          { key: 'clothing', label: 'Clothing' },
-          { key: 'background', label: 'Background' },
-          { key: 'style', label: 'Style' },
-        ] as const).map((c) => {
-          const isActive = category === c.key;
-          return (
-            <TouchableOpacity
-              key={c.key}
-              onPress={() => setCategory(c.key)}
-              activeOpacity={0.9}
-              style={{
-                height: 36,
-                paddingHorizontal: 14,
-                borderRadius: 18,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: isActive ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.06)',
-                borderWidth: 1,
-                borderColor: isActive ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.12)'
-              }}
-            >
-              <Text style={{ color: '#EAEAEA', fontWeight: '700', fontSize: 13 }}>{c.label}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+  function PosterCard({ title, subtitle, image, onPress }: { title: string; subtitle?: string; image: any; onPress: () => void }) {
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.9}
+        style={{ width: '100%', height: 150, borderRadius: 18, overflow: 'hidden', backgroundColor: '#111216' }}
+      >
+        {/* Background image with RN fallback */}
+        <ExpoImage
+          source={image}
+          style={{ width: '100%', height: '100%' }}
+          contentFit="cover"
+          transition={0}
+        />
+        {/* Stronger bottom gradient to avoid faint lines from image edges */}
+        <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 56, backgroundColor: 'rgba(0,0,0,0.5)' }} />
+        <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: 10 }}>
+          <Text style={{ color: '#EAEAEA', fontWeight: '800', fontSize: 14 }} numberOfLines={1}>{title}</Text>
+          {!!subtitle && (
+            <Text style={{ color: '#BFC3CF', fontSize: 11 }} numberOfLines={1}>{subtitle}</Text>
+          )}
+        </View>
+      </TouchableOpacity>
+    );
+  }
 
-      {/* Two-column grid */}
+  return (
+    <View style={{ paddingHorizontal: 12, paddingTop: 2, paddingBottom: 16 }}>
+      {/* Category filters */}
+      <ModesFilterBar category={category} onChange={setCategory} />
+
+      {/* Two-column grid (stable, no layout animation to prevent collapse) */}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
         {filtered.map((p) => (
-          <TouchableOpacity
-            key={p.id}
-            onPress={() => openPicker(p.styleKey)}
-            activeOpacity={0.9}
-            style={{ width: '48%', height: 150, borderRadius: 16, overflow: 'hidden', marginBottom: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}
-          >
-            <ExpoImage source={p.image} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={0} />
-            <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: 10, backgroundColor: 'rgba(0,0,0,0.45)' }}>
-              <Text style={{ color: '#EAEAEA', fontWeight: '800', fontSize: 14 }} numberOfLines={1}>{p.title}</Text>
-              {!!p.subtitle && (
-                <Text style={{ color: '#BFC3CF', fontSize: 11 }} numberOfLines={1}>{p.subtitle}</Text>
-              )}
-            </View>
-          </TouchableOpacity>
+          <Animated.View key={p.id} entering={FadeIn.duration(120)} style={{ width: '48%', marginBottom: 10 }}>
+            <PosterCard title={p.title} subtitle={p.subtitle} image={p.image} onPress={() => openPicker(p.styleKey)} />
+          </Animated.View>
         ))}
       </View>
     </View>

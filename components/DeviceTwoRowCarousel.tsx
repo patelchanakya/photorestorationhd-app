@@ -14,7 +14,7 @@ interface DeviceTwoRowCarouselProps {
 type AssetColumn = { id: string; top?: MediaLibrary.Asset; bottom?: MediaLibrary.Asset };
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const COLUMN_WIDTH = Math.round(Math.min(140, SCREEN_WIDTH * 0.30));
+const COLUMN_WIDTH = Math.round(Math.min(130, SCREEN_WIDTH * 0.28));
 const ITEM_RADIUS = 16;
 const PAGE_SIZE = 150; // how many assets we fetch per page
 

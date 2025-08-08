@@ -705,12 +705,12 @@ export default function MinimalCameraWithGalleryButton() {
 
 
           {/* Top Controls */}
-          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, paddingTop: 12, paddingHorizontal: 16, zIndex: 50 }}>
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, paddingTop: 12, paddingHorizontal: 16, zIndex: 10 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               {/* Settings Button */}
               <TouchableOpacity
                 onPress={() => router.push('/settings-modal')}
-                style={{ width: 52, height: 52, alignItems: 'center', justifyContent: 'center', zIndex: 100 }}
+                style={{ width: 52, height: 52, alignItems: 'center', justifyContent: 'center', zIndex: 20 }}
               >
                 <IconSymbol name="gear" size={28} color="#fff" />
               </TouchableOpacity>
@@ -868,7 +868,7 @@ export default function MinimalCameraWithGalleryButton() {
             <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
               {/* Gallery Button with Count Badge */}
               <TouchableOpacity
-                onPress={() => router.push('/gallery-modal')}
+                onPress={() => router.push('/gallery')}
                 style={{ position: 'absolute', left: 32, width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' }}
               >
                 <IconSymbol name="rectangle.stack" size={32} color="#fff" />
