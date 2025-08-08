@@ -1,13 +1,13 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, withRepeat, withSequence } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
-import { CircularProgress } from './CircularProgress';
 import { useRestorationScreenStore } from '@/store/restorationScreenStore';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect, useRef } from 'react';
+import { View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { CircularProgress } from './CircularProgress';
 
 interface ProcessingScreenProps {
-  functionType: 'restoration' | 'unblur' | 'colorize';
+  functionType: 'restoration' | 'unblur' | 'colorize' | 'descratch';
   isProcessing: boolean;
   isError?: boolean;
 }
@@ -36,6 +36,12 @@ const ProcessingScreenComponent = ({ functionType, isProcessing, isError }: Proc
           icon: 'paintbrush',
           title: 'Colorizing your photo...',
           description: 'Adding vibrant colors to your image'
+        };
+      case 'descratch':
+        return {
+          icon: 'bandage',
+          title: 'Repairing your photo...',
+          description: 'Removing scratches and restoring details'
         };
       default:
         return {

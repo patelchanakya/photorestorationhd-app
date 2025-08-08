@@ -2,6 +2,7 @@ import { BeforeAfterSlider } from '@/components/BeforeAfterSlider';
 import { ProcessingScreen } from '@/components/ProcessingScreen';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
+import { type FunctionType } from '@/services/modelConfigs';
 import { photoStorage } from '@/services/storage';
 import { restorationService } from '@/services/supabase';
 import { useRestorationScreenStore } from '@/store/restorationScreenStore';
@@ -143,7 +144,7 @@ export default function RestorationScreen() {
       // Start restoration process for new images
       photoRestoration.mutate({
         imageUri: imageUri as string,
-        functionType: functionType as 'restoration' | 'unblur' | 'colorize',
+        functionType: functionType as FunctionType,
         imageSource: (imageSource as 'camera' | 'gallery') || 'gallery'
       });
     } else {
@@ -417,7 +418,7 @@ export default function RestorationScreen() {
     if (isNewRestoration && functionType && !photoRestoration.isError) {
       return (
         <ProcessingScreen
-          functionType={functionType as 'restoration' | 'unblur' | 'colorize'}
+          functionType={functionType as FunctionType}
           isProcessing={photoRestoration.isPending}
           isError={photoRestoration.isError}
         />

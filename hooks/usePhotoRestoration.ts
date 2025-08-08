@@ -1,9 +1,9 @@
 import { analyticsService } from '@/services/analytics';
+import { type FunctionType } from '@/services/modelConfigs';
 import { restorePhoto } from '@/services/replicate';
+import { restorationTrackingService } from '@/services/restorationTracking';
 import { photoStorage } from '@/services/storage';
 import { restorationService } from '@/services/supabase';
-import { restorationTrackingService } from '@/services/restorationTracking';
-import { networkStateService } from '@/services/networkState';
 import { useRestorationStore } from '@/store/restorationStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -32,7 +32,7 @@ export function usePhotoRestoration() {
   const { isPro, decrementFreeRestorations } = useSubscriptionStore();
 
   return useMutation({
-    mutationFn: async ({ imageUri, functionType, imageSource }: { imageUri: string; functionType: 'restoration' | 'unblur' | 'colorize'; imageSource?: 'camera' | 'gallery' }) => {
+    mutationFn: async ({ imageUri, functionType, imageSource }: { imageUri: string; functionType: FunctionType; imageSource?: 'camera' | 'gallery' }) => {
       const startTime = Date.now();
       let supabaseRestorationId: string | null = null;
       
