@@ -6,7 +6,7 @@ import { HeroBackToLifeExamples } from '@/components/HeroBackToLifeExamples';
 import { QuickActionRail } from '@/components/QuickActionRail';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
-import { presentPaywall, restorePurchases, validatePremiumAccess } from '@/services/revenuecat';
+import { presentPaywall, restorePurchases, validatePremiumAccess, checkSubscriptionStatus, getSubscriptionExpirationDate } from '@/services/revenuecat';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import React from 'react';
@@ -52,7 +52,7 @@ export default function HomeGalleryLikeScreen() {
               }
             }}
             onLongPress={async () => {
-              // Long press to restore purchases (works for both PRO and non-PRO users)
+              // Long press to restore purchases or refresh status
               const isExpoGo = Constants.appOwnership === 'expo';
               if (isExpoGo) {
                 Alert.alert(
@@ -63,32 +63,79 @@ export default function HomeGalleryLikeScreen() {
                 return;
               }
               
-              Alert.alert(
-                'Restore Purchases',
-                'Would you like to restore your previous purchases?',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  { 
-                    text: 'Restore', 
-                    onPress: async () => {
-                      const restored = await restorePurchases();
-                      if (restored) {
+              // In dev mode, show additional debug options
+              if (__DEV__) {
+                const expirationDate = await getSubscriptionExpirationDate();
+                const expirationString = expirationDate ? 
+                  `Expires: ${expirationDate.toLocaleString()}` : 
+                  'No active subscription';
+                
+                Alert.alert(
+                  'Subscription Options',
+                  `Current Status: ${isPro ? 'PRO' : 'FREE'}\n${expirationString}`,
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { 
+                      text: 'Refresh Status', 
+                      onPress: async () => {
+                        const status = await checkSubscriptionStatus();
                         Alert.alert(
-                          'Restored!',
-                          'Your Pro subscription has been restored successfully!',
-                          [{ text: 'Great!' }]
-                        );
-                      } else {
-                        Alert.alert(
-                          'No Purchases Found',
-                          'No previous purchases were found for this account.',
+                          'Status Refreshed',
+                          `Subscription is ${status ? 'ACTIVE' : 'INACTIVE'}`,
                           [{ text: 'OK' }]
                         );
                       }
+                    },
+                    { 
+                      text: 'Restore Purchases', 
+                      onPress: async () => {
+                        const restored = await restorePurchases();
+                        if (restored) {
+                          Alert.alert(
+                            'Restored!',
+                            'Your Pro subscription has been restored successfully!',
+                            [{ text: 'Great!' }]
+                          );
+                        } else {
+                          Alert.alert(
+                            'No Purchases Found',
+                            'No previous purchases were found for this account.',
+                            [{ text: 'OK' }]
+                          );
+                        }
+                      }
                     }
-                  }
-                ]
-              );
+                  ]
+                );
+              } else {
+                // Production mode - just restore
+                Alert.alert(
+                  'Restore Purchases',
+                  'Would you like to restore your previous purchases?',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { 
+                      text: 'Restore', 
+                      onPress: async () => {
+                        const restored = await restorePurchases();
+                        if (restored) {
+                          Alert.alert(
+                            'Restored!',
+                            'Your Pro subscription has been restored successfully!',
+                            [{ text: 'Great!' }]
+                          );
+                        } else {
+                          Alert.alert(
+                            'No Purchases Found',
+                            'No previous purchases were found for this account.',
+                            [{ text: 'OK' }]
+                          );
+                        }
+                      }
+                    }
+                  ]
+                );
+              }
             }}
             style={{ 
               backgroundColor: isPro ? 'rgba(249,115,22,0.15)' : 'rgba(249,115,22,0.9)', 

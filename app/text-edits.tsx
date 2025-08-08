@@ -33,8 +33,6 @@ export default function TextEditsScreen() {
       functionType = 'outfit';
     } else if (editMode === 'background') {
       functionType = 'background';
-    } else if (editMode === 'backtolife') {
-      functionType = 'backtolife';
     }
     
     // Navigate to crop modal with the custom prompt

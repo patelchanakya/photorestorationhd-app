@@ -276,7 +276,6 @@ function CropModalScreen() {
              functionType === 'descratch' ? 'Descratch' : 
              functionType === 'outfit' ? 'Change Outfit' :
              functionType === 'background' ? 'Change Background' :
-             functionType === 'backtolife' ? 'Animate' :
              functionType === 'enlighten' ? 'Fix Lighting' :
              functionType === 'custom' ? 'Custom Edit' :
              'Restore'}

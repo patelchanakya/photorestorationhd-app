@@ -26,7 +26,7 @@ export const MODEL_CONFIGS: Record<FunctionType, ModelConfig> = {
   unblur: {
     model: "black-forest-labs/flux-kontext-pro",
     buildInput: (base64: string, customPrompt?: string) => ({
-      prompt: customPrompt || "sharpen and unblur this image, enhance clarity and focus without losing any facial features or adding anything extra",
+      prompt: customPrompt || "enhance and restore this image, sharpen and unblur, improve clarity and focus without losing any facial features or adding anything extra",
       input_image: `data:image/jpeg;base64,${base64}`,
       output_format: "png",
       aspect_ratio: "match_input_image",
@@ -59,7 +59,7 @@ export const MODEL_CONFIGS: Record<FunctionType, ModelConfig> = {
   outfit: {
     model: "black-forest-labs/flux-kontext-pro",
     buildInput: (base64: string, customPrompt?: string) => ({
-      prompt: customPrompt || "change the person's outfit to professional business attire",
+      prompt: customPrompt || "change only the clothing and outfit, keep the exact same face, facial features, hair, pose, body position, and background unchanged, professional business attire",
       input_image: `data:image/jpeg;base64,${base64}`,
       output_format: "png",
       aspect_ratio: "match_input_image",
@@ -70,7 +70,7 @@ export const MODEL_CONFIGS: Record<FunctionType, ModelConfig> = {
   background: {
     model: "black-forest-labs/flux-kontext-pro",
     buildInput: (base64: string, customPrompt?: string) => ({
-      prompt: customPrompt || "replace the background with a professional studio setting",
+      prompt: customPrompt || "replace only the background with professional studio setting, keep the exact same person, face, facial features, hair, clothing, pose, and body position unchanged",
       input_image: `data:image/jpeg;base64,${base64}`,
       output_format: "png",
       aspect_ratio: "match_input_image",
@@ -79,7 +79,7 @@ export const MODEL_CONFIGS: Record<FunctionType, ModelConfig> = {
     })
   },
   backtolife: {
-    model: "black-forest-labs/flux-kontext-pro",
+    model: "black-forest-labs/flux-kontext-pro", // Placeholder - will be replaced with proper video API
     buildInput: (base64: string, customPrompt?: string) => ({
       prompt: customPrompt || "bring this photo to life with natural animation",
       input_image: `data:image/jpeg;base64,${base64}`,

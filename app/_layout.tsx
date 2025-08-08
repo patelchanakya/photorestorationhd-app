@@ -240,6 +240,31 @@ export default function RootLayout() {
               const hasProEntitlement = proEntitlement?.isActive === true;
               const wasProBefore = useSubscriptionStore.getState().isPro;
               
+              // Detailed logging for sandbox debugging
+              if (__DEV__ && proEntitlement) {
+                const now = new Date();
+                const expirationDate = proEntitlement.expirationDate ? new Date(proEntitlement.expirationDate) : null;
+                const timeRemaining = expirationDate ? Math.round((expirationDate.getTime() - now.getTime()) / 1000 / 60) : 0;
+                
+                console.log('🔍 Subscription Debug Info:', {
+                  isActive: proEntitlement.isActive,
+                  willRenew: proEntitlement.willRenew,
+                  expirationDate: proEntitlement.expirationDate,
+                  timeRemainingMinutes: timeRemaining,
+                  isSandbox: proEntitlement.isSandbox,
+                  periodType: proEntitlement.periodType,
+                  productIdentifier: proEntitlement.productIdentifier,
+                });
+                
+                if (expirationDate && expirationDate < now) {
+                  console.log('⚠️ SUBSCRIPTION EXPIRED:', {
+                    expiredAt: expirationDate.toISOString(),
+                    currentTime: now.toISOString(),
+                    minutesAgo: Math.round((now.getTime() - expirationDate.getTime()) / 1000 / 60)
+                  });
+                }
+              }
+              
               setIsPro(hasProEntitlement);
               
               // Track subscription events
@@ -262,6 +287,52 @@ export default function RootLayout() {
             
             if (__DEV__) {
               console.log('🎯 Initial pro status:', hasProEntitlement);
+              
+              // Log detailed info for initial check too
+              if (proEntitlement) {
+                const now = new Date();
+                const expirationDate = proEntitlement.expirationDate ? new Date(proEntitlement.expirationDate) : null;
+                const timeRemaining = expirationDate ? Math.round((expirationDate.getTime() - now.getTime()) / 1000 / 60) : 0;
+                
+                console.log('🔍 Initial Subscription Debug Info:', {
+                  isActive: proEntitlement.isActive,
+                  willRenew: proEntitlement.willRenew,
+                  expirationDate: proEntitlement.expirationDate,
+                  timeRemainingMinutes: timeRemaining,
+                  isSandbox: proEntitlement.isSandbox,
+                });
+              }
+              
+              // In sandbox mode, set up periodic checks every 2 minutes
+              if (proEntitlement?.isSandbox) {
+                console.log('🧪 Sandbox mode detected - enabling periodic subscription checks');
+                const intervalId = setInterval(async () => {
+                  try {
+                    const latestInfo = await Purchases.getCustomerInfo();
+                    const latestPro = latestInfo.entitlements.active['pro'];
+                    const isProNow = latestPro?.isActive === true;
+                    
+                    if (__DEV__) {
+                      console.log('⏰ Periodic sandbox check:', {
+                        isActive: isProNow,
+                        willRenew: latestPro?.willRenew,
+                        expirationDate: latestPro?.expirationDate
+                      });
+                    }
+                    
+                    // Only update if status changed
+                    if (isProNow !== useSubscriptionStore.getState().isPro) {
+                      setIsPro(isProNow);
+                      console.log('🔄 Sandbox subscription status changed:', isProNow);
+                    }
+                  } catch (error) {
+                    console.log('⚠️ Periodic check failed:', error);
+                  }
+                }, 120000); // Check every 2 minutes in sandbox
+                
+                // Store interval ID for cleanup
+                (global as any).__sandboxCheckInterval = intervalId;
+              }
             }
           } catch (error) {
             if (__DEV__) {
