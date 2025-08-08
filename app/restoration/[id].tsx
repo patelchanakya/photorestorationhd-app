@@ -39,7 +39,7 @@ const isSmallDevice = SCREEN_WIDTH < 375;
 const isTinyDevice = SCREEN_HEIGHT < 700;
 
 export default function RestorationScreen() {
-  const { id, imageUri, functionType, imageSource } = useLocalSearchParams();
+  const { id, imageUri, functionType, imageSource, customPrompt } = useLocalSearchParams();
   
   // Use Zustand store for all state management
   const {
@@ -145,14 +145,15 @@ export default function RestorationScreen() {
       photoRestoration.mutate({
         imageUri: imageUri as string,
         functionType: functionType as FunctionType,
-        imageSource: (imageSource as 'camera' | 'gallery') || 'gallery'
+        imageSource: (imageSource as 'camera' | 'gallery') || 'gallery',
+        customPrompt: customPrompt ? decodeURIComponent(customPrompt as string) : undefined
       });
     } else {
       // Load existing restoration
       loadRestoration();
       loadAllRestorations();
     }
-  }, [isNewRestoration, imageUri, functionType, imageSource, loadRestoration, loadAllRestorations]);
+  }, [isNewRestoration, imageUri, functionType, imageSource, customPrompt, loadRestoration, loadAllRestorations]);
   
   // Handle restoration success
   useEffect(() => {

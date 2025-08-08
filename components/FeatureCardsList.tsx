@@ -11,7 +11,7 @@ type CardItem = {
   id: string;
   title: string;
   subtitle: string;
-  functionType?: 'restoration' | 'unblur' | 'colorize' | 'descratch';
+  functionType?: 'restoration' | 'unblur' | 'colorize' | 'descratch' | 'enlighten';
   styleKey?: string;
   route?: string;
   image: any; // require('...')
@@ -23,7 +23,7 @@ const CARDS: CardItem[] = [
   { id: 'fc_descratch', title: 'Descratch', subtitle: 'Remove scratches & marks', functionType: 'descratch', image: require('../assets/images/onboarding/before-2.jpg') },
   { id: 'fc_enhance', title: 'Enhance', subtitle: 'Remove blur, sharpen details', functionType: 'unblur', image: require('../assets/images/onboarding/before-2.jpg') },
   { id: 'fc_colorize', title: 'Colorize', subtitle: 'Add colors to B&W photos', functionType: 'colorize', image: require('../assets/images/onboarding/after-4.png') },
-  { id: 'fc_enlighten', title: 'Enlighten', subtitle: 'Fix lighting & exposure', styleKey: 'enlighten', image: require('../assets/images/onboarding/after-2.png') },
+  { id: 'fc_enlighten', title: 'Enlighten', subtitle: 'Fix lighting & exposure', functionType: 'enlighten', image: require('../assets/images/onboarding/after-2.png') },
 ];
 
 type FeatureCardsListProps = {
@@ -150,7 +150,7 @@ export function FeatureCardsList({
         style={{ marginHorizontal: 16, marginBottom: 14 }}
       >
         <View style={{ 
-          height: 240, 
+          height: 180, 
           borderRadius: 22, 
           overflow: 'hidden', 
           borderWidth: 1.5, 
@@ -164,30 +164,30 @@ export function FeatureCardsList({
             style={{ position: 'absolute', inset: 0 }}
           />
           
-          <View style={{ alignItems: 'center', marginBottom: 20 }}>
+          <View style={{ alignItems: 'center', marginBottom: 12 }}>
             <View style={{
-              width: 60,
-              height: 60,
-              borderRadius: 30,
+              width: 50,
+              height: 50,
+              borderRadius: 25,
               backgroundColor: 'rgba(249,115,22,0.15)',
               alignItems: 'center',
               justifyContent: 'center',
-              marginBottom: 16
+              marginBottom: 12
             }}>
-              <IconSymbol name="lightbulb" size={28} color="#f97316" />
+              <IconSymbol name="lightbulb" size={24} color="#f97316" />
             </View>
             <Text style={{ 
               color: '#f97316', 
-              fontSize: 24, 
+              fontSize: 20, 
               fontWeight: '700', 
               letterSpacing: -0.3,
-              marginBottom: 8
+              marginBottom: 6
             }}>
               Request your idea
             </Text>
             <Text style={{ 
               color: 'rgba(255,255,255,0.6)', 
-              fontSize: 14,
+              fontSize: 13,
               textAlign: 'center',
               paddingHorizontal: 40
             }}>
@@ -197,15 +197,15 @@ export function FeatureCardsList({
           
           <View style={{
             backgroundColor: 'rgba(249,115,22,0.2)',
-            borderRadius: 16,
-            paddingHorizontal: 20,
-            paddingVertical: 10,
+            borderRadius: 14,
+            paddingHorizontal: 16,
+            paddingVertical: 8,
             flexDirection: 'row',
             alignItems: 'center',
             gap: 6
           }}>
-            <IconSymbol name="envelope" size={16} color="#f97316" />
-            <Text style={{ color: '#f97316', fontSize: 14, fontWeight: '600' }}>
+            <IconSymbol name="envelope" size={14} color="#f97316" />
+            <Text style={{ color: '#f97316', fontSize: 13, fontWeight: '600' }}>
               Send Request
             </Text>
           </View>

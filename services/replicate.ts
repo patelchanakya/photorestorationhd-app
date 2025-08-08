@@ -157,7 +157,7 @@ function isContentPolicyViolation(error: string): boolean {
   return contentPolicyKeywords.some(keyword => errorLower.includes(keyword));
 }
 
-export async function restorePhoto(imageUri: string, functionType: FunctionType = 'restoration'): Promise<string> {
+export async function restorePhoto(imageUri: string, functionType: FunctionType = 'restoration', customPrompt?: string): Promise<string> {
   // Create an abort controller for proper timeout handling
   const abortController = new AbortController();
   const timeoutId = setTimeout(() => {
@@ -187,19 +187,26 @@ export async function restorePhoto(imageUri: string, functionType: FunctionType 
     
     if (__DEV__) {
       console.log(`🔧 Using model for ${functionType}:`, modelConfig.model);
-      const inputParams = modelConfig.buildInput(base64);
+      if (customPrompt) {
+        console.log(`🎨 Custom prompt provided:`, customPrompt);
+      }
+      const inputParams = modelConfig.buildInput(base64, customPrompt);
       // Log input params without base64 data to avoid cluttering logs
       const logParams = { ...inputParams };
-      if (logParams.image) {
-        logParams.image = `[base64 image data: ${base64.length} chars]`;
+      if (logParams.input_image) {
+        logParams.input_image = `[base64 image data: ${base64.length} chars]`;
       }
       console.log(`🔧 Input parameters:`, logParams);
+      
+      // Highlight the actual prompt being sent to API
+      console.log('\n📝 FINAL PROMPT SENT TO API:', logParams.prompt || 'No prompt (restoration mode)');
+      console.log('================================\n');
     }
     
     // Create prediction with abort signal
     const prediction = await replicate.predictions.create({
       model: modelConfig.model,
-      input: modelConfig.buildInput(base64)
+      input: modelConfig.buildInput(base64, customPrompt)
     });
 
     // Poll for completion: 1s intervals for first 10 seconds, then exponential backoff

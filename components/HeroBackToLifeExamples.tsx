@@ -8,7 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import React from 'react';
 import { Alert, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 
 interface ExampleItem {
   id: string;
@@ -17,23 +17,24 @@ interface ExampleItem {
   title?: string;
   type?: 'image' | 'video';
   yOffset?: number; // vertical nudge in pixels (positive pushes content down)
+  animationPrompt?: string; // The prompt to apply this animation
 }
 
 const DEFAULT_EXAMPLES: ExampleItem[] = [
   // Video presets for different animations
-  { id: 'ex-c', video: require('../assets/videos/btl-3.mp4'), title: 'Hug', type: 'video' },
-  { id: 'ex-e', video: require('../assets/videos/btl-5.mp4'), title: 'Group', type: 'video' },
-  { id: 'ex-d', video: require('../assets/videos/btl-4.mp4'), title: 'Love', type: 'video' },
-  { id: 'ex-a', video: require('../assets/videos/btl-1.mp4'), title: 'Dance', type: 'video' },
-  { id: 'ex-b', video: require('../assets/videos/btl-2.mp4'), title: 'Fun', type: 'video' },
-  { id: 'ex-smile', video: require('../assets/videos/btl-0.mp4'), title: 'Smile', type: 'video' },
+  { id: 'ex-c', video: require('../assets/videos/btl-3.mp4'), title: 'Hug', type: 'video', animationPrompt: 'animate with a warm hug gesture' },
+  { id: 'ex-e', video: require('../assets/videos/btl-5.mp4'), title: 'Group', type: 'video', animationPrompt: 'animate as a group celebration' },
+  { id: 'ex-d', video: require('../assets/videos/btl-4.mp4'), title: 'Love', type: 'video', animationPrompt: 'animate with love and affection' },
+  { id: 'ex-a', video: require('../assets/videos/btl-1.mp4'), title: 'Dance', type: 'video', animationPrompt: 'animate with dancing movements' },
+  { id: 'ex-b', video: require('../assets/videos/btl-2.mp4'), title: 'Fun', type: 'video', animationPrompt: 'animate with fun and playful movements' },
+  { id: 'ex-smile', video: require('../assets/videos/btl-0.mp4'), title: 'Smile', type: 'video', animationPrompt: 'animate with a warm smile' },
   
   // Fallback option if video doesn't work:
   // { id: 'ex-a', image: require('../assets/images/onboarding/after-3.png'), title: 'Back to life', type: 'image' },
   // { id: 'ex-b', image: require('../assets/images/onboarding/after-4.png'), title: 'Back to life', type: 'image' },
 ];
 
-async function pickVideo(isPro: boolean) {
+async function pickVideo(isPro: boolean, animationPrompt?: string) {
   // Check current PRO status
   const currentIsPro = useSubscriptionStore.getState().isPro;
   
@@ -52,9 +53,25 @@ async function pickVideo(isPro: boolean) {
   
   const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (res.status !== 'granted') return;
-  const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Videos, quality: 1 });
+  
+  // For now, we'll use image picker and apply animation prompts to still images
+  // Future: Add video picker when video animation is supported
+  const result = await ImagePicker.launchImageLibraryAsync({ 
+    mediaTypes: ImagePicker.MediaTypeOptions.Images, 
+    quality: 1 
+  });
+  
   if (!result.canceled && result.assets[0]) {
-    Alert.alert('Video selected', 'Video flow coming soon');
+    // Navigate to text-edits with the animation prompt
+    const { router } = await import('expo-router');
+    router.push({
+      pathname: '/text-edits',
+      params: {
+        imageUri: result.assets[0].uri,
+        prompt: animationPrompt || 'bring this photo to life with natural animation',
+        mode: 'backtolife'
+      }
+    });
   }
 }
 
@@ -93,6 +110,128 @@ Thanks!`;
   }
 }
 
+// Create animated tile component with glow effect
+const AnimatedTile = ({ item, index, isPro }: { item: ExampleItem; index: number; isPro: boolean }) => {
+  // Subtle glow animation
+  const glowOpacity = useSharedValue(0.5);
+  
+  React.useEffect(() => {
+    glowOpacity.value = withRepeat(
+      withSequence(
+        withTiming(0.8, { duration: 2000 + index * 200 }),
+        withTiming(0.5, { duration: 2000 + index * 200 })
+      ),
+      -1,
+      true
+    );
+  }, []);
+  
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: glowOpacity.value,
+  }));
+  
+  return (
+    <Animated.View
+      entering={FadeInDown.delay(index * 120).duration(1000).springify().damping(20)}
+      style={{ width: 120, marginRight: 10 }}
+    >
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={() => pickVideo(isPro, item.animationPrompt)}
+        style={{ 
+          width: 120, 
+          aspectRatio: 9/16, 
+          borderRadius: 16, 
+          overflow: 'hidden', 
+          borderWidth: 1, 
+          borderColor: 'rgba(255,255,255,0.08)', 
+          backgroundColor: '#0b0b0f'
+        }}
+      >
+        {/* Render video or image based on type */}
+        {item.type === 'video' && item.video ? (
+          <Video
+            source={item.video}
+            style={{ width: '100%', height: '100%', opacity: 0.98 }}
+            resizeMode="cover"
+            shouldPlay
+            isLooping
+            isMuted
+            useNativeControls={false}
+            rate={[1.0, 0.95, 1.05, 0.9, 1.1, 0.98][index] || 1.0}
+            positionMillis={index * 1500}
+          />
+        ) : (
+          <ExpoImage source={item.image} style={{ width: '100%', height: '100%', transform: [{ translateY: (item.yOffset ?? 32) }] }} contentFit="cover" transition={0} />
+        )}
+        
+        {/* Bottom gradient - softer */}
+        <LinearGradient
+          colors={["transparent", "rgba(0,0,0,0.15)", "rgba(0,0,0,0.7)"]}
+          start={{ x: 0.5, y: 0.45 }}
+          end={{ x: 0.5, y: 1 }}
+          style={{ position: 'absolute', inset: 0 as any }}
+        />
+        
+        {/* Top subtle glow for luminescence */}
+        <Animated.View style={[{ position: 'absolute', top: 0, left: 0, right: 0, height: '40%' }, glowStyle]}>
+          <LinearGradient
+            colors={['rgba(255,255,255,0.06)', 'transparent']}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={{ flex: 1 }}
+          />
+        </Animated.View>
+        
+        {/* PRO badge for non-pro users - minimal style */}
+        {!isPro && (
+          <View style={{ 
+            position: 'absolute', 
+            top: 8, 
+            right: 8,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            borderRadius: 10,
+            paddingHorizontal: 6,
+            paddingVertical: 3,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 3,
+            borderWidth: 0.5,
+            borderColor: 'rgba(249,115,22,0.5)'
+          }}>
+            <IconSymbol name="crown" size={10} color="#f97316" />
+            <Text style={{ color: '#f97316', fontSize: 9, fontWeight: '600', letterSpacing: 0.3 }}>PRO</Text>
+          </View>
+        )}
+        
+        {/* Bottom label with soft glow */}
+        <View style={{ position: 'absolute', left: 10, bottom: 10 }}>
+          <Text style={{ 
+            color: '#FFFFFF', 
+            fontWeight: '700', 
+            fontSize: 15, 
+            textShadowColor: 'rgba(255,255,255,0.25)', 
+            textShadowOffset: { width: 0, height: 0 }, 
+            textShadowRadius: 4,
+            letterSpacing: 0.3
+          }}>
+            {item.title}
+          </Text>
+          <Text style={{ 
+            color: 'rgba(255,255,255,0.4)', 
+            fontSize: 9, 
+            marginTop: 1,
+            letterSpacing: 0.8,
+            fontWeight: '500'
+          }}>
+            TAP TO ANIMATE
+          </Text>
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
+
 export function HeroBackToLifeExamples({ examples = DEFAULT_EXAMPLES }: { examples?: ExampleItem[] }) {
   const isPro = useSubscriptionStore((state) => state.isPro);
   
@@ -105,71 +244,12 @@ export function HeroBackToLifeExamples({ examples = DEFAULT_EXAMPLES }: { exampl
       >
         {/* Existing animation tiles */}
         {examples.map((item, index) => (
-          <Animated.View
-            key={item.id}
-            entering={FadeIn.delay(index * 100).duration(800)}
-            style={{ width: 120, marginRight: 10 }}
-          >
-            <TouchableOpacity
-              activeOpacity={0.9}
-              onPress={() => pickVideo(isPro)}
-              style={{ width: 120, aspectRatio: 9/16, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', backgroundColor: '#0b0b0f' }}
-            >
-              {/* Render video or image based on type */}
-              {item.type === 'video' && item.video ? (
-                <Video
-                  source={item.video}
-                  style={{ width: '100%', height: '100%' }}
-                  resizeMode="contain"
-                  shouldPlay
-                  isLooping
-                  isMuted
-                  useNativeControls={false}
-                  rate={[1.0, 0.9, 1.1, 0.85, 1.05, 0.95][index] || 1.0} // Varied playback speeds
-                  positionMillis={[0, 3500, 1500, 5000, 2500, 4000][index] || index * 2000} // Different start positions
-                />
-              ) : (
-                <ExpoImage source={item.image} style={{ width: '100%', height: '100%', transform: [{ translateY: (item.yOffset ?? 32) }] }} contentFit="cover" transition={0} />
-              )}
-            <LinearGradient
-              colors={["transparent", "rgba(0,0,0,0.3)", "rgba(0,0,0,0.85)"]}
-              start={{ x: 0.5, y: 0.3 }}
-              end={{ x: 0.5, y: 1 }}
-              style={{ position: 'absolute', inset: 0 as any }}
-            />
-            
-            {/* PRO badge for non-pro users - minimal style */}
-            {!isPro && (
-              <View style={{ 
-                position: 'absolute', 
-                top: 8, 
-                right: 8,
-                backgroundColor: 'rgba(0,0,0,0.7)',
-                borderRadius: 10,
-                paddingHorizontal: 6,
-                paddingVertical: 3,
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 3,
-                borderWidth: 0.5,
-                borderColor: 'rgba(249,115,22,0.5)'
-              }}>
-                <IconSymbol name="crown" size={10} color="#f97316" />
-                <Text style={{ color: '#f97316', fontSize: 9, fontWeight: '600', letterSpacing: 0.3 }}>PRO</Text>
-              </View>
-            )}
-            
-            {/* Bottom label */}
-            <View style={{ position: 'absolute', left: 10, bottom: 10 }}>
-              <Text style={{ color: '#FFFFFF', fontWeight: '600', fontSize: 14, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>{item.title}</Text>
-            </View>
-            </TouchableOpacity>
-          </Animated.View>
+          <AnimatedTile key={item.id} item={item} index={index} isPro={isPro} />
         ))}
         
         {/* Request/Suggest new animation tile */}
         <Animated.View
-          entering={FadeIn.delay(examples.length * 100).duration(800)}
+          entering={FadeInDown.delay(examples.length * 120).duration(1000).springify().damping(20)}
           style={{ width: 120, marginRight: 0 }}
         >
           <TouchableOpacity
@@ -242,5 +322,3 @@ export function HeroBackToLifeExamples({ examples = DEFAULT_EXAMPLES }: { exampl
     </View>
   );
 }
-
-

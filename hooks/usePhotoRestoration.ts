@@ -32,7 +32,7 @@ export function usePhotoRestoration() {
   const { isPro, decrementFreeRestorations } = useSubscriptionStore();
 
   return useMutation({
-    mutationFn: async ({ imageUri, functionType, imageSource }: { imageUri: string; functionType: FunctionType; imageSource?: 'camera' | 'gallery' }) => {
+    mutationFn: async ({ imageUri, functionType, imageSource, customPrompt }: { imageUri: string; functionType: FunctionType; imageSource?: 'camera' | 'gallery'; customPrompt?: string }) => {
       const startTime = Date.now();
       let supabaseRestorationId: string | null = null;
       
@@ -67,7 +67,7 @@ export function usePhotoRestoration() {
           console.log(`📡 [TIMING] Starting API call at: +${apiStartTime - startTime}ms`);
         }
         
-        const restorePromise = restorePhoto(imageUri, functionType);
+        const restorePromise = restorePhoto(imageUri, functionType, customPrompt);
         const timeoutPromise = new Promise<never>((_, reject) => {
           setTimeout(() => {
             reject(new Error('Photo restoration timed out. Please check your internet connection and try again.'));

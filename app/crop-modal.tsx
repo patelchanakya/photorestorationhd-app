@@ -36,7 +36,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 function CropModalScreen() {
   const router = useRouter();
-  const { imageUri, functionType, imageSource } = useLocalSearchParams();
+  const { imageUri, functionType, imageSource, customPrompt } = useLocalSearchParams();
   const [error] = useState<string | null>(null);
   
   // Use Zustand store for state management
@@ -249,7 +249,8 @@ function CropModalScreen() {
     // Small delay to show success state
     setTimeout(() => {
       // Proceed with restoration
-      router.replace(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(imageUri)}&functionType=${functionType}&imageSource=${imageSource || 'gallery'}`);
+      const promptParam = customPrompt ? `&customPrompt=${encodeURIComponent(customPrompt as string)}` : '';
+      router.replace(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(imageUri)}&functionType=${functionType}&imageSource=${imageSource || 'gallery'}${promptParam}`);
     }, 400);
   };
 
@@ -269,7 +270,16 @@ function CropModalScreen() {
         </TouchableOpacity>
         <View className="flex-1 mx-4">
           <Text className="text-white text-lg font-semibold text-center">
-            {functionType === 'unblur' ? 'Unblur' : functionType === 'colorize' ? 'Colorize' : functionType === 'descratch' ? 'Descratch' : 'Restore'}
+            {functionType === 'repair' ? 'Repair' :
+             functionType === 'unblur' ? 'Unblur' : 
+             functionType === 'colorize' ? 'Colorize' : 
+             functionType === 'descratch' ? 'Descratch' : 
+             functionType === 'outfit' ? 'Change Outfit' :
+             functionType === 'background' ? 'Change Background' :
+             functionType === 'backtolife' ? 'Animate' :
+             functionType === 'enlighten' ? 'Fix Lighting' :
+             functionType === 'custom' ? 'Custom Edit' :
+             'Restore'}
           </Text>
           <Text className="text-white/60 text-sm text-center mt-1">
             Use image or crop for better results

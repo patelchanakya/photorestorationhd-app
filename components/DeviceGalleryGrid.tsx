@@ -1,12 +1,11 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { type FunctionType } from '@/services/modelConfigs';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
 import { router } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Dimensions, FlatList, Linking, Platform, Text, TouchableOpacity, View } from 'react-native';
-
-type FunctionType = 'restoration' | 'unblur' | 'colorize' | 'descratch';
 
 interface DeviceGalleryGridProps {
   functionType: FunctionType;

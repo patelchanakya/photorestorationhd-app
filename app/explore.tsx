@@ -138,7 +138,7 @@ export default function HomeGalleryLikeScreen() {
             const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: false, quality: 1 });
             if (!result.canceled && result.assets[0]) {
               const { router } = await import('expo-router');
-              router.push(`/crop-modal?imageUri=${encodeURIComponent(result.assets[0].uri)}&functionType=restoration&imageSource=gallery`);
+              router.push(`/crop-modal?imageUri=${encodeURIComponent(result.assets[0].uri)}&functionType=repair&imageSource=gallery`);
             }
           }}
           style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}
@@ -151,7 +151,7 @@ export default function HomeGalleryLikeScreen() {
 
         {/* Two-row horizontally scrolling device photos (UNTOUCHED) */}
         <View style={{ paddingBottom: 10 }}>
-          <DeviceTwoRowCarousel functionType="restoration" />
+          <DeviceTwoRowCarousel functionType="repair" />
         </View>
 
         {/* Outfits Section */}

@@ -1,12 +1,11 @@
+import { type FunctionType } from '@/services/modelConfigs';
+import { validatePremiumAccess } from '@/services/revenuecat';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Dimensions, FlatList, Linking, Platform, Text, TouchableOpacity, View } from 'react-native';
-import { validatePremiumAccess } from '@/services/revenuecat';
-
-type FunctionType = 'restoration' | 'unblur' | 'colorize' | 'descratch';
 
 interface DeviceTwoRowCarouselProps {
   functionType: FunctionType;

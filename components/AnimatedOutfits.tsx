@@ -59,6 +59,12 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
     });
 
     if (!result.canceled && result.assets[0]) {
+      // Debug: Show what prompt will be used
+      if (__DEV__) {
+        console.log('👔 Outfit selected:', outfit.title);
+        console.log('📝 Prompt to be used:', outfit.outfitPrompt || outfit.title);
+      }
+      
       // Navigate to processing with outfit prompt
       router.push({
         pathname: '/text-edits',
@@ -102,7 +108,7 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
                 <Video
                   source={item.video}
                   style={{ width: '100%', height: '100%' }}
-                  resizeMode="contain"
+                  resizeMode="cover"
                   shouldPlay
                   isLooping
                   isMuted

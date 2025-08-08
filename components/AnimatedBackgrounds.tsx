@@ -59,6 +59,12 @@ export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { bac
     });
 
     if (!result.canceled && result.assets[0]) {
+      // Debug: Show what prompt will be used
+      if (__DEV__) {
+        console.log('🌅 Background selected:', background.title);
+        console.log('📝 Prompt to be used:', background.backgroundPrompt || background.title);
+      }
+      
       // Navigate to processing with background prompt
       router.push({
         pathname: '/text-edits',
@@ -102,7 +108,7 @@ export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { bac
                 <Video
                   source={item.video}
                   style={{ width: '100%', height: '100%' }}
-                  resizeMode="contain"
+                  resizeMode="cover"
                   shouldPlay
                   isLooping
                   isMuted
