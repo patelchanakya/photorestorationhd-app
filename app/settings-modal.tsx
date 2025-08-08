@@ -42,7 +42,7 @@ const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpaci
 export default function SettingsModalScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { showFlashButton, toggleFlashButton, setRestorationCount, galleryViewMode, setGalleryViewMode, simpleSlider, setSimpleSlider } = useRestorationStore();
+  const { setRestorationCount } = useRestorationStore();
   const { isPro, freeRestorationsUsed, freeRestorationsLimit, expirationDate } = useSubscriptionStore();
   
   // Local loading states
@@ -1028,9 +1028,7 @@ Best regards`;
                   style={{
                     flexDirection: 'row',
                     alignItems: 'center',
-                    padding: 16,
-                    borderBottomWidth: 1,
-                    borderBottomColor: 'rgba(255,255,255,0.1)'
+                    padding: 16
                   }}
                   onPress={() => setShowLanguageModal(true)}
                 >
@@ -1055,156 +1053,9 @@ Best regards`;
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" style={{ marginLeft: 8 }} />
                 </TouchableOpacity>
                 
-                {/* Show Flash Toggle */}
-                <TouchableOpacity 
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16
-                  }}
-                  onPress={toggleFlashButton}
-                >
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
-                    <Ionicons name="flash" size={18} color="#f97316" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      {t('settings.showFlashButton')}
-                    </Text>
-                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                      {t('settings.showFlashButtonDescription')}
-                    </Text>
-                  </View>
-                  <View style={{
-                    width: 44,
-                    height: 24,
-                    backgroundColor: showFlashButton ? '#f97316' : 'rgba(255,255,255,0.2)',
-                    borderRadius: 12,
-                    alignItems: 'center',
-                    justifyContent: showFlashButton ? 'flex-end' : 'flex-start',
-                    flexDirection: 'row',
-                    paddingHorizontal: 2
-                  }}>
-                    <View style={{
-                      width: 20,
-                      height: 20,
-                      backgroundColor: 'white',
-                      borderRadius: 10
-                    }} />
-                  </View>
-                </TouchableOpacity>
-                
-                {/* Grid View Mode */}
-                <TouchableOpacity 
-                  onPress={() => setGalleryViewMode(galleryViewMode === 'list' ? 'grid' : 'list')}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16,
-                    borderBottomWidth: __DEV__ ? 1 : 0,
-                    borderBottomColor: 'rgba(255,255,255,0.1)'
-                  }}>
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
-                    <IconSymbol 
-                      name="square.grid.2x2" 
-                      size={18} 
-                      color="#f97316" 
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      {t('settings.gridView')}
-                    </Text>
-                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                      {t('settings.gridViewDescription')}
-                    </Text>
-                  </View>
-                  <View style={{
-                    width: 44,
-                    height: 24,
-                    backgroundColor: galleryViewMode === 'grid' ? '#f97316' : 'rgba(255,255,255,0.2)',
-                    borderRadius: 12,
-                    alignItems: 'center',
-                    justifyContent: galleryViewMode === 'grid' ? 'flex-end' : 'flex-start',
-                    flexDirection: 'row',
-                    paddingHorizontal: 2
-                  }}>
-                    <View style={{
-                      width: 20,
-                      height: 20,
-                      backgroundColor: 'white',
-                      borderRadius: 10
-                    }} />
-                  </View>
-                </TouchableOpacity>
-                
-                {/* Simple Slider Toggle */}
-                <TouchableOpacity 
-                  onPress={() => setSimpleSlider(!simpleSlider)}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16,
-                    borderBottomWidth: __DEV__ ? 1 : 0,
-                    borderBottomColor: 'rgba(255,255,255,0.1)'
-                  }}>
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
-                    <IconSymbol 
-                      name="slider.horizontal.3" 
-                      size={18} 
-                      color="#f97316" 
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      Simple Slider
-                    </Text>
-                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                      Clean line slider without arrows
-                    </Text>
-                  </View>
-                  <View style={{
-                    width: 44,
-                    height: 24,
-                    backgroundColor: simpleSlider ? '#f97316' : 'rgba(255,255,255,0.2)',
-                    borderRadius: 12,
-                    alignItems: 'center',
-                    justifyContent: simpleSlider ? 'flex-end' : 'flex-start',
-                    flexDirection: 'row',
-                    paddingHorizontal: 2
-                  }}>
-                    <View style={{
-                      width: 20,
-                      height: 20,
-                      backgroundColor: 'white',
-                      borderRadius: 10
-                    }} />
-                  </View>
-                </TouchableOpacity>
+
+
+
               </View>
             </View>
 

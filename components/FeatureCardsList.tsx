@@ -1,9 +1,10 @@
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Text, TouchableOpacity, View } from 'react-native';
 import { IconSymbol } from './ui/IconSymbol';
 
 type CardItem = {
@@ -18,14 +19,11 @@ type CardItem = {
 
 // Poster-style cards inspired by the provided reference
 const CARDS: CardItem[] = [
-  { id: 'fc_change_clothes', title: 'Outfits', subtitle: 'Formal, casual, vintage', route: '/clothes', image: require('../assets/images/onboarding/after-4.png') },
   { id: 'fc_restore', title: 'Restore', subtitle: 'Fix damage, tears & fading', functionType: 'restoration', image: require('../assets/images/onboarding/before-3.jpg') },
   { id: 'fc_descratch', title: 'Descratch', subtitle: 'Remove scratches & marks', functionType: 'descratch', image: require('../assets/images/onboarding/before-2.jpg') },
   { id: 'fc_enhance', title: 'Enhance', subtitle: 'Remove blur, sharpen details', functionType: 'unblur', image: require('../assets/images/onboarding/before-2.jpg') },
   { id: 'fc_colorize', title: 'Colorize', subtitle: 'Add colors to B&W photos', functionType: 'colorize', image: require('../assets/images/onboarding/after-4.png') },
   { id: 'fc_enlighten', title: 'Enlighten', subtitle: 'Fix lighting & exposure', styleKey: 'enlighten', image: require('../assets/images/onboarding/after-2.png') },
-  { id: 'fc_change_bg', title: 'Backgrounds', subtitle: 'Studio, nature, custom', route: '/backgrounds', image: require('../assets/images/onboarding/after-2.png') },
-  { id: 'fc_combine', title: 'Combine', subtitle: 'Merge photos together', styleKey: 'combine', image: require('../assets/images/onboarding/after-3.png') },
 ];
 
 type FeatureCardsListProps = {
@@ -71,6 +69,42 @@ const Card = React.memo(({
   </TouchableOpacity>
 ));
 
+// Handle request idea email
+async function handleRequestIdea() {
+  try {
+    const subject = 'Clever - Feature Request';
+    const body = `Hi Clever team!
+
+I'd love to see this feature added to the app:
+
+[Describe your feature idea here - e.g., "Remove background", "Change hair color", "Age progression", etc.]
+
+Why I want this:
+[Tell us why this would be useful]
+
+Thanks!`;
+
+    const mailUrl = `mailto:photorestorationhd@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    
+    const canOpen = await Linking.canOpenURL(mailUrl);
+    if (canOpen) {
+      await Linking.openURL(mailUrl);
+    } else {
+      Alert.alert(
+        'Contact Us',
+        'Please email us at: photorestorationhd@gmail.com',
+        [{ text: 'OK' }]
+      );
+    }
+  } catch (error) {
+    Alert.alert(
+      'Contact Us',
+      'Please email us at: photorestorationhd@gmail.com',
+      [{ text: 'OK' }]
+    );
+  }
+}
+
 // Memoize the entire component - export as default function
 export function FeatureCardsList({ 
   onOpenBackgrounds, 
@@ -108,6 +142,75 @@ export function FeatureCardsList({
       {CARDS.map((c) => (
         <Card key={c.id} item={c} onPress={handlePress} />
       ))}
+      
+      {/* Request your idea card */}
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={handleRequestIdea}
+        style={{ marginHorizontal: 16, marginBottom: 14 }}
+      >
+        <View style={{ 
+          height: 240, 
+          borderRadius: 22, 
+          overflow: 'hidden', 
+          borderWidth: 1.5, 
+          borderColor: 'rgba(249,115,22,0.3)',
+          backgroundColor: '#0b0b0f',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <LinearGradient
+            colors={['rgba(249,115,22,0.05)', 'rgba(249,115,22,0.15)']}
+            style={{ position: 'absolute', inset: 0 }}
+          />
+          
+          <View style={{ alignItems: 'center', marginBottom: 20 }}>
+            <View style={{
+              width: 60,
+              height: 60,
+              borderRadius: 30,
+              backgroundColor: 'rgba(249,115,22,0.15)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 16
+            }}>
+              <IconSymbol name="lightbulb" size={28} color="#f97316" />
+            </View>
+            <Text style={{ 
+              color: '#f97316', 
+              fontSize: 24, 
+              fontWeight: '700', 
+              letterSpacing: -0.3,
+              marginBottom: 8
+            }}>
+              Request your idea
+            </Text>
+            <Text style={{ 
+              color: 'rgba(255,255,255,0.6)', 
+              fontSize: 14,
+              textAlign: 'center',
+              paddingHorizontal: 40
+            }}>
+              Have a feature in mind? Let us know!
+            </Text>
+          </View>
+          
+          <View style={{
+            backgroundColor: 'rgba(249,115,22,0.2)',
+            borderRadius: 16,
+            paddingHorizontal: 20,
+            paddingVertical: 10,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 6
+          }}>
+            <IconSymbol name="envelope" size={16} color="#f97316" />
+            <Text style={{ color: '#f97316', fontSize: 14, fontWeight: '600' }}>
+              Send Request
+            </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
     </View>
   );
 }

@@ -1,8 +1,9 @@
+import { AnimatedBackgrounds } from '@/components/AnimatedBackgrounds';
+import { AnimatedOutfits } from '@/components/AnimatedOutfits';
 import { DeviceTwoRowCarousel } from '@/components/DeviceTwoRowCarousel';
 import { FeatureCardsList } from '@/components/FeatureCardsList';
 import { HeroBackToLifeExamples } from '@/components/HeroBackToLifeExamples';
 import { QuickActionRail } from '@/components/QuickActionRail';
-import { StyleSheet } from '@/components/StyleSheet';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { presentPaywall, restorePurchases, validatePremiumAccess } from '@/services/revenuecat';
@@ -13,22 +14,8 @@ import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeGalleryLikeScreen() {
-  const [activeSheet, setActiveSheet] = React.useState<'bg' | 'clothes' | null>(null);
   const isPro = useSubscriptionStore((state) => state.isPro);
   const router = useRouter();
-  
-  // Memoize ALL callbacks to prevent re-renders
-  const handleCloseSheet = React.useCallback(() => {
-    setActiveSheet(null);
-  }, []);
-  
-  const handleOpenBackgrounds = React.useCallback(() => {
-    setActiveSheet('bg');
-  }, []);
-  
-  const handleOpenClothes = React.useCallback(() => {
-    setActiveSheet('clothes');
-  }, []);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#0B0B0F' }} edges={['top', 'left', 'right']}>
@@ -163,18 +150,31 @@ export default function HomeGalleryLikeScreen() {
         {/* Mode chips removed as requested */}
 
         {/* Two-row horizontally scrolling device photos (UNTOUCHED) */}
-      <View style={{ paddingBottom: 10 }}>
+        <View style={{ paddingBottom: 10 }}>
           <DeviceTwoRowCarousel functionType="restoration" />
         </View>
 
-                        {/* Poster-style feature cards (new) */}
-                        <FeatureCardsList onOpenBackgrounds={handleOpenBackgrounds} onOpenClothes={handleOpenClothes} />
+        {/* Outfits Section */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '600', letterSpacing: -0.3 }}>Outfits</Text>
+        </View>
+        <AnimatedOutfits />
+
+        {/* Backgrounds Section */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '600', letterSpacing: -0.3 }}>Backgrounds</Text>
+        </View>
+        <AnimatedBackgrounds />
+
+        {/* Other AI Features - Enlighten, etc. */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '600', letterSpacing: -0.3 }}>Magic</Text>
+        </View>
+        <FeatureCardsList />
+
       </ScrollView>
       {/* Bottom quick action rail */}
       <QuickActionRail />
-      
-      {/* Always render sheet component with null check inside */}
-      <StyleSheet type={activeSheet} onClose={handleCloseSheet} />
     </SafeAreaView>
   );
 }
