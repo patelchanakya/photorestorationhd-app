@@ -81,9 +81,18 @@ export function DeviceTwoRowCarousel({ functionType }: DeviceTwoRowCarouselProps
     }
   }, [appendAssetsAsColumns, endCursor, hasNextPage, loadingMore]);
 
-  const openSettings = () => {
-    if (Platform.OS === 'ios') Linking.openURL('app-settings:');
-    else Linking.openSettings();
+  const openSettings = async () => {
+    try {
+      if (Platform.OS === 'ios') {
+        await Linking.openURL('app-settings:');
+      } else {
+        await Linking.openSettings();
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.error('Failed to open settings:', error);
+      }
+    }
   };
 
   if (!permissionResponse?.granted) {

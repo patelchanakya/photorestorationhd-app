@@ -1,31 +1,22 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack, useRouter } from 'expo-router';
+import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import '../global.css';
 
-import CustomSplashScreen from '@/components/CustomSplashScreen';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { OnboardingProvider, useOnboarding } from '@/contexts/OnboardingContext';
-import { JobProvider } from '@/contexts/JobContext';
 import { GlobalNotifications } from '@/components/GlobalNotifications';
+import InitialLoadingScreen from '@/components/InitialLoadingScreen';
+import { JobProvider } from '@/contexts/JobContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { LanguageProvider } from '@/i18n';
-import { analyticsService } from '@/services/analytics';
-import { deviceTrackingService } from '@/services/deviceTracking';
-import { networkStateService } from '@/services/networkState';
-import { notificationService } from '@/services/notificationService';
-import { checkSubscriptionStatus } from '@/services/revenuecat';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
 import NetInfo from '@react-native-community/netinfo';
 import { QueryClient, QueryClientProvider, focusManager, onlineManager } from '@tanstack/react-query';
-import Constants from 'expo-constants';
 import { Image as ExpoImage } from 'expo-image';
 import React, { useEffect } from 'react';
-import { AppState, AppStateStatus, LogBox, Platform, AppState as RNAppState, View } from 'react-native';
+import { AppState, AppStateStatus, LogBox, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // Configure LogBox for production
@@ -34,22 +25,9 @@ if (!__DEV__) {
   LogBox.ignoreAllLogs(true);
   
   // Override console methods to prevent logs in production
-  const originalConsoleError = console.error;
   console.log = () => {};
   console.warn = () => {};
-  console.error = (...args) => {
-    // Filter out specific errors we want to suppress
-    if (args.some(arg => 
-      typeof arg === 'string' && 
-      (arg.includes('RevenueCat') || 
-       arg.includes('BackendError') || 
-       arg.includes('😿') ||
-       arg.includes('SDK Configuration is not valid'))
-    )) {
-      return; // Suppress these specific errors
-    }
-    // For other errors, suppress them too in production
-  };
+  console.error = () => {};
   console.info = () => {};
   console.debug = () => {};
 }
@@ -68,35 +46,6 @@ if (__DEV__) {
     '⚠️',
     '😿',
   ]);
-  
-  // Override console methods for RevenueCat in dev too
-  const originalWarn = console.warn;
-  const originalError = console.error;
-  
-  console.warn = (...args) => {
-    if (args.some(arg => 
-      typeof arg === 'string' && 
-      (arg.includes('RevenueCat') || 
-       arg.includes('MISSING_METADATA') ||
-       arg.includes('App Store Connect'))
-    )) {
-      return;
-    }
-    originalWarn.apply(console, args);
-  };
-  
-  console.error = (...args) => {
-    if (args.some(arg => 
-      typeof arg === 'string' && 
-      (arg.includes('RevenueCat') || 
-       arg.includes('BackendError') || 
-       arg.includes('😿') ||
-       arg.includes('SDK Configuration is not valid'))
-    )) {
-      return;
-    }
-    originalError.apply(console, args);
-  };
 }
 
 // Create QueryClient instance
@@ -132,39 +81,13 @@ function useAppState(onChange: (status: AppStateStatus) => void) {
   }, [onChange]);
 }
 
-// App state change handler - defined outside component to prevent re-creation
-function onAppStateChange(status: AppStateStatus) {
-  if (Platform.OS !== 'web') {
-    focusManager.setFocused(status === 'active');
+// App state change handler
+const onAppStateChange = (status: AppStateStatus) => {
+  if (__DEV__) {
+    console.log('🔄 App state changed:', status);
   }
-  
-  // Refresh subscription status when app becomes active - RevenueCat best practice
-  if (status === 'active') {
-    // SECURITY FIX: Force Apple ID check to prevent subscription leakage between Apple IDs
-    // When Apple ID switches without app restart, RevenueCat caches old anonymous ID
-    // This forces fresh check of current Apple ID's actual subscription status
-    try {
-      // Step 1: Invalidate cache to force fresh data fetch
-      Purchases.invalidateCustomerInfoCache();
-      
-      // Step 2: Force fresh check of current Apple ID's receipt
-      // This will trigger customer info listener with correct subscription status
-      Purchases.getCustomerInfo().then(() => {
-        if (__DEV__) {
-          console.log('✅ Forced fresh Apple ID subscription check on app active');
-        }
-      }).catch((error) => {
-        if (__DEV__) {
-          console.log('🔄 Failed to force fresh subscription check:', error);
-        }
-      });
-    } catch (error) {
-      if (__DEV__) {
-        console.log('🔄 Failed to invalidate customer info cache:', error);
-      }
-    }
-  }
-}
+  focusManager.setFocused(status === 'active');
+};
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -176,15 +99,16 @@ export default function RootLayout() {
     'PlayfairDisplay-Bold': require('../assets/fonts/PlayfairDisplay-Bold.ttf'),
     'PlayfairDisplay-Italic': require('../assets/fonts/PlayfairDisplay-Italic.ttf'),
   });
-  const { setIsPro } = useSubscriptionStore();
-  const [showCustomSplash, setShowCustomSplash] = React.useState(true);
+  
+  const [showInitialLoading, setShowInitialLoading] = React.useState(true);
 
   // Set up network and app state management
   useOnlineManager();
   useAppState(onAppStateChange);
+  
   // Proactively trim expo-image memory on background to avoid spikes
   useEffect(() => {
-    const sub = RNAppState.addEventListener('change', (state) => {
+    const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
       if (state === 'background') {
         try {
           // Clear only memory cache; disk cache remains
@@ -196,350 +120,8 @@ export default function RootLayout() {
     return () => sub.remove();
   }, []);
 
-
-  // Initialize RevenueCat after component mounts
-  useEffect(() => {
-    if (!loaded) return;
-    
-    async function initRevenueCat() {
-      try {
-        // Only initialize RevenueCat in development builds, not Expo Go
-        const isExpoGo = Constants.appOwnership === 'expo';
-        
-        if (isExpoGo) {
-          if (__DEV__) {
-            console.log('⚠️ RevenueCat is not available in Expo Go. Using mock data.');
-          }
-          // Set default free state for Expo Go
-          setIsPro(false);
-          return;
-        }
-        
-        // BEST PRACTICE: Configure appropriate log levels
-        // Development: VERBOSE for debugging
-        // Production: ERROR only for critical issues
-        if (__DEV__) {
-          Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
-          Purchases.setDebugLogsEnabled(true);
-        } else {
-          // Production: Only log errors to avoid noise
-          Purchases.setLogLevel(LOG_LEVEL.ERROR);
-          Purchases.setDebugLogsEnabled(false);
-        }
-        
-        // Configure RevenueCat with Apple API key
-        if (Platform.OS === 'ios') {
-          try {
-            const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY;
-            
-            if (!apiKey) {
-              if (__DEV__) {
-                console.error('❌ RevenueCat Apple API key not found in environment variables');
-                console.log('🔄 Continuing without RevenueCat...');
-              }
-              return;
-            }
-            
-            // Check if RevenueCat is already configured to prevent multiple configurations
-            try {
-              const isConfigured = await Purchases.isConfigured();
-              if (isConfigured) {
-                if (__DEV__) {
-                  console.log('✅ RevenueCat already configured, skipping...');
-                }
-                
-                // Just get current customer info and set up listener
-                const customerInfo = await Purchases.getCustomerInfo();
-                const proEntitlement = customerInfo.entitlements.active['pro'];
-                const hasProEntitlement = proEntitlement?.isActive === true;
-                setIsPro(hasProEntitlement);
-                
-                // Set up listener and skip to the end
-                const customerInfoListener = (customerInfo: any) => {
-                  const proEntitlement = customerInfo.entitlements.active['pro'];
-                  const hasProEntitlement = proEntitlement?.isActive === true;
-                  setIsPro(hasProEntitlement);
-                };
-                
-                const removeListener = Purchases.addCustomerInfoUpdateListener(customerInfoListener);
-                (global as any).__revenueCatListener = removeListener;
-                
-                return;
-              }
-            } catch (error) {
-              // RevenueCat not configured yet, continue with configuration
-            }
-            
-            if (__DEV__) {
-              console.log('🔧 Configuring RevenueCat for first time...');
-            }
-            
-            // Configure RevenueCat ONLY if not already configured
-            await Purchases.configure({ 
-              apiKey: apiKey,
-              // Add additional configuration to prevent errors
-              useAmazon: false,
-            });
-            
-            if (__DEV__) {
-              console.log('✅ RevenueCat configured successfully');
-            }
-            
-            // IMPORTANT: Check if we already have an anonymous ID to prevent creating duplicates
-            try {
-              const appUserID = await Purchases.getAppUserID();
-              if (__DEV__) {
-                console.log('📱 Current App User ID:', appUserID);
-              }
-            } catch (error) {
-              if (__DEV__) {
-                console.log('🆕 No existing App User ID, will use new anonymous ID');
-              }
-            }
-            
-            // Listen for customer info updates - STORE LISTENER FOR CLEANUP
-            const customerInfoListener = (customerInfo: any) => {
-              if (__DEV__) {
-                console.log('📱 Customer info updated:', customerInfo);
-              }
-              
-              // Check if user has active pro entitlement using isActive property
-              const proEntitlement = customerInfo.entitlements.active['pro'];
-              const hasProEntitlement = proEntitlement?.isActive === true;
-              const wasProBefore = useSubscriptionStore.getState().isPro;
-              
-              // Detailed logging for sandbox debugging
-              if (__DEV__ && proEntitlement) {
-                const now = new Date();
-                const expirationDate = proEntitlement.expirationDate ? new Date(proEntitlement.expirationDate) : null;
-                const timeRemaining = expirationDate ? Math.round((expirationDate.getTime() - now.getTime()) / 1000 / 60) : 0;
-                
-                console.log('🔍 Subscription Debug Info:', {
-                  isActive: proEntitlement.isActive,
-                  willRenew: proEntitlement.willRenew,
-                  expirationDate: proEntitlement.expirationDate,
-                  timeRemainingMinutes: timeRemaining,
-                  isSandbox: proEntitlement.isSandbox,
-                  periodType: proEntitlement.periodType,
-                  productIdentifier: proEntitlement.productIdentifier,
-                });
-                
-                if (expirationDate && expirationDate < now) {
-                  console.log('⚠️ SUBSCRIPTION EXPIRED:', {
-                    expiredAt: expirationDate.toISOString(),
-                    currentTime: now.toISOString(),
-                    minutesAgo: Math.round((now.getTime() - expirationDate.getTime()) / 1000 / 60)
-                  });
-                }
-              }
-              
-              setIsPro(hasProEntitlement);
-              
-              // DO NOT save PRO status to device - it should only come from Apple ID
-              
-              // Track subscription events
-              if (hasProEntitlement && !wasProBefore) {
-                analyticsService.trackSubscriptionEvent('upgraded', 'pro');
-              } else if (!hasProEntitlement && wasProBefore) {
-                analyticsService.trackSubscriptionEvent('restored', 'free');
-              }
-              
-              if (__DEV__) {
-                console.log('🔄 Pro status updated:', hasProEntitlement);
-              }
-            };
-            
-            // Add listener and store the removal function
-            const removeListener = Purchases.addCustomerInfoUpdateListener(customerInfoListener);
-            
-            // Store the removal function for cleanup
-            (global as any).__revenueCatListener = removeListener;
-            
-            // SECURITY FIX: Invalidate cache immediately on app startup
-            // This handles the case where users update the app and have stale cache
-            // Forces fresh check of current Apple ID's subscription status
-            if (__DEV__) {
-              console.log('🔒 Invalidating RevenueCat cache on startup for security');
-            }
-            Purchases.invalidateCustomerInfoCache();
-            
-            // Check initial subscription status with fresh data
-            const customerInfo = await Purchases.getCustomerInfo();
-            const proEntitlement = customerInfo.entitlements.active['pro'];
-            const hasProEntitlement = proEntitlement?.isActive === true;
-            setIsPro(hasProEntitlement);
-            
-            // AUTO-RESTORE: Silently sync purchases if no subscription found
-            // This improves UX for users switching devices or reinstalling
-            // syncPurchases() doesn't show prompts - recommended by RevenueCat
-            if (!hasProEntitlement) {
-              try {
-                if (__DEV__) {
-                  console.log('🔄 No subscription found, attempting silent restore...');
-                }
-                
-                // This is silent - no OS prompts will appear
-                await Purchases.syncPurchases();
-                // syncPurchases doesn't return customerInfo - need to fetch it separately
-                const syncedInfo = await Purchases.getCustomerInfo();
-                const syncedProEntitlement = syncedInfo.entitlements.active['pro'];
-                const hasSyncedPro = syncedProEntitlement?.isActive === true;
-                
-                if (hasSyncedPro) {
-                  // Found subscription via sync! Update state
-                  setIsPro(true);
-                  if (__DEV__) {
-                    console.log('✅ Auto-restore successful! Found active subscription');
-                  }
-                  analyticsService.trackSubscriptionEvent('auto_restored', 'pro');
-                } else {
-                  if (__DEV__) {
-                    console.log('ℹ️ No subscription found after sync - user needs to purchase');
-                  }
-                }
-              } catch (error) {
-                // Fail silently - user can manually restore if needed
-                if (__DEV__) {
-                  console.log('⚠️ Auto-restore failed silently:', error);
-                }
-              }
-            }
-            
-            if (__DEV__) {
-              console.log('🎯 Initial pro status:', hasProEntitlement);
-              
-              // Log detailed info for initial check too
-              if (proEntitlement) {
-                const now = new Date();
-                const expirationDate = proEntitlement.expirationDate ? new Date(proEntitlement.expirationDate) : null;
-                const timeRemaining = expirationDate ? Math.round((expirationDate.getTime() - now.getTime()) / 1000 / 60) : 0;
-                
-                console.log('🔍 Initial Subscription Debug Info:', {
-                  isActive: proEntitlement.isActive,
-                  willRenew: proEntitlement.willRenew,
-                  expirationDate: proEntitlement.expirationDate,
-                  timeRemainingMinutes: timeRemaining,
-                  isSandbox: proEntitlement.isSandbox,
-                });
-              }
-              
-              // In sandbox mode, set up periodic checks every 2 minutes
-              if (proEntitlement?.isSandbox) {
-                console.log('🧪 Sandbox mode detected - enabling periodic subscription checks');
-                const intervalId = setInterval(async () => {
-                  try {
-                    const latestInfo = await Purchases.getCustomerInfo();
-                    const latestPro = latestInfo.entitlements.active['pro'];
-                    const isProNow = latestPro?.isActive === true;
-                    
-                    if (__DEV__) {
-                      console.log('⏰ Periodic sandbox check:', {
-                        isActive: isProNow,
-                        willRenew: latestPro?.willRenew,
-                        expirationDate: latestPro?.expirationDate
-                      });
-                    }
-                    
-                    // Only update if status changed
-                    if (isProNow !== useSubscriptionStore.getState().isPro) {
-                      setIsPro(isProNow);
-                      console.log('🔄 Sandbox subscription status changed:', isProNow);
-                    }
-                  } catch (error) {
-                    console.log('⚠️ Periodic check failed:', error);
-                  }
-                }, 120000); // Check every 2 minutes in sandbox
-                
-                // Store interval ID for cleanup
-                (global as any).__sandboxCheckInterval = intervalId;
-              }
-            }
-          } catch (error: any) {
-            if (__DEV__) {
-              console.error('❌ RevenueCat configuration failed:', error);
-              console.log('🔄 Continuing without RevenueCat...');
-            }
-          }
-        }
-      } catch (error: any) {
-        if (__DEV__) {
-          console.error('❌ Failed to initialize RevenueCat:', error);
-        }
-        // Set default state on error
-        setIsPro(false);
-      }
-    }
-    
-    // Initialize device tracking service
-    deviceTrackingService.initialize().catch((error) => {
-      if (__DEV__) {
-        console.error('❌ Failed to initialize device tracking service:', error);
-      }
-    });
-
-    // Set up network monitoring for restoration sync
-    const unsubscribeNetworkMonitor = networkStateService.subscribe(async (_isOnline) => {
-      // No-op for now (removed syncPendingOperations to avoid type error). We keep the subscription for future use.
-    });
-
-    // Initialize analytics service
-    analyticsService.initialize().catch((error) => {
-      if (__DEV__) {
-        console.error('❌ Failed to initialize analytics service:', error);
-      }
-    });
-
-    // Initialize notification service
-    notificationService.initialize().catch((error) => {
-      if (__DEV__) {
-        console.error('❌ Failed to initialize notification service:', error);
-      }
-    });
-    
-    // Add a small delay to ensure other providers are ready
-    const timer = setTimeout(async () => {
-      await initRevenueCat();
-      
-      // No need to initialize video usage - now using online-only approach
-    }, 100);
-    
-    return () => {
-      clearTimeout(timer);
-      
-      // CRITICAL: Remove RevenueCat listener to prevent memory leak
-      if ((global as any).__revenueCatListener) {
-        try {
-          (global as any).__revenueCatListener();
-          delete (global as any).__revenueCatListener;
-          if (__DEV__) {
-            console.log('🧹 Cleaned up RevenueCat listener');
-          }
-        } catch (error) {
-          if (__DEV__) {
-            console.error('Failed to cleanup RevenueCat listener:', error);
-          }
-        }
-      }
-      
-      // Cleanup sandbox interval if exists
-      if ((global as any).__sandboxCheckInterval) {
-        clearInterval((global as any).__sandboxCheckInterval);
-        delete (global as any).__sandboxCheckInterval;
-        if (__DEV__) {
-          console.log('🧹 Cleaned up sandbox check interval');
-        }
-      }
-      
-      // Cleanup analytics service
-      analyticsService.destroy();
-      // Cleanup network monitor
-      unsubscribeNetworkMonitor();
-    };
-  }, [loaded, setIsPro]);
-
-  const onCustomSplashComplete = React.useCallback(() => {
-    // Don't hide the native splash yet - let the onboarding screen do it
-    setShowCustomSplash(false);
+  const onLoadingComplete = React.useCallback(() => {
+    setShowInitialLoading(false);
   }, []);
 
   if (!loaded) {
@@ -547,10 +129,10 @@ export default function RootLayout() {
     return null;
   }
 
-  if (showCustomSplash) {
+  if (showInitialLoading) {
     return (
       <View style={{ flex: 1, backgroundColor: '#000000' }}>
-        <CustomSplashScreen onAnimationComplete={onCustomSplashComplete} />
+        <InitialLoadingScreen onLoadingComplete={onLoadingComplete} />
       </View>
     );
   }
@@ -560,19 +142,17 @@ export default function RootLayout() {
       <View style={{ flex: 1, backgroundColor: '#000000' }}>
         <ErrorBoundary>
           <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#000000' }}>
-            <OnboardingProvider>
-              <LanguageProvider>
-                <QueryClientProvider client={queryClient}>
-                  <JobProvider>
-                    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                      <OnboardingNavigator />
-                      <GlobalNotifications />
-                      <StatusBar style="auto" />
-                    </ThemeProvider>
-                  </JobProvider>
-                </QueryClientProvider>
-              </LanguageProvider>
-            </OnboardingProvider>
+            <LanguageProvider>
+              <QueryClientProvider client={queryClient}>
+                <JobProvider>
+                  <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                    <MainNavigator />
+                    <GlobalNotifications />
+                    <StatusBar style="auto" />
+                  </ThemeProvider>
+                </JobProvider>
+              </QueryClientProvider>
+            </LanguageProvider>
           </GestureHandlerRootView>
         </ErrorBoundary>
       </View>
@@ -580,38 +160,9 @@ export default function RootLayout() {
   );
 }
 
-function OnboardingNavigator() {
-  const { showOnboarding } = useOnboarding();
-  const router = useRouter();
-  const useExplore = true;
-
-  if (__DEV__) {
-    console.log('🚀 OnboardingNavigator: showOnboarding =', showOnboarding);
-  }
-
-  useEffect(() => {
-    if (showOnboarding === true) {
-      if (__DEV__) {
-        console.log('🔄 Navigating to onboarding...');
-      }
-      router.replace('/onboarding');
-    } else if (showOnboarding === false) {
-      if (__DEV__) console.log('🔄 Navigating to explore...');
-      router.replace('/explore');
-    }
-  }, [showOnboarding, router]);
-
-  if (showOnboarding === null) {
-    if (__DEV__) {
-      console.log('⏳ OnboardingNavigator: Still checking onboarding status...');
-    }
-    // Still checking onboarding status
-    return null;
-  }
-
+function MainNavigator() {
   return (
-    <Stack>
-      <Stack.Screen name="onboarding" options={{ headerShown: false, contentStyle: { backgroundColor: '#000000' } }} />
+    <Stack initialRouteName="explore">
       <Stack.Screen name="explore" options={{ headerShown: false }} />
       <Stack.Screen name="index" options={{ headerShown: false, title: "Clever" }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

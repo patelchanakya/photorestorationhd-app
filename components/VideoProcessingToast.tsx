@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Image, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
-import ReAnimated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming } from 'react-native-reanimated';
+import ReAnimated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence } from 'react-native-reanimated';
+import { IconSymbol } from './ui/IconSymbol';
 
 interface VideoProcessingToastProps {
   visible: boolean;
@@ -12,27 +13,108 @@ interface VideoProcessingToastProps {
   jobType?: 'video' | 'photo';
   status?: 'loading' | 'completed' | 'error';
   onPress?: () => void;
+  onCancel?: () => void;
 }
 
-// Simple spinning loader
+// Psychologically engaging multi-layer loading spinner
 const LoadingSpinner = () => {
+  // Multiple animation values for layered effects
   const rotation = useSharedValue(0);
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(0.8);
+  const colorIntensity = useSharedValue(0);
 
   React.useEffect(() => {
-    rotation.value = withRepeat(
-      withTiming(360, { duration: 1000 }),
-      -1,
-      false
-    );
+    // Variable speed rotation (psychological engagement through unpredictability)
+    const rotateWithVariableSpeed = () => {
+      rotation.value = withRepeat(
+        withSequence(
+          withTiming(120, { duration: 800 }), // Fast start
+          withTiming(240, { duration: 1200 }), // Slow middle  
+          withTiming(360, { duration: 900 })   // Medium end
+        ),
+        -1,
+        false
+      );
+    };
+
+    // Breathing scale effect (organic, life-like motion)
+    const breathingScale = () => {
+      scale.value = withRepeat(
+        withSequence(
+          withTiming(0.95, { duration: 1500 }),
+          withTiming(1.05, { duration: 1500 }),
+          withTiming(1.0, { duration: 800 })
+        ),
+        -1,
+        true
+      );
+    };
+
+    // Pulsing opacity (subtle attention-grabbing)
+    const pulsingOpacity = () => {
+      opacity.value = withRepeat(
+        withSequence(
+          withTiming(0.6, { duration: 1800 }),
+          withTiming(1.0, { duration: 1200 }),
+          withTiming(0.8, { duration: 1000 })
+        ),
+        -1,
+        true
+      );
+    };
+
+    // Color intensity shifting (creates visual interest)
+    const colorShifting = () => {
+      colorIntensity.value = withRepeat(
+        withTiming(1, { duration: 2500 }),
+        -1,
+        true
+      );
+    };
+
+    rotateWithVariableSpeed();
+    breathingScale();
+    pulsingOpacity();
+    colorShifting();
   }, []);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotation.value}deg` }],
+  // Primary spinner style with all effects combined
+  const spinnerStyle = useAnimatedStyle(() => ({
+    transform: [
+      { rotate: `${rotation.value}deg` },
+      { scale: scale.value }
+    ],
+    opacity: opacity.value,
+  }));
+
+  // Background glow effect
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: colorIntensity.value * 0.3,
+    transform: [{ scale: 1.2 + (colorIntensity.value * 0.1) }],
   }));
 
   return (
-    <View className="ml-3 w-6 h-6 items-center justify-center">
-      <ReAnimated.View style={animatedStyle}>
+    <View className="w-6 h-6 items-center justify-center">
+      {/* Background glow layer */}
+      <ReAnimated.View 
+        style={[glowStyle, { position: 'absolute' }]}
+      >
+        <Svg width="24" height="24" viewBox="0 0 24 24">
+          <Circle
+            cx="12"
+            cy="12"
+            r="11"
+            fill="none"
+            stroke="#3B82F6"
+            strokeWidth="1"
+            strokeOpacity="0.2"
+          />
+        </Svg>
+      </ReAnimated.View>
+
+      {/* Main animated spinner */}
+      <ReAnimated.View style={spinnerStyle}>
         <Svg width="20" height="20" viewBox="0 0 24 24">
           <Circle
             cx="12"
@@ -58,7 +140,8 @@ export function VideoProcessingToast({
   timeRemaining = 120, // default 2 minutes
   jobType = 'video',
   status = 'loading',
-  onPress 
+  onPress,
+  onCancel
 }: VideoProcessingToastProps) {
   const insets = useSafeAreaInsets();
   const translateY = React.useRef(new Animated.Value(-100)).current;
@@ -122,10 +205,8 @@ export function VideoProcessingToast({
         paddingHorizontal: 16,
       }}
     >
-      <TouchableOpacity
-        onPress={onPress}
-        activeOpacity={0.9}
-        className={`backdrop-blur rounded-2xl p-4 flex-row items-center shadow-lg ${
+      <View
+        className={`backdrop-blur rounded-2xl shadow-lg relative ${
           status === 'completed' 
             ? 'bg-gray-800/90 border border-blue-500/20 shadow-2xl' 
             : 'bg-gray-900/95'
@@ -137,6 +218,23 @@ export function VideoProcessingToast({
           shadowRadius: 12,
         } : undefined}
       >
+        {/* Cancel button */}
+        {onCancel && (
+          <TouchableOpacity
+            onPress={onCancel}
+            className="absolute top-2 right-2 w-8 h-8 rounded-full items-center justify-center z-10"
+            activeOpacity={0.7}
+          >
+            <IconSymbol name="xmark" size={16} color="#9CA3AF" />
+          </TouchableOpacity>
+        )}
+        
+        {/* Main content - now wrapped in TouchableOpacity */}
+        <TouchableOpacity
+          onPress={onPress}
+          activeOpacity={0.9}
+          className="p-4 flex-row items-center"
+        >
         {/* Thumbnail */}
         {imageUri && (
           <View className="w-14 h-14 rounded-xl overflow-hidden mr-4">
@@ -163,7 +261,9 @@ export function VideoProcessingToast({
         
         {/* Loading indicator - spinning circle */}
         {status === 'loading' && (
-          <LoadingSpinner />
+          <View className="mr-2">
+            <LoadingSpinner />
+          </View>
         )}
         
         {/* Success indicator - arrow icon */}
@@ -174,7 +274,8 @@ export function VideoProcessingToast({
             </View>
           </View>
         )}
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </View>
     </Animated.View>
   );
 }

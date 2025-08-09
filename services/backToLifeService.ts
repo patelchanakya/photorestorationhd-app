@@ -21,19 +21,6 @@ export const backToLifeService = {
    * Always fetches fresh data from RevenueCat and Supabase
    */
   async checkUsage(): Promise<BackToLifeUsage> {
-    // DEV OVERRIDE: allow unlimited testing without daily/monthly caps
-    const debugLimit = process.env.EXPO_PUBLIC_DEBUG_BTL_LIMIT ? parseInt(process.env.EXPO_PUBLIC_DEBUG_BTL_LIMIT, 10) : undefined;
-    if (__DEV__ && (process.env.EXPO_PUBLIC_DEBUG_BTL_UNLIMITED === '1' || (debugLimit && debugLimit > 0))) {
-      return {
-        canUse: true,
-        used: 0,
-        limit: debugLimit || 9999,
-        planType: 'monthly',
-        nextResetDate: new Date().toISOString(),
-        canUseToday: true,
-        lastVideoDate: null,
-      };
-    }
     try {
       // Get subscription details from RevenueCat
       const planDetails = await getSubscriptionPlanDetails();
@@ -102,10 +89,6 @@ export const backToLifeService = {
    */
   async incrementUsage(): Promise<boolean> {
     try {
-      if (__DEV__ && (process.env.EXPO_PUBLIC_DEBUG_BTL_UNLIMITED === '1' || (process.env.EXPO_PUBLIC_DEBUG_BTL_LIMIT && parseInt(process.env.EXPO_PUBLIC_DEBUG_BTL_LIMIT, 10) > 0))) {
-        // Skip increment in dev-unlimited mode
-        return true;
-      }
       // First check if user can use the feature
       const usage = await this.checkUsage();
       if (!usage.canUse) {

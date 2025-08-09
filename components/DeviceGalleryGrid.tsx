@@ -60,10 +60,16 @@ export function DeviceGalleryGrid({ functionType }: DeviceGalleryGridProps) {
     } else if (current.canAskAgain) {
       await MediaLibrary.requestPermissionsAsync();
     } else {
-      if (Platform.OS === 'ios') {
-        Linking.openURL('app-settings:');
-      } else {
-        Linking.openSettings();
+      try {
+        if (Platform.OS === 'ios') {
+          await Linking.openURL('app-settings:');
+        } else {
+          await Linking.openSettings();
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.error('Failed to open settings:', error);
+        }
       }
     }
   };

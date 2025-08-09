@@ -39,6 +39,7 @@ export function usePhotoRestoration() {
     mutationFn: async ({ imageUri, functionType, imageSource, customPrompt }: { imageUri: string; functionType: FunctionType; imageSource?: 'camera' | 'gallery'; customPrompt?: string }) => {
       const startTime = Date.now();
       let supabaseRestorationId: string | null = null;
+      let progressInterval: ReturnType<typeof setInterval> | null = null;
       
       if (__DEV__) {
         console.log(`🚀 [TIMING] Starting ${functionType} restoration at:`, new Date().toISOString());
@@ -75,7 +76,6 @@ export function usePhotoRestoration() {
         }
         
         // Start progress simulation for JobContext
-        let progressInterval: ReturnType<typeof setInterval> | null = null;
         let lastProgress = 0;
         
         progressInterval = setInterval(async () => {
@@ -202,6 +202,7 @@ export function usePhotoRestoration() {
             ? (functionType as 'restoration'|'unblur'|'colorize'|'descratch')
             : 'restoration'
         );
+
         
         // Update job progress if this restoration was started via JobContext
         // This is handled in the onSuccess callback in restoration/[id].tsx
@@ -221,14 +222,9 @@ export function usePhotoRestoration() {
         return completedData;
       } catch (error) {
         // Clear progress interval on error
-        try {
-          // progressInterval is defined in the parent scope; best-effort clear
-           
-          const anyInterval: any = (global as any).__noop_progress_interval || null;
-          if (anyInterval) {
-            clearInterval(anyInterval);
-          }
-        } catch {}
+        if (progressInterval) {
+          clearInterval(progressInterval);
+        }
         if (__DEV__) {
           console.error('Photo restoration failed:', error);
         }

@@ -48,7 +48,7 @@ export function JobBlockingModal({ visible, jobType = 'video', onDismiss }: JobB
           
           {/* Title */}
           <Text className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-3">
-            We're still generating your results
+            We&apos;re still generating your results
           </Text>
           
           {/* Description */}

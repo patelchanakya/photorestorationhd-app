@@ -4,6 +4,7 @@ import { backToLifeService } from '@/services/backToLifeService';
 import { presentPaywall } from '@/services/revenuecat';
 import { useCropModalStore } from '@/store/cropModalStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { useFocusEffect } from '@react-navigation/native';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -78,6 +79,7 @@ const VideoViewWithPlayer = ({ video, index, style }: { video: any; index: numbe
     player.play();
   });
 
+  // Handle app state changes (backgrounding)
   React.useEffect(() => {
     const handleAppStateChange = (nextAppState: string) => {
       if (nextAppState === 'active') {
@@ -92,6 +94,24 @@ const VideoViewWithPlayer = ({ video, index, style }: { video: any; index: numbe
     
     return () => subscription?.remove();
   }, [player]);
+
+  // Handle navigation focus (returning to screen)
+  useFocusEffect(
+    React.useCallback(() => {
+      // Play video when screen comes into focus
+      if (player && !player.playing) {
+        player.play();
+      }
+      
+      // Optional: pause when leaving screen to save resources
+      return () => {
+        // We could pause here, but keeping them playing for smoother UX
+        // if (player && player.playing) {
+        //   player.pause();
+        // }
+      };
+    }, [player])
+  );
 
   return (
     <VideoView

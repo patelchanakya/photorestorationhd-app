@@ -297,8 +297,26 @@ export async function restorePhoto(imageUri: string, functionType: FunctionType 
       }
       
       if (result.status === 'succeeded') {
-        // The output is a URL to the restored image
-        return result.output as string;
+        // Handle different output formats from different models
+        const output = result.output as any;
+        
+        // flux-kontext-apps/restore-image returns a simple string
+        if (typeof output === 'string') {
+          return output;
+        }
+        
+        // black-forest-labs/flux-kontext-pro returns an array
+        if (Array.isArray(output) && output.length > 0) {
+          const first = output[0];
+          if (typeof first === 'string') return first;
+          if (first && typeof first.url === 'string') return first.url;
+        }
+        
+        // Log unexpected format for debugging
+        if (__DEV__) {
+          console.error('Unexpected output format:', output);
+        }
+        throw new Error('Unexpected output format from model');
       } else if (result.status === 'failed') {
         // Check if it's a content policy violation
         const error = String(result.error) || 'Processing failed';

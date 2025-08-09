@@ -1,4 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import * as ImagePicker from 'expo-image-picker';
+import * as MediaLibrary from 'expo-media-library';
 import React, { useEffect, useRef } from 'react';
 import { Dimensions, Image, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
@@ -123,6 +125,34 @@ export default function CustomSplashScreen({ onAnimationComplete }: CustomSplash
     if (iconUri) {
       Image.prefetch(iconUri).catch(() => {});
     }
+
+    // Request photo permissions during splash screen
+    const requestPermissions = async () => {
+      try {
+        if (__DEV__) {
+          console.log('📱 Requesting photo permissions during splash screen...');
+        }
+        
+        // Request media library permissions for photo access
+        const mediaLibraryResult = await MediaLibrary.requestPermissionsAsync();
+        if (__DEV__) {
+          console.log('📱 Media library permission result:', mediaLibraryResult.status);
+        }
+        
+        // Also request image picker permissions (covers gallery access)
+        const imagePickerResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (__DEV__) {
+          console.log('📱 Image picker permission result:', imagePickerResult.status);
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.log('📱 Error requesting permissions during splash:', error);
+        }
+      }
+    };
+
+    // Start permission request immediately
+    requestPermissions();
     
     const startAnimation = () => {
       // Background fade in with subtle breathing animation

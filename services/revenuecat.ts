@@ -1,12 +1,12 @@
-import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { analyticsService } from '@/services/analytics';
+import { useSubscriptionStore } from '@/store/subscriptionStore';
 import Constants from 'expo-constants';
 import Purchases, {
     CustomerInfo,
-    PurchasesOffering,
-    PurchasesPackage,
+    PURCHASES_ERROR_CODE,
     PurchasesError,
-    PURCHASES_ERROR_CODE
+    PurchasesOffering,
+    PurchasesPackage
 } from 'react-native-purchases';
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 
@@ -28,6 +28,47 @@ export interface PurchaseResult {
 // Helper to check if we're in Expo Go
 const isExpoGo = () => Constants.appOwnership === 'expo';
 
+// Helper to safely reset identity before restore operations
+// Always logs out to prevent cross-Apple-ID entitlement carryover.
+async function safeResetIdentity() {
+  try {
+    await Purchases.logOut();
+    if (__DEV__) console.log('👤 safeResetIdentity: Logged out to new anonymous RevenueCat ID');
+  } catch (e) {
+    // Ignore logout errors
+    if (__DEV__) console.log('ℹ️ safeResetIdentity: logOut error (ignored):', (e as any)?.message);
+  }
+  try { await Purchases.invalidateCustomerInfoCache(); } catch {}
+}
+
+// Robust entitlement validation to avoid granting access for expired subscriptions (esp. in sandbox)
+function isEntitlementTrulyActive(entitlement: any): boolean {
+  if (!entitlement?.isActive) return false;
+  if (entitlement?.expirationDate) {
+    const expiration = new Date(entitlement.expirationDate);
+    const now = new Date();
+    // Small buffer to account for device/server clock skew
+    const bufferMs = 5 * 60 * 1000;
+    const isValid = expiration.getTime() > (now.getTime() - bufferMs);
+    
+    if (__DEV__) {
+      console.log('⏰ Entitlement validation:', {
+        expirationDate: entitlement.expirationDate,
+        expirationTime: expiration.toISOString(),
+        nowTime: now.toISOString(),
+        timeDiff: expiration.getTime() - now.getTime(),
+        bufferMs,
+        isValid,
+        rcIsActive: entitlement.isActive
+      });
+    }
+    
+    return isValid;
+  }
+  // Lifetime purchases or missing expiration date: trust isActive
+  return entitlement.isActive === true;
+}
+
 export const getOfferings = async (): Promise<RevenueCatOfferings> => {
   try {
     // Mock data for Expo Go
@@ -48,13 +89,11 @@ export const getOfferings = async (): Promise<RevenueCatOfferings> => {
       
       // Find monthly and weekly packages based on your RevenueCat configuration
       const monthly = availablePackages.find(pkg => 
-        pkg.identifier === '$rc_monthly' || 
-        pkg.packageType === 'monthly'
+        pkg.identifier === '$rc_monthly'
       );
       
       const weekly = availablePackages.find(pkg => 
-        pkg.identifier === '$rc_weekly' || 
-        pkg.packageType === 'weekly'
+        pkg.identifier === '$rc_weekly'
       );
       
       if (__DEV__) {
@@ -110,6 +149,10 @@ export const purchasePackageEnhanced = async (packageToPurchase: PurchasesPackag
         errorMessage: 'Purchase succeeded but entitlement not active'
       };
     }
+    
+    // Explicitly update store status (no reliance on global listener)
+    await checkSubscriptionStatus();
+    
     
     return { success: true };
   } catch (error: any) {
@@ -212,7 +255,8 @@ export const purchasePackage = async (packageToPurchase: PurchasesPackage): Prom
       }
     }
     
-    // Note: Store update handled by CustomerInfo listener in _layout.tsx
+    // Explicitly update store status (no reliance on global listener)
+    await checkSubscriptionStatus();
     if (__DEV__) {
       console.log('🔄 Purchase completed, pro status:', hasProEntitlement);
     }
@@ -326,6 +370,7 @@ export const getCustomerInfo = async (): Promise<CustomerInfo | null> => {
   }
 };
 
+
 export const checkSubscriptionStatus = async (): Promise<boolean> => {
   try {
     const customerInfo = await getCustomerInfo();
@@ -333,31 +378,33 @@ export const checkSubscriptionStatus = async (): Promise<boolean> => {
     if (!customerInfo) {
       // Only update store in error case where CustomerInfo is unavailable
       useSubscriptionStore.getState().setIsPro(false);
+      useSubscriptionStore.getState().setExpirationDate(null);
       return false;
     }
     
-    // Check if user has active pro entitlement using isActive property
-    const proEntitlement = customerInfo.entitlements.active['pro'];
-    const hasProEntitlement = proEntitlement?.isActive === true;
+    // Prefer active entitlements, but fall back to all to read expiration/debug info
+    const entitlementsAny: any = (customerInfo as any)?.entitlements ?? {};
+    const proEntitlement = entitlementsAny.active?.['pro'] ?? entitlementsAny.all?.['pro'];
+    const hasProEntitlement = isEntitlementTrulyActive(proEntitlement);
     
     // Update store if different from current value (for Apple ID switches)
     const currentProStatus = useSubscriptionStore.getState().isPro;
     if (hasProEntitlement !== currentProStatus) {
       useSubscriptionStore.getState().setIsPro(hasProEntitlement);
+      // Keep expiration date in sync for UI
+      useSubscriptionStore.getState().setExpirationDate(proEntitlement?.expirationDate ?? null);
       if (__DEV__) {
         console.log('🔄 Updated subscription status on check:', hasProEntitlement);
       }
     }
     
     if (__DEV__) {
-      console.log('🔍 Subscription status check:', hasProEntitlement);
-      if (proEntitlement) {
-        console.log('🔍 Pro entitlement details:', {
-          isActive: proEntitlement.isActive,
-          willRenew: proEntitlement.willRenew,
-          expirationDate: proEntitlement.expirationDate
-        });
-      }
+      console.log('🔍 Subscription status check:', {
+        result: hasProEntitlement,
+        rcIsActive: proEntitlement?.isActive ?? null,
+        willRenew: proEntitlement?.willRenew ?? null,
+        expirationDate: proEntitlement?.expirationDate ?? null,
+      });
     }
     
     return hasProEntitlement;
@@ -391,27 +438,45 @@ export const restorePurchases = async (): Promise<boolean> => {
       console.log('🔄 Restoring purchases...');
     }
     
-    const { customerInfo } = await Purchases.restorePurchases();
+    // Sync with current Apple ID to prevent cross-Apple-ID carryover
+    await safeResetIdentity();
+
+    const customerInfo = await Purchases.restorePurchases();
+
+    // Force fetch fresh info after restore to avoid stale cache side-effects
+    try { await Purchases.invalidateCustomerInfoCache(); } catch {}
+    const freshInfo = await getCustomerInfo();
+    const info = freshInfo ?? customerInfo;
     
     if (__DEV__) {
       console.log('✅ Purchases restored:', customerInfo);
     }
     
     // Add null safety check
-    if (!customerInfo) {
+    if (!info) {
       if (__DEV__) {
         console.log('⚠️ No customer info returned from restore');
       }
-      return false;
+      const hasPro = await checkSubscriptionStatus();
+      return hasPro;
     }
     
-    // Check if restored purchases include pro entitlement using isActive property
-    const proEntitlement = customerInfo.entitlements.active['pro'];
-    const hasProEntitlement = proEntitlement?.isActive === true;
+    // Validate entitlement strictly
+    const entitlementsAny: any = (info as any)?.entitlements ?? {};
+    const proEntitlement = entitlementsAny.active?.['pro'] ?? entitlementsAny.all?.['pro'];
+    const hasProEntitlement = isEntitlementTrulyActive(proEntitlement);
+    // Update store explicitly
+    useSubscriptionStore.getState().setIsPro(hasProEntitlement);
+    useSubscriptionStore.getState().setExpirationDate(proEntitlement?.expirationDate ?? null);
     
     // Note: Store update handled by CustomerInfo listener in _layout.tsx
     if (__DEV__) {
-      console.log('🔄 Restore completed, pro status:', hasProEntitlement);
+      console.log('🔄 Restore completed:', {
+        result: hasProEntitlement,
+        rcIsActive: proEntitlement?.isActive ?? null,
+        willRenew: proEntitlement?.willRenew ?? null,
+        expirationDate: proEntitlement?.expirationDate ?? null,
+      });
     }
     
     return hasProEntitlement;
@@ -442,14 +507,17 @@ export const restorePurchasesDetailed = async (): Promise<RestoreResult> => {
       console.log('🔄 Restoring purchases...');
     }
     
-    const { customerInfo } = await Purchases.restorePurchases();
+    // Sync with current Apple ID to prevent cross-Apple-ID carryover
+    await safeResetIdentity();
+
+    const customerInfo = await Purchases.restorePurchases();
     
     if (__DEV__) {
       console.log('✅ Purchases restored:', customerInfo);
     }
     
     // Add null safety check - but customerInfo can be null even on successful restores
-    if (!customerInfo) {
+    if (!info) {
       if (__DEV__) {
         console.log('⚠️ No customer info returned from detailed restore');
       }
@@ -462,6 +530,7 @@ export const restorePurchasesDetailed = async (): Promise<RestoreResult> => {
       });
       
       if (waitForStoreUpdate.success) {
+        useSubscriptionStore.getState().setIsPro(waitForStoreUpdate.isPro);
         if (__DEV__) {
           console.log('✅ Restore successful - store updated with PRO status');
         }
@@ -482,13 +551,21 @@ export const restorePurchasesDetailed = async (): Promise<RestoreResult> => {
       };
     }
     
-    // Check if restored purchases include pro entitlement using isActive property
-    const proEntitlement = customerInfo.entitlements.active['pro'];
-    const hasProEntitlement = proEntitlement?.isActive === true;
+    // Check entitlement with robust validation
+    const entitlementsAny: any = (info as any)?.entitlements ?? {};
+    const proEntitlement = entitlementsAny.active?.['pro'] ?? entitlementsAny.all?.['pro'];
+    const hasProEntitlement = isEntitlementTrulyActive(proEntitlement);
+    useSubscriptionStore.getState().setIsPro(hasProEntitlement);
+    useSubscriptionStore.getState().setExpirationDate(proEntitlement?.expirationDate ?? null);
     
     // Note: Store update handled by CustomerInfo listener in _layout.tsx
     if (__DEV__) {
-      console.log('🔄 Detailed restore completed, pro status:', hasProEntitlement);
+      console.log('🔄 Detailed restore completed:', {
+        result: hasProEntitlement,
+        rcIsActive: proEntitlement?.isActive ?? null,
+        willRenew: proEntitlement?.willRenew ?? null,
+        expirationDate: proEntitlement?.expirationDate ?? null,
+      });
     }
     
     return {
@@ -767,10 +844,12 @@ export const getSubscriptionExpirationDate = async (): Promise<Date | null> => {
       return null;
     }
     
-    const proEntitlement = customerInfo.entitlements.active['pro'];
+    // Prefer active but fall back to all for expiration visibility
+    const entitlementsAny: any = (customerInfo as any)?.entitlements ?? {};
+    const proEntitlement = entitlementsAny.active?.['pro'] ?? entitlementsAny.all?.['pro'];
     
     // Only return expiration date if entitlement is active
-    if (proEntitlement?.isActive && proEntitlement.expirationDate) {
+    if (isEntitlementTrulyActive(proEntitlement) && proEntitlement.expirationDate) {
       return new Date(proEntitlement.expirationDate);
     }
     
@@ -802,21 +881,23 @@ export const validatePremiumAccess = async (): Promise<boolean> => {
     if (!customerInfo) {
       // Only update store in error case where CustomerInfo is unavailable
       useSubscriptionStore.getState().setIsPro(false);
+      useSubscriptionStore.getState().setExpirationDate(null);
       return false;
     }
     
-    // Check entitlement using isActive property for accuracy
-    const proEntitlement = customerInfo.entitlements.active['pro'];
-    const hasValidAccess = proEntitlement?.isActive === true;
+    // Check entitlement using robust validation
+    const entitlementsAny: any = (customerInfo as any)?.entitlements ?? {};
+    const proEntitlement = entitlementsAny.active?.['pro'] ?? entitlementsAny.all?.['pro'];
+    const hasValidAccess = isEntitlementTrulyActive(proEntitlement);
     
     // Note: Store update handled by CustomerInfo listener in _layout.tsx
     if (__DEV__) {
       console.log('🔐 Premium access validation:', hasValidAccess);
-      if (proEntitlement && !hasValidAccess) {
-        console.log('🔐 Pro entitlement exists but not active:', {
-          isActive: proEntitlement.isActive,
-          willRenew: proEntitlement.willRenew,
-          expirationDate: proEntitlement.expirationDate
+      if (proEntitlement) {
+        console.log('🔐 Pro entitlement details (validation):', {
+          isActive: proEntitlement?.isActive ?? null,
+          willRenew: proEntitlement?.willRenew ?? null,
+          expirationDate: proEntitlement?.expirationDate ?? null,
         });
       }
     }
@@ -1087,6 +1168,9 @@ export const restorePurchasesSimple = async (): Promise<RestoreResult> => {
         errorMessage: 'Cannot restore purchases in Expo Go'
       };
     }
+
+    // Sync with current Apple ID to prevent cross-Apple-ID carryover
+    await safeResetIdentity();
     
     if (__DEV__) {
       console.log('🔄 Starting restore purchases...');
@@ -1095,36 +1179,11 @@ export const restorePurchasesSimple = async (): Promise<RestoreResult> => {
     // Store initial state
     const initialProStatus = useSubscriptionStore.getState().isPro;
     
-    // STEP 1: Sync purchases first (recommended by RevenueCat for anonymous users)
-    // This pulls past purchases from App Store and links anonymous IDs
+    // STEP 1: Invalidate cache first (avoid pre-sync in sandbox; restore will refresh receipt)
     try {
-      if (__DEV__) {
-        console.log('🔄 Syncing purchases with current Apple ID...');
-      }
-      await Purchases.syncPurchases();
-      
-      // Check if sync found purchases
-      const afterSyncInfo = await Purchases.getCustomerInfo();
-      const afterSyncPro = afterSyncInfo.entitlements.active['pro'];
-      const foundPurchasesFromSync = afterSyncPro?.isActive === true;
-      
-      if (foundPurchasesFromSync) {
-        if (__DEV__) {
-          console.log('✅ Sync found purchases, no need for restore');
-        }
-        
-        // Wait for listener to update
-        await waitForSubscriptionUpdate({
-          timeout: 2000,
-          checkInterval: 100,
-          expectedChange: !initialProStatus
-        });
-        
-        return {
-          success: true,
-          hasActiveEntitlements: true
-        };
-      }
+      if (__DEV__) console.log('🔒 Invalidating cache before sync...');
+      await Purchases.invalidateCustomerInfoCache();
+      // No pre-sync: let restore flow refresh the receipt tied to current Apple ID
     } catch (syncError) {
       if (__DEV__) {
         console.log('⚠️ Sync failed, will try restore:', syncError);
@@ -1138,21 +1197,29 @@ export const restorePurchasesSimple = async (): Promise<RestoreResult> => {
     
     const restore = await Purchases.restorePurchases();
     
-    // Wait for the listener to update the store
-    const storeUpdate = await waitForSubscriptionUpdate({
-      timeout: 3000,
-      checkInterval: 100,
-      expectedChange: !initialProStatus
-    });
-    
-    // Check the final status from store
-    const finalProStatus = useSubscriptionStore.getState().isPro;
+    // Force fresh data after restore: invalidate and fetch
+    try { await Purchases.invalidateCustomerInfoCache(); } catch {}
+    const freshInfo = await getCustomerInfo();
+    let finalProStatus = false;
+    let proEntitlement: any = null;
+    if (freshInfo) {
+      const entitlementsAny: any = (freshInfo as any)?.entitlements ?? {};
+      proEntitlement = entitlementsAny.active?.['pro'] ?? entitlementsAny.all?.['pro'];
+      finalProStatus = isEntitlementTrulyActive(proEntitlement);
+      useSubscriptionStore.getState().setIsPro(finalProStatus);
+      useSubscriptionStore.getState().setExpirationDate(proEntitlement?.expirationDate ?? null);
+    } else {
+      // As a fallback, run the standard status check
+      finalProStatus = await checkSubscriptionStatus();
+    }
     
     if (__DEV__) {
       console.log('🔄 Restore complete:', {
         hadProBefore: initialProStatus,
         hasProNow: finalProStatus,
-        storeUpdated: storeUpdate.success
+        rcIsActive: proEntitlement?.isActive ?? null,
+        willRenew: proEntitlement?.willRenew ?? null,
+        expirationDate: proEntitlement?.expirationDate ?? null,
       });
     }
     

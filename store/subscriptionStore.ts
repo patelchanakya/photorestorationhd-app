@@ -1,7 +1,7 @@
+import { deviceTrackingService } from '@/services/deviceTracking';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { deviceTrackingService } from '@/services/deviceTracking';
 
 interface SubscriptionState {
   isPro: boolean;
@@ -25,7 +25,7 @@ interface SubscriptionState {
 export const useSubscriptionStore = create<SubscriptionState>()(
   persist(
     (set, get) => ({
-      isPro: false,
+      isPro: false, // This will NOT be persisted - see partialize below
       freeRestorationsUsed: 0,
       freeRestorationsLimit: 3, // 3 free restorations every 48 hours
       lastResetDate: new Date().toISOString(),
@@ -182,7 +182,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       }
     }),
     {
-      name: 'subscription-storage-v2', // Changed name to clear old cache
+      name: 'subscription-storage-v2', // Keep same name to avoid breaking production
       storage: {
         getItem: async (name) => {
           const value = await AsyncStorage.getItem(name);
@@ -194,6 +194,27 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         removeItem: async (name) => {
           await AsyncStorage.removeItem(name);
         },
+      },
+      // IMPORTANT: Exclude isPro from persistence to prevent subscription leakage across Apple IDs
+      partialize: (state) => ({
+        // Only persist these fields - isPro is explicitly excluded
+        freeRestorationsUsed: state.freeRestorationsUsed,
+        freeRestorationsLimit: state.freeRestorationsLimit,
+        lastResetDate: state.lastResetDate,
+        expirationDate: state.expirationDate,
+        appUserId: state.appUserId,
+        hasSeenUpgradePrompt: state.hasSeenUpgradePrompt,
+        // isPro is NOT included here - it must come fresh from RevenueCat on each app start
+      }) as any,
+      // Force isPro to always start as false when rehydrating from storage
+      onRehydrateStorage: () => (state, error) => {
+        if (state && !error) {
+          // Always reset isPro to false on app startup - RevenueCat will set it correctly
+          state.isPro = false;
+          if (__DEV__) {
+            console.log('🔄 Store rehydrated: isPro reset to false, waiting for RevenueCat');
+          }
+        }
       },
     }
   )

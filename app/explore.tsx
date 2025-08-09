@@ -6,7 +6,7 @@ import { HeroBackToLifeExamples } from '@/components/HeroBackToLifeExamples';
 import { QuickActionRail } from '@/components/QuickActionRail';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
-import { presentPaywall, restorePurchases, restorePurchasesSimple, validatePremiumAccess, checkSubscriptionStatus, getSubscriptionExpirationDate } from '@/services/revenuecat';
+import { presentPaywall } from '@/services/revenuecat';
 import { UserIdPersistenceService } from '@/services/userIdPersistence';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
@@ -52,106 +52,6 @@ export default function HomeGalleryLikeScreen() {
                 }
               }
             }}
-            onLongPress={async () => {
-              // Long press to restore purchases or refresh status
-              const isExpoGo = Constants.appOwnership === 'expo';
-              if (isExpoGo) {
-                Alert.alert(
-                  'Demo Mode',
-                  'Restore is not available in Expo Go.',
-                  [{ text: 'OK' }]
-                );
-                return;
-              }
-              
-              // In dev mode, show additional debug options
-              if (__DEV__) {
-                const expirationDate = await getSubscriptionExpirationDate();
-                const expirationString = expirationDate ? 
-                  `Expires: ${expirationDate.toLocaleString()}` : 
-                  'No active subscription';
-                
-                Alert.alert(
-                  'Subscription Options',
-                  `Current Status: ${isPro ? 'PRO' : 'FREE'}\n${expirationString}`,
-                  [
-                    { text: 'Cancel', style: 'cancel' },
-                    { 
-                      text: 'Refresh Status', 
-                      onPress: async () => {
-                        const status = await checkSubscriptionStatus();
-                        Alert.alert(
-                          'Status Refreshed',
-                          `Subscription is ${status ? 'ACTIVE' : 'INACTIVE'}`,
-                          [{ text: 'OK' }]
-                        );
-                      }
-                    },
-                    { 
-                      text: 'Restore Purchases', 
-                      onPress: async () => {
-                        const result = await restorePurchasesSimple();
-                        
-                        if (result.success && result.hasActiveEntitlements) {
-                          Alert.alert(
-                            'Restored!',
-                            'Your Pro subscription has been restored successfully!',
-                            [{ text: 'Great!' }]
-                          );
-                        } else if (result.success && !result.hasActiveEntitlements) {
-                          Alert.alert(
-                            'No Purchases Found',
-                            'No previous purchases were found for this account.',
-                            [{ text: 'OK' }]
-                          );
-                        } else {
-                          Alert.alert(
-                            'Restore Failed',
-                            result.errorMessage || 'Unable to restore purchases. Please try again.',
-                            [{ text: 'OK' }]
-                          );
-                        }
-                      }
-                    }
-                  ]
-                );
-              } else {
-                // Production mode - just restore
-                Alert.alert(
-                  'Restore Purchases',
-                  'Would you like to restore your previous purchases?',
-                  [
-                    { text: 'Cancel', style: 'cancel' },
-                    { 
-                      text: 'Restore', 
-                      onPress: async () => {
-                        const result = await restorePurchasesSimple();
-                        
-                        if (result.success && result.hasActiveEntitlements) {
-                          Alert.alert(
-                            'Restored!',
-                            'Your Pro subscription has been restored successfully!',
-                            [{ text: 'Great!' }]
-                          );
-                        } else if (result.success && !result.hasActiveEntitlements) {
-                          Alert.alert(
-                            'No Purchases Found',
-                            'No previous purchases were found for this account.',
-                            [{ text: 'OK' }]
-                          );
-                        } else {
-                          Alert.alert(
-                            'Restore Failed',
-                            result.errorMessage || 'Unable to restore purchases. Please try again.',
-                            [{ text: 'OK' }]
-                          );
-                        }
-                      }
-                    }
-                  ]
-                );
-              }
-            }}
             style={{ 
               backgroundColor: isPro ? 'rgba(249,115,22,0.15)' : 'rgba(249,115,22,0.9)', 
               borderRadius: 16, 
@@ -165,19 +65,6 @@ export default function HomeGalleryLikeScreen() {
             }}>
             {isPro && <IconSymbol name="checkmark.circle.fill" size={14} color="#f97316" />}
             <Text style={{ color: isPro ? '#f97316' : '#fff', fontWeight: '600', fontSize: 12 }}>PRO</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => router.push('/gallery-modal')}
-            style={{
-              backgroundColor: 'rgba(255,255,255,0.1)',
-              borderRadius: 16,
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.2)',
-            }}
-          >
-            <IconSymbol name="photo.stack" size={16} color="#EAEAEA" />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => router.push('/settings-modal')}
