@@ -95,6 +95,36 @@ export interface Database {
           last_reset_date?: string;
         };
       };
+      user_video_usage: {
+        Row: {
+          user_id: string;
+          back_to_life_count: number;
+          plan_type: string;
+          usage_limit: number;
+          billing_cycle_start: string | null;
+          next_reset_date: string | null;
+          original_purchase_date: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          back_to_life_count?: number;
+          plan_type?: string;
+          usage_limit?: number;
+          billing_cycle_start?: string;
+          next_reset_date?: string;
+          original_purchase_date?: string;
+        };
+        Update: {
+          back_to_life_count?: number;
+          plan_type?: string;
+          usage_limit?: number;
+          billing_cycle_start?: string;
+          next_reset_date?: string;
+          original_purchase_date?: string;
+          updated_at?: string;
+        };
+      };
       restorations: {
         Row: {
           id: string;

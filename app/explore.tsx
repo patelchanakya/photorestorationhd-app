@@ -167,6 +167,19 @@ export default function HomeGalleryLikeScreen() {
             <Text style={{ color: isPro ? '#f97316' : '#fff', fontWeight: '600', fontSize: 12 }}>PRO</Text>
           </TouchableOpacity>
           <TouchableOpacity
+            onPress={() => router.push('/gallery-modal')}
+            style={{
+              backgroundColor: 'rgba(255,255,255,0.1)',
+              borderRadius: 16,
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.2)',
+            }}
+          >
+            <IconSymbol name="photo.stack" size={16} color="#EAEAEA" />
+          </TouchableOpacity>
+          <TouchableOpacity
             onPress={() => router.push('/settings-modal')}
           >
             <IconSymbol name="gear" size={22} color="#EAEAEA" />
@@ -175,6 +188,7 @@ export default function HomeGalleryLikeScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+        
         {/* Back to Life section title */}
         <View style={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '600', letterSpacing: -0.3 }}>Back to Life</Text>

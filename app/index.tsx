@@ -976,6 +976,7 @@ export default function MinimalCameraWithGalleryButton() {
             </View>
           </View>
 
+
           {/* Mode Selector Modal */}
           <ModeSelector
             visible={showModeSelector}

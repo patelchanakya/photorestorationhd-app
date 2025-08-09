@@ -8,11 +8,14 @@ import '../global.css';
 import CustomSplashScreen from '@/components/CustomSplashScreen';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { OnboardingProvider, useOnboarding } from '@/contexts/OnboardingContext';
+import { JobProvider } from '@/contexts/JobContext';
+import { GlobalNotifications } from '@/components/GlobalNotifications';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { LanguageProvider } from '@/i18n';
 import { analyticsService } from '@/services/analytics';
 import { deviceTrackingService } from '@/services/deviceTracking';
 import { networkStateService } from '@/services/networkState';
+import { notificationService } from '@/services/notificationService';
 import { checkSubscriptionStatus } from '@/services/revenuecat';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import NetInfo from '@react-native-community/netinfo';
@@ -485,10 +488,19 @@ export default function RootLayout() {
         console.error('❌ Failed to initialize analytics service:', error);
       }
     });
+
+    // Initialize notification service
+    notificationService.initialize().catch((error) => {
+      if (__DEV__) {
+        console.error('❌ Failed to initialize notification service:', error);
+      }
+    });
     
     // Add a small delay to ensure other providers are ready
-    const timer = setTimeout(() => {
-      initRevenueCat();
+    const timer = setTimeout(async () => {
+      await initRevenueCat();
+      
+      // No need to initialize video usage - now using online-only approach
     }, 100);
     
     return () => {
@@ -551,12 +563,15 @@ export default function RootLayout() {
             <OnboardingProvider>
               <LanguageProvider>
                 <QueryClientProvider client={queryClient}>
+                  <JobProvider>
                     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                    <OnboardingNavigator />
-                    <StatusBar style="auto" />
-                  </ThemeProvider>
-              </QueryClientProvider>
-            </LanguageProvider>
+                      <OnboardingNavigator />
+                      <GlobalNotifications />
+                      <StatusBar style="auto" />
+                    </ThemeProvider>
+                  </JobProvider>
+                </QueryClientProvider>
+              </LanguageProvider>
             </OnboardingProvider>
           </GestureHandlerRootView>
         </ErrorBoundary>
@@ -601,6 +616,7 @@ function OnboardingNavigator() {
       <Stack.Screen name="index" options={{ headerShown: false, title: "Clever" }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="restoration/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="video-result/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="gallery-modal" options={{ presentation: 'modal', headerShown: false }} />
       <Stack.Screen name="settings-modal" options={{ presentation: 'modal', headerShown: false }} />
       <Stack.Screen name="crop-modal" options={{ presentation: 'modal', headerShown: false }} />

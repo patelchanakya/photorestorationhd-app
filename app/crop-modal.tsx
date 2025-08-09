@@ -3,7 +3,9 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 import { analyticsService } from '@/services/analytics';
 import { deviceTrackingService } from '@/services/deviceTracking';
+import { type FunctionType } from '@/services/modelConfigs';
 import { networkStateService } from '@/services/networkState';
+import { notificationService } from '@/services/notificationService';
 import { presentPaywall, validatePremiumAccess } from '@/services/revenuecat';
 import { useCropModalStore } from '@/store/cropModalStore';
 import { useRestorationStore } from '@/store/restorationStore';
@@ -12,7 +14,6 @@ import Constants from 'expo-constants';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
     Alert,
     Dimensions,
     Image,
@@ -25,6 +26,7 @@ import Animated, {
     runOnJS,
     useAnimatedStyle,
     useSharedValue,
+    withRepeat,
     withSequence,
     withSpring,
     withTiming
@@ -36,7 +38,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 function CropModalScreen() {
   const router = useRouter();
-  const { imageUri, functionType, imageSource, customPrompt } = useLocalSearchParams();
+  const { imageUri, functionType, imageSource, customPrompt, simulateVideo } = useLocalSearchParams();
   const [error] = useState<string | null>(null);
   
   // Use Zustand store for state management
@@ -48,6 +50,10 @@ function CropModalScreen() {
     setShowCropTool,
     setUseImageLoading,
     setButtonText,
+    setCurrentImageUri,
+    setIsProcessing,
+    setProgress,
+    setCanCancel,
     resetForNewImage,
     reset,
   } = useCropModalStore();
@@ -79,6 +85,28 @@ function CropModalScreen() {
   const animatedButtonStyle = useAnimatedStyle(() => ({
     transform: [{ scale: buttonScale.value }],
     opacity: buttonOpacity.value,
+  }));
+
+  // Minimal spinner for the Upload button while starting
+  const spinnerRotation = useSharedValue(0);
+  useEffect(() => {
+    spinnerRotation.value = withRepeat(withTiming(360, { duration: 700 }), -1, false);
+  }, []);
+  const animatedSpinnerStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${spinnerRotation.value}deg` }],
+  }));
+
+  // Center spinner when isProcessing (fallback beneath modal)
+  const centerSpin = useSharedValue(0);
+  useEffect(() => {
+    if (isProcessing) {
+      centerSpin.value = withRepeat(withTiming(360, { duration: 700 }), -1, false);
+    } else {
+      centerSpin.value = 0;
+    }
+  }, [isProcessing]);
+  const animatedCenterStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${centerSpin.value}deg` }],
   }));
   
   const { canRestore, incrementFreeRestorations, isPro, hasSeenUpgradePrompt, setHasSeenUpgradePrompt } = useSubscriptionStore();
@@ -245,28 +273,84 @@ function CropModalScreen() {
       withTiming(1.05, { duration: 100 }),
       withSpring(1, { damping: 10 })
     );
-    
-    // Small delay to show success state
-    setTimeout(() => {
-      // Proceed with restoration
-      const promptParam = customPrompt ? `&customPrompt=${encodeURIComponent(customPrompt as string)}` : '';
-      router.replace(`/restoration/${Date.now()}?imageUri=${encodeURIComponent(imageUri)}&functionType=${functionType}&imageSource=${imageSource || 'gallery'}${promptParam}`);
-    }, 400);
+
+    // Show processing modal immediately (Remini-style) without navigating yet
+    const isVideo = (functionType as string) === 'backtolife';
+    const simulateToast = (typeof simulateVideo === 'string') && (simulateVideo === '1' || simulateVideo.toLowerCase() === 'true');
+    setIsProcessing(true);
+    setCurrentImageUri(imageUri);
+    setProgress(1);
+    setCanCancel(isVideo || simulateToast);
+
+    // Local progress timer until 95%
+    const startTime = Date.now();
+    const estimatedDuration = isVideo ? 120 : 7; // seconds
+    let progressIntervalId: NodeJS.Timeout | null = setInterval(() => {
+      const elapsed = (Date.now() - startTime) / 1000;
+      const pct = Math.min(Math.floor((elapsed / estimatedDuration) * 95), 95);
+      setProgress(pct);
+    }, 1000);
+
+    // Start photo restoration directly from here
+    photoRestoration.mutate(
+      {
+        imageUri: imageUri as string,
+        functionType: (functionType as string) as FunctionType,
+        imageSource: (imageSource as 'camera' | 'gallery') || 'gallery',
+        customPrompt: customPrompt ? decodeURIComponent(customPrompt as string) : undefined,
+      },
+      {
+        onSuccess: (data) => {
+          if (progressIntervalId) {
+            clearInterval(progressIntervalId);
+            progressIntervalId = null;
+          }
+          setProgress(100);
+          setTimeout(() => setIsProcessing(false), 300);
+          setUseImageLoading(false);
+          setButtonText('Use Image');
+          // Test: trigger completion notification for photo to validate notification flow
+          if (simulateToast) {
+            notificationService.sendVideoCompletionNotification('photo');
+          }
+          const isVideoResult = (data as any).videoFilename;
+          if (isVideoResult) {
+            router.replace(`/video-result/${data.id}`);
+          } else {
+            router.replace(`/restoration/${data.id}`);
+          }
+        },
+        onError: (err) => {
+          if (progressIntervalId) {
+            clearInterval(progressIntervalId);
+            progressIntervalId = null;
+          }
+          setUseImageLoading(false);
+          setIsProcessing(false);
+          setButtonText('Use Image');
+          Alert.alert(
+            'Processing Failed',
+            (err as any)?.message || 'Something went wrong. Please try again.',
+            [{ text: 'OK' }]
+          );
+        },
+      }
+    );
   };
 
 
 
   return (
-    <SafeAreaView className="flex-1 bg-black justify-center items-center">
+    <SafeAreaView className="flex-1 justify-center items-center" style={{ backgroundColor: '#0B0B0F' }}>
       <View
-        className="flex-row justify-between items-center px-4 py-3 border-b border-white/10 bg-black/90"
+        className="flex-row justify-between items-center px-4 py-3"
         style={{ zIndex: 10 }}
       >
         <TouchableOpacity
           onPress={handleCancel}
           className="w-10 h-10 rounded-full justify-center items-center"
         >
-          <IconSymbol name="xmark" size={20} color="rgba(255,255,255,0.2)" />
+          <IconSymbol name="xmark" size={20} color="rgba(255,255,255,0.75)" />
         </TouchableOpacity>
         <View className="flex-1 mx-4">
           <Text className="text-white text-lg font-semibold text-center">
@@ -280,7 +364,7 @@ function CropModalScreen() {
              functionType === 'custom' ? 'Custom Edit' :
              'Restore'}
           </Text>
-          <Text className="text-white/60 text-sm text-center mt-1">
+          <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, textAlign: 'center', marginTop: 4, letterSpacing: 0.2 }}>
             Use image or crop for better results
           </Text>
         </View>
@@ -288,8 +372,20 @@ function CropModalScreen() {
         <View className="w-10 h-10" />
       </View>
       {isProcessing ? (
-        <View style={{ flex: 1, backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color="#f97316" />
+        <View style={{ flex: 1, backgroundColor: '#0B0B0F', justifyContent: 'center', alignItems: 'center' }}>
+          <Animated.View
+            style={[
+              {
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                borderWidth: 3,
+                borderColor: 'rgba(249,115,22,0.25)',
+                borderTopColor: '#f97316',
+              },
+              animatedCenterStyle,
+            ]}
+          />
         </View>
       ) : showCropTool ? (
         <View style={{
@@ -300,7 +396,7 @@ function CropModalScreen() {
           overflow: 'hidden',
           justifyContent: 'center',
           alignItems: 'center',
-          backgroundColor: 'black',
+          backgroundColor: '#0B0B0F',
         }}>
           <CustomImageCropper
             imageUri={currentImageUri}
@@ -332,7 +428,7 @@ function CropModalScreen() {
           />
         </View>
       ) : (
-        <View style={{ flex: 1, backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' }}>
+        <View style={{ flex: 1, backgroundColor: '#0B0B0F', justifyContent: 'center', alignItems: 'center' }}>
           {currentImageUri ? (
             <>
               <View style={{ 
@@ -373,14 +469,18 @@ function CropModalScreen() {
                 borderRadius: 28,
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                borderWidth: 1,
-                borderColor: 'rgba(255, 255, 255, 0.2)',
+                backgroundColor: 'rgba(26, 26, 26, 0.85)',
+                borderWidth: 1.5,
+                borderColor: 'rgba(255, 255, 255, 0.18)',
                 flexDirection: 'row',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.25,
+                shadowRadius: 8,
               }}
               onPress={() => setShowCropTool(true)}
               accessibilityLabel="Crop Image"
-              activeOpacity={0.7}
+              activeOpacity={0.8}
             >
               <IconSymbol name="crop" size={18} color="#fff" />
               <Text style={{ 
@@ -415,8 +515,14 @@ function CropModalScreen() {
                   borderRadius: 28,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: useImageLoading ? 'rgba(249,115,22,0.5)' : '#f97316',
+                  backgroundColor: useImageLoading ? 'rgba(249,115,22,0.7)' : '#f97316',
                   flexDirection: 'row',
+                  shadowColor: '#f97316',
+                  shadowOffset: { width: 0, height: 8 },
+                  shadowOpacity: useImageLoading ? 0.15 : 0.35,
+                  shadowRadius: 16,
+                  borderWidth: useImageLoading ? 0 : 0.5,
+                  borderColor: 'rgba(255, 255, 255, 0.1)',
                 },
                 animatedButtonStyle
               ]}
@@ -430,7 +536,24 @@ function CropModalScreen() {
               disabled={useImageLoading}
             >
               {useImageLoading ? (
-                <ActivityIndicator size="small" color="rgba(255, 255, 255, 0.9)" />
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Animated.View
+                    style={[
+                      {
+                        width: 18,
+                        height: 18,
+                        borderRadius: 9,
+                        borderWidth: 2,
+                        borderColor: 'rgba(255,255,255,0.25)',
+                        borderTopColor: '#ffffff',
+                      },
+                      animatedSpinnerStyle,
+                    ]}
+                  />
+                  <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '600', letterSpacing: 0.3 }}>
+                    Uploading…
+                  </Text>
+                </View>
               ) : (
                 <Text style={{ 
                   color: '#ffffff', 

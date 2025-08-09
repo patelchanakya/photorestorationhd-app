@@ -1,14 +1,17 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { useBackToLife } from '@/hooks/useBackToLife';
+import { backToLifeService } from '@/services/backToLifeService';
 import { presentPaywall } from '@/services/revenuecat';
-import { VideoView, useVideoPlayer } from 'expo-video';
+import { useCropModalStore } from '@/store/cropModalStore';
+import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import React from 'react';
-import { Alert, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import Animated, { FadeIn, FadeInDown, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
+import { Alert, AppState, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 
 interface ExampleItem {
   id: string;
@@ -21,20 +24,52 @@ interface ExampleItem {
 }
 
 const DEFAULT_EXAMPLES: ExampleItem[] = [
-  // Video presets for different animations
-  { id: 'ex-c', video: require('../assets/videos/btl-3.mp4'), title: 'Hug', type: 'video', animationPrompt: 'animate with a warm hug gesture' },
-  { id: 'ex-e', video: require('../assets/videos/btl-5.mp4'), title: 'Group', type: 'video', animationPrompt: 'animate as a group celebration' },
-  { id: 'ex-d', video: require('../assets/videos/btl-4.mp4'), title: 'Love', type: 'video', animationPrompt: 'animate with love and affection' },
-  { id: 'ex-a', video: require('../assets/videos/btl-1.mp4'), title: 'Dance', type: 'video', animationPrompt: 'animate with dancing movements' },
-  { id: 'ex-b', video: require('../assets/videos/btl-2.mp4'), title: 'Fun', type: 'video', animationPrompt: 'animate with fun and playful movements' },
-  { id: 'ex-smile', video: require('../assets/videos/btl-0.mp4'), title: 'Smile', type: 'video', animationPrompt: 'animate with a warm smile' },
-  
-  // Fallback option if video doesn't work:
-  // { id: 'ex-a', image: require('../assets/images/onboarding/after-3.png'), title: 'Back to life', type: 'image' },
-  // { id: 'ex-b', image: require('../assets/images/onboarding/after-4.png'), title: 'Back to life', type: 'image' },
+  // Video presets optimized for Kling v2.1 video generation with natural, cinematic prompts
+  { 
+    id: 'ex-c', 
+    video: require('../assets/videos/btl-3.mp4'), 
+    title: 'Hug', 
+    type: 'video', 
+    animationPrompt: 'Let the scene express warmth and closeness through a natural hug or embrace. The motion should feel smooth and genuine, whether it\'s two people sharing a soft side hug, a small group leaning in together, or friends pulling each other close. Keep movements fluid and unforced, with slight posture adjustments and natural timing. Let the moment feel connected and comfortable, adapting to the number of people in the scene. Background remains still.' 
+  },
+  { 
+    id: 'ex-e', 
+    video: require('../assets/videos/btl-5.mp4'), 
+    title: 'Group', 
+    type: 'video', 
+    animationPrompt: 'Bring the group to life with small, natural movements that reflect connection and presence. People may shift slightly, glance at each other, share a laugh, or adjust their posture. Movements should feel relaxed and unposed, like a real moment between friends or family. Let each person have their own subtle variation in motion, creating a layered, lifelike scene. Background stays still.' 
+  },
+  { 
+    id: 'ex-b', 
+    video: require('../assets/videos/btl-2.mp4'), 
+    title: 'Fun', 
+    type: 'video', 
+    animationPrompt: 'Bring a sense of fun and joy to the scene through a natural, fitting gesture. For example, friends might laugh together, a parent might lift a child, someone might clap, wave, or lean playfully toward another. Let the action match the energy and context of the image, keeping it smooth, warm, and spontaneous. Background remains still.' 
+  },
+  { 
+    id: 'ex-d', 
+    video: require('../assets/videos/btl-4.mp4'), 
+    title: 'Love', 
+    type: 'video', 
+    animationPrompt: 'Let the scene express affection naturally — this could be a gentle kiss, a soft lean-in, or an intimate glance, depending on the relationship in the image. Movements should be smooth, minimal, and emotionally grounded. If a kiss happens, let it be brief and warm, with natural timing. Keep everything feeling sincere and comfortable. Background remains still.' 
+  },
+  { 
+    id: 'ex-a', 
+    video: require('../assets/videos/btl-1.mp4'), 
+    title: 'Dance', 
+    type: 'video', 
+    animationPrompt: 'Add a moment of playful movement that fits the scene — this could be a quick spin, a light sway, or another gentle dance-like gesture. Keep the motion fluid and joyful, without exaggerated speed. Allow clothing and hair to respond naturally. Let Kling choose a motion that feels appropriate for the pose and number of people. Background remains still.' 
+  },
+  { 
+    id: 'ex-smile', 
+    video: require('../assets/videos/btl-0.mp4'), 
+    title: 'Smile', 
+    type: 'video', 
+    animationPrompt: 'Let the subject\'s expression shift gently into a soft, natural smile. The movement should be minimal and unforced, as if sparked by a small happy thought or connection. Keep the face relaxed, with a smooth transition into the smile. Background and posture remain unchanged.' 
+  },
 ];
 
-// VideoView component with player hook
+// VideoView component with player hook and AppState handling
 const VideoViewWithPlayer = ({ video, index, style }: { video: any; index: number; style: any }) => {
   const player = useVideoPlayer(video, (player) => {
     player.loop = true;
@@ -42,6 +77,21 @@ const VideoViewWithPlayer = ({ video, index, style }: { video: any; index: numbe
     player.playbackRate = [1.0, 0.95, 1.05, 0.9, 1.1, 0.98][index] || 1.0;
     player.play();
   });
+
+  React.useEffect(() => {
+    const handleAppStateChange = (nextAppState: string) => {
+      if (nextAppState === 'active') {
+        // Resume video playback when app returns to foreground
+        if (player && !player.playing) {
+          player.play();
+        }
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    
+    return () => subscription?.remove();
+  }, [player]);
 
   return (
     <VideoView
@@ -54,13 +104,59 @@ const VideoViewWithPlayer = ({ video, index, style }: { video: any; index: numbe
   );
 };
 
-async function pickVideo(isPro: boolean, animationPrompt?: string) {
+const pickVideoWithHook = (backToLife: any) => async (isPro: boolean, animationPrompt?: string) => {
+  console.log('🎬 FUCK IT: Starting simple flow');
+  
+  try {
+    // Get permission
+    const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (res.status !== 'granted') return;
+    
+    // Launch picker with basic options
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: false,
+      quality: 1,
+    });
+    
+    console.log('🎬 PICKER RESULT:', result.canceled);
+    
+    if (!result.canceled && result.assets?.[0]) {
+      console.log('🎬 STARTING PROCESSING NOW');
+      
+      const { setIsProcessing, setCurrentImageUri, setProgress, setCanCancel, setProcessingStatus, setCompletedRestorationId } = useCropModalStore.getState();
+      const uri = result.assets[0].uri;
+      
+      setIsProcessing(true);
+      setCurrentImageUri(uri);
+      setProgress(1);
+      setCanCancel(true);
+      setProcessingStatus('loading');
+      setCompletedRestorationId(null);
+      
+      backToLife.mutate({
+        imageUri: uri,
+        animationPrompt: animationPrompt || 'bring this photo to life',
+        imageSource: 'gallery',
+      });
+    }
+  } catch (error) {
+    console.error('🎬 FUCK ERROR:', error);
+  }
+};
+
+// OLD CODE BELOW (commented out for testing)
+/*
+async function pickVideoOLD(isPro: boolean, animationPrompt?: string) {
+  const { setIsProcessing, setCurrentImageUri, setProgress, setCanCancel } = useCropModalStore.getState();
   // Check current PRO status
   const currentIsPro = useSubscriptionStore.getState().isPro;
+  console.log('🎬 Back to Life: Current PRO status:', currentIsPro);
   
   // If not PRO, show paywall
   if (!currentIsPro) {
+    console.log('🎬 Back to Life: Not PRO, showing paywall');
     const success = await presentPaywall();
+    console.log('🎬 Back to Life: Paywall result:', success);
     if (!success) return;
     
     // After successful purchase, check if status was updated
@@ -70,30 +166,111 @@ async function pickVideo(isPro: boolean, animationPrompt?: string) {
       await new Promise(resolve => setTimeout(resolve, 500));
     }
   }
+
+  // Check usage limits for Pro users (skip in debug mode)
+  const debugUnlimited = process.env.EXPO_PUBLIC_DEBUG_BTL_UNLIMITED === '1';
+  console.log('🎬 Back to Life: Debug unlimited enabled?', debugUnlimited);
   
-  const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (res.status !== 'granted') return;
-  
-  // For now, we'll use image picker and apply animation prompts to still images
-  // Future: Add video picker when video animation is supported
-  const result = await ImagePicker.launchImageLibraryAsync({ 
-    mediaTypes: ImagePicker.MediaTypeOptions.Images, 
-    quality: 1 
-  });
-  
-  if (!result.canceled && result.assets[0]) {
-    // Navigate to text-edits with the animation prompt
-    const { router } = await import('expo-router');
-    router.push({
-      pathname: '/text-edits',
-      params: {
-        imageUri: result.assets[0].uri,
-        prompt: animationPrompt || 'bring this photo to life with natural animation',
-        mode: 'backtolife'
+  if (currentIsPro && !debugUnlimited) {
+    console.log('🎬 Back to Life: PRO user, checking usage limits');
+    try {
+      console.log('🎬 Back to Life: Calling backToLifeService.checkUsage()');
+      const usage = await backToLifeService.checkUsage();
+      console.log('🎬 Back to Life: Usage check result:', usage);
+      
+      if (!usage.canUse) {
+        let title, message;
+        
+        if (!usage.canUseToday) {
+          // User already used their daily video
+          title = 'Daily Limit Reached';
+          message = 'You can generate 1 Back to Life video per day. Come back tomorrow for your next video!';
+        } else {
+          // User reached monthly/weekly limit
+          const periodText = usage.planType === 'weekly' ? 'week' : 'month';
+          const now = new Date();
+          const resetDate = new Date(usage.nextResetDate);
+          const daysUntilReset = Math.ceil((resetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          
+          title = 'Period Limit Reached';
+          message = `You've used all ${usage.limit} Back to Life videos this billing ${periodText}. Your limit will reset ${daysUntilReset <= 0 ? 'today' : daysUntilReset === 1 ? 'tomorrow' : `in ${daysUntilReset} days`}.`;
+        }
+        
+        Alert.alert(
+          title,
+          message,
+          [
+            { text: 'OK', style: 'default' },
+            {
+              text: 'Upgrade Plan',
+              style: 'default',
+              onPress: () => {
+                // Future: Show upgrade to higher tier
+                Alert.alert('Coming Soon', 'Higher usage tiers coming soon!');
+              }
+            }
+          ]
+        );
+        return;
       }
+      
+      // Show remaining count if getting close to limit  
+      const remaining = usage.limit - usage.used;
+      if (remaining <= (usage.planType === 'weekly' ? 1 : 3)) {
+        const periodText = usage.planType === 'weekly' ? 'billing week' : 'billing month';
+        Alert.alert(
+          'Usage Reminder',
+          `You have ${remaining} Back to Life videos remaining this ${periodText}.`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Continue', style: 'default', onPress: () => proceedWithImagePicker() }
+          ]
+        );
+        return;
+      }
+    } catch (error) {
+      console.error('❌ Back to Life: Failed to check video usage availability:', error);
+      // Continue with image picker if error checking usage
+    }
+  } else if (debugUnlimited) {
+    console.log('🎬 Back to Life: Skipping usage check - debug unlimited mode');
+  }
+  
+  // Proceed with image picker
+  console.log('🎬 Back to Life: Proceeding with image picker');
+  await proceedWithImagePicker();
+
+  async function proceedWithImagePicker() {
+    console.log('🎬 Back to Life: Requesting media permissions');
+    const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    console.log('🎬 Back to Life: Permission result:', res.status);
+    if (res.status !== 'granted') return;
+    
+    // For now, we'll use image picker and apply animation prompts to still images
+    // Future: Add video picker when video animation is supported
+    console.log('🎬 Back to Life: Launching image picker');
+    const result = await ImagePicker.launchImageLibraryAsync({ 
+      mediaTypes: ImagePicker.MediaTypeOptions.Images, 
+      quality: 1 
     });
+    
+    console.log('🎬 Back to Life: Image picker result:', { canceled: result.canceled, hasAssets: !!result.assets?.[0] });
+    if (!result.canceled && result.assets[0]) {
+      // Start Back to Life directly (skip crop modal)
+      const uri = result.assets[0].uri;
+      setIsProcessing(true);
+      setCurrentImageUri(uri);
+      setProgress(1);
+      setCanCancel(true);
+      backToLife.mutate({
+        imageUri: uri,
+        animationPrompt: animationPrompt || 'bring this photo to life with natural animation',
+        imageSource: 'gallery',
+      });
+    }
   }
 }
+*/
 
 async function handleRequestIdea() {
   try {
@@ -131,7 +308,7 @@ Thanks!`;
 }
 
 // Create animated tile component with glow effect
-const AnimatedTile = ({ item, index, isPro }: { item: ExampleItem; index: number; isPro: boolean }) => {
+const AnimatedTile = ({ item, index, isPro, backToLife }: { item: ExampleItem; index: number; isPro: boolean; backToLife: any }) => {
   // Subtle glow animation
   const glowOpacity = useSharedValue(0.5);
   
@@ -157,7 +334,7 @@ const AnimatedTile = ({ item, index, isPro }: { item: ExampleItem; index: number
     >
       <TouchableOpacity
         activeOpacity={0.85}
-        onPress={() => pickVideo(isPro, item.animationPrompt)}
+        onPress={() => pickVideoWithHook(backToLife)(isPro, item.animationPrompt)}
         style={{ 
           width: 120, 
           aspectRatio: 9/16, 
@@ -248,6 +425,7 @@ const AnimatedTile = ({ item, index, isPro }: { item: ExampleItem; index: number
 
 export function HeroBackToLifeExamples({ examples = DEFAULT_EXAMPLES }: { examples?: ExampleItem[] }) {
   const isPro = useSubscriptionStore((state) => state.isPro);
+  const backToLife = useBackToLife();
   
   return (
     <View style={{ marginTop: 16, marginBottom: 8, position: 'relative' }}>
@@ -258,7 +436,7 @@ export function HeroBackToLifeExamples({ examples = DEFAULT_EXAMPLES }: { exampl
       >
         {/* Existing animation tiles */}
         {examples.map((item, index) => (
-          <AnimatedTile key={item.id} item={item} index={index} isPro={isPro} />
+          <AnimatedTile key={item.id} item={item} index={index} isPro={isPro} backToLife={backToLife} />
         ))}
         
         {/* Request/Suggest new animation tile */}

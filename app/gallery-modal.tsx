@@ -109,10 +109,17 @@ export default function GalleryModalScreen() {
 
   const renderItem = ({ item }: { item: typeof restorations[0] }) => {
     let thumbnailUri = undefined;
+    let isVideo = false;
+    
     try {
-      thumbnailUri = item.thumbnail_filename
-        ? photoStorage.getPhotoUri('thumbnail', item.thumbnail_filename)
-        : undefined;
+      if (item.thumbnail_filename) {
+        // Standard image restoration with thumbnail
+        thumbnailUri = photoStorage.getPhotoUri('thumbnail', item.thumbnail_filename);
+      } else if (item.restored_filename) {
+        // Video restoration - use the video file itself
+        thumbnailUri = photoStorage.getPhotoUri('restored', item.restored_filename);
+        isVideo = item.restored_filename.endsWith('.mp4');
+      }
     } catch (err) {
       // Silently handle missing files
     }
@@ -143,13 +150,20 @@ export default function GalleryModalScreen() {
               style={[styles.thumbnail, styles.thumbnailForeground]}
               resizeMode="contain"
             />
+            {/* Video play icon overlay */}
+            {isVideo && (
+              <View style={styles.videoOverlay}>
+                <IconSymbol name="play.circle.fill" size={24} color="#fff" />
+              </View>
+            )}
           </View>
         )}
         <View style={styles.cardContent}>
           <Text style={styles.cardTitle} numberOfLines={1}>
             {item.function_type === 'unblur' ? 'Unblurred' : 
              item.function_type === 'colorize' ? 'Colorized' : 
-             item.function_type === 'descratch' ? 'Descratched' : 'Auto Restored'}
+             item.function_type === 'descratch' ? 'Descratched' : 
+             item.function_type === 'backtolife' ? 'Back to Life' : 'Auto Restored'} {isVideo ? 'Video' : ''}
           </Text>
           <Text style={styles.cardDate}>{new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
         </View>
@@ -282,10 +296,17 @@ export default function GalleryModalScreen() {
               disableVirtualization={false}
               renderItem={({ item, index }) => {
                 let thumbnailUri = undefined;
+                let isVideo = false;
+                
                 try {
-                  thumbnailUri = item.thumbnail_filename
-                    ? photoStorage.getPhotoUri('thumbnail', item.thumbnail_filename)
-                    : undefined;
+                  if (item.thumbnail_filename) {
+                    // Standard image restoration with thumbnail
+                    thumbnailUri = photoStorage.getPhotoUri('thumbnail', item.thumbnail_filename);
+                  } else if (item.restored_filename) {
+                    // Video restoration - use the video file itself
+                    thumbnailUri = photoStorage.getPhotoUri('restored', item.restored_filename);
+                    isVideo = item.restored_filename.endsWith('.mp4');
+                  }
                 } catch (err) {
                   // Silently handle missing files
                 }
@@ -318,6 +339,12 @@ export default function GalleryModalScreen() {
                           style={[styles.gridImage, styles.gridImageForeground]}
                           resizeMode="contain"
                         />
+                        {/* Video play icon overlay */}
+                        {isVideo && (
+                          <View style={styles.videoOverlayGrid}>
+                            <IconSymbol name="play.circle.fill" size={20} color="#fff" />
+                          </View>
+                        )}
                       </>
                     )}
                   </TouchableOpacity>
@@ -639,6 +666,28 @@ const styles = StyleSheet.create({
   gridImageForeground: {
     position: 'relative',
     backgroundColor: 'transparent',
+  },
+  videoOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 14,
+  },
+  videoOverlayGrid: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 18,
   },
   toggleRowBelowHeader: {
     flexDirection: 'row',

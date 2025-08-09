@@ -1,4 +1,5 @@
 import { useRestorationScreenStore } from '@/store/restorationScreenStore';
+import { getTimeMessage } from '@/hooks/useVideoGeneration';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useRef } from 'react';
@@ -6,13 +7,22 @@ import { View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { CircularProgress } from './CircularProgress';
 
-interface ProcessingScreenProps {
-  functionType: 'restoration' | 'unblur' | 'colorize' | 'descratch';
-  isProcessing: boolean;
-  isError?: boolean;
+interface VideoGenerationState {
+  isGenerating: boolean;
+  progressPhase: string;
+  elapsedSeconds: number;
+  canCancel: boolean;
+  showTimeWarning: boolean;
 }
 
-const ProcessingScreenComponent = ({ functionType, isProcessing, isError }: ProcessingScreenProps) => {
+interface ProcessingScreenProps {
+  functionType: 'restoration' | 'unblur' | 'colorize' | 'descratch' | 'backtolife';
+  isProcessing: boolean;
+  isError?: boolean;
+  videoGenerationState?: VideoGenerationState;
+}
+
+const ProcessingScreenComponent = ({ functionType, isProcessing, isError, videoGenerationState }: ProcessingScreenProps) => {
   const { processingProgress, setProcessingProgress, clearProcessingProgress } = useRestorationScreenStore();
   
   // Track haptic feedback milestones to avoid duplicates
@@ -42,6 +52,14 @@ const ProcessingScreenComponent = ({ functionType, isProcessing, isError }: Proc
           icon: 'bandage',
           title: 'Repairing your photo...',
           description: 'Removing scratches and restoring details'
+        };
+      case 'backtolife':
+        return {
+          icon: 'video',
+          title: videoGenerationState?.progressPhase || 'Bringing your photo to life...',
+          description: videoGenerationState ? 
+            getTimeMessage(videoGenerationState.elapsedSeconds, videoGenerationState.progressPhase) : 
+            'This may take 2-5 minutes'
         };
       default:
         return {

@@ -1,9 +1,10 @@
 export interface ModelConfig {
   model: string;
   buildInput: (base64: string, customPrompt?: string) => Record<string, any>;
+  isVideo?: boolean;
 }
 
-export type FunctionType = 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'outfit' | 'background' | 'backtolife' | 'enlighten' | 'custom';
+export type FunctionType = 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'outfit' | 'background' | 'enlighten' | 'custom';
 
 export const MODEL_CONFIGS: Record<FunctionType, ModelConfig> = {
   restoration: {
@@ -71,17 +72,6 @@ export const MODEL_CONFIGS: Record<FunctionType, ModelConfig> = {
     model: "black-forest-labs/flux-kontext-pro",
     buildInput: (base64: string, customPrompt?: string) => ({
       prompt: customPrompt || "replace only the background with professional studio setting, keep the exact same person, face, facial features, hair, clothing, pose, and body position unchanged",
-      input_image: `data:image/jpeg;base64,${base64}`,
-      output_format: "png",
-      aspect_ratio: "match_input_image",
-      safety_tolerance: 6,
-      prompt_upsampling: true
-    })
-  },
-  backtolife: {
-    model: "black-forest-labs/flux-kontext-pro", // Placeholder - will be replaced with proper video API
-    buildInput: (base64: string, customPrompt?: string) => ({
-      prompt: customPrompt || "bring this photo to life with natural animation",
       input_image: `data:image/jpeg;base64,${base64}`,
       output_format: "png",
       aspect_ratio: "match_input_image",

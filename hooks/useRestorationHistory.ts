@@ -38,11 +38,22 @@ export function useRestorationHistory(enabled: boolean = true, updateCount: bool
         // Filter and validate restorations
         const validRestorations = [];
         for (const restoration of restorations) {
-          if (restoration.status === 'completed' && restoration.thumbnail_filename) {
-            // Check if thumbnail exists
-            const exists = await photoStorage.checkPhotoExists('thumbnail', restoration.thumbnail_filename);
-            if (exists) {
-              validRestorations.push(restoration);
+          if (restoration.status === 'completed') {
+            // Check if this is a video (has restored_filename but no thumbnail)
+            const isVideo = restoration.restored_filename && !restoration.thumbnail_filename;
+            
+            if (isVideo) {
+              // For videos, check if the restored file exists
+              const exists = await photoStorage.checkPhotoExists('restored', restoration.restored_filename);
+              if (exists) {
+                validRestorations.push(restoration);
+              }
+            } else if (restoration.thumbnail_filename) {
+              // For images, check if thumbnail exists
+              const exists = await photoStorage.checkPhotoExists('thumbnail', restoration.thumbnail_filename);
+              if (exists) {
+                validRestorations.push(restoration);
+              }
             }
           }
         }

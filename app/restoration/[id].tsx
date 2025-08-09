@@ -1,10 +1,12 @@
 import { BeforeAfterSlider } from '@/components/BeforeAfterSlider';
-import { ProcessingScreen } from '@/components/ProcessingScreen';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
+import { useVideoGeneration } from '@/hooks/useVideoGeneration';
+import { backToLifeService } from '@/services/backToLifeService';
 import { type FunctionType } from '@/services/modelConfigs';
 import { photoStorage } from '@/services/storage';
 import { restorationService } from '@/services/supabase';
+import { useCropModalStore } from '@/store/cropModalStore';
 import { useRestorationScreenStore } from '@/store/restorationScreenStore';
 import { useRestorationStore } from '@/store/restorationStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
@@ -19,15 +21,13 @@ import {
     ActivityIndicator,
     Alert,
     Dimensions,
-    FlatList,
-    Image,
     Platform,
     SafeAreaView,
     ScrollView,
     Share,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
@@ -63,6 +63,7 @@ export default function RestorationScreen() {
   
   // Use the photo restoration hook
   const photoRestoration = usePhotoRestoration();
+  const { state: videoState, startMonitoring } = useVideoGeneration();
   const decrementRestorationCount = useRestorationStore((state) => state.decrementRestorationCount);
   const simpleSlider = useRestorationStore((state) => state.simpleSlider);
   const totalRestorations = useRestorationStore((state) => state.totalRestorations);
@@ -140,15 +141,51 @@ export default function RestorationScreen() {
     }
   }, [id]);
 
+  const { setIsProcessing, setProgress, setCanCancel, setCurrentImageUri } = useCropModalStore();
+  
   useEffect(() => {
     if (isNewRestoration) {
-      // Start restoration process for new images
+      const isVideoGeneration = functionType === 'backtolife';
+      
+      // Start processing with simple store
+      setIsProcessing(true);
+      setCurrentImageUri(imageUri as string);
+      setProgress(0);
+      setCanCancel(isVideoGeneration); // Only videos can be cancelled
+      
+      if (__DEV__) {
+        console.log(`🚀 Started ${isVideoGeneration ? 'video' : 'photo'} processing`);
+      }
+      
+      const startTime = Date.now();
+      const estimatedDuration = isVideoGeneration ? 120 : 7; // seconds
+      
+      // Simple progress timer
+      let progressIntervalId: NodeJS.Timeout | null = null;
+      progressIntervalId = setInterval(() => {
+        const elapsed = (Date.now() - startTime) / 1000;
+        const progress = Math.min(Math.floor((elapsed / estimatedDuration) * 95), 95);
+        setProgress(progress);
+        
+        if (__DEV__ && progress % 10 === 0) {
+          console.log(`📊 Progress: ${progress}%`);
+        }
+      }, 1000);
+      
+      // Start the actual processing in background
       photoRestoration.mutate({
         imageUri: imageUri as string,
         functionType: functionType as FunctionType,
         imageSource: (imageSource as 'camera' | 'gallery') || 'gallery',
         customPrompt: customPrompt ? decodeURIComponent(customPrompt as string) : undefined
       });
+
+      // Cleanup progress timer on unmount or effect re-run
+      return () => {
+        if (progressIntervalId) {
+          clearInterval(progressIntervalId);
+        }
+      };
     } else {
       // Load existing restoration
       loadRestoration();
@@ -161,44 +198,72 @@ export default function RestorationScreen() {
     if (photoRestoration.isSuccess && photoRestoration.data) {
       const restorationData = photoRestoration.data;
       
-      // Immediately complete the progress animation
-      completeProcessing();
+      // Complete processing with 100% progress
+      setProgress(100);
+      setTimeout(() => {
+        setIsProcessing(false);
+      }, 500); // Brief delay to show 100% completion
       
-      if (__DEV__) {
-        console.log(`🎯 [TIMING] API success received, waiting 150ms before navigation`);
+      // Check if this is a video result
+      const isVideoResult = (restorationData as any).videoFilename;
+      
+      // Increment video usage counter for back-to-life mode
+      const isBackToLifeMode = functionType === 'backtolife';
+      
+      if (isBackToLifeMode) {
+        if (__DEV__) {
+          console.log('🎥 Back to Life video completed, incrementing usage count');
+        }
+        backToLifeService.incrementUsage().catch(error => {
+          if (__DEV__) {
+            console.error('❌ Failed to increment Back to Life usage:', error);
+          }
+        });
       }
       
-      // Add a small delay to show 100% completion before redirecting
-      setTimeout(() => {
+      // Navigate to appropriate result screen
+      if (isVideoResult) {
+        // For videos, navigate to video result screen
         if (__DEV__) {
-          console.log(`🏁 [TIMING] Navigating to results screen`);
+          console.log('🎬 Navigating to video result screen');
         }
-        // Navigate to the completed restoration view
+        router.replace(`/video-result/${restorationData.id}`);
+      } else {
+        // For images, navigate to restoration view
+        if (__DEV__) {
+          console.log('🖼️ Navigating to image restoration screen');
+        }
         router.replace(`/restoration/${restorationData.id}`);
-        
-        // Check if we should show rating prompt (after 3rd restoration)
-        if (totalRestorations >= 3 && !hasShownRatingPrompt) {
-          // Additional delay to let the restoration screen load
-          setTimeout(async () => {
-            if (await StoreReview.hasAction()) {
-              await StoreReview.requestReview();
-              setHasShownRatingPrompt(true);
-              if (__DEV__) {
-                console.log('📱 Showed rating prompt after 3rd restoration');
-              }
+      }
+      
+      // Check if we should show rating prompt (after 3rd restoration)
+      if (totalRestorations >= 3 && !hasShownRatingPrompt) {
+        // Additional delay to let the restoration screen load
+        setTimeout(async () => {
+          if (await StoreReview.hasAction()) {
+            await StoreReview.requestReview();
+            setHasShownRatingPrompt(true);
+            if (__DEV__) {
+              console.log('📱 Showed rating prompt after 3rd restoration');
             }
-          }, 1200); // Wait 1.2s after navigation
-        }
-      }, 150); // Brief delay to show 100% completion
+          }
+        }, 1200); // Wait 1.2s after navigation
+      }
     }
-  }, [photoRestoration.isSuccess, photoRestoration.data, completeProcessing, totalRestorations, hasShownRatingPrompt, setHasShownRatingPrompt]);
+  }, [photoRestoration.isSuccess, photoRestoration.data, functionType, totalRestorations, hasShownRatingPrompt, setHasShownRatingPrompt]);
   
   // Clear progress immediately when error occurs
   useEffect(() => {
     if (photoRestoration.isError) {
       clearProcessingProgress();
+      setIsProcessing(false);
+      Alert.alert(
+        'Processing Failed',
+        photoRestoration.error?.message || 'Something went wrong. Please try again.',
+        [{ text: 'OK' }]
+      );
     }
-  }, [photoRestoration.isError, clearProcessingProgress]);
+  }, [photoRestoration.isError, photoRestoration.error, clearProcessingProgress, setIsProcessing]);
   
   // Check if files exist when viewing existing restoration
   useEffect(() => {
@@ -423,20 +488,13 @@ export default function RestorationScreen() {
     );
   }
 
-  // Show loading state for new restorations or while loading existing ones
-  if (loading || photoRestoration.isPending) {
-    // For new restorations, use the enhanced processing screen (only if no error)
-    if (isNewRestoration && functionType && !photoRestoration.isError) {
-      return (
-        <ProcessingScreen
-          functionType={functionType as FunctionType}
-          isProcessing={photoRestoration.isPending}
-          isError={photoRestoration.isError}
-        />
-      );
-    }
-    
-    // For loading existing restorations, use simple loading
+  // Don't show any loading screen for new restorations - JobContext handles UI
+  if (isNewRestoration) {
+    return null; // JobContext components (PhotoProcessingModal/VideoProcessingToast) handle the UI
+  }
+  
+  // Show loading state only for existing restorations being loaded
+  if (loading) {
     return (
       <View className="flex-1 bg-gray-100 justify-center items-center px-6">
         <ActivityIndicator size="large" color="#f97316" />
@@ -623,7 +681,14 @@ export default function RestorationScreen() {
                   onPress={handleShare}
                   activeOpacity={0.7}
                 >
-                  <IconSymbol name="square.and.arrow.up" size={20} color="#fff" />
+                  <Text style={{
+                    color: '#fff',
+                    fontSize: 16,
+                    fontWeight: '600',
+                    letterSpacing: 0.3
+                  }}>
+                    Share
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>

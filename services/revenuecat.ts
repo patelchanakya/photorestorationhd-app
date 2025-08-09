@@ -834,12 +834,158 @@ export const validatePremiumAccess = async (): Promise<boolean> => {
 // Helper function to get the user's original app user ID
 export const getAppUserId = async (): Promise<string | null> => {
   try {
-    const customerInfo = await getCustomerInfo();
-    return customerInfo?.originalAppUserId || null;
+    if (isExpoGo()) {
+      // Return a consistent mock ID for Expo Go testing
+      return 'expo-go-user';
+    }
+
+    // Use RevenueCat's current app user ID, which changes when Apple ID switches
+    // This is the standard approach recommended by RevenueCat
+    const currentAppUserId = await Purchases.getAppUserID();
+    
+    if (__DEV__) {
+      console.log('👤 Current app user ID:', currentAppUserId);
+    }
+    
+    return currentAppUserId;
   } catch (error) {
     // Only log errors in development builds
     if (__DEV__) {
       console.error('❌ Failed to get app user ID:', error);
+    }
+    return null;
+  }
+};
+
+// Interface for subscription plan details
+export interface SubscriptionPlanDetails {
+  planType: 'weekly' | 'monthly';
+  usageLimit: number;
+  billingCycleStart: string; // ISO date string
+  nextResetDate: string; // ISO date string
+  originalPurchaseDate: string; // ISO date string
+  productIdentifier: string;
+}
+
+// Helper function to get subscription plan details for usage limits
+export const getSubscriptionPlanDetails = async (): Promise<SubscriptionPlanDetails | null> => {
+  try {
+    if (isExpoGo()) {
+      // Mock data for Expo Go testing
+      if (__DEV__) {
+        console.log('⚠️ Using mock subscription plan details in Expo Go');
+      }
+      const now = new Date();
+      return {
+        planType: 'monthly',
+        usageLimit: 10,
+        billingCycleStart: now.toISOString(),
+        nextResetDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        originalPurchaseDate: now.toISOString(),
+        productIdentifier: 'mock_monthly'
+      };
+    }
+
+    const customerInfo = await getCustomerInfo();
+    
+    if (!customerInfo) {
+      return null;
+    }
+
+    const proEntitlement = customerInfo.entitlements.active['pro'];
+    
+    if (!proEntitlement?.isActive) {
+      return null;
+    }
+
+    // Detect plan type from product identifier
+    const productId = proEntitlement.productIdentifier?.toLowerCase() || '';
+    const isWeekly = productId.includes('weekly') || productId.includes('week');
+    const planType: 'weekly' | 'monthly' = isWeekly ? 'weekly' : 'monthly';
+    // Pro users get 1 video per day: 7 for weekly, 31 for monthly
+    const usageLimit = isWeekly ? 7 : 31;
+
+    // Get original purchase date and ensure UTC consistency
+    const originalPurchaseDate = proEntitlement.originalPurchaseDate || new Date().toISOString();
+    
+    // Use UTC dates to avoid timezone issues
+    const originalDate = new Date(originalPurchaseDate);
+    const now = new Date();
+    
+    // Calculate current billing cycle start and next reset
+    let billingCycleStart: Date;
+    let nextResetDate: Date;
+    
+    if (isWeekly) {
+      // Weekly: Simple 7-day calculation
+      const daysSincePurchase = Math.floor((now.getTime() - originalDate.getTime()) / (1000 * 60 * 60 * 24));
+      const currentCycle = Math.floor(daysSincePurchase / 7);
+      billingCycleStart = new Date(originalDate.getTime() + (currentCycle * 7 * 24 * 60 * 60 * 1000));
+      nextResetDate = new Date(billingCycleStart.getTime() + (7 * 24 * 60 * 60 * 1000));
+    } else {
+      // Monthly: Use actual month boundaries
+      const originalYear = originalDate.getFullYear();
+      const originalMonth = originalDate.getMonth();
+      const originalDay = originalDate.getDate();
+      
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth();
+      
+      // Calculate how many months have passed
+      const monthsPassed = (currentYear - originalYear) * 12 + (currentMonth - originalMonth);
+      
+      // Current billing cycle starts on the same day of the month
+      billingCycleStart = new Date(originalYear, originalMonth + monthsPassed, originalDay);
+      
+      // Handle edge case where original day doesn't exist in current month (e.g., Jan 31 -> Feb 28)
+      if (billingCycleStart.getMonth() !== (originalMonth + monthsPassed) % 12) {
+        // Day doesn't exist in this month, use last day of previous month
+        billingCycleStart = new Date(originalYear, originalMonth + monthsPassed, 0);
+      }
+      
+      // Next reset is same day next month
+      nextResetDate = new Date(originalYear, originalMonth + monthsPassed + 1, originalDay);
+      if (nextResetDate.getMonth() !== (originalMonth + monthsPassed + 1) % 12) {
+        nextResetDate = new Date(originalYear, originalMonth + monthsPassed + 2, 0);
+      }
+      
+      // If current time is before billing cycle start, we're in the previous cycle
+      if (now < billingCycleStart) {
+        billingCycleStart = new Date(originalYear, originalMonth + monthsPassed - 1, originalDay);
+        if (billingCycleStart.getMonth() !== (originalMonth + monthsPassed - 1) % 12) {
+          billingCycleStart = new Date(originalYear, originalMonth + monthsPassed, 0);
+        }
+        nextResetDate = new Date(originalYear, originalMonth + monthsPassed, originalDay);
+        if (nextResetDate.getMonth() !== (originalMonth + monthsPassed) % 12) {
+          nextResetDate = new Date(originalYear, originalMonth + monthsPassed + 1, 0);
+        }
+      }
+    }
+
+    if (__DEV__) {
+      console.log('📊 Subscription plan details:', {
+        planType,
+        usageLimit,
+        productIdentifier: proEntitlement.productIdentifier,
+        originalPurchaseDate,
+        billingCycleStart: billingCycleStart.toISOString(),
+        nextResetDate: nextResetDate.toISOString(),
+        isWeekly,
+        calculationMethod: isWeekly ? 'days-based' : 'month-boundaries'
+      });
+    }
+
+    return {
+      planType,
+      usageLimit,
+      billingCycleStart: billingCycleStart.toISOString(),
+      nextResetDate: nextResetDate.toISOString(),
+      originalPurchaseDate,
+      productIdentifier: proEntitlement.productIdentifier || 'unknown'
+    };
+  } catch (error) {
+    if (__DEV__) {
+      console.error('❌ Failed to get subscription plan details:', error);
     }
     return null;
   }

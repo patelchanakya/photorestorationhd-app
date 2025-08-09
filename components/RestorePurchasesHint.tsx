@@ -71,7 +71,7 @@ export function RestorePurchasesHint() {
               Already purchased PRO?
             </Text>
             <Text className="text-white/70 text-sm mb-3">
-              If you've purchased on another device or reinstalled the app, restore your purchase to regain access.
+              If you&apos;ve purchased on another device or reinstalled the app, restore your purchase to regain access.
             </Text>
             <View className="flex-row gap-3">
               <TouchableOpacity
@@ -80,7 +80,7 @@ export function RestorePurchasesHint() {
                 className="bg-blue-500 px-4 py-2 rounded-full"
               >
                 <Text className="text-white font-semibold">
-                  {isRestoring ? 'Restoring...' : 'Restore Purchases'}
+                  {isRestoring ? "Restoring..." : "Restore Purchases"}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity

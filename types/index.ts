@@ -10,13 +10,15 @@ export interface Restoration {
   original_filename: string;
   restored_filename?: string;
   thumbnail_filename?: string;
+  video_filename?: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
   processing_time_ms?: number;
   created_at: string;
   completed_at?: string;
   error_message?: string;
   prediction_id?: string;
-  function_type?: 'restoration' | 'unblur' | 'colorize' | 'descratch';
+  function_type?: 'restoration' | 'unblur' | 'colorize' | 'descratch' | 'outfit' | 'background' | 'repair' | 'enlighten' | 'custom';
+  is_video?: boolean;
 }
 
 export interface RestorationInput {

@@ -17,15 +17,17 @@ export default function TextEditsScreen() {
   
   const [customPrompt, setCustomPrompt] = useState('');
   const [selectedImage, setSelectedImage] = useState<string>('');
+  const [hasProcessed, setHasProcessed] = useState(false);
   
   useEffect(() => {
-    // If we have an image and prompt from navigation, process it
-    if (imageUri && initialPrompt) {
+    // If we have an image and prompt from navigation, process it ONCE
+    if (imageUri && initialPrompt && !hasProcessed) {
+      setHasProcessed(true);
       processWithPrompt(imageUri as string, initialPrompt as string, mode as string);
     }
-  }, [imageUri, initialPrompt, mode]);
+  }, [imageUri, initialPrompt, mode, hasProcessed]);
 
-  const processWithPrompt = (uri: string, prompt: string, editMode?: string) => {
+  const processWithPrompt = async (uri: string, prompt: string, editMode?: string) => {
     // Determine the function type based on mode
     let functionType: string = 'custom';
     
@@ -33,9 +35,24 @@ export default function TextEditsScreen() {
       functionType = 'outfit';
     } else if (editMode === 'background') {
       functionType = 'background';
+    } else if (editMode === 'backtolife') {
+      functionType = 'backtolife';
     }
     
-    // Navigate to crop modal with the custom prompt
+    if (functionType === 'backtolife') {
+      // Start Back to Life directly (skip crop modal)
+      const { useCropModalStore } = await import('@/store/cropModalStore');
+      const { useBackToLife } = await import('@/hooks/useBackToLife');
+      const store = useCropModalStore.getState();
+      const backToLife = (useBackToLife as any)();
+      store.setIsProcessing(true);
+      store.setCurrentImageUri(uri);
+      store.setProgress(1);
+      store.setCanCancel(true);
+      backToLife.mutate({ imageUri: uri, animationPrompt: prompt, imageSource: 'gallery' });
+      return;
+    }
+    // Otherwise go to crop modal
     router.replace(`/crop-modal?imageUri=${encodeURIComponent(uri)}&functionType=${functionType}&customPrompt=${encodeURIComponent(prompt)}&imageSource=gallery`);
   };
 

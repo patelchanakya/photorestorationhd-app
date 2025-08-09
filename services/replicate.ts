@@ -1,7 +1,6 @@
-import Replicate from 'replicate';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
-import { networkStateService } from './networkState';
+import Replicate from 'replicate';
 import { getModelConfig, type FunctionType } from './modelConfigs';
 
 // Validate API token
@@ -158,6 +157,61 @@ function isContentPolicyViolation(error: string): boolean {
 }
 
 export async function restorePhoto(imageUri: string, functionType: FunctionType = 'restoration', customPrompt?: string): Promise<string> {
+  // Get model configuration to check if this is a video generation request
+  const modelConfig = getModelConfig(functionType);
+  
+  // DEV: Route Back to Life to restoration model for testing if enabled
+  const USE_BTL_TEST_IMAGE_MODEL = process.env.EXPO_PUBLIC_BTL_TEST_IMAGE_MODEL === '1';
+  if (functionType === 'backtolife' && USE_BTL_TEST_IMAGE_MODEL) {
+    if (__DEV__) {
+      console.log('🧪 DEV: Using restoration model for Back to Life test (no video gen)');
+    }
+    // Use the restore-image model for testing instead of video generation
+    const testModel = 'flux-kontext-apps/restore-image';
+    
+    // Process the image
+    const processedImageUri = await processImageIfNeeded(imageUri);
+    const base64Image = await imageToBase64(processedImageUri);
+    const dataUrl = `data:image/jpeg;base64,${base64Image}`;
+    
+    const prediction = await replicate.predictions.create({
+      model: testModel,
+      input: { 
+        input_image: dataUrl,
+        output_quality: 100 
+      },
+    });
+    
+    // Poll for completion (reuse the same polling cadence)
+    let attempts = 0;
+    let delay = 1000;
+    const maxAttempts = 40;
+    while (attempts < maxAttempts) {
+      await sleep(delay);
+      const result = await replicate.predictions.get(prediction.id);
+      if (result.status === 'succeeded') {
+        const out = result.output as any;
+        // Output can be a string URL or an array of URLs/objects
+        if (typeof out === 'string') return out;
+        if (Array.isArray(out)) {
+          const first = out[0];
+          if (typeof first === 'string') return first;
+          if (first && typeof first.url === 'function') return first.url();
+          if (first && typeof first.url === 'string') return first.url;
+        }
+        // Fallback: stringify and throw to surface shape
+        throw new Error('Unexpected output format from test model');
+      } else if (result.status === 'failed') {
+        throw new Error(String(result.error) || 'Test model failed');
+      }
+      attempts++;
+      delay = attempts <= 10 ? 1000 : Math.min(delay * 1.2, 3000);
+    }
+    throw new Error('Test model took too long to complete');
+  }
+
+
+  // Continue with regular image processing
   // Create an abort controller for proper timeout handling
   const abortController = new AbortController();
   const timeoutId = setTimeout(() => {
@@ -181,9 +235,6 @@ export async function restorePhoto(imageUri: string, functionType: FunctionType 
     
     // Convert to base64
     const base64 = await imageToBase64(processedUri);
-    
-    // Get model configuration for the function type
-    const modelConfig = getModelConfig(functionType);
     
     if (__DEV__) {
       console.log(`🔧 Using model for ${functionType}:`, modelConfig.model);

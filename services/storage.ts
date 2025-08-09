@@ -14,7 +14,7 @@ class PhotoStorage {
   // Initialize storage directories
   private async initializeStorage() {
     try {
-      const directories = ['originals', 'restored', 'thumbnails'];
+      const directories = ['originals', 'restored', 'thumbnails', 'videos'];
       
       // Ensure base directory exists
       const baseInfo = await FileSystem.getInfoAsync(this.basePath);
@@ -97,6 +97,38 @@ class PhotoStorage {
     }
   }
 
+  // Save video from URL
+  async saveVideo(url: string, originalFileName: string): Promise<string> {
+    try {
+      await this.initializeStorage(); // Ensure directories exist
+      
+      // Create video filename based on original
+      const fileName = originalFileName.includes('pastpix_') 
+        ? originalFileName.replace('pastpix_', 'pastpix_video_').replace('.jpg', '.mp4')
+        : originalFileName.replace('clever_', 'clever_video_').replace('.jpg', '.mp4');
+      const destination = `${this.basePath}videos/${fileName}`;
+      
+      if (__DEV__) {
+        console.log(`⬇️ Downloading video from: ${url}`);
+      }
+      const result = await FileSystem.downloadAsync(url, destination);
+      
+      if (result.status === 200) {
+        if (__DEV__) {
+          console.log(`✅ Saved video: ${fileName}`);
+        }
+        return fileName;
+      } else {
+        throw new Error(`Video download failed with status: ${result.status}`);
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.error('Failed to save video:', error);
+      }
+      throw error;
+    }
+  }
+
   // Generate and save thumbnail
   async createThumbnail(uri: string, type: 'original' | 'restored'): Promise<string> {
     try {
@@ -135,15 +167,17 @@ class PhotoStorage {
     }
   }
 
-  // Get full URI for a stored photo
-  getPhotoUri(type: 'original' | 'restored' | 'thumbnail', filename: string): string {
-    const folder = type === 'thumbnail' ? 'thumbnails' : type === 'restored' ? 'restored' : 'originals';
+  // Get full URI for a stored photo or video
+  getPhotoUri(type: 'original' | 'restored' | 'thumbnail' | 'video', filename: string): string {
+    const folder = type === 'thumbnail' ? 'thumbnails' : 
+                   type === 'restored' ? 'restored' : 
+                   type === 'video' ? 'videos' : 'originals';
     const uri = `${this.basePath}${folder}/${filename}`;
     return uri;
   }
   
-  // Check if a photo file exists
-  async checkPhotoExists(type: 'original' | 'restored' | 'thumbnail', filename: string): Promise<boolean> {
+  // Check if a photo or video file exists
+  async checkPhotoExists(type: 'original' | 'restored' | 'thumbnail' | 'video', filename: string): Promise<boolean> {
     try {
       const uri = this.getPhotoUri(type, filename);
       const info = await FileSystem.getInfoAsync(uri);
@@ -172,6 +206,75 @@ class PhotoStorage {
         }
       })
     );
+  }
+
+  // Save local video file (for mock/local videos)
+  async saveLocalVideo(videoUri: string, originalImageId: string): Promise<string> {
+    try {
+      await this.initializeStorage();
+      
+      const fileName = `video_${originalImageId}_${Date.now()}.mp4`;
+      const destination = `${this.basePath}videos/${fileName}`;
+      
+      // Copy video to local storage
+      await FileSystem.copyAsync({
+        from: videoUri,
+        to: destination
+      });
+      
+      if (__DEV__) {
+        console.log('✅ Local video saved to storage:', destination);
+      }
+      
+      return destination;
+    } catch (error) {
+      if (__DEV__) {
+        console.error('❌ Failed to save local video:', error);
+      }
+      throw new Error('Failed to save video. Please try again.');
+    }
+  }
+
+  // Export video to camera roll
+  async exportVideoToCameraRoll(uri: string): Promise<void> {
+    if (__DEV__) {
+      console.log('🔄 Starting video export to camera roll:', uri);
+    }
+    
+    try {
+      // Check if file exists
+      const fileInfo = await FileSystem.getInfoAsync(uri);
+      if (!fileInfo.exists) {
+        throw new Error('Video file not found. Please try again.');
+      }
+
+      // Check/request permissions
+      let { status } = await MediaLibrary.getPermissionsAsync();
+      if (status !== 'granted') {
+        const permission = await MediaLibrary.requestPermissionsAsync();
+        if (permission.status !== 'granted') {
+          throw new Error('Camera roll access denied. Please enable permissions in Settings.');
+        }
+        status = permission.status;
+      }
+
+      // Save to camera roll
+      const asset = await MediaLibrary.createAssetAsync(uri);
+      
+      if (__DEV__) {
+        console.log('✅ Video exported to camera roll successfully:', asset.uri);
+      }
+      
+    } catch (error) {
+      if (__DEV__) {
+        console.error('❌ Failed to export video to camera roll:', error);
+      }
+      
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to save video to camera roll. Please try again.');
+    }
   }
 
   // Export photo to camera roll

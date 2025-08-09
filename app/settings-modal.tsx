@@ -9,6 +9,7 @@ import { photoStorage } from '@/services/storage';
 import { localStorageHelpers } from '@/services/supabase';
 import { useRestorationStore } from '@/store/restorationStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { backToLifeService, type BackToLifeUsage } from '@/services/backToLifeService';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
@@ -44,6 +45,7 @@ export default function SettingsModalScreen() {
   const queryClient = useQueryClient();
   const { setRestorationCount } = useRestorationStore();
   const { isPro, freeRestorationsUsed, freeRestorationsLimit, expirationDate } = useSubscriptionStore();
+  const [backToLifeUsage, setBackToLifeUsage] = useState<BackToLifeUsage | null>(null);
   
   // Local loading states
   const [isRestoring, setIsRestoring] = useState(false);
@@ -53,6 +55,24 @@ export default function SettingsModalScreen() {
   const [msRemaining, setMsRemaining] = useState<number>(0);
   const { t, currentLanguage } = useTranslation();
   const supportedLanguages = getSupportedLanguages();
+
+  // Fetch Back to Life usage data for Pro users
+  useEffect(() => {
+    const fetchUsageData = async () => {
+      if (isPro) {
+        try {
+          const usage = await backToLifeService.checkUsage();
+          setBackToLifeUsage(usage);
+        } catch (error) {
+          if (__DEV__) {
+            console.error('❌ Failed to fetch Back to Life usage:', error);
+          }
+        }
+      }
+    };
+
+    fetchUsageData();
+  }, [isPro]);
   
   // Get current language info
   const getCurrentLanguageInfo = () => {
@@ -751,6 +771,52 @@ Best regards`;
                       </Text>
                       <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
                         {getSubscriptionStatus()}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                {/* Video Usage - Only show for Pro users */}
+                {isPro && backToLifeUsage && (
+                  <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    padding: 16,
+                    borderBottomWidth: 1,
+                    borderBottomColor: 'rgba(255,255,255,0.1)'
+                  }}>
+                    <View style={{
+                      width: 36,
+                      height: 36,
+                      backgroundColor: 'rgba(168,85,247,0.2)',
+                      borderRadius: 18,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: 12
+                    }}>
+                      <IconSymbol 
+                        name="video.fill"
+                        size={18}
+                        color="#a855f7"
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
+                        Back to Life Videos
+                      </Text>
+                    </View>
+                    <View style={{
+                      backgroundColor: !backToLifeUsage.canUse ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.2)',
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                      borderRadius: 12
+                    }}>
+                      <Text style={{
+                        color: !backToLifeUsage.canUse ? '#ef4444' : '#22c55e',
+                        fontSize: 12,
+                        fontWeight: '600'
+                      }}>
+                        {backToLifeUsage.used}/{backToLifeUsage.limit}
                       </Text>
                     </View>
                   </View>

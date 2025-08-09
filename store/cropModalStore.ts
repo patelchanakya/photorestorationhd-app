@@ -10,12 +10,24 @@ interface CropModalState {
   useImageLoading: boolean;
   buttonText: string;
   
+  // Processing progress
+  progress: number;
+  canCancel: boolean;
+  
+  // Back to Life completion tracking
+  completedRestorationId: string | null;
+  processingStatus: 'loading' | 'completed' | 'error' | null;
+  
   // Actions
   setCurrentImageUri: (uri: string) => void;
   setIsProcessing: (processing: boolean) => void;
   setShowCropTool: (show: boolean) => void;
   setUseImageLoading: (loading: boolean) => void;
   setButtonText: (text: string) => void;
+  setProgress: (progress: number) => void;
+  setCanCancel: (canCancel: boolean) => void;
+  setCompletedRestorationId: (id: string | null) => void;
+  setProcessingStatus: (status: 'loading' | 'completed' | 'error' | null) => void;
   
   // Reset function for new image
   resetForNewImage: (imageUri: string) => void;
@@ -30,6 +42,10 @@ const initialState = {
   showCropTool: false,
   useImageLoading: false,
   buttonText: 'Use Image',
+  progress: 0,
+  canCancel: false,
+  completedRestorationId: null,
+  processingStatus: null,
 };
 
 export const useCropModalStore = create<CropModalState>((set, get) => ({
@@ -70,6 +86,34 @@ export const useCropModalStore = create<CropModalState>((set, get) => ({
     }
     set({ buttonText: text });
   },
+
+  setProgress: (progress) => {
+    if (__DEV__) {
+      console.log('📊 CropModal: Setting progress:', progress);
+    }
+    set({ progress });
+  },
+
+  setCanCancel: (canCancel) => {
+    if (__DEV__) {
+      console.log('🚫 CropModal: Setting can cancel:', canCancel);
+    }
+    set({ canCancel });
+  },
+
+  setCompletedRestorationId: (id) => {
+    if (__DEV__) {
+      console.log('🎬 CropModal: Setting completed restoration ID:', id);
+    }
+    set({ completedRestorationId: id });
+  },
+
+  setProcessingStatus: (status) => {
+    if (__DEV__) {
+      console.log('📊 CropModal: Setting processing status:', status);
+    }
+    set({ processingStatus: status });
+  },
   
   // Reset for new image - maintains consistency with existing patterns
   resetForNewImage: (imageUri) => {
@@ -82,6 +126,10 @@ export const useCropModalStore = create<CropModalState>((set, get) => ({
       showCropTool: false,
       useImageLoading: false,
       buttonText: 'Use Image',
+      progress: 0,
+      canCancel: false,
+      completedRestorationId: null,
+      processingStatus: null,
     });
   },
   
