@@ -971,6 +971,18 @@ export async function getVideoTrackingId(): Promise<string | null> {
     // Get the stable original ID (available after restore)
     // This is the canonical ID that persists across reinstalls
     const stableId = (customerInfo as any).originalAppUserId;
+    const currentId = await Purchases.getAppUserID();
+    
+    if (__DEV__) {
+      console.log('📊 Video Tracking Debug:', {
+        has_stable_id: !!stableId,
+        stable_id: stableId,
+        current_id: currentId,
+        is_promotional: proEntitlement.store === 'promotional',
+        product_id: proEntitlement.productIdentifier,
+        expires_date: proEntitlement.expirationDate
+      });
+    }
     
     if (!stableId) {
       // This can happen for:
@@ -979,25 +991,23 @@ export async function getVideoTrackingId(): Promise<string | null> {
       
       if (proEntitlement.store === 'promotional') {
         // Promotional entitlements use anonymous ID
-        const anonymousId = await Purchases.getAppUserID();
         if (__DEV__) {
-          console.log('🎬 Video tracking: Promotional entitlement, using anonymous:', anonymousId);
+          console.log('🎬 Video tracking: Promotional entitlement, using anonymous:', currentId);
         }
-        return anonymousId;
+        return currentId;
       }
       
       // Unexpected: Pro but no originalAppUserId
       // This shouldn't happen in production as Pro requires purchase/restore
       if (__DEV__) {
-        console.warn('🎬 Video tracking: Pro user but no originalAppUserId - restore may be needed');
+        console.warn('⚠️ Video tracking: Pro user but no originalAppUserId - restore may be needed');
       }
       // Fall back to current ID as last resort
-      const currentId = await Purchases.getAppUserID();
       return currentId;
     }
     
     if (__DEV__) {
-      console.log('🎬 Video tracking: Using stable ID:', stableId);
+      console.log('✅ Video tracking: Using stable ID:', stableId);
     }
     
     return stableId;

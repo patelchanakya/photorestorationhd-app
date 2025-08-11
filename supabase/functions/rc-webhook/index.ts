@@ -1,6 +1,22 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// Logging configuration - set to false for production
+const LOG_CONFIG = {
+  enabled: true,           // Master switch - set to false to disable all logging
+  webhook: true,           // Log incoming webhook details
+  subscriber: true,        // Log subscriber API responses
+  database: true,          // Log database operations
+  errors: true,           // Always log errors (even if enabled is false)
+};
+
+// Helper function for conditional logging
+const log = (category: keyof typeof LOG_CONFIG, ...args: any[]) => {
+  if ((LOG_CONFIG.enabled && LOG_CONFIG[category]) || (category === 'errors' && LOG_CONFIG.errors)) {
+    console.log(...args);
+  }
+};
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -77,15 +93,18 @@ serve(async (req) => {
     const payload: RevenueCatWebhookEvent = await req.json();
     const event = payload.event;
     
-    console.log('Processing RevenueCat webhook:', {
+    log('webhook', '📥 Processing RevenueCat webhook:', {
       type: event.type,
       app_user_id: event.app_user_id,
-      product_id: event.product_id
+      product_id: event.product_id,
+      environment: event.environment,
+      event_id: event.id,
+      timestamp: new Date(event.event_timestamp_ms).toISOString()
     });
 
     // Handle TEST events
     if (event.type === 'TEST') {
-      console.log('Received TEST webhook - confirming webhook is working');
+      log('webhook', '✅ TEST webhook received - webhook integration is working');
       return new Response(JSON.stringify({ 
         success: true,
         message: 'TEST webhook received successfully',
@@ -114,7 +133,11 @@ serve(async (req) => {
     );
 
     if (!rcResponse.ok) {
-      console.error('Failed to fetch subscriber from RevenueCat:', rcResponse.status);
+      log('errors', '❌ Failed to fetch subscriber from RevenueCat:', {
+        status: rcResponse.status,
+        statusText: rcResponse.statusText,
+        app_user_id: event.app_user_id
+      });
       throw new Error('Failed to fetch subscriber data');
     }
 
@@ -129,10 +152,12 @@ serve(async (req) => {
     const hasProEntitlement = proEntitlement && 
       new Date(proEntitlement.expires_date) > new Date();
 
-    console.log('Subscriber info:', {
+    log('subscriber', '👤 Subscriber info:', {
       canonical_id: canonicalId,
+      original_id: event.app_user_id,
       has_pro: hasProEntitlement,
-      product_identifier: proEntitlement?.product_identifier
+      product_identifier: proEntitlement?.product_identifier,
+      expires_date: proEntitlement?.expires_date
     });
 
     // Handle different event types
@@ -205,7 +230,10 @@ serve(async (req) => {
 
         // Reset usage if billing cycle changed
         if (existingRecord && existingRecord.billing_cycle_start !== billingCycleStart.toISOString()) {
-          console.log('Resetting usage for new billing cycle');
+          log('database', '🔄 Resetting usage for new billing cycle:', {
+          old_cycle: existingRecord.billing_cycle_start,
+          new_cycle: billingCycleStart.toISOString()
+        });
           back_to_life_count = 0;
           last_video_date = null;
         }
@@ -228,11 +256,17 @@ serve(async (req) => {
           });
 
         if (error) {
-          console.error('Failed to upsert usage record:', error);
+          log('errors', '❌ Failed to upsert usage record:', error);
           throw error;
         }
 
-        console.log('Successfully updated usage record for canonical ID:', canonicalId);
+        log('database', '✅ Successfully updated usage record:', {
+          canonical_id: canonicalId,
+          plan_type: planType,
+          usage_limit: usageLimit,
+          billing_cycle_start: billingCycleStart.toISOString(),
+          next_reset_date: nextResetDate.toISOString()
+        });
       }
     } else if (INACTIVE_EVENTS.includes(event.type)) {
       // User no longer has active subscription - mark as inactive
@@ -246,11 +280,14 @@ serve(async (req) => {
         .eq('user_id', canonicalId);
 
       if (error) {
-        console.error('Failed to mark user as inactive:', error);
+        log('errors', '❌ Failed to mark user as inactive:', error);
         throw error;
       }
 
-      console.log('Marked user as inactive:', canonicalId);
+      log('database', '⏸️ Marked user as inactive:', {
+        canonical_id: canonicalId,
+        event_type: event.type
+      });
     } else if (TRANSFER_EVENTS.includes(event.type)) {
       // Handle transfer events - merge usage from old IDs to canonical ID
       const transferredFrom = event.transferred_from || [];
@@ -295,7 +332,7 @@ serve(async (req) => {
             });
 
           if (updateError) {
-            console.error('Failed to merge usage records:', updateError);
+            log('errors', '❌ Failed to merge usage records:', updateError);
             throw updateError;
           }
 
@@ -306,10 +343,14 @@ serve(async (req) => {
             .eq('user_id', oldId);
 
           if (deleteError) {
-            console.error('Failed to delete old usage record:', deleteError);
+            log('errors', '⚠️ Failed to delete old usage record:', deleteError);
           }
 
-          console.log(`Merged usage from ${oldId} to ${canonicalId}`);
+          log('database', '🔀 Merged usage records:', {
+            from: oldId,
+            to: canonicalId,
+            merged_count: mergedCount
+          });
         }
       }
     }
@@ -323,7 +364,11 @@ serve(async (req) => {
       status: 200
     });
   } catch (error) {
-    console.error('Webhook processing error:', error);
+    log('errors', '❌ Webhook processing error:', {
+      error: error.message,
+      event_type: payload?.event?.type,
+      app_user_id: payload?.event?.app_user_id
+    });
     return new Response(JSON.stringify({ 
       error: error.message 
     }), {

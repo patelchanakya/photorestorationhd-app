@@ -25,6 +25,9 @@ export const backToLifeService = {
       // Get subscription details from RevenueCat
       const planDetails = await getSubscriptionPlanDetails();
       if (!planDetails) {
+        if (__DEV__) {
+          console.log('🎬 BackToLife: No subscription plan details available');
+        }
         return {
           canUse: false,
           used: 0,
@@ -39,6 +42,9 @@ export const backToLifeService = {
       // Get stable tracking ID for video usage
       const userId = await getVideoTrackingId();
       if (!userId) {
+        if (__DEV__) {
+          console.log('🎬 BackToLife: No video tracking ID available');
+        }
         return {
           canUse: false,
           used: 0,
@@ -50,6 +56,16 @@ export const backToLifeService = {
         };
       }
 
+      if (__DEV__) {
+        console.log('📊 BackToLife Usage Check:', {
+          user_id: userId,
+          plan_type: planDetails.planType,
+          usage_limit: planDetails.usageLimit,
+          billing_cycle_start: planDetails.billingCycleStart,
+          next_reset_date: planDetails.nextResetDate
+        });
+      }
+
       // Get or create usage record
       const usageRecord = await this.getOrCreateUsageRecord(userId, planDetails);
       
@@ -57,6 +73,18 @@ export const backToLifeService = {
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
       const canUseToday = !usageRecord.last_video_date || usageRecord.last_video_date !== today;
       const hasMonthlyCapacity = usageRecord.back_to_life_count < planDetails.usageLimit;
+      
+      if (__DEV__) {
+        console.log('🎬 BackToLife Usage Status:', {
+          user_id: userId,
+          used_count: usageRecord.back_to_life_count,
+          limit: planDetails.usageLimit,
+          can_use_today: canUseToday,
+          has_monthly_capacity: hasMonthlyCapacity,
+          last_video_date: usageRecord.last_video_date,
+          today: today
+        });
+      }
       
       return {
         canUse: canUseToday && hasMonthlyCapacity,
