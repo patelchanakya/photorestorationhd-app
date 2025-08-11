@@ -2,6 +2,7 @@ import { analyticsService } from '@/services/analytics';
 import { deviceTrackingService } from '@/services/deviceTracking';
 import { networkStateService } from '@/services/networkState';
 import { notificationService } from '@/services/notificationService';
+import { permissionsService } from '@/services/permissions';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -124,23 +125,27 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
     initializationPromise = new Promise<void>((resolve) => {
       const runInitialization = async () => {
         try {
-          // Step 1: RevenueCat Configuration
+          // Step 1: Permissions (First to avoid UI flash)
+          setLoadingText('Requesting permissions...');
+          await initializePermissions();
+
+          // Step 2: RevenueCat Configuration
           setLoadingText('Configuring subscriptions...');
           await initializeRevenueCat();
 
-          // Step 2: Device Services
+          // Step 3: Device Services
           setLoadingText('Setting up device services...');
           await initializeDeviceServices();
 
-          // Step 3: Analytics
+          // Step 4: Analytics
           setLoadingText('Starting analytics...');
           await initializeAnalytics();
 
-          // Step 4: Notifications
+          // Step 5: Notifications
           setLoadingText('Setting up notifications...');
           await initializeNotifications();
 
-          // Step 5: Final checks
+          // Step 6: Final checks
           setLoadingText('Finishing up...');
           await new Promise((r) => setTimeout(r, 500));
 
@@ -304,6 +309,21 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
     } catch (error) {
       if (__DEV__) {
         console.error('❌ Failed to initialize analytics:', error);
+      }
+    }
+  };
+
+  const initializePermissions = async () => {
+    try {
+      // Check essential permissions upfront (only request notifications)
+      // Media/camera permissions are requested on-demand to preserve native dialogs
+      await permissionsService.requestEssentialPermissions();
+      if (__DEV__) {
+        console.log('✅ Essential permissions initialized');
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.error('❌ Failed to initialize permissions:', error);
       }
     }
   };

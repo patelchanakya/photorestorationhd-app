@@ -1,11 +1,12 @@
 import { type FunctionType } from '@/services/modelConfigs';
+import { permissionsService } from '@/services/permissions';
 import { validatePremiumAccess } from '@/services/revenuecat';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, FlatList, Linking, Platform, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, FlatList, Linking, Platform, Text, TouchableOpacity, View } from 'react-native';
 
 interface DeviceTwoRowCarouselProps {
   functionType: FunctionType;
@@ -19,20 +20,34 @@ const ITEM_RADIUS = 16;
 const PAGE_SIZE = 150; // how many assets we fetch per page
 
 export function DeviceTwoRowCarousel({ functionType }: DeviceTwoRowCarouselProps) {
-  const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
   const [columns, setColumns] = useState<AssetColumn[]>([]);
   const [loadingInitial, setLoadingInitial] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [endCursor, setEndCursor] = useState<string | undefined>(undefined);
   const [hasNextPage, setHasNextPage] = useState<boolean>(true);
+  const [hasPermission, setHasPermission] = useState(false);
   const didInitRef = useRef(false);
 
   useEffect(() => {
-    if (!permissionResponse?.granted) return;
-    if (didInitRef.current) return;
-    didInitRef.current = true;
-    resetAndLoad();
-  }, [permissionResponse?.granted]);
+    // Check if we have media library permission from our centralized service
+    const checkPermission = () => {
+      const granted = permissionsService.hasMediaLibraryPermission();
+      setHasPermission(granted);
+      if (granted && !didInitRef.current) {
+        didInitRef.current = true;
+        resetAndLoad();
+      }
+    };
+
+    // Check immediately
+    checkPermission();
+    
+    // If no permission initially, check periodically in case user grants it later
+    if (!permissionsService.hasMediaLibraryPermission()) {
+      const interval = setInterval(checkPermission, 1000);
+      return () => clearInterval(interval);
+    }
+  }, []);
 
   const appendAssetsAsColumns = useCallback((assets: MediaLibrary.Asset[]) => {
     setColumns(prev => {
@@ -95,21 +110,37 @@ export function DeviceTwoRowCarousel({ functionType }: DeviceTwoRowCarouselProps
     }
   };
 
-  if (!permissionResponse?.granted) {
+  if (!hasPermission) {
     const handlePermissionPress = async () => {
-      const current = await MediaLibrary.getPermissionsAsync();
-      if (current.granted) {
-        await resetAndLoad();
-      } else if (current.canAskAgain) {
-        const res = await requestPermission();
-        if (res?.granted) {
-          await resetAndLoad();
-          return;
+      try {
+        // First, try the native permission dialog
+        const result = await permissionsService.requestSpecificPermission('mediaLibrary');
+        if (result === 'granted') {
+          setHasPermission(true);
+          if (!didInitRef.current) {
+            didInitRef.current = true;
+            await resetAndLoad();
+          }
+        } else if (result === 'denied') {
+          // Check if we can still ask again or if user permanently denied
+          const currentStatus = await ImagePicker.getMediaLibraryPermissionsAsync();
+          if (currentStatus.canAskAgain === false) {
+            // User permanently denied, need to go to settings
+            Alert.alert(
+              'Permission Required',
+              'Photo access was permanently denied. Please enable it in Settings to use this feature.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Open Settings', onPress: openSettings }
+              ]
+            );
+          }
+          // If canAskAgain is true, the dialog was just dismissed - don't do anything
         }
-        const refreshed = await MediaLibrary.getPermissionsAsync();
-        if (refreshed.granted) await resetAndLoad();
-      } else {
-        openSettings();
+      } catch (error) {
+        if (__DEV__) {
+          console.error('Permission request error:', error);
+        }
       }
     };
 
@@ -123,7 +154,7 @@ export function DeviceTwoRowCarousel({ functionType }: DeviceTwoRowCarouselProps
             style={{ backgroundColor: '#111', paddingVertical: 12, borderRadius: 24, alignItems: 'center' }}
           >
             <Text style={{ color: '#fff', fontWeight: '800' }}>
-              {permissionResponse?.canAskAgain === false ? 'Open Settings' : 'Give Access'}
+              Give Access
             </Text>
           </TouchableOpacity>
           <TouchableOpacity

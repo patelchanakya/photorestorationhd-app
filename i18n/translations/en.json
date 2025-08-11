@@ -34,7 +34,7 @@
   "language": {
     "selectLanguage": "Select Language",
     "availableNow": "Available now",
-    "nextIn": "Next in {{time}}"
+    "nextIn": "Reset in {{time}}"
   },
   "common": {
     "ok": "OK",

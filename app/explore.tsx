@@ -1,8 +1,5 @@
-import { AnimatedBackgrounds } from '@/components/AnimatedBackgrounds';
-import { AnimatedOutfits } from '@/components/AnimatedOutfits';
 import { DeviceTwoRowCarousel } from '@/components/DeviceTwoRowCarousel';
 import { FeatureCardsList } from '@/components/FeatureCardsList';
-import { HeroBackToLifeExamples } from '@/components/HeroBackToLifeExamples';
 import { QuickActionRail } from '@/components/QuickActionRail';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
@@ -10,13 +7,37 @@ import { presentPaywall } from '@/services/revenuecat';
 import { UserIdPersistenceService } from '@/services/userIdPersistence';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
-import React from 'react';
-import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Alert, ScrollView, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeGalleryLikeScreen() {
   const isPro = useSubscriptionStore((state) => state.isPro);
   const router = useRouter();
+  
+  // Lazy load heavy components after initial render
+  const [componentsLoaded, setComponentsLoaded] = useState(false);
+  const [AnimatedBackgrounds, setAnimatedBackgrounds] = useState<any>(null);
+  const [AnimatedOutfits, setAnimatedOutfits] = useState<any>(null);
+  const [HeroBackToLifeExamples, setHeroBackToLifeExamples] = useState<any>(null);
+  
+  useEffect(() => {
+    // Load heavy components after a short delay to improve initial render
+    const loadTimer = setTimeout(() => {
+      Promise.all([
+        import('@/components/AnimatedBackgrounds'),
+        import('@/components/AnimatedOutfits'),
+        import('@/components/HeroBackToLifeExamples')
+      ]).then(([bgModule, outfitsModule, btlModule]) => {
+        setAnimatedBackgrounds(() => bgModule.AnimatedBackgrounds);
+        setAnimatedOutfits(() => outfitsModule.AnimatedOutfits);
+        setHeroBackToLifeExamples(() => btlModule.HeroBackToLifeExamples);
+        setComponentsLoaded(true);
+      });
+    }, 100); // Small delay to let initial UI render first
+    
+    return () => clearTimeout(loadTimer);
+  }, []);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#0B0B0F' }} edges={['top', 'left', 'right']}>
@@ -82,7 +103,13 @@ export default function HomeGalleryLikeScreen() {
         </View>
         
         {/* Two tall examples side-by-side for Back to life (video friendly) */}
-        <HeroBackToLifeExamples />
+        {componentsLoaded && HeroBackToLifeExamples ? (
+          <HeroBackToLifeExamples />
+        ) : (
+          <View style={{ height: 200, justifyContent: 'center', alignItems: 'center' }}>
+            <ActivityIndicator color="#8B5CF6" />
+          </View>
+        )}
 
       {/* Repair section title */}
       <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -121,13 +148,25 @@ export default function HomeGalleryLikeScreen() {
         <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '600', letterSpacing: -0.3 }}>Outfits</Text>
         </View>
-        <AnimatedOutfits />
+        {componentsLoaded && AnimatedOutfits ? (
+          <AnimatedOutfits />
+        ) : (
+          <View style={{ height: 200, justifyContent: 'center', alignItems: 'center' }}>
+            <ActivityIndicator color="#8B5CF6" />
+          </View>
+        )}
 
         {/* Backgrounds Section */}
         <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '600', letterSpacing: -0.3 }}>Backgrounds</Text>
         </View>
-        <AnimatedBackgrounds />
+        {componentsLoaded && AnimatedBackgrounds ? (
+          <AnimatedBackgrounds />
+        ) : (
+          <View style={{ height: 200, justifyContent: 'center', alignItems: 'center' }}>
+            <ActivityIndicator color="#8B5CF6" />
+          </View>
+        )}
 
         {/* Other AI Features - Enlighten, etc. */}
         <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>

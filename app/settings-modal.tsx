@@ -49,7 +49,6 @@ export default function SettingsModalScreen() {
   
   // Local loading states
   const [isRestoring, setIsRestoring] = useState(false);
-  const [isResettingAppleId, setIsResettingAppleId] = useState(false);
   const [timeUntilNext, setTimeUntilNext] = useState<string>('Available now');
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [revenueCatUserId, setRevenueCatUserId] = useState<string | null>(null);
@@ -294,82 +293,6 @@ export default function SettingsModalScreen() {
     }
   };
 
-  const handleResetAppleId = async () => {
-    try {
-      // Show confirmation dialog first
-      Alert.alert(
-        'Reset Apple ID Identity',
-        'This will reset your RevenueCat identity to prevent subscription issues when switching Apple IDs. You can restore your purchases afterward if needed.\n\nAre you sure you want to continue?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Reset', 
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                setIsResettingAppleId(true);
-                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                
-                if (__DEV__) {
-                  console.log('📱 User triggered Apple ID reset');
-                }
-                
-                // Import RevenueCat and reset identity
-                const { default: Purchases } = await import('react-native-purchases');
-                await Purchases.logOut();
-                
-                
-                Alert.alert(
-                  'Identity Reset',
-                  'RevenueCat identity has been reset. If you had a subscription, tap "Restore Purchases" to regain access.',
-                  [{ text: 'OK' }]
-                );
-                
-                if (__DEV__) {
-                  console.log('✅ Apple ID reset completed successfully');
-                }
-              } catch (error) {
-                if (__DEV__) {
-                  console.error('❌ Failed to reset Apple ID:', error);
-                }
-                
-                Alert.alert(
-                  'Reset Failed',
-                  'Unable to reset Apple ID identity. Please try again.',
-                  [{ text: 'OK' }]
-                );
-              } finally {
-                setIsResettingAppleId(false);
-              }
-            }
-          }
-        ]
-      );
-    } catch (error) {
-      if (__DEV__) {
-        console.error('Error in reset Apple ID handler:', error);
-      }
-    }
-  };
-
-  const handleManageSubscription = async () => {
-    try {
-      const url = Platform.OS === 'ios' 
-        ? 'https://apps.apple.com/account/subscriptions'
-        : 'https://play.google.com/store/account/subscriptions';
-      
-      await Linking.openURL(url);
-    } catch (error) {
-      if (__DEV__) {
-        console.error('Error opening subscription management:', error);
-      }
-      Alert.alert(
-        t('common.error'),
-        'Unable to open subscription management. Please check your device settings.',
-        [{ text: t('common.ok') }]
-      );
-    }
-  };
 
   // Handle paywall presentation
   const handleShowPaywall = async () => {
@@ -436,7 +359,7 @@ export default function SettingsModalScreen() {
     if (timeUntilNext === 'Available now') {
       return status;
     }
-    return `${status} • Next in ${timeUntilNext}`;
+    return `${status} • Reset in ${timeUntilNext}`;
   };
 
   // Social media URLs
@@ -920,77 +843,6 @@ Best regards`;
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </TouchableOpacity>
 
-                {/* Reset Apple ID Identity */}
-                <TouchableOpacity 
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16,
-                    borderBottomWidth: isPro ? 1 : 0,
-                    borderBottomColor: 'rgba(255,255,255,0.1)',
-                    opacity: isResettingAppleId ? 0.7 : 1
-                  }}
-                  onPress={handleResetAppleId}
-                  disabled={isResettingAppleId}
-                >
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(239,68,68,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
-                    {isResettingAppleId ? (
-                      <ActivityIndicator size="small" color="#ef4444" />
-                    ) : (
-                      <IconSymbol name="person.crop.circle.badge.minus" size={18} color="#ef4444" />
-                    )}
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      {isResettingAppleId ? 'Resetting...' : 'Reset Apple ID Identity'}
-                    </Text>
-                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                      Fix subscription issues after Apple ID switch
-                    </Text>
-                  </View>
-                  <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
-                </TouchableOpacity>
-
-                {/* Manage Subscription */}
-                {isPro && (
-                  <TouchableOpacity 
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      padding: 16
-                    }}
-                    onPress={handleManageSubscription}
-                  >
-                    <View style={{
-                      width: 36,
-                      height: 36,
-                      backgroundColor: 'rgba(249,115,22,0.2)',
-                      borderRadius: 18,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: 12
-                    }}>
-                      <IconSymbol name="gear" size={18} color="#f97316" />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                        {t('settings.manageSubscription')}
-                      </Text>
-                      <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                        {t('settings.manageSubscriptionDescription')}
-                      </Text>
-                    </View>
-                    <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
-                  </TouchableOpacity>
-                )}
               </View>
             </View>
             

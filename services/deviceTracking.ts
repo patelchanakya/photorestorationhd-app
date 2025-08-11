@@ -24,8 +24,9 @@ try {
 const DEVICE_ID_KEY = 'device_id_persistent';
 const DEVICE_USAGE_LAST_RESET_KEY = 'device_usage_last_reset';
 const DEVICE_USAGE_COUNT_KEY = 'device_usage_count';
+const MIGRATION_FLAG_KEY = 'free_limit_migration_v2'; // Flag to track 5-lifetime migration
 
-const FREE_RESTORATION_LIMIT = 3; // 3 free restorations every 48 hours
+const FREE_RESTORATION_LIMIT = 5; // 5 free restorations total (lifetime)
 
 // Interface for device usage data
 interface DeviceUsage {
@@ -138,10 +139,71 @@ export const deviceTrackingService = {
   },
 
   /**
+   * Migrate existing users to new 5-lifetime system (reset to 0/5)
+   */
+  async migrateToLifetimeSystem(deviceId: string): Promise<void> {
+    try {
+      // Check if migration already completed
+      const migrationDone = await SecureStore.getItemAsync(MIGRATION_FLAG_KEY);
+      if (migrationDone) {
+        return; // Already migrated
+      }
+
+      if (__DEV__) {
+        console.log('🔄 Migrating to 5-lifetime system - resetting all free users to 0/5');
+      }
+
+      // Reset local storage
+      await SecureStore.setItemAsync(DEVICE_USAGE_COUNT_KEY, '0');
+      await SecureStore.deleteItemAsync(DEVICE_USAGE_LAST_RESET_KEY); // No longer needed
+
+      // Reset Supabase record if online
+      if (networkStateService.isOnline) {
+        try {
+          const { data: existing } = await supabase
+            .from('device_usage')
+            .select('device_id')
+            .eq('device_id', deviceId)
+            .single();
+
+          if (existing) {
+            // Update existing record
+            await supabase
+              .from('device_usage')
+              .update({
+                free_restorations_used: 0,
+                last_reset_date: new Date().toISOString(), // Keep for now, will remove later
+              })
+              .eq('device_id', deviceId);
+          }
+        } catch (error) {
+          if (__DEV__) {
+            console.warn('⚠️ Failed to reset Supabase record during migration:', error);
+          }
+        }
+      }
+
+      // Mark migration as complete
+      await SecureStore.setItemAsync(MIGRATION_FLAG_KEY, 'true');
+      
+      if (__DEV__) {
+        console.log('✅ Migration complete - user reset to 0/5 free restorations');
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.warn('⚠️ Failed to migrate user to lifetime system:', error);
+      }
+    }
+  },
+
+  /**
    * Get device usage data from Supabase with local fallback
    */
   async getDeviceUsage(): Promise<DeviceUsage> {
     const deviceId = await this.getDeviceId();
+    
+    // Check if we need to migrate to new 5-lifetime system
+    await this.migrateToLifetimeSystem(deviceId);
     
     try {
       // Get last reset date and usage count from SecureStore
@@ -155,7 +217,7 @@ export const deviceTrackingService = {
           if (supabaseUsage) {
             // Update local cache with Supabase data
             await this.updateLocalCache(supabaseUsage);
-            return this.processUsageData(supabaseUsage);
+            return supabaseUsage;
           }
         } catch (error) {
           if (__DEV__) {
@@ -165,15 +227,14 @@ export const deviceTrackingService = {
       }
       
       // If no local data exists, initialize with defaults
-      if (!lastResetStr || !usageCountStr) {
+      if (!usageCountStr) {
         const initialUsage: DeviceUsage = {
           device_id: deviceId,
           free_restorations_used: 0,
-          last_reset_date: new Date().toISOString(),
+          last_reset_date: new Date().toISOString(), // Keep for DB compatibility
         };
         
-        // Save initial data locally
-        await SecureStore.setItemAsync(DEVICE_USAGE_LAST_RESET_KEY, initialUsage.last_reset_date);
+        // Save initial data locally (only count matters now)
         await SecureStore.setItemAsync(DEVICE_USAGE_COUNT_KEY, '0');
         
         // Try to create record in Supabase
@@ -196,10 +257,10 @@ export const deviceTrackingService = {
       const usage: DeviceUsage = {
         device_id: deviceId,
         free_restorations_used: parseInt(usageCountStr, 10) || 0,
-        last_reset_date: lastResetStr,
+        last_reset_date: lastResetStr || new Date().toISOString(), // Keep for DB compatibility
       };
       
-      return this.processUsageData(usage);
+      return usage;
     } catch (error) {
       if (__DEV__) {
         console.error('❌ Failed to get device usage from SecureStore:', error);
@@ -211,51 +272,6 @@ export const deviceTrackingService = {
         last_reset_date: new Date().toISOString(),
       };
     }
-  },
-
-
-  /**
-   * Process usage data and handle 48-hour reset logic
-   */
-  async processUsageData(usage: DeviceUsage): Promise<DeviceUsage> {
-    const now = new Date();
-    const lastReset = new Date(usage.last_reset_date);
-    const hoursSinceReset = (now.getTime() - lastReset.getTime()) / (1000 * 60 * 60);
-    
-    if (hoursSinceReset >= 48) {
-      // Reset the 48-hour limit
-      const resetUsage: DeviceUsage = {
-        ...usage,
-        free_restorations_used: 0,
-        last_reset_date: now.toISOString(),
-      };
-      
-      // Update local cache
-      await this.updateLocalCache(resetUsage);
-      
-      // Update Supabase if online
-      if (networkStateService.isOnline) {
-        try {
-          await this.updateDeviceUsageInSupabase(resetUsage);
-        } catch (error) {
-          if (__DEV__) {
-            console.warn('⚠️ Failed to update reset in Supabase:', error);
-          }
-          // Queue operation for later sync
-          await this.queueOperation('reset', usage.device_id, resetUsage);
-        }
-      } else {
-        // Queue operation for when online
-        await this.queueOperation('reset', usage.device_id, resetUsage);
-      }
-      
-      if (__DEV__) {
-        console.log('🔄 Reset 48-hour limit');
-      }
-      return resetUsage;
-    }
-    
-    return usage;
   },
 
   /**
@@ -318,7 +334,6 @@ export const deviceTrackingService = {
    */
   async updateLocalCache(usage: DeviceUsage): Promise<void> {
     try {
-      await SecureStore.setItemAsync(DEVICE_USAGE_LAST_RESET_KEY, usage.last_reset_date);
       await SecureStore.setItemAsync(DEVICE_USAGE_COUNT_KEY, usage.free_restorations_used.toString());
     } catch (error) {
       if (__DEV__) {
@@ -472,18 +487,6 @@ export const deviceTrackingService = {
       return currentUsage;
     }
 
-    // Check if we're still within the same 48-hour window
-    const now = new Date();
-    const lastReset = new Date(currentUsage.last_reset_date);
-    const hoursSinceReset = (now.getTime() - lastReset.getTime()) / (1000 * 60 * 60);
-    
-    if (hoursSinceReset >= 48) {
-      if (__DEV__) {
-        console.log('⚠️ Outside 48-hour window, not decrementing');
-      }
-      return currentUsage;
-    }
-
     const newCount = Math.max(0, currentUsage.free_restorations_used - 1);
     
     const updatedUsage: DeviceUsage = {
@@ -524,54 +527,6 @@ export const deviceTrackingService = {
     return Math.max(0, FREE_RESTORATION_LIMIT - usage.free_restorations_used);
   },
 
-  /**
-   * Get time remaining until next free restoration (in milliseconds)
-   */
-  async getTimeUntilNextFreeRestoration(): Promise<number> {
-    const usage = await this.getDeviceUsage();
-    
-    // If user hasn't used their free restoration, it's available now
-    if (usage.free_restorations_used === 0) {
-      return 0;
-    }
-    
-    const now = new Date();
-    const lastReset = new Date(usage.last_reset_date);
-    const hoursSinceReset = (now.getTime() - lastReset.getTime()) / (1000 * 60 * 60);
-    
-    // If 48 hours have passed, restoration is available now
-    if (hoursSinceReset >= 48) {
-      return 0;
-    }
-    
-    // Calculate time remaining until 48 hours from last reset
-    const hoursRemaining = 48 - hoursSinceReset;
-    return Math.ceil(hoursRemaining * 60 * 60 * 1000); // Convert to milliseconds
-  },
-
-  /**
-   * Get formatted time remaining until next free restoration
-   */
-  async getFormattedTimeUntilNext(): Promise<string> {
-    const msRemaining = await this.getTimeUntilNextFreeRestoration();
-    
-    if (msRemaining === 0) {
-      return 'Available now';
-    }
-    
-    const hours = Math.floor(msRemaining / (1000 * 60 * 60));
-    const minutes = Math.floor((msRemaining % (1000 * 60 * 60)) / (1000 * 60));
-    
-    if (hours === 0) {
-      return `${minutes}m`;
-    } else if (hours < 24) {
-      return `${hours}h ${minutes}m`;
-    } else {
-      const days = Math.floor(hours / 24);
-      const remainingHours = hours % 24;
-      return `${days}d ${remainingHours}h`;
-    }
-  },
 
   /**
    * Reset usage data (for testing purposes)

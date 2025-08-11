@@ -1,13 +1,13 @@
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { useHorizontalVisibility } from '@/hooks/useHorizontalVisibility';
 import { presentPaywall } from '@/services/revenuecat';
-import { VideoView, useVideoPlayer } from 'expo-video';
+import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import React from 'react';
-import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 interface BackgroundItem {
@@ -19,24 +19,117 @@ interface BackgroundItem {
   backgroundPrompt?: string; // The prompt to apply this background
 }
 
-// Add your background transformation videos here
+// Background presets aligned with user requests/research
 const DEFAULT_BACKGROUNDS: BackgroundItem[] = [
-  // Example items - replace with your actual videos
-  { id: 'bg-1', title: 'Beach', type: 'image', image: require('../assets/images/onboarding/after-3.png'), backgroundPrompt: 'tropical beach with palm trees' },
-  { id: 'bg-2', title: 'City', type: 'image', image: require('../assets/images/onboarding/after-4.png'), backgroundPrompt: 'modern city skyline' },
-  { id: 'bg-3', title: 'Nature', type: 'image', image: require('../assets/images/onboarding/after-3.png'), backgroundPrompt: 'forest nature scenery' },
-  { id: 'bg-4', title: 'Studio', type: 'image', image: require('../assets/images/onboarding/after-4.png'), backgroundPrompt: 'professional photo studio' },
-  { id: 'bg-5', title: 'Abstract', type: 'image', image: require('../assets/images/onboarding/after-3.png'), backgroundPrompt: 'abstract artistic background' },
-  { id: 'bg-6', title: 'Sunset', type: 'image', image: require('../assets/images/onboarding/after-4.png'), backgroundPrompt: 'beautiful sunset sky' },
+  {
+    id: 'bg-1',
+    title: 'Studio',
+    type: 'image',
+    image: require('../assets/images/backgrounds/thumbnail/studio/studio.jpeg'),
+    backgroundPrompt:
+      "Replace only the background with a seamless studio backdrop in white or light gray, evenly lit and perfectly smooth with no texture or banding. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. Do not retouch or brighten the subject."
+  },
+  {
+    id: 'bg-2',
+    title: 'Blur',
+    type: 'image',
+    image: require('../assets/images/backgrounds/thumbnail/blur/blurred.jpeg'),
+    backgroundPrompt:
+      "Do not change the location. Keep the same background but apply a soft, natural blur and brighten the background slightly (~25%) while preserving its original color balance. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No added glow or light spill on the subject."
+  },
+  {
+    id: 'bg-3',
+    title: 'Beach',
+    type: 'image',
+    image: require('../assets/images/backgrounds/thumbnail/beach/beach.jpeg'),
+    backgroundPrompt:
+      "Replace only the background with a clear, bright beach scene: visible ocean horizon, soft blue sky, and light sand. Keep the background mostly in focus (minimal blur) so details are recognizable; avoid heavy bokeh. Maintain balanced daylight exposure and natural colors. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No umbrellas, text, or added props."
+  },
+  {
+    id: 'bg-4',
+    title: 'Garden',
+    type: 'image',
+    image: require('../assets/images/backgrounds/thumbnail/garden/garden.jpeg'),
+    backgroundPrompt:
+      "Replace only the background with a clear garden scene: visible greenery and foliage with natural daylight. Keep the background mostly in focus (minimal blur) so leaves and shapes are recognizable; avoid heavy bokeh. Maintain balanced exposure and natural colors. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No insects, flowers touching the subject, or added props."
+  },
+  {
+    id: 'bg-5',
+    title: 'City',
+    type: 'image',
+    image: require('../assets/images/backgrounds/thumbnail/city/city.jpeg'),
+    backgroundPrompt:
+      "Replace only the background with a clear modern city scene in daylight—street or skyline—with recognizable buildings and structure. Keep the background mostly in focus (minimal blur); avoid heavy bokeh. Maintain balanced exposure and natural colors. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No text, logos, or legible signage; no added props."
+  },
+  {
+    id: 'bg-6',
+    title: 'Wedding',
+    type: 'image',
+    image: require('../assets/images/backgrounds/thumbnail/wedding/wedding.jpeg'),
+    backgroundPrompt:
+      "Replace only the background with a clearly visible, elegant wedding venue interior (aisle or reception hall) with warm ambient lighting. Show tasteful decor—soft florals, candles, or string lights—in a refined setting. Keep the background mostly in focus (minimal blur) so details are recognizable; avoid heavy bokeh. Maintain balanced exposure and natural warm tones. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. Do not add veils, bouquets, or accessories to the subject; no text or logos."
+  },
+  {
+    id: 'bg-7',
+    title: 'Heavenly',
+    type: 'image',
+    image: require('../assets/images/backgrounds/thumbnail/heavenly/heavenly.jpg'),
+    backgroundPrompt:
+      "Replace only the background with a bright, heavenly sky of soft white clouds and gentle sunbeams. Keep the cloud forms clearly visible (minimal blur) so the sky reads cleanly; avoid heavy bokeh. Use an airy pastel blue‑to‑white gradient with a subtle, tasteful glow—no halos. Maintain balanced exposure and natural color. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No wings, text, or added objects; do not retouch or brighten the subject."
+  },
+  {
+    id: 'bg-8',
+    title: 'Passport',
+    type: 'image',
+    image: require('../assets/images/backgrounds/thumbnail/passport/passport.jpg'),
+    backgroundPrompt:
+      "Replace only the background with a perfectly uniform pure white background (#FFFFFF), evenly lit. Absolutely no texture, edges, gradients, color casts, or shadows in the background. Keep the person exactly the same—face, skin tone, hair, clothing, pose, and lighting unchanged. Do not retouch the subject or add anything."
+  },
+  {
+    id: 'bg-10',
+    title: 'Soft Lights',
+    type: 'image',
+    image: require('../assets/images/backgrounds/thumbnail/soft-lights/softer.jpg'),
+    backgroundPrompt:
+      "Replace only the background with a premium, cinematic bokeh of soft lights. Use neutral‑to‑warm white/golden highlights, large soft discs, and shallow depth‑of‑field. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No light spill on the subject, no text, shapes, or props. Background should feel elegant and luminous without overexposure or harsh edges."
+  },
+  {
+    id: 'bg-11',
+    title: 'Christmas',
+    type: 'image',
+    image: require('../assets/images/backgrounds/thumbnail/christmas/christmas.jpg'),
+    backgroundPrompt:
+      "Replace only the background with a clearly visible, elegant Christmas interior scene. Show a decorated Christmas tree, warm ambient string lights, and tasteful holiday decor in a living‑room setting. Keep the background mostly in focus (minimal blur) so details are recognizable; avoid heavy bokeh. Maintain balanced exposure, natural colors, and realistic depth‑of‑field behind the subject. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. Do not place any objects on the subject; no text, logos, snow overlays, or lens effects."
+  },
 ];
 
-// VideoView component with player hook
-const VideoViewWithPlayer = ({ video }: { video: any }) => {
+// VideoView component with player hook - optimized for performance
+const VideoViewWithPlayer = ({ video, isVisible = true }: { video: any; isVisible?: boolean }) => {
   const player = useVideoPlayer(video, (player) => {
     player.loop = true;
     player.muted = true;
-    player.play();
+    // Don't auto-play, wait for visibility
   });
+
+  React.useEffect(() => {
+    if (!player) return;
+    
+    let playTimer: any;
+    
+    if (isVisible) {
+      // Small delay to prevent all videos starting at once
+      playTimer = setTimeout(() => {
+        if (!player.playing) player.play();
+      }, Math.random() * 300);
+    } else {
+      // Pause when not visible
+      if (player.playing) player.pause();
+    }
+    
+    return () => {
+      if (playTimer) clearTimeout(playTimer);
+    };
+  }, [player, isVisible]);
 
   return (
     <VideoView
@@ -52,6 +145,11 @@ const VideoViewWithPlayer = ({ video }: { video: any }) => {
 export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { backgrounds?: BackgroundItem[] }) {
   const router = useRouter();
   const isPro = useSubscriptionStore((state) => state.isPro);
+  const { width: screenWidth } = useWindowDimensions();
+  const spacing = 10;
+  const tileWidth = Math.round(Math.min(140, Math.max(110, screenWidth * 0.3)));
+  const overscan = screenWidth >= 768 ? 2 : 0;
+  const { onScroll, onContainerLayout, isIndexVisible } = useHorizontalVisibility({ itemWidth: tileWidth, itemSpacing: spacing, overscanItems: overscan, leadingInset: 16 });
 
   const handleBackgroundSelect = async (background: BackgroundItem) => {
     // Check current PRO status
@@ -97,23 +195,27 @@ export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { bac
   };
 
   return (
-    <View style={{ marginTop: 16, marginBottom: 8, position: 'relative' }}>
+    <View style={{ marginTop: 16, marginBottom: 8, position: 'relative' }} onLayout={onContainerLayout}>
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 16 }}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        decelerationRate="fast"
+        removeClippedSubviews
       >
         {backgrounds.map((item, index) => (
           <Animated.View
             key={item.id}
             entering={FadeIn.delay(index * 100).duration(800)}
-            style={{ width: 120, marginRight: index === backgrounds.length - 1 ? 0 : 10 }}
+            style={{ width: tileWidth, marginRight: index === backgrounds.length - 1 ? 0 : spacing }}
           >
             <TouchableOpacity
               activeOpacity={0.9}
               onPress={() => handleBackgroundSelect(item)}
               style={{ 
-                width: 120, 
+                width: tileWidth, 
                 aspectRatio: 9/16, 
                 borderRadius: 16, 
                 overflow: 'hidden', 
@@ -124,7 +226,11 @@ export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { bac
             >
               {/* Render video or image based on type */}
               {item.type === 'video' && item.video ? (
-                <VideoViewWithPlayer video={item.video} />
+                isIndexVisible(index) ? (
+                  <VideoViewWithPlayer video={item.video} />
+                ) : (
+                  <View style={{ width: '100%', height: '100%', backgroundColor: '#0b0b0f' }} />
+                )
               ) : (
                 <ExpoImage 
                   source={item.image} 
@@ -142,29 +248,23 @@ export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { bac
                 style={{ position: 'absolute', inset: 0 as any }}
               />
               
-              {/* PRO badge for non-pro users - minimal style */}
-              {!isPro && (
-                <View style={{ 
-                  position: 'absolute', 
-                  top: 8, 
-                  right: 8,
-                  backgroundColor: 'rgba(0,0,0,0.7)',
-                  borderRadius: 10,
-                  paddingHorizontal: 6,
-                  paddingVertical: 3,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 3,
-                  borderWidth: 0.5,
-                  borderColor: 'rgba(249,115,22,0.5)'
-                }}>
-                  <IconSymbol name="crown" size={10} color="#f97316" />
-                  <Text style={{ color: '#f97316', fontSize: 9, fontWeight: '600', letterSpacing: 0.3 }}>PRO</Text>
-                </View>
-              )}
-              
-              {/* Bottom label */}
+              {/* Bottom label with PRO badge */}
               <View style={{ position: 'absolute', left: 10, bottom: 10 }}>
+                {/* PRO badge for non-pro users - positioned above title */}
+                {!isPro && (
+                  <View style={{ 
+                    backgroundColor: 'rgba(0,0,0,0.7)',
+                    borderRadius: 10,
+                    paddingHorizontal: 6,
+                    paddingVertical: 3,
+                    borderWidth: 0.5,
+                    borderColor: 'rgba(249,115,22,0.5)',
+                    alignSelf: 'flex-start',
+                    marginBottom: 4
+                  }}>
+                    <Text style={{ color: '#f97316', fontSize: 9, fontWeight: '600', letterSpacing: 0.3 }}>PRO</Text>
+                  </View>
+                )}
                 <Text style={{ 
                   color: '#FFFFFF', 
                   fontWeight: '600', 

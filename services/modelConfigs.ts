@@ -66,7 +66,8 @@ export const MODEL_CONFIGS: Record<FunctionType, ModelConfig> = {
       aspect_ratio: "match_input_image",
       safety_tolerance: 6,
       prompt_upsampling: true
-    })
+    }),
+    isVideo: true
   },
   background: {
     model: "black-forest-labs/flux-kontext-pro",

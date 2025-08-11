@@ -1,11 +1,12 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { type FunctionType } from '@/services/modelConfigs';
+import { permissionsService } from '@/services/permissions';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
 import { router } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Dimensions, FlatList, Linking, Platform, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Dimensions, FlatList, Linking, Platform, Text, TouchableOpacity, View } from 'react-native';
 
 interface DeviceGalleryGridProps {
   functionType: FunctionType;
@@ -21,15 +22,29 @@ const getNumColumns = () => {
 };
 
 export function DeviceGalleryGrid({ functionType }: DeviceGalleryGridProps) {
-  const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
   const [assets, setAssets] = useState<MediaLibrary.Asset[]>([]);
+  const [hasPermission, setHasPermission] = useState(false);
   const numColumns = useMemo(() => getNumColumns(), []);
 
   useEffect(() => {
-    if (permissionResponse?.granted) {
-      loadAllPhotos();
+    // Check if we have media library permission from our centralized service
+    const checkPermission = () => {
+      const granted = permissionsService.hasMediaLibraryPermission();
+      setHasPermission(granted);
+      if (granted) {
+        loadAllPhotos();
+      }
+    };
+
+    // Check immediately
+    checkPermission();
+    
+    // If no permission initially, check periodically in case user grants it later
+    if (!permissionsService.hasMediaLibraryPermission()) {
+      const interval = setInterval(checkPermission, 1000);
+      return () => clearInterval(interval);
     }
-  }, [permissionResponse?.granted]);
+  }, []);
 
   const loadAllPhotos = async () => {
     let allAssets: MediaLibrary.Asset[] = [];
@@ -53,28 +68,51 @@ export function DeviceGalleryGrid({ functionType }: DeviceGalleryGridProps) {
   };
 
   const handlePermissionRequest = async () => {
-    const current = await MediaLibrary.getPermissionsAsync();
-    
-    if (current.granted) {
-      loadAllPhotos();
-    } else if (current.canAskAgain) {
-      await MediaLibrary.requestPermissionsAsync();
-    } else {
-      try {
-        if (Platform.OS === 'ios') {
-          await Linking.openURL('app-settings:');
-        } else {
-          await Linking.openSettings();
+    try {
+      // First, try the native permission dialog
+      const result = await permissionsService.requestSpecificPermission('mediaLibrary');
+      if (result === 'granted') {
+        setHasPermission(true);
+        loadAllPhotos();
+      } else if (result === 'denied') {
+        // Check if we can still ask again or if user permanently denied
+        const currentStatus = await ImagePicker.getMediaLibraryPermissionsAsync();
+        if (currentStatus.canAskAgain === false) {
+          // User permanently denied, need to go to settings
+          Alert.alert(
+            'Permission Required',
+            'Photo access was permanently denied. Please enable it in Settings to use this feature.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { 
+                text: 'Open Settings', 
+                onPress: async () => {
+                  try {
+                    if (Platform.OS === 'ios') {
+                      await Linking.openURL('app-settings:');
+                    } else {
+                      await Linking.openSettings();
+                    }
+                  } catch (error) {
+                    if (__DEV__) {
+                      console.error('Failed to open settings:', error);
+                    }
+                  }
+                }
+              }
+            ]
+          );
         }
-      } catch (error) {
-        if (__DEV__) {
-          console.error('Failed to open settings:', error);
-        }
+        // If canAskAgain is true, the dialog was just dismissed - don't do anything
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.error('Permission request error:', error);
       }
     }
   };
 
-  if (!permissionResponse?.granted) {
+  if (!hasPermission) {
     return (
       <View style={{ paddingHorizontal: 16 }}>
         <View style={{ backgroundColor: '#151515', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
@@ -90,7 +128,7 @@ export function DeviceGalleryGrid({ functionType }: DeviceGalleryGridProps) {
             style={{ backgroundColor: '#ffffff', paddingVertical: 12, borderRadius: 12, alignItems: 'center' }}
           >
             <Text style={{ color: '#111827', fontWeight: '700' }}>
-              {permissionResponse?.canAskAgain === false ? 'Open Settings' : 'Allow Photo Access'}
+              Allow Photo Access
             </Text>
           </TouchableOpacity>
           <TouchableOpacity

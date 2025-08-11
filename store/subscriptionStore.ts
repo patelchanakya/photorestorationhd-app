@@ -17,7 +17,6 @@ interface SubscriptionState {
   setHasSeenUpgradePrompt: (seen: boolean) => void;
   incrementFreeRestorations: () => Promise<void>;
   decrementFreeRestorations: (restorationCreatedAt: string) => Promise<void>;
-  resetDailyLimit: () => void;
   canRestore: () => Promise<boolean>;
   getRemainingRestorations: () => Promise<number>;
 }
@@ -27,7 +26,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
     (set, get) => ({
       isPro: false, // This will NOT be persisted - see partialize below
       freeRestorationsUsed: 0,
-      freeRestorationsLimit: 3, // 3 free restorations every 48 hours
+      freeRestorationsLimit: 5, // 5 free restorations total (lifetime)
       lastResetDate: new Date().toISOString(),
       expirationDate: null,
       appUserId: null,
@@ -98,29 +97,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           return;
         }
         
-        // Check if the restoration was created within the current 48-hour window
-        const now = new Date();
-        const createdAt = new Date(restorationCreatedAt);
-        const lastReset = new Date(state.lastResetDate);
-        
-        // If the restoration was created before the last reset, don't decrement
-        if (createdAt < lastReset) {
-          if (__DEV__) {
-            console.log('⚠️ Restoration was created before current 48-hour window, not decrementing');
-          }
-          return;
-        }
-        
-        // Check if we're still within the same 48-hour window
-        const hoursSinceReset = (now.getTime() - lastReset.getTime()) / (1000 * 60 * 60);
-        if (hoursSinceReset >= 48) {
-          if (__DEV__) {
-            console.log('⚠️ Outside current 48-hour window, not decrementing');
-          }
-          return;
-        }
-        
-        // Decrement device-based usage (now local-only)
+        // Decrement device-based usage (lifetime limit)
         const updatedUsage = await deviceTrackingService.decrementUsage();
         
         // Update local state to match device tracking
@@ -132,13 +109,6 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         if (__DEV__) {
           console.log('✅ Device usage decremented locally:', updatedUsage.free_restorations_used);
         }
-      },
-
-      resetDailyLimit: () => {
-        set({ 
-          freeRestorationsUsed: 0, 
-          lastResetDate: new Date().toISOString() 
-        });
       },
 
       canRestore: async () => {

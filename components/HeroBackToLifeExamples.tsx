@@ -1,17 +1,16 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useBackToLife } from '@/hooks/useBackToLife';
-import { backToLifeService } from '@/services/backToLifeService';
-import { presentPaywall } from '@/services/revenuecat';
 import { useCropModalStore } from '@/store/cropModalStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { useFocusEffect } from '@react-navigation/native';
+import { FlashList } from '@shopify/flash-list';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import React from 'react';
-import { Alert, AppState, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, AppState, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 
 interface ExampleItem {
@@ -28,80 +27,124 @@ const DEFAULT_EXAMPLES: ExampleItem[] = [
   // Video presets optimized for Kling v2.1 video generation with natural, cinematic prompts
   { 
     id: 'ex-c', 
-    video: require('../assets/videos/btl-3.mp4'), 
+    video: require('../assets/videos/magic/backtolife/thumbnail/btl-3.mp4'), 
     title: 'Hug', 
     type: 'video', 
     animationPrompt: 'Let the scene express warmth and closeness through a natural hug or embrace. The motion should feel smooth and genuine, whether it\'s two people sharing a soft side hug, a small group leaning in together, or friends pulling each other close. Keep movements fluid and unforced, with slight posture adjustments and natural timing. Let the moment feel connected and comfortable, adapting to the number of people in the scene. Background remains still.' 
   },
   { 
     id: 'ex-e', 
-    video: require('../assets/videos/btl-5.mp4'), 
+    video: require('../assets/videos/magic/backtolife/thumbnail/btl-5.mp4'), 
     title: 'Group', 
     type: 'video', 
     animationPrompt: 'Bring the group to life with small, natural movements that reflect connection and presence. People may shift slightly, glance at each other, share a laugh, or adjust their posture. Movements should feel relaxed and unposed, like a real moment between friends or family. Let each person have their own subtle variation in motion, creating a layered, lifelike scene. Background stays still.' 
   },
   { 
     id: 'ex-b', 
-    video: require('../assets/videos/btl-2.mp4'), 
+    video: require('../assets/videos/magic/backtolife/thumbnail/btl-2.mp4'), 
     title: 'Fun', 
     type: 'video', 
     animationPrompt: 'Bring a sense of fun and joy to the scene through a natural, fitting gesture. For example, friends might laugh together, a parent might lift a child, someone might clap, wave, or lean playfully toward another. Let the action match the energy and context of the image, keeping it smooth, warm, and spontaneous. Background remains still.' 
   },
   { 
     id: 'ex-d', 
-    video: require('../assets/videos/btl-4.mp4'), 
+    video: require('../assets/videos/magic/backtolife/thumbnail/btl-4.mp4'), 
     title: 'Love', 
     type: 'video', 
     animationPrompt: 'Let the scene express affection naturally — this could be a gentle kiss, a soft lean-in, or an intimate glance, depending on the relationship in the image. Movements should be smooth, minimal, and emotionally grounded. If a kiss happens, let it be brief and warm, with natural timing. Keep everything feeling sincere and comfortable. Background remains still.' 
   },
   { 
     id: 'ex-a', 
-    video: require('../assets/videos/btl-1.mp4'), 
+    video: require('../assets/videos/magic/backtolife/thumbnail/btl-1.mp4'), 
     title: 'Dance', 
     type: 'video', 
     animationPrompt: 'Add a moment of playful movement that fits the scene — this could be a quick spin, a light sway, or another gentle dance-like gesture. Keep the motion fluid and joyful, without exaggerated speed. Allow clothing and hair to respond naturally. Let Kling choose a motion that feels appropriate for the pose and number of people. Background remains still.' 
   },
   { 
     id: 'ex-smile', 
-    video: require('../assets/videos/btl-0.mp4'), 
+    video: require('../assets/videos/magic/backtolife/thumbnail/btl-0.mp4'), 
     title: 'Smile', 
     type: 'video', 
     animationPrompt: 'Let the subject\'s expression shift gently into a soft, natural smile. The movement should be minimal and unforced, as if sparked by a small happy thought or connection. Keep the face relaxed, with a smooth transition into the smile. Background and posture remain unchanged.' 
   },
 ];
 
-// VideoView component with player hook and AppState handling
-const VideoViewWithPlayer = ({ video, index, style }: { video: any; index: number; style: any }) => {
+// VideoView component with player hook and AppState handling - optimized
+const VideoViewWithPlayer = ({ video, index, style, isVisible, resumeTick = 0 }: { video: any; index: number; style: any; isVisible: boolean; resumeTick?: number }) => {
+  // Calculate deterministic values for this video
+  const playbackRate = 1.0; // Do not slow down Back to Life videos
+
+  const initialSeek = React.useMemo(() => {
+    return (index * 0.3) % 2;
+  }, [index]);
+  
   const player = useVideoPlayer(video, (player) => {
     player.loop = true;
     player.muted = true;
-    player.playbackRate = [1.0, 0.95, 1.05, 0.9, 1.1, 0.98][index] || 1.0;
-    player.play();
+    player.playbackRate = playbackRate;
+    // Don't auto-play to improve initial load
   });
 
+  // Start/pause based on visibility with staggered delay
+  React.useEffect(() => {
+    if (!player) return;
+
+    let timer: any;
+    if (isVisible) {
+      const startDelay = index * 150 + Math.random() * 200;
+      timer = setTimeout(() => {
+        try {
+          player.currentTime = initialSeek;
+        } catch {}
+        try {
+          if (!player.playing) player.play();
+        } catch {}
+      }, startDelay);
+    } else {
+      try {
+        if (player.playing) player.pause();
+      } catch {}
+    }
+
+    return () => timer && clearTimeout(timer);
+  }, [player, index, isVisible, initialSeek]);
+  
   // Handle app state changes (backgrounding)
   React.useEffect(() => {
     const handleAppStateChange = (nextAppState: string) => {
-      if (nextAppState === 'active') {
+      if (nextAppState === 'active' && isVisible) {
         // Resume video playback when app returns to foreground
-        if (player && !player.playing) {
-          player.play();
-        }
+        try {
+          if (player && !player.playing) {
+            player.play();
+          }
+        } catch {}
       }
     };
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
     
     return () => subscription?.remove();
-  }, [player]);
+  }, [player, isVisible]);
+
+  // Explicit resume when parent signals (e.g., app became active or screen re-focused)
+  React.useEffect(() => {
+    try {
+      if (resumeTick > 0 && player && isVisible && !player.playing) {
+        player.play();
+      }
+    } catch {}
+  }, [resumeTick]);
 
   // Handle navigation focus (returning to screen)
   useFocusEffect(
     React.useCallback(() => {
       // Play video when screen comes into focus
-      if (player && !player.playing) {
-        player.play();
-      }
+      try {
+        if (player && !player.playing && isVisible) {
+          player.play();
+        }
+      } catch {}
       
       // Optional: pause when leaving screen to save resources
       return () => {
@@ -110,7 +153,7 @@ const VideoViewWithPlayer = ({ video, index, style }: { video: any; index: numbe
         //   player.pause();
         // }
       };
-    }, [player])
+    }, [player, isVisible])
   );
 
   return (
@@ -328,7 +371,7 @@ Thanks!`;
 }
 
 // Create animated tile component with glow effect
-const AnimatedTile = ({ item, index, isPro, backToLife }: { item: ExampleItem; index: number; isPro: boolean; backToLife: any }) => {
+const AnimatedTile = ({ item, index, isPro, backToLife, isVisible, resumeTick, tileWidth, spacing }: { item: ExampleItem; index: number; isPro: boolean; backToLife: any; isVisible: boolean; resumeTick: number; tileWidth: number; spacing: number }) => {
   // Subtle glow animation
   const glowOpacity = useSharedValue(0.5);
   
@@ -349,20 +392,21 @@ const AnimatedTile = ({ item, index, isPro, backToLife }: { item: ExampleItem; i
   
   return (
     <Animated.View
-      entering={FadeInDown.delay(index * 120).duration(1000).springify().damping(20)}
-      style={{ width: 120, marginRight: 10 }}
+      entering={FadeInDown.delay(index * 40).duration(250).springify().damping(20)}
+      style={{ width: tileWidth, marginRight: spacing }}
     >
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={() => pickVideoWithHook(backToLife)(isPro, item.animationPrompt)}
         style={{ 
-          width: 120, 
+          width: tileWidth, 
           aspectRatio: 9/16, 
           borderRadius: 16, 
           overflow: 'hidden', 
           borderWidth: 1, 
           borderColor: 'rgba(255,255,255,0.08)', 
-          backgroundColor: '#0b0b0f'
+          backgroundColor: '#0b0b0f',
+          opacity: isVisible ? 0.98 : 0.45
         }}
       >
         {/* Render video or image based on type */}
@@ -371,6 +415,8 @@ const AnimatedTile = ({ item, index, isPro, backToLife }: { item: ExampleItem; i
             video={item.video} 
             index={index}
             style={{ width: '100%', height: '100%', opacity: 0.98 }}
+            isVisible={isVisible}
+            resumeTick={resumeTick}
           />
         ) : (
           <ExpoImage source={item.image} style={{ width: '100%', height: '100%', transform: [{ translateY: (item.yOffset ?? 32) }] }} contentFit="cover" transition={0} />
@@ -394,29 +440,23 @@ const AnimatedTile = ({ item, index, isPro, backToLife }: { item: ExampleItem; i
           />
         </Animated.View>
         
-        {/* PRO badge for non-pro users - minimal style */}
-        {!isPro && (
-          <View style={{ 
-            position: 'absolute', 
-            top: 8, 
-            right: 8,
-            backgroundColor: 'rgba(0,0,0,0.7)',
-            borderRadius: 10,
-            paddingHorizontal: 6,
-            paddingVertical: 3,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 3,
-            borderWidth: 0.5,
-            borderColor: 'rgba(249,115,22,0.5)'
-          }}>
-            <IconSymbol name="crown" size={10} color="#f97316" />
-            <Text style={{ color: '#f97316', fontSize: 9, fontWeight: '600', letterSpacing: 0.3 }}>PRO</Text>
-          </View>
-        )}
-        
-        {/* Bottom label with soft glow */}
+        {/* Bottom label with PRO badge and soft glow */}
         <View style={{ position: 'absolute', left: 10, bottom: 10 }}>
+          {/* PRO badge for non-pro users - positioned above title */}
+          {!isPro && (
+            <View style={{ 
+              backgroundColor: 'rgba(0,0,0,0.7)',
+              borderRadius: 10,
+              paddingHorizontal: 6,
+              paddingVertical: 3,
+              borderWidth: 0.5,
+              borderColor: 'rgba(249,115,22,0.5)',
+              alignSelf: 'flex-start',
+              marginBottom: 4
+            }}>
+              <Text style={{ color: '#f97316', fontSize: 9, fontWeight: '600', letterSpacing: 0.3 }}>PRO</Text>
+            </View>
+          )}
           <Text style={{ 
             color: '#FFFFFF', 
             fontWeight: '700', 
@@ -446,85 +486,113 @@ const AnimatedTile = ({ item, index, isPro, backToLife }: { item: ExampleItem; i
 export function HeroBackToLifeExamples({ examples = DEFAULT_EXAMPLES }: { examples?: ExampleItem[] }) {
   const isPro = useSubscriptionStore((state) => state.isPro);
   const backToLife = useBackToLife();
+  const { width: screenWidth } = useWindowDimensions();
+  const spacing = 10;
+  const tileWidth = Math.round(Math.min(140, Math.max(110, screenWidth * 0.3)));
+  const [resumeTick, setResumeTick] = React.useState(0);
+  const [visibleSet, setVisibleSet] = React.useState<Set<number>>(new Set());
+
+  // When app returns to foreground, nudge a resume tick so all visible players resume
+  React.useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        setResumeTick((v) => v + 1);
+      }
+    });
+    return () => sub.remove();
+  }, []);
   
+  const renderItem = React.useCallback(({ item, index }: { item: ExampleItem; index: number }) => {
+    const isVisible = visibleSet.has(index);
+    return (
+      <AnimatedTile
+        item={item}
+        index={index}
+        isPro={isPro}
+        backToLife={backToLife}
+        isVisible={isVisible}
+        resumeTick={resumeTick}
+        tileWidth={tileWidth}
+        spacing={index === examples.length - 1 ? 0 : spacing}
+      />
+    );
+  }, [visibleSet, isPro, backToLife, resumeTick, tileWidth, spacing, examples.length]);
+
+  const onViewableItemsChanged = React.useRef(({ viewableItems }: { viewableItems: { index: number | null }[] }) => {
+    const next = new Set<number>();
+    for (const v of viewableItems) {
+      if (typeof v.index === 'number') next.add(v.index);
+    }
+    setVisibleSet(next);
+  }).current;
+
+  const viewabilityConfig = React.useRef({ itemVisiblePercentThreshold: 30, minimumViewTime: 0 }).current;
+
+  const ListFooterComponent = (
+    <Animated.View
+      entering={FadeInDown.delay(examples.length * 120).duration(1000).springify().damping(20)}
+      style={{ width: tileWidth, marginRight: 0 }}
+    >
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={handleRequestIdea}
+        style={{ 
+          width: tileWidth, 
+          aspectRatio: 9/16, 
+          borderRadius: 16, 
+          overflow: 'hidden', 
+          borderWidth: 1.5, 
+          borderColor: 'rgba(249,115,22,0.3)', 
+          backgroundColor: 'rgba(249,115,22,0.05)',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <LinearGradient
+          colors={["rgba(249,115,22,0.1)", "rgba(249,115,22,0.05)", "rgba(0,0,0,0.8)"]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={{ position: 'absolute', inset: 0 as any }}
+        />
+        <View style={{ 
+          width: 44,
+          height: 44,
+          borderRadius: 22,
+          backgroundColor: 'rgba(249,115,22,0.15)',
+          borderWidth: 1.5,
+          borderColor: 'rgba(249,115,22,0.4)',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: 8
+        }}>
+          <IconSymbol name="plus" size={24} color="#f97316" />
+        </View>
+        <Text style={{ color: '#f97316', fontWeight: '600', fontSize: 12, textAlign: 'center', paddingHorizontal: 10 }}>
+          Request
+        </Text>
+        <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10, textAlign: 'center', paddingHorizontal: 10, marginTop: 2 }}>
+          Tell us your idea
+        </Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+
   return (
     <View style={{ marginTop: 16, marginBottom: 8, position: 'relative' }}>
-      <ScrollView 
-        horizontal 
+      <FlashList
+        horizontal
+        data={examples}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
         showsHorizontalScrollIndicator={false}
+        estimatedItemSize={tileWidth + spacing}
         contentContainerStyle={{ paddingHorizontal: 16 }}
-      >
-        {/* Existing animation tiles */}
-        {examples.map((item, index) => (
-          <AnimatedTile key={item.id} item={item} index={index} isPro={isPro} backToLife={backToLife} />
-        ))}
-        
-        {/* Request/Suggest new animation tile */}
-        <Animated.View
-          entering={FadeInDown.delay(examples.length * 120).duration(1000).springify().damping(20)}
-          style={{ width: 120, marginRight: 0 }}
-        >
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={handleRequestIdea}
-            style={{ 
-              width: 120, 
-              aspectRatio: 9/16, 
-              borderRadius: 16, 
-              overflow: 'hidden', 
-              borderWidth: 1.5, 
-              borderColor: 'rgba(249,115,22,0.3)', 
-              backgroundColor: 'rgba(249,115,22,0.05)',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            {/* Gradient background */}
-            <LinearGradient
-              colors={["rgba(249,115,22,0.1)", "rgba(249,115,22,0.05)", "rgba(0,0,0,0.8)"]}
-              start={{ x: 0.5, y: 0 }}
-              end={{ x: 0.5, y: 1 }}
-              style={{ position: 'absolute', inset: 0 as any }}
-            />
-            
-            {/* Plus icon in center */}
-            <View style={{ 
-              width: 44,
-              height: 44,
-              borderRadius: 22,
-              backgroundColor: 'rgba(249,115,22,0.15)',
-              borderWidth: 1.5,
-              borderColor: 'rgba(249,115,22,0.4)',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: 8
-            }}>
-              <IconSymbol name="plus" size={24} color="#f97316" />
-            </View>
-            
-            {/* Text */}
-            <Text style={{ 
-              color: '#f97316', 
-              fontWeight: '600', 
-              fontSize: 12,
-              textAlign: 'center',
-              paddingHorizontal: 10
-            }}>
-              Request
-            </Text>
-            <Text style={{ 
-              color: 'rgba(255,255,255,0.5)', 
-              fontSize: 10,
-              textAlign: 'center',
-              paddingHorizontal: 10,
-              marginTop: 2
-            }}>
-              Tell us your idea
-            </Text>
-          </TouchableOpacity>
-        </Animated.View>
-      </ScrollView>
-      {/* Right edge gradient to show scrollability */}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
+        ListFooterComponent={ListFooterComponent}
+        ItemSeparatorComponent={() => <View style={{ width: spacing }} />}
+        extraData={visibleSet}
+      />
       <LinearGradient
         colors={['transparent', '#0B0B0F']}
         start={{ x: 0, y: 0 }}

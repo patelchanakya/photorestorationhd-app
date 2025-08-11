@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { permissionsService } from '@/services/permissions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
@@ -34,17 +35,15 @@ function PlayerView({ url }: { url: string }) {
   });
 
   useEffect(() => {
+    if (!__DEV__) return;
     const checkPlayerStatus = () => {
       if (player) {
-        console.log('🎬 Player status:', {
-          status: player.status,
-          duration: player.duration,
-          currentTime: player.currentTime,
-        });
+        // Dev-only lightweight status check
+        // Avoid logging large objects frequently in production
+        console.log('🎬 Player status:', player.status, Math.round(player.currentTime));
       }
     };
-
-    const interval = setInterval(checkPlayerStatus, 2000);
+    const interval = setInterval(checkPlayerStatus, 4000);
     return () => clearInterval(interval);
   }, [player]);
 
@@ -68,7 +67,6 @@ export default function VideoResultScreen() {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
-  const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
   
   // Animation values for Save button
   const buttonScale = useSharedValue(1);
@@ -213,10 +211,10 @@ export default function VideoResultScreen() {
   const handleSaveVideo = async () => {
     if (isSaving) return;
 
-    // Check permission first
-    if (!permissionResponse?.granted) {
-      const permission = await requestPermission();
-      if (!permission.granted) {
+    // Check permission first using our centralized service
+    if (!permissionsService.hasMediaLibraryPermission()) {
+      const result = await permissionsService.requestSpecificPermission('mediaLibrary');
+      if (result !== 'granted') {
         Alert.alert(
           'Permission Required',
           'Please grant photo library access to save videos.',
