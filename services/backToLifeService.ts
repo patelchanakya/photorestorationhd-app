@@ -1,4 +1,4 @@
-import { getAppUserId, getSubscriptionPlanDetails } from './revenuecat';
+import { getVideoTrackingId, getSubscriptionPlanDetails } from './revenuecat';
 import { supabase } from './supabaseClient';
 
 export interface BackToLifeUsage {
@@ -36,8 +36,8 @@ export const backToLifeService = {
         };
       }
 
-      // Get user ID
-      const userId = await getAppUserId();
+      // Get stable tracking ID for video usage
+      const userId = await getVideoTrackingId();
       if (!userId) {
         return {
           canUse: false,
@@ -98,10 +98,10 @@ export const backToLifeService = {
         return false;
       }
 
-      const userId = await getAppUserId();
+      const userId = await getVideoTrackingId();
       if (!userId) {
         if (__DEV__) {
-          console.log('⚠️ No user ID for usage increment');
+          console.log('⚠️ No video tracking ID for usage increment');
         }
         return false;
       }

@@ -938,6 +938,77 @@ export const getAppUserId = async (): Promise<string | null> => {
   }
 };
 
+/**
+ * Get stable tracking ID for video usage that persists across reinstalls
+ * Uses originalAppUserId which is stable after restore/purchase
+ * Returns null if not Pro or CustomerInfo not ready
+ * 
+ * IMPORTANT: This ID is used to query the backend where the canonical
+ * user_id is maintained via RevenueCat webhooks
+ */
+export async function getVideoTrackingId(): Promise<string | null> {
+  try {
+    // Get latest customer info
+    const customerInfo = await getCustomerInfo();
+    
+    // No customer info = not ready yet
+    if (!customerInfo) {
+      if (__DEV__) {
+        console.log('🎬 Video tracking: CustomerInfo not ready');
+      }
+      return null;
+    }
+    
+    // Check Pro entitlement
+    const proEntitlement = customerInfo.entitlements?.active?.pro;
+    if (!proEntitlement?.isActive) {
+      if (__DEV__) {
+        console.log('🎬 Video tracking: No Pro entitlement');
+      }
+      return null;
+    }
+    
+    // Get the stable original ID (available after restore)
+    // This is the canonical ID that persists across reinstalls
+    const stableId = (customerInfo as any).originalAppUserId;
+    
+    if (!stableId) {
+      // This can happen for:
+      // 1. Promotional/granted entitlements (no purchase)
+      // 2. User hasn't restored yet (shouldn't have Pro then)
+      
+      if (proEntitlement.store === 'promotional') {
+        // Promotional entitlements use anonymous ID
+        const anonymousId = await Purchases.getAppUserID();
+        if (__DEV__) {
+          console.log('🎬 Video tracking: Promotional entitlement, using anonymous:', anonymousId);
+        }
+        return anonymousId;
+      }
+      
+      // Unexpected: Pro but no originalAppUserId
+      // This shouldn't happen in production as Pro requires purchase/restore
+      if (__DEV__) {
+        console.warn('🎬 Video tracking: Pro user but no originalAppUserId - restore may be needed');
+      }
+      // Fall back to current ID as last resort
+      const currentId = await Purchases.getAppUserID();
+      return currentId;
+    }
+    
+    if (__DEV__) {
+      console.log('🎬 Video tracking: Using stable ID:', stableId);
+    }
+    
+    return stableId;
+  } catch (error) {
+    if (__DEV__) {
+      console.error('❌ Failed to get video tracking ID:', error);
+    }
+    return null;
+  }
+}
+
 // Interface for subscription plan details
 export interface SubscriptionPlanDetails {
   planType: 'weekly' | 'monthly';
