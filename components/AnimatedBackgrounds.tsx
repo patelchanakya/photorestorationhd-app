@@ -1,5 +1,4 @@
-import { useHorizontalVisibility } from '@/hooks/useHorizontalVisibility';
-import { presentPaywall } from '@/services/revenuecat';
+import { checkSubscriptionStatus, presentPaywall } from '@/services/revenuecat';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -7,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import React from 'react';
-import { ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 interface BackgroundItem {
@@ -23,30 +22,6 @@ interface BackgroundItem {
 const DEFAULT_BACKGROUNDS: BackgroundItem[] = [
   {
     id: 'bg-1',
-    title: 'Studio',
-    type: 'image',
-    image: require('../assets/images/backgrounds/thumbnail/studio/studio.jpeg'),
-    backgroundPrompt:
-      "Replace only the background with a seamless studio backdrop in white or light gray, evenly lit and perfectly smooth with no texture or banding. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. Do not retouch or brighten the subject."
-  },
-  {
-    id: 'bg-2',
-    title: 'Blur',
-    type: 'image',
-    image: require('../assets/images/backgrounds/thumbnail/blur/blurred.jpeg'),
-    backgroundPrompt:
-      "Do not change the location. Keep the same background but apply a soft, natural blur and brighten the background slightly (~25%) while preserving its original color balance. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No added glow or light spill on the subject."
-  },
-  {
-    id: 'bg-3',
-    title: 'Beach',
-    type: 'image',
-    image: require('../assets/images/backgrounds/thumbnail/beach/beach.jpeg'),
-    backgroundPrompt:
-      "Replace only the background with a clear, bright beach scene: visible ocean horizon, soft blue sky, and light sand. Keep the background mostly in focus (minimal blur) so details are recognizable; avoid heavy bokeh. Maintain balanced daylight exposure and natural colors. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No umbrellas, text, or added props."
-  },
-  {
-    id: 'bg-4',
     title: 'Garden',
     type: 'image',
     image: require('../assets/images/backgrounds/thumbnail/garden/garden.jpeg'),
@@ -54,23 +29,7 @@ const DEFAULT_BACKGROUNDS: BackgroundItem[] = [
       "Replace only the background with a clear garden scene: visible greenery and foliage with natural daylight. Keep the background mostly in focus (minimal blur) so leaves and shapes are recognizable; avoid heavy bokeh. Maintain balanced exposure and natural colors. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No insects, flowers touching the subject, or added props."
   },
   {
-    id: 'bg-5',
-    title: 'City',
-    type: 'image',
-    image: require('../assets/images/backgrounds/thumbnail/city/city.jpeg'),
-    backgroundPrompt:
-      "Replace only the background with a clear modern city scene in daylight—street or skyline—with recognizable buildings and structure. Keep the background mostly in focus (minimal blur); avoid heavy bokeh. Maintain balanced exposure and natural colors. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No text, logos, or legible signage; no added props."
-  },
-  {
-    id: 'bg-6',
-    title: 'Wedding',
-    type: 'image',
-    image: require('../assets/images/backgrounds/thumbnail/wedding/wedding.jpeg'),
-    backgroundPrompt:
-      "Replace only the background with a clearly visible, elegant wedding venue interior (aisle or reception hall) with warm ambient lighting. Show tasteful decor—soft florals, candles, or string lights—in a refined setting. Keep the background mostly in focus (minimal blur) so details are recognizable; avoid heavy bokeh. Maintain balanced exposure and natural warm tones. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. Do not add veils, bouquets, or accessories to the subject; no text or logos."
-  },
-  {
-    id: 'bg-7',
+    id: 'bg-2',
     title: 'Heavenly',
     type: 'image',
     image: require('../assets/images/backgrounds/thumbnail/heavenly/heavenly.jpg'),
@@ -78,12 +37,52 @@ const DEFAULT_BACKGROUNDS: BackgroundItem[] = [
       "Replace only the background with a bright, heavenly sky of soft white clouds and gentle sunbeams. Keep the cloud forms clearly visible (minimal blur) so the sky reads cleanly; avoid heavy bokeh. Use an airy pastel blue‑to‑white gradient with a subtle, tasteful glow—no halos. Maintain balanced exposure and natural color. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No wings, text, or added objects; do not retouch or brighten the subject."
   },
   {
-    id: 'bg-8',
+    id: 'bg-3',
     title: 'Passport',
     type: 'image',
     image: require('../assets/images/backgrounds/thumbnail/passport/passport.jpg'),
     backgroundPrompt:
       "Replace only the background with a perfectly uniform pure white background (#FFFFFF), evenly lit. Absolutely no texture, edges, gradients, color casts, or shadows in the background. Keep the person exactly the same—face, skin tone, hair, clothing, pose, and lighting unchanged. Do not retouch the subject or add anything."
+  },
+  {
+    id: 'bg-4',
+    title: 'Studio',
+    type: 'image',
+    image: require('../assets/images/backgrounds/thumbnail/studio/studio.jpeg'),
+    backgroundPrompt:
+      "Replace only the background with a seamless studio backdrop in white or light gray, evenly lit and perfectly smooth with no texture or banding. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. Do not retouch or brighten the subject."
+  },
+  {
+    id: 'bg-5',
+    title: 'Blur',
+    type: 'image',
+    image: require('../assets/images/backgrounds/thumbnail/blur/blurred.jpeg'),
+    backgroundPrompt:
+      "Do not change the location. Keep the same background but apply a soft, natural blur and brighten the background slightly (~25%) while preserving its original color balance. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No added glow or light spill on the subject."
+  },
+  {
+    id: 'bg-6',
+    title: 'Beach',
+    type: 'image',
+    image: require('../assets/images/backgrounds/thumbnail/beach/beach.jpeg'),
+    backgroundPrompt:
+      "Replace only the background with a clear, bright beach scene: visible ocean horizon, soft blue sky, and light sand. Keep the background mostly in focus (minimal blur) so details are recognizable; avoid heavy bokeh. Maintain balanced daylight exposure and natural colors. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No umbrellas, text, or added props."
+  },
+  {
+    id: 'bg-7',
+    title: 'City',
+    type: 'image',
+    image: require('../assets/images/backgrounds/thumbnail/city/city.jpeg'),
+    backgroundPrompt:
+      "Replace only the background with a clear modern city scene in daylight—street or skyline—with recognizable buildings and structure. Keep the background mostly in focus (minimal blur); avoid heavy bokeh. Maintain balanced exposure and natural colors. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No text, logos, or legible signage; no added props."
+  },
+  {
+    id: 'bg-8',
+    title: 'Wedding',
+    type: 'image',
+    image: require('../assets/images/backgrounds/thumbnail/wedding/wedding.jpeg'),
+    backgroundPrompt:
+      "Replace only the background with a clearly visible, elegant wedding venue interior (aisle or reception hall) with warm ambient lighting. Show tasteful decor—soft florals, candles, or string lights—in a refined setting. Keep the background mostly in focus (minimal blur) so details are recognizable; avoid heavy bokeh. Maintain balanced exposure and natural warm tones. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. Do not add veils, bouquets, or accessories to the subject; no text or logos."
   },
   {
     id: 'bg-10',
@@ -145,11 +144,6 @@ const VideoViewWithPlayer = ({ video, isVisible = true }: { video: any; isVisibl
 export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { backgrounds?: BackgroundItem[] }) {
   const router = useRouter();
   const isPro = useSubscriptionStore((state) => state.isPro);
-  const { width: screenWidth } = useWindowDimensions();
-  const spacing = 10;
-  const tileWidth = Math.round(Math.min(140, Math.max(110, screenWidth * 0.3)));
-  const overscan = screenWidth >= 768 ? 2 : 0;
-  const { onScroll, onContainerLayout, isIndexVisible } = useHorizontalVisibility({ itemWidth: tileWidth, itemSpacing: spacing, overscanItems: overscan, leadingInset: 16 });
 
   const handleBackgroundSelect = async (background: BackgroundItem) => {
     // Check current PRO status
@@ -159,13 +153,7 @@ export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { bac
     if (!currentIsPro) {
       const success = await presentPaywall();
       if (!success) return;
-      
-      // After successful purchase, check if status was updated
-      const updatedIsPro = useSubscriptionStore.getState().isPro;
-      if (!updatedIsPro) {
-        // Wait a moment for the listener to update
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
+      await checkSubscriptionStatus();
     }
     
     // Launch image picker for user to select photo
@@ -195,27 +183,23 @@ export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { bac
   };
 
   return (
-    <View style={{ marginTop: 16, marginBottom: 8, position: 'relative' }} onLayout={onContainerLayout}>
+    <View style={{ marginTop: 16, marginBottom: 8, position: 'relative' }}>
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 16 }}
-        onScroll={onScroll}
-        scrollEventThrottle={16}
-        decelerationRate="fast"
-        removeClippedSubviews
       >
         {backgrounds.map((item, index) => (
           <Animated.View
             key={item.id}
             entering={FadeIn.delay(index * 100).duration(800)}
-            style={{ width: tileWidth, marginRight: index === backgrounds.length - 1 ? 0 : spacing }}
+            style={{ width: 120, marginRight: index === backgrounds.length - 1 ? 0 : 10 }}
           >
             <TouchableOpacity
               activeOpacity={0.9}
               onPress={() => handleBackgroundSelect(item)}
               style={{ 
-                width: tileWidth, 
+                width: 120, 
                 aspectRatio: 9/16, 
                 borderRadius: 16, 
                 overflow: 'hidden', 
@@ -226,11 +210,7 @@ export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { bac
             >
               {/* Render video or image based on type */}
               {item.type === 'video' && item.video ? (
-                isIndexVisible(index) ? (
-                  <VideoViewWithPlayer video={item.video} />
-                ) : (
-                  <View style={{ width: '100%', height: '100%', backgroundColor: '#0b0b0f' }} />
-                )
+                <VideoViewWithPlayer video={item.video} />
               ) : (
                 <ExpoImage 
                   source={item.image} 

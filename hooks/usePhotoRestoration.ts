@@ -83,7 +83,7 @@ export function usePhotoRestoration() {
         const modelConfig = getModelConfig(functionType);
         const USE_BTL_TEST_IMAGE_MODEL = process.env.EXPO_PUBLIC_BTL_TEST_IMAGE_MODEL === '1';
         const isVideoLike = modelConfig.isVideo && !USE_BTL_TEST_IMAGE_MODEL;
-        const estimatedDuration = isVideoLike ? 120000 : 7000; // 2 minutes for video, 7 seconds for photo
+        const estimatedDuration = isVideoLike ? 120000 : 10000; // 2 minutes for video, 10 seconds for photo
           const progress = Math.min(Math.floor((elapsed / estimatedDuration) * 95), 95); // Cap at 95% until completion
           
           // Only update if progress changed (avoid spam)

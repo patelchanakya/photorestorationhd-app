@@ -4,6 +4,7 @@ import { useCropModalStore } from '@/store/cropModalStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { useFocusEffect } from '@react-navigation/native';
 import { FlashList } from '@shopify/flash-list';
+import * as Haptics from 'expo-haptics';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -167,13 +168,49 @@ const VideoViewWithPlayer = ({ video, index, style, isVisible, resumeTick = 0 }:
   );
 };
 
-const pickVideoWithHook = (backToLife: any) => async (isPro: boolean, animationPrompt?: string) => {
-  console.log('🎬 FUCK IT: Starting simple flow');
+const pickVideoWithHook = (backToLife: any, onBeforePicker?: () => void, onAfterPicker?: () => void) => async (isPro: boolean, animationPrompt?: string) => {
+  console.log('🎬 Back to Life: Starting Pro-gated flow');
   
   try {
+    // Trigger subtle drop-back feedback immediately on tap
+    try { onBeforePicker && onBeforePicker(); } catch {}
+    
+    // CRITICAL: Check PRO status before allowing access to Back to Life feature
+    const currentIsPro = useSubscriptionStore.getState().isPro;
+    console.log('🎬 Back to Life: Current PRO status:', currentIsPro);
+    
+    if (!currentIsPro) {
+      console.log('🎬 Back to Life: Not PRO, presenting paywall');
+      const { presentPaywall } = await import('@/services/revenuecat');
+      const success = await presentPaywall();
+      console.log('🎬 Back to Life: Paywall result:', success);
+      
+      if (!success) {
+        console.log('🎬 Back to Life: Purchase cancelled or failed');
+        try { onAfterPicker && onAfterPicker(); } catch {}
+        return;
+      }
+      
+      // Wait for listener to update subscription state
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const updatedIsPro = useSubscriptionStore.getState().isPro;
+      
+      if (!updatedIsPro) {
+        console.log('🎬 Back to Life: Subscription not active after purchase');
+        Alert.alert('Purchase Error', 'Please try again or restore purchases if you already have a subscription.');
+        try { onAfterPicker && onAfterPicker(); } catch {}
+        return;
+      }
+    }
+
+    console.log('🎬 Back to Life: PRO access confirmed, proceeding with feature');
+    
     // Get permission
     const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (res.status !== 'granted') return;
+    if (res.status !== 'granted') {
+      try { onAfterPicker && onAfterPicker(); } catch {}
+      return;
+    }
     
     // Launch picker with basic options
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -181,18 +218,20 @@ const pickVideoWithHook = (backToLife: any) => async (isPro: boolean, animationP
       quality: 1,
     });
     
-    console.log('🎬 PICKER RESULT:', result.canceled);
+    console.log('🎬 Back to Life: Picker result:', result.canceled);
     
     if (!result.canceled && result.assets?.[0]) {
-      console.log('🎬 STARTING PROCESSING NOW');
+      console.log('🎬 Back to Life: Starting processing for PRO user');
       
-      const { setIsProcessing, setCurrentImageUri, setProgress, setCanCancel, setProcessingStatus, setCompletedRestorationId } = useCropModalStore.getState();
+      const { setCurrentImageUri, setProgress, setCanCancel, setProcessingStatus, setCompletedRestorationId, setVideoModeTag } = useCropModalStore.getState();
       const uri = result.assets[0].uri;
       
-      setIsProcessing(true);
+      // Set UI state (but NOT isProcessing - let the mutation handle that atomically)
       setCurrentImageUri(uri);
       setProgress(1);
       setCanCancel(true);
+      // Map example title to a compact mode tag for UI (Hug, Group, Fun, Love, Dance, Smile)
+      setVideoModeTag(item.title || null);
       setProcessingStatus('loading');
       setCompletedRestorationId(null);
       
@@ -202,8 +241,11 @@ const pickVideoWithHook = (backToLife: any) => async (isPro: boolean, animationP
         imageSource: 'gallery',
       });
     }
+    // Release after user made a choice (selected or canceled)
+    try { onAfterPicker && onAfterPicker(); } catch {}
   } catch (error) {
-    console.error('🎬 FUCK ERROR:', error);
+    console.error('🎬 Back to Life error:', error);
+    try { onAfterPicker && onAfterPicker(); } catch {}
   }
 };
 
@@ -321,10 +363,13 @@ async function pickVideoOLD(isPro: boolean, animationPrompt?: string) {
     if (!result.canceled && result.assets[0]) {
       // Start Back to Life directly (skip crop modal)
       const uri = result.assets[0].uri;
-      setIsProcessing(true);
+      // Set UI state (but NOT isProcessing - let the mutation handle that atomically)
       setCurrentImageUri(uri);
       setProgress(1);
       setCanCancel(true);
+      setProcessingStatus('loading');
+      setCompletedRestorationId(null);
+      
       backToLife.mutate({
         imageUri: uri,
         animationPrompt: animationPrompt || 'bring this photo to life with natural animation',
@@ -371,9 +416,12 @@ Thanks!`;
 }
 
 // Create animated tile component with glow effect
-const AnimatedTile = ({ item, index, isPro, backToLife, isVisible, resumeTick, tileWidth, spacing }: { item: ExampleItem; index: number; isPro: boolean; backToLife: any; isVisible: boolean; resumeTick: number; tileWidth: number; spacing: number }) => {
+  const AnimatedTile = ({ item, index, isPro, backToLife, isVisible, resumeTick, tileWidth, spacing, onBeforePicker, onAfterPicker }: { item: ExampleItem; index: number; isPro: boolean; backToLife: any; isVisible: boolean; resumeTick: number; tileWidth: number; spacing: number; onBeforePicker?: () => void; onAfterPicker?: () => void }) => {
+  // Get video processing state to prevent multiple simultaneous video generations
+  const { isVideoProcessing } = useCropModalStore();
   // Subtle glow animation
   const glowOpacity = useSharedValue(0.5);
+    const pressScale = useSharedValue(1);
   
   React.useEffect(() => {
     glowOpacity.value = withRepeat(
@@ -389,15 +437,30 @@ const AnimatedTile = ({ item, index, isPro, backToLife, isVisible, resumeTick, t
   const glowStyle = useAnimatedStyle(() => ({
     opacity: glowOpacity.value,
   }));
+  const tilePressStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pressScale.value }],
+  }));
   
   return (
     <Animated.View
       entering={FadeInDown.delay(index * 40).duration(250).springify().damping(20)}
       style={{ width: tileWidth, marginRight: spacing }}
     >
+      <Animated.View style={[tilePressStyle]}> 
       <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={() => pickVideoWithHook(backToLife)(isPro, item.animationPrompt)}
+        activeOpacity={isVideoProcessing ? 1 : 0.85}
+        onPressIn={() => {
+          if (isVideoProcessing) return;
+          try { Haptics.selectionAsync(); } catch {}
+          pressScale.value = withTiming(0.97, { duration: 90 });
+          glowOpacity.value = withTiming(0.9, { duration: 120 });
+        }}
+        onPressOut={() => {
+          pressScale.value = withTiming(1, { duration: 140 });
+          glowOpacity.value = withTiming(0.5, { duration: 200 });
+        }}
+        onPress={isVideoProcessing ? undefined : () => pickVideoWithHook(backToLife, onBeforePicker, onAfterPicker)(isPro, item.animationPrompt)}
+        disabled={isVideoProcessing}
         style={{ 
           width: tileWidth, 
           aspectRatio: 9/16, 
@@ -406,7 +469,7 @@ const AnimatedTile = ({ item, index, isPro, backToLife, isVisible, resumeTick, t
           borderWidth: 1, 
           borderColor: 'rgba(255,255,255,0.08)', 
           backgroundColor: '#0b0b0f',
-          opacity: isVisible ? 0.98 : 0.45
+          opacity: isVideoProcessing ? 0.5 : (isVisible ? 0.98 : 0.45)
         }}
       >
         {/* Render video or image based on type */}
@@ -440,10 +503,20 @@ const AnimatedTile = ({ item, index, isPro, backToLife, isVisible, resumeTick, t
           />
         </Animated.View>
         
+        {/* Video processing overlay: keep dim + disable, remove label */}
+        {isVideoProcessing && (
+          <View style={{ 
+            position: 'absolute', 
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            borderRadius: 16
+          }} />
+        )}
+        
         {/* Bottom label with PRO badge and soft glow */}
         <View style={{ position: 'absolute', left: 10, bottom: 10 }}>
-          {/* PRO badge for non-pro users - positioned above title */}
-          {!isPro && (
+          {/* PRO badge for pro users - positioned above title */}
+          {isPro && (
             <View style={{ 
               backgroundColor: 'rgba(0,0,0,0.7)',
               borderRadius: 10,
@@ -469,21 +542,22 @@ const AnimatedTile = ({ item, index, isPro, backToLife, isVisible, resumeTick, t
             {item.title}
           </Text>
           <Text style={{ 
-            color: 'rgba(255,255,255,0.4)', 
+            color: isVideoProcessing ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.4)', 
             fontSize: 9, 
             marginTop: 1,
             letterSpacing: 0.8,
             fontWeight: '500'
           }}>
-            TAP TO ANIMATE
+            {isVideoProcessing ? 'PROCESSING...' : 'TAP TO ANIMATE'}
           </Text>
         </View>
       </TouchableOpacity>
+      </Animated.View>
     </Animated.View>
   );
 };
 
-export function HeroBackToLifeExamples({ examples = DEFAULT_EXAMPLES }: { examples?: ExampleItem[] }) {
+export function HeroBackToLifeExamples({ examples = DEFAULT_EXAMPLES, onBeforePicker, onAfterPicker }: { examples?: ExampleItem[]; onBeforePicker?: () => void; onAfterPicker?: () => void }) {
   const isPro = useSubscriptionStore((state) => state.isPro);
   const backToLife = useBackToLife();
   const { width: screenWidth } = useWindowDimensions();
@@ -514,9 +588,11 @@ export function HeroBackToLifeExamples({ examples = DEFAULT_EXAMPLES }: { exampl
         resumeTick={resumeTick}
         tileWidth={tileWidth}
         spacing={index === examples.length - 1 ? 0 : spacing}
+        onBeforePicker={onBeforePicker}
+        onAfterPicker={onAfterPicker}
       />
     );
-  }, [visibleSet, isPro, backToLife, resumeTick, tileWidth, spacing, examples.length]);
+  }, [visibleSet, isPro, backToLife, resumeTick, tileWidth, spacing, examples.length, onBeforePicker, onAfterPicker]);
 
   const onViewableItemsChanged = React.useRef(({ viewableItems }: { viewableItems: { index: number | null }[] }) => {
     const next = new Set<number>();

@@ -1,9 +1,13 @@
 import { analyticsService } from '@/services/analytics';
+import { backToLifeService } from '@/services/backToLifeService';
 import { deviceTrackingService } from '@/services/deviceTracking';
 import { networkStateService } from '@/services/networkState';
 import { notificationService } from '@/services/notificationService';
 import { permissionsService } from '@/services/permissions';
+import { checkSubscriptionStatus } from '@/services/revenuecat';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { checkForCompletedVideos } from '@/services/videoGenerationService';
+import { useVideoToastStore } from '@/store/videoToastStore';
 import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -51,6 +55,7 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
   
   // Refs for cleanup
   const initializationRef = useRef<any>(null);
+  const customerInfoListenerRemoverRef = useRef<null | (() => void)>(null);
 
   // Animation styles
   const logoAnimatedStyle = useAnimatedStyle(() => ({
@@ -145,7 +150,11 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
           setLoadingText('Setting up notifications...');
           await initializeNotifications();
 
-          // Step 6: Final checks
+          // Step 6: Check for completed videos
+          setLoadingText('Checking for completed videos...');
+          await checkAndRecoverVideos();
+
+          // Step 7: Final checks
           setLoadingText('Finishing up...');
           await new Promise((r) => setTimeout(r, 500));
 
@@ -176,6 +185,15 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
     initializationPromise.then(() => {
       onLoadingComplete();
     });
+
+    return () => {
+      const timeoutId = initializationRef.current;
+      if (timeoutId) clearTimeout(timeoutId);
+      const remove = customerInfoListenerRemoverRef.current;
+      if (remove) {
+        try { remove(); } catch {}
+      }
+    };
   }, [onLoadingComplete]);
 
   const initializeRevenueCat = async () => {
@@ -192,8 +210,8 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
       
       // Configure log levels
       if (__DEV__) {
-        Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
-        Purchases.setDebugLogsEnabled(true);
+        Purchases.setLogLevel(LOG_LEVEL.INFO); // Reduced from VERBOSE to avoid JWS token spam
+        Purchases.setDebugLogsEnabled(true);   // Keep debug logs enabled for troubleshooting
       } else {
         Purchases.setLogLevel(LOG_LEVEL.ERROR);
         Purchases.setDebugLogsEnabled(false);
@@ -240,36 +258,82 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
           return;
         }
         
-        // Auto-check subscription status
+        // CRITICAL: Establish correct subscription truth at app startup
+        // Store starts with isPro = false, this call sets the correct value
         try {
           if (__DEV__) {
-            console.log('🔍 Refreshing purchases + checking subscription status...');
+            console.log('🔍 App startup: Refreshing purchases + checking subscription status...');
           }
-          // Ensure entitlements reflect current Apple ID without prompting user
+          
+          // CRITICAL: Establish correct subscription truth at app startup (production-safe)
           try {
+            if (__DEV__) {
+              console.log('🔍 App startup: Syncing purchases + checking subscription status...');
+            }
+            
+            // Step 1: Clear stale cache to get fresh data
             await Purchases.invalidateCustomerInfoCache();
-            // Refresh receipt with current Apple ID (no UI prompt)
-            // Safe on iOS; no-op on Android
-            // https://www.revenuecat.com/docs/restoring-purchases#syncing-purchases
-            // May be critical after Apple ID switch
+            
+            // Step 2: Sync purchases with current Apple ID (no UI prompt)
+            // Safe on iOS; no-op on Android. Gets entitlements for current Apple ID.
             // @ts-ignore - method available at runtime
             await (Purchases as any).syncPurchases?.();
+            
+            if (__DEV__) {
+              console.log('✅ RevenueCat sync complete - ready for subscription check');
+            }
           } catch (syncErr) {
             if (__DEV__) {
-              console.log('⚠️ syncPurchases failed (non-fatal):', (syncErr as any)?.message);
+              console.log('⚠️ RevenueCat sync failed (non-fatal):', (syncErr as any)?.message);
             }
           }
 
-          const { checkSubscriptionStatus } = await import('@/services/revenuecat');
+          // Attach live listener to keep store in sync after purchases/restores/expiry
+          try {
+            if (__DEV__) console.log('🎧 Setting up RevenueCat customer info listener');
+            const removeListener = Purchases.addCustomerInfoUpdateListener(async () => {
+              try {
+                await checkSubscriptionStatus();
+              } catch (e) {
+                if (__DEV__) console.log('⚠️ Customer info listener update failed:', (e as any)?.message);
+              }
+            });
+            customerInfoListenerRemoverRef.current = removeListener;
+            if (__DEV__) console.log('✅ RevenueCat customer info listener set up successfully');
+          } catch (e) {
+            if (__DEV__) console.log('❌ Failed to set customer info listener:', (e as any)?.message);
+          }
+
+          // This single call establishes the correct subscription state at startup
           const hasActiveSubscription = await checkSubscriptionStatus();
           
           if (__DEV__) {
-            console.log('✅ Subscription check result:', hasActiveSubscription);
+            console.log('✅ App startup subscription truth established:', hasActiveSubscription);
+            console.log('✅ Store isPro after startup check:', useSubscriptionStore.getState().isPro);
+          }
+
+          // For Pro users, sync usage data to ensure billing cycle resets are applied
+          if (hasActiveSubscription) {
+            try {
+              if (__DEV__) {
+                console.log('🎬 App startup: Syncing Pro user Back to Life usage...');
+              }
+              await backToLifeService.checkUsage();
+              if (__DEV__) {
+                console.log('✅ App startup: Back to Life usage synced successfully');
+              }
+            } catch (usageError: any) {
+              if (__DEV__) {
+                console.warn('⚠️ App startup: Back to Life usage sync failed:', usageError?.message);
+              }
+              // Continue with app initialization even if usage sync fails
+            }
           }
         } catch (autoCheckError: any) {
           if (__DEV__) {
-            console.warn('⚠️ Automatic subscription check failed:', autoCheckError?.message);
+            console.warn('⚠️ Startup subscription check failed - user remains non-Pro:', autoCheckError?.message);
           }
+          // Ensure non-Pro state on any failure - fail safe
           setIsPro(false);
         }
       }
@@ -337,6 +401,44 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
     } catch (error) {
       if (__DEV__) {
         console.error('❌ Failed to initialize notifications:', error);
+      }
+    }
+  };
+
+  const checkAndRecoverVideos = async () => {
+    try {
+      // First check for any persistent pending videos from storage
+      await useVideoToastStore.getState().checkForPendingVideo();
+      
+      // Then check for newly completed videos from database
+      const completedVideos = await checkForCompletedVideos();
+      
+      if (completedVideos.length > 0) {
+        if (__DEV__) {
+          console.log(`🎬 Found ${completedVideos.length} completed video(s) to recover`);
+        }
+        
+        // Show modal for the first completed video if no pending modal is already visible
+        const currentToastState = useVideoToastStore.getState();
+        if (!currentToastState.showCompletionModal) {
+          const firstVideo = completedVideos[0];
+          await useVideoToastStore.getState().showVideoReady({
+            id: firstVideo.prediction_id,
+            localPath: firstVideo.local_video_path,
+            imageUri: firstVideo.image_uri,
+            message: completedVideos.length > 1 
+              ? `${completedVideos.length} videos are ready! 🎬` 
+              : 'Your video is ready! 🎬'
+          });
+        }
+      }
+      
+      if (__DEV__) {
+        console.log('✅ Video recovery check completed');
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.error('❌ Failed to check for completed videos:', error);
       }
     }
   };

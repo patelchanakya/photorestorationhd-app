@@ -1,8 +1,10 @@
-import Replicate from 'replicate';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 import { AppState, AppStateStatus } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { networkStateService } from './networkState';
+import Purchases from 'react-native-purchases';
+import Replicate from 'replicate';
+import { photoStorage } from './storage';
+import { supabase } from './supabaseClient';
 
 // Validate API token
 const apiToken = process.env.EXPO_PUBLIC_REPLICATE_API_TOKEN;
@@ -20,13 +22,13 @@ const replicate = new Replicate({
 
 // Animation-specific prompts optimized for Kling v2.1
 const ANIMATION_PROMPTS = {
-  'animate with a warm hug gesture': 'person opens arms and makes a warm hugging gesture, showing affection',
-  'animate as a group celebration': 'person celebrates with group-friendly gestures and movements, expressing joy',
-  'animate with love and affection': 'person shows affection with gentle loving gestures and warm expressions',
-  'animate with dancing movements': 'person starts dancing with rhythmic movements and joy, moving to music',
-  'animate with fun and playful movements': 'person makes playful and fun movements with energy and enthusiasm',
-  'animate with a warm smile': "person's face lights up with a warm, genuine smile, expressing happiness",
-  'bring this photo to life with natural animation': 'person makes subtle natural movements with gentle expressions'
+  'animate with a warm hug gesture': 'In this scene, people very slowly embrace in a warm, affectionate hug with extremely gentle, natural movements. For groups, show a very calm group hug where everyone leans in very softly; for pairs or individuals, display very tender, gradual hugging gestures. Keep all actions realistic, extremely gentle, and ultra-fluid without any fast or sudden motions, maintaining the original photo\'s composition and background still.',
+  'animate as a group celebration': 'The subjects celebrate together with very slow, peaceful joyful gestures like soft, gradual cheers or gentle high-fives, expressing happiness very naturally. In groups, show extremely subtle interactions such as slow smiling nods or very light pats on backs; for individuals, display quiet, gradual celebratory poses. Ensure movements are ultra-smooth, realistic, and extremely slow, preserving the photo\'s essence with a static background.',
+  'animate with love and affection': 'People express love through extremely gentle, affectionate actions like very soft touches or slow, warm gazes, with natural and very calm movements. For groups or families, include very subtle caring interactions; for couples or individuals, show tender, gradual expressions. All animations should be ultra-fluid, realistic, and free of any quick or sudden elements, keeping the background unchanged.',
+  'animate with dancing movements': 'Subjects move with very slow, rhythmic dancing steps that feel natural and extremely gentle, like a very slow sway or soft, gradual twirl. In groups, coordinate very calm collective dances; for singles, show extremely subtle personal rhythms. Avoid any quick motions, ensuring ultra-realistic, slow flow suitable for Kling v2.1, with the background remaining still.',
+  'animate with fun and playful movements': 'The scene comes alive with fun, playful yet extremely calm movements like very gentle waves or soft, slow laughs, keeping everything natural and ultra-smooth. Groups interact with light, coordinated, slow playfulness; individuals display very subtle joyful gestures. Prevent any fast actions, focusing on realistic, ultra-fluid, gradual animations while the background stays static.',
+  'animate with a warm smile': 'Faces very slowly light up with warm, genuine smiles that spread naturally across the group or individual, accompanied by extremely subtle, gentle head tilts or soft eye sparkles. For multiple people, smiles ripple very softly between them; ensure all expressions are calm, realistic, and gradual, with no sudden changes and a motionless background.',
+  'bring this photo to life with natural animation': 'Bring the photo to life with extremely subtle, natural animations like very gentle breathing, soft blinks, or calm, gradual shifts in posture, suitable for individuals or groups. Movements should be ultra-smooth, realistic, and very unhurried, avoiding any fast or artificial effects, while keeping the background completely still for a lifelike feel.'
 } as const;
 
 // Helper function to convert image to accessible URL
@@ -211,6 +213,16 @@ class VideoGenerationStateManager {
 
 const stateManager = VideoGenerationStateManager.getInstance();
 
+// Helper function to get current user ID
+async function getCurrentUserId(): Promise<string | null> {
+  try {
+    return await Purchases.getAppUserID();
+  } catch (error) {
+    console.error('Failed to get user ID:', error);
+    return null;
+  }
+}
+
 // Helper function to optimize prompt for Kling v2.1
 function optimizePromptForKling(originalPrompt: string): string {
   // Check if we have a predefined optimized prompt
@@ -317,10 +329,15 @@ export async function generateVideo(
       console.log('🎥 Settings:', { mode: input.mode, duration: input.duration });
     }
 
-    // Create prediction
+    // Get the webhook URL from Supabase
+    const webhookUrl = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/video-webhook`;
+    
+    // Create prediction with webhook for persistence
     const prediction = await replicate.predictions.create({
       model: 'kwaivgi/kling-v2.1',
-      input
+      input,
+      webhook: webhookUrl,
+      webhook_events_filter: ['completed']
     });
 
     if (__DEV__) {
@@ -338,11 +355,36 @@ export async function generateVideo(
       options
     };
     await stateManager.saveState(initialState);
+    
+    // Also save to database for webhook and recovery
+    try {
+      const userId = await getCurrentUserId();
+      if (userId) {
+        const { error: dbError } = await supabase
+          .from('user_video_jobs')
+          .insert({
+            user_id: userId,
+            prediction_id: prediction.id,
+            image_uri: imageUri,
+            prompt: optimizedPrompt,
+            status: 'starting',
+            expires_at: new Date(Date.now() + 3600000).toISOString() // 1 hour from now
+          });
+        
+        if (dbError) {
+          console.error('Failed to save video job to database:', dbError);
+        } else if (__DEV__) {
+          console.log('💾 Video job saved to database for persistence');
+        }
+      }
+    } catch (dbErr) {
+      console.error('Error saving video job:', dbErr);
+    }
 
     // Poll for completion with optimized intervals for video processing
     let attempts = 0;
-    let delay = 3000; // Start with 3 seconds for video generation (longer than image)
-    const maxAttempts = 120; // Up to 8 minutes of polling with longer intervals
+    let delay = 5000; // Start with 5 seconds as requested for better UX
+    const maxAttempts = 100; // Up to 8-10 minutes with 5s intervals
     
     // Track last network check to avoid excessive checking
     let lastNetworkCheck = Date.now();
@@ -351,9 +393,11 @@ export async function generateVideo(
     while (attempts < maxAttempts) {
       await sleep(delay);
       
-      // More frequent network connectivity checks for long video operations
+      // Smart network connectivity checks - check less frequently as time goes on
       const now = Date.now();
-      const shouldCheckNetwork = (now - lastNetworkCheck) > networkCheckInterval || attempts % 5 === 0;
+      const shouldCheckNetwork = (now - lastNetworkCheck) > networkCheckInterval || 
+                                 (attempts < 10 && attempts % 3 === 0) || // Check every 3rd attempt early on
+                                 (attempts >= 10 && attempts % 6 === 0);  // Check every 6th attempt later
       
       if (shouldCheckNetwork) {
         const hasRealConnection = await testNetworkConnection();
@@ -389,11 +433,13 @@ export async function generateVideo(
         const elapsedSeconds = Math.floor(elapsedMs / 1000);
         let status: 'starting' | 'processing' | 'finalizing' = 'processing';
         
-        // Determine status based on elapsed time and result status
-        if (elapsedMs < 10000) {
-          status = 'starting';
+        // Determine status based on elapsed time and result status for better UX feedback
+        if (elapsedMs < 15000) {
+          status = 'starting'; // First 15 seconds
         } else if (result.status === 'processing' && elapsedMs > 90000) {
           status = 'finalizing'; // After 90s, likely in final stages
+        } else {
+          status = 'processing'; // Main processing phase
         }
 
         await stateManager.saveState({
@@ -403,7 +449,8 @@ export async function generateVideo(
         });
 
         if (__DEV__) {
-          console.log(`🔄 Video polling attempt ${attempts + 1}: status = ${result.status} (${status}) - ${elapsedSeconds}s elapsed`);
+          const nextPollIn = Math.round(delay / 1000);
+          console.log(`🔄 Video polling attempt ${attempts + 1}/${maxAttempts}: ${result.status} (${status}) - ${elapsedSeconds}s elapsed - next poll in ${nextPollIn}s`);
         }
       }
       
@@ -427,6 +474,33 @@ export async function generateVideo(
           new URL(videoUrl);
         } catch {
           throw new Error('Invalid video URL format received from Kling API');
+        }
+        
+        // CRITICAL: Download video immediately to prevent URL expiration
+        try {
+          const localVideoPath = await downloadAndSaveVideo(videoUrl, prediction.id);
+          
+          // Update database with download status
+          const userId = await getCurrentUserId();
+          if (userId) {
+            await supabase
+              .from('user_video_jobs')
+              .update({
+                status: 'downloaded',
+                video_url: videoUrl,
+                local_video_path: localVideoPath,
+                completed_at: new Date().toISOString(),
+                downloaded_at: new Date().toISOString()
+              })
+              .eq('prediction_id', prediction.id);
+          }
+          
+          if (__DEV__) {
+            console.log('✅ Video downloaded and saved locally:', localVideoPath);
+          }
+        } catch (downloadError) {
+          console.error('Failed to download video immediately:', downloadError);
+          // Don't throw - still return the URL but log the issue
         }
         
         // Clear persisted state on success
@@ -483,8 +557,8 @@ export async function generateVideo(
       
       attempts++;
       
-      // Optimized exponential backoff for video generation: 3s -> 8s max
-      delay = Math.min(delay * 1.15, 8000);
+      // Conservative backoff for video generation: 5s -> 10s max for consistent UX
+      delay = Math.min(delay * 1.1, 10000);
     }
     
     // Clear state if we exceed max attempts
@@ -595,8 +669,8 @@ export async function resumeVideoGenerationIfExists(): Promise<{
     return { isResuming: false, state: null };
   }
   
-  // Estimate remaining time (assume 2-5 minutes total processing)
-  const estimatedTotalMs = 180000; // 3 minutes average
+  // Estimate remaining time (assume 1-3 minutes total processing, being more conservative)
+  const estimatedTotalMs = 120000; // 2 minutes average for better UX expectations
   const estimatedTimeRemaining = Math.max(0, estimatedTotalMs - elapsedMs);
   
   if (__DEV__) {
@@ -630,11 +704,18 @@ export function getVideoGenerationProgress(): {
   const elapsedMs = Date.now() - state.startTime;
   const elapsedSeconds = Math.floor(elapsedMs / 1000);
   
-  let progressPhase = 'Starting video generation...';
+  let progressPhase = 'Preparing your video...';
   if (state.status === 'processing') {
-    progressPhase = 'Processing video... This may take 2-5 minutes.';
+    const minutes = Math.floor(elapsedSeconds / 60);
+    if (minutes < 1) {
+      progressPhase = 'Analyzing your photo...';
+    } else if (minutes < 2) {
+      progressPhase = 'Creating video frames...';
+    } else {
+      progressPhase = 'Adding final touches...';
+    }
   } else if (state.status === 'finalizing') {
-    progressPhase = 'Finalizing video... Almost ready!';
+    progressPhase = 'Almost ready! Finalizing your video...';
   }
   
   return {
@@ -647,3 +728,185 @@ export function getVideoGenerationProgress(): {
 
 // Export state manager for external use
 export { stateManager as videoStateManager };
+
+// Download video from Replicate URL and save locally (for app access only)
+async function downloadAndSaveVideo(videoUrl: string, predictionId: string): Promise<string> {
+  try {
+    // Create a unique filename for the video
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const fileName = `video_${predictionId}_${timestamp}.mp4`;
+    const localUri = `${FileSystem.documentDirectory}videos/${fileName}`;
+    
+    // Ensure videos directory exists
+    const videosDir = `${FileSystem.documentDirectory}videos/`;
+    const dirInfo = await FileSystem.getInfoAsync(videosDir);
+    if (!dirInfo.exists) {
+      await FileSystem.makeDirectoryAsync(videosDir, { intermediates: true });
+    }
+    
+    if (__DEV__) {
+      console.log('📥 Downloading video for local storage only (no auto-save to camera roll)');
+    }
+    
+    // Download the video with progress tracking
+    const downloadResumable = FileSystem.createDownloadResumable(
+      videoUrl,
+      localUri,
+      {},
+      (downloadProgress) => {
+        const progress = downloadProgress.totalBytesWritten / downloadProgress.totalBytesExpectedToWrite;
+        if (__DEV__) {
+          console.log(`📥 Video download progress: ${Math.round(progress * 100)}%`);
+        }
+      }
+    );
+    
+    const result = await downloadResumable.downloadAsync();
+    if (!result || !result.uri) {
+      throw new Error('Failed to download video');
+    }
+    
+    // Save video using photoStorage service (for app's internal gallery)
+    await photoStorage.saveVideo(result.uri, fileName);
+    
+    if (__DEV__) {
+      console.log('✅ Video saved locally, ready for user viewing');
+    }
+    
+    return result.uri;
+  } catch (error) {
+    console.error('Error downloading video:', error);
+    throw error;
+  }
+}
+
+// Check for completed videos on app launch
+export async function checkForCompletedVideos(): Promise<Array<{
+  id: string;
+  prediction_id: string;
+  video_url: string;
+  local_video_path: string;
+  image_uri: string;
+  created_at: string;
+}>> {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return [];
+    
+    // Get pending videos from database
+    const { data: pendingVideos, error } = await supabase
+      .from('user_video_jobs')
+      .select('*')
+      .eq('user_id', userId)
+      .in('status', ['completed', 'processing', 'starting'])
+      .is('local_video_path', null)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching pending videos:', error);
+      return [];
+    }
+    
+    if (!pendingVideos || pendingVideos.length === 0) {
+      return [];
+    }
+    
+    const completedVideos = [];
+    
+    // Check each pending video with Replicate
+    for (const video of pendingVideos) {
+      try {
+        // Check if URL has expired (1 hour window)
+        const expiresAt = new Date(video.expires_at);
+        const now = new Date();
+        
+        if (now > expiresAt) {
+          // URL expired, mark as expired
+          await supabase
+            .from('user_video_jobs')
+            .update({ status: 'expired' })
+            .eq('id', video.id);
+          continue;
+        }
+        
+        // Check prediction status with Replicate
+        const prediction = await replicate.predictions.get(video.prediction_id);
+        
+        if (prediction.status === 'succeeded' && prediction.output) {
+          // Download video immediately
+          try {
+            const localPath = await downloadAndSaveVideo(
+              prediction.output as string,
+              video.prediction_id
+            );
+            
+            // Update database
+            await supabase
+              .from('user_video_jobs')
+              .update({
+                status: 'downloaded',
+                video_url: prediction.output as string,
+                local_video_path: localPath,
+                completed_at: new Date().toISOString(),
+                downloaded_at: new Date().toISOString()
+              })
+              .eq('id', video.id);
+            
+            completedVideos.push({
+              ...video,
+              video_url: prediction.output as string,
+              local_video_path: localPath
+            });
+            
+            if (__DEV__) {
+              console.log('✅ Recovered completed video:', video.prediction_id);
+            }
+          } catch (downloadErr) {
+            console.error('Failed to download recovered video:', downloadErr);
+          }
+        } else if (prediction.status === 'failed' || prediction.status === 'canceled') {
+          // Mark as failed
+          await supabase
+            .from('user_video_jobs')
+            .update({ 
+              status: 'failed',
+              error_message: prediction.error || 'Video generation failed'
+            })
+            .eq('id', video.id);
+        }
+      } catch (checkError) {
+        console.error('Error checking video status:', checkError);
+      }
+    }
+    
+    return completedVideos;
+  } catch (error) {
+    console.error('Error checking for completed videos:', error);
+    return [];
+  }
+}
+
+// Get count of ready videos for settings indicator
+export async function getReadyVideosCount(): Promise<number> {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return 0;
+    
+    const { count, error } = await supabase
+      .from('user_video_jobs')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('status', 'downloaded')
+      .not('local_video_path', 'is', null);
+    
+    if (error) {
+      console.error('Error counting ready videos:', error);
+      return 0;
+    }
+    
+    return count || 0;
+  } catch (error) {
+    console.error('Error getting ready videos count:', error);
+    return 0;
+  }
+}

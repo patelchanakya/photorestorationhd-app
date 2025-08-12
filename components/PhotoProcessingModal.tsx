@@ -137,10 +137,7 @@ export function PhotoProcessingModal({
             <View className="items-center">
               <Text className="text-2xl font-semibold text-white mb-2">{title}</Text>
               <Text className="text-center text-gray-300 text-base">
-                Hang tight — this usually takes a few seconds.
-              </Text>
-              <Text className="text-center text-gray-400 text-sm mt-2">
-                {Math.max(0, Math.min(100, Math.floor(progress)))}% complete
+                Hang tight — this usually takes about 10 seconds.
               </Text>
             </View>
           </View>

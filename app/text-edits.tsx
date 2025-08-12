@@ -1,4 +1,6 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { presentPaywall } from '@/services/revenuecat';
+import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,6 +13,7 @@ export default function TextEditsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
+  const isPro = useSubscriptionStore((state) => state.isPro);
   
   // Get parameters from navigation
   const { imageUri, prompt: initialPrompt, mode } = params;
@@ -28,6 +31,37 @@ export default function TextEditsScreen() {
   }, [imageUri, initialPrompt, mode, hasProcessed]);
 
   const processWithPrompt = async (uri: string, prompt: string, editMode?: string) => {
+    // CRITICAL: Gate Pro-only features before processing
+    const proOnlyModes = ['outfit', 'background'];
+    if (proOnlyModes.includes(editMode || '')) {
+      const currentIsPro = useSubscriptionStore.getState().isPro;
+      
+      if (!currentIsPro) {
+        console.log(`🔒 Text-edits: Pro mode "${editMode}" requires subscription`);
+        const success = await presentPaywall();
+        
+        if (!success) {
+          console.log(`🔒 Text-edits: Pro mode "${editMode}" cancelled - returning to previous screen`);
+          router.back();
+          return;
+        }
+        
+        // Wait for listener to update subscription state
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const updatedIsPro = useSubscriptionStore.getState().isPro;
+        
+        if (!updatedIsPro) {
+          Alert.alert('Purchase Error', 'Please try again or restore purchases if you already have a subscription.');
+          router.back();
+          return;
+        }
+        
+        console.log(`✅ Text-edits: Pro mode "${editMode}" unlocked after purchase`);
+      } else {
+        console.log(`✅ Text-edits: Pro mode "${editMode}" - user already has Pro access`);
+      }
+    }
+
     // Determine the function type based on mode
     let functionType: string = 'custom';
     
@@ -35,23 +69,10 @@ export default function TextEditsScreen() {
       functionType = 'outfit';
     } else if (editMode === 'background') {
       functionType = 'background';
-    } else if (editMode === 'backtolife') {
-      functionType = 'backtolife';
     }
     
-    if (functionType === 'backtolife') {
-      // Start Back to Life directly (skip crop modal)
-      const { useCropModalStore } = await import('@/store/cropModalStore');
-      const { useBackToLife } = await import('@/hooks/useBackToLife');
-      const store = useCropModalStore.getState();
-      const backToLife = (useBackToLife as any)();
-      store.setIsProcessing(true);
-      store.setCurrentImageUri(uri);
-      store.setProgress(1);
-      store.setCanCancel(true);
-      backToLife.mutate({ imageUri: uri, animationPrompt: prompt, imageSource: 'gallery' });
-      return;
-    }
+    // Note: Back to Life video generation is handled separately in HeroBackToLifeExamples.tsx
+    // and should not be mixed with text-based AI editing functionality
     // Otherwise go to crop modal
     router.replace(`/crop-modal?imageUri=${encodeURIComponent(uri)}&functionType=${functionType}&customPrompt=${encodeURIComponent(prompt)}&imageSource=gallery`);
   };

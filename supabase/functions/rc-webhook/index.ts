@@ -79,18 +79,54 @@ serve(async (req) => {
   }
 
   try {
+    log('webhook', '🔧 Environment Check:', {
+      has_supabase_url: !!Deno.env.get('SUPABASE_URL'),
+      has_service_key: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+      has_rc_api_key: !!Deno.env.get('RC_API_KEY'),
+      has_webhook_secret: !!Deno.env.get('RC_WEBHOOK_SECRET')
+    });
+
+    // Verify required environment variables
+    const requiredEnvVars = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'RC_API_KEY'];
+    const missingVars = requiredEnvVars.filter(varName => !Deno.env.get(varName));
+    
+    if (missingVars.length > 0) {
+      log('errors', '❌ Missing required environment variables:', missingVars);
+      return new Response(JSON.stringify({ 
+        error: 'Missing required environment variables',
+        missing: missingVars,
+        required: requiredEnvVars
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500
+      });
+    }
+
     // Verify webhook secret (if configured)
     const webhookSecret = Deno.env.get('RC_WEBHOOK_SECRET');
     if (webhookSecret) {
       const authHeader = req.headers.get('Authorization');
       if (authHeader !== `Bearer ${webhookSecret}`) {
-        console.error('Invalid webhook secret');
+        log('errors', '❌ Invalid webhook secret');
         return new Response('Unauthorized', { status: 401 });
       }
     }
 
     // Parse webhook payload
-    const payload: RevenueCatWebhookEvent = await req.json();
+    let payload: RevenueCatWebhookEvent;
+    try {
+      payload = await req.json();
+    } catch (parseError) {
+      log('errors', '❌ Failed to parse webhook payload:', parseError.message);
+      return new Response(JSON.stringify({ 
+        error: 'Invalid JSON payload',
+        details: parseError.message
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400
+      });
+    }
+    
     const event = payload.event;
     
     log('webhook', '📥 Processing RevenueCat webhook:', {
@@ -118,31 +154,74 @@ serve(async (req) => {
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    let supabase;
+    try {
+      supabase = createClient(supabaseUrl, supabaseServiceKey);
+      log('database', '✅ Supabase client initialized');
+    } catch (supabaseError) {
+      log('errors', '❌ Failed to initialize Supabase client:', supabaseError.message);
+      throw new Error(`Supabase initialization failed: ${supabaseError.message}`);
+    }
 
     // Fetch canonical subscriber info from RevenueCat API
     const rcApiKey = Deno.env.get('RC_API_KEY')!;
-    const rcResponse = await fetch(
-      `https://api.revenuecat.com/v1/subscribers/${event.app_user_id}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${rcApiKey}`,
-          'X-Platform': 'ios'
+    let rcResponse;
+    try {
+      rcResponse = await fetch(
+        `https://api.revenuecat.com/v1/subscribers/${event.app_user_id}`,
+        {
+          headers: {
+            'Authorization': rcApiKey,  // v1 API doesn't use Bearer prefix
+            'X-Platform': 'ios'
+          }
         }
-      }
-    );
+      );
+    } catch (fetchError) {
+      log('errors', '❌ Network error fetching subscriber from RevenueCat:', {
+        error: fetchError.message,
+        app_user_id: event.app_user_id
+      });
+      throw new Error(`Network error: ${fetchError.message}`);
+    }
 
     if (!rcResponse.ok) {
+      const errorText = await rcResponse.text().catch(() => 'Could not read error response');
       log('errors', '❌ Failed to fetch subscriber from RevenueCat:', {
         status: rcResponse.status,
         statusText: rcResponse.statusText,
-        app_user_id: event.app_user_id
+        app_user_id: event.app_user_id,
+        api_url: `https://api.revenuecat.com/v1/subscribers/${event.app_user_id}`,
+        error_body: errorText,
+        api_key_prefix: rcApiKey.substring(0, 8) + '...',
+        headers_sent: {
+          'Authorization': '[REDACTED]',
+          'X-Platform': 'ios'
+        }
       });
-      throw new Error('Failed to fetch subscriber data');
+      
+      // Return a 200 response but log the error - don't fail the webhook
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'RevenueCat API access forbidden',
+        details: `${rcResponse.status} ${rcResponse.statusText}`,
+        app_user_id: event.app_user_id,
+        event_type: event.type,
+        suggestion: 'Check if REST API key has permissions for this user/environment'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200  // Return 200 so RevenueCat doesn't retry
+      });
     }
 
-    const subscriberData = await rcResponse.json();
-    const subscriber = subscriberData.subscriber;
+    let subscriberData, subscriber;
+    try {
+      subscriberData = await rcResponse.json();
+      subscriber = subscriberData.subscriber;
+    } catch (jsonError) {
+      log('errors', '❌ Failed to parse RevenueCat response:', jsonError.message);
+      throw new Error(`JSON parse error: ${jsonError.message}`);
+    }
     
     // Get canonical ID (original_app_user_id)
     const canonicalId = subscriber.original_app_user_id || event.app_user_id;
@@ -219,11 +298,29 @@ serve(async (req) => {
         }
 
         // Check if we need to reset usage (new billing cycle)
-        const { data: existingRecord } = await supabase
-          .from('user_video_usage')
-          .select('*')
-          .eq('user_id', canonicalId)
-          .single();
+        let existingRecord = null;
+        try {
+          const { data, error: selectError } = await supabase
+            .from('user_video_usage')
+            .select('*')
+            .eq('user_id', canonicalId)
+            .single();
+          
+          if (selectError && selectError.code !== 'PGRST116') { // PGRST116 is "not found"
+            log('errors', '❌ Database error fetching existing record:', selectError);
+            throw selectError;
+          }
+          
+          existingRecord = data;
+          log('database', '📊 Existing record check:', { 
+            found: !!existingRecord,
+            user_id: canonicalId,
+            current_count: existingRecord?.back_to_life_count || 0
+          });
+        } catch (dbError) {
+          log('errors', '❌ Database query failed:', dbError.message);
+          throw new Error(`Database query failed: ${dbError.message}`);
+        }
 
         let back_to_life_count = existingRecord?.back_to_life_count || 0;
         let last_video_date = existingRecord?.last_video_date || null;
@@ -239,25 +336,34 @@ serve(async (req) => {
         }
 
         // Upsert usage record with canonical ID
-        const { error } = await supabase
-          .from('user_video_usage')
-          .upsert({
-            user_id: canonicalId,
-            plan_type: planType,
-            usage_limit: usageLimit,
-            billing_cycle_start: billingCycleStart.toISOString(),
-            next_reset_date: nextResetDate.toISOString(),
-            original_purchase_date: originalPurchaseDate.toISOString(),
-            back_to_life_count,
-            last_video_date,
-            is_active: true,
-            expires_date: proEntitlement.expires_date,
-            updated_at: new Date().toISOString()
-          });
+        const upsertData = {
+          user_id: canonicalId,
+          plan_type: planType,
+          usage_limit: usageLimit,
+          billing_cycle_start: billingCycleStart.toISOString(),
+          next_reset_date: nextResetDate.toISOString(),
+          original_purchase_date: originalPurchaseDate.toISOString(),
+          back_to_life_count,
+          last_video_date,
+          is_active: true,
+          expires_date: proEntitlement.expires_date,
+          updated_at: new Date().toISOString()
+        };
 
-        if (error) {
-          log('errors', '❌ Failed to upsert usage record:', error);
-          throw error;
+        log('database', '💾 Attempting to upsert usage record:', upsertData);
+
+        try {
+          const { error: upsertError } = await supabase
+            .from('user_video_usage')
+            .upsert(upsertData);
+
+          if (upsertError) {
+            log('errors', '❌ Failed to upsert usage record:', upsertError);
+            throw new Error(`Database upsert failed: ${upsertError.message}`);
+          }
+        } catch (dbError) {
+          log('errors', '❌ Database upsert operation failed:', dbError.message);
+          throw new Error(`Database operation failed: ${dbError.message}`);
         }
 
         log('database', '✅ Successfully updated usage record:', {
@@ -366,8 +472,7 @@ serve(async (req) => {
   } catch (error) {
     log('errors', '❌ Webhook processing error:', {
       error: error.message,
-      event_type: payload?.event?.type,
-      app_user_id: payload?.event?.app_user_id
+      stack: error.stack
     });
     return new Response(JSON.stringify({ 
       error: error.message 

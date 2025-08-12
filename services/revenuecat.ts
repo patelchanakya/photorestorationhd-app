@@ -43,7 +43,21 @@ async function safeResetIdentity() {
 
 // Robust entitlement validation to avoid granting access for expired subscriptions (esp. in sandbox)
 function isEntitlementTrulyActive(entitlement: any): boolean {
-  if (!entitlement?.isActive) return false;
+  if (__DEV__) {
+    console.log('🔍 Entitlement input:', {
+      hasEntitlement: !!entitlement,
+      isActive: entitlement?.isActive,
+      expirationDate: entitlement?.expirationDate,
+      willRenew: entitlement?.willRenew
+    });
+  }
+  
+  if (!entitlement?.isActive) {
+    if (__DEV__) {
+      console.log('❌ Entitlement not active, returning false');
+    }
+    return false;
+  }
   if (entitlement?.expirationDate) {
     const expiration = new Date(entitlement.expirationDate);
     const now = new Date();
@@ -66,6 +80,9 @@ function isEntitlementTrulyActive(entitlement: any): boolean {
     return isValid;
   }
   // Lifetime purchases or missing expiration date: trust isActive
+  if (__DEV__) {
+    console.log('✅ No expiration date, trusting isActive:', entitlement.isActive);
+  }
   return entitlement.isActive === true;
 }
 
@@ -389,12 +406,20 @@ export const checkSubscriptionStatus = async (): Promise<boolean> => {
     
     // Update store if different from current value (for Apple ID switches)
     const currentProStatus = useSubscriptionStore.getState().isPro;
+    if (__DEV__) {
+      console.log('🔍 Store comparison:', {
+        currentProStatus,
+        hasProEntitlement,
+        needsUpdate: hasProEntitlement !== currentProStatus
+      });
+    }
     if (hasProEntitlement !== currentProStatus) {
       useSubscriptionStore.getState().setIsPro(hasProEntitlement);
       // Keep expiration date in sync for UI
       useSubscriptionStore.getState().setExpirationDate(proEntitlement?.expirationDate ?? null);
       if (__DEV__) {
         console.log('🔄 Updated subscription status on check:', hasProEntitlement);
+        console.log('🔄 Store state after update:', useSubscriptionStore.getState().isPro);
       }
     }
     
@@ -867,11 +892,11 @@ export const getSubscriptionExpirationDate = async (): Promise<Date | null> => {
 export const validatePremiumAccess = async (): Promise<boolean> => {
   try {
     if (isExpoGo()) {
-      // In Expo Go, allow access for testing
+      // In Expo Go, deny premium access to ensure proper testing of paywall flows
       if (__DEV__) {
-        console.log('⚠️ Allowing premium access in Expo Go for testing');
+        console.log('⚠️ Denying premium access in Expo Go - use development build for subscription testing');
       }
-      return true;
+      return false;
     }
     
     // Call getCustomerInfo() as recommended by RevenueCat docs
@@ -882,6 +907,9 @@ export const validatePremiumAccess = async (): Promise<boolean> => {
       // Only update store in error case where CustomerInfo is unavailable
       useSubscriptionStore.getState().setIsPro(false);
       useSubscriptionStore.getState().setExpirationDate(null);
+      if (__DEV__) {
+        console.log('🔐 Premium access validation: No customer info, denying access');
+      }
       return false;
     }
     
@@ -892,7 +920,12 @@ export const validatePremiumAccess = async (): Promise<boolean> => {
     
     // Note: Store update handled by CustomerInfo listener in _layout.tsx
     if (__DEV__) {
-      console.log('🔐 Premium access validation:', hasValidAccess);
+      console.log('🔐 Premium access validation result:', {
+        hasValidAccess,
+        hasProEntitlement: !!proEntitlement,
+        activeEntitlements: Object.keys(entitlementsAny.active || {}),
+        allEntitlements: Object.keys(entitlementsAny.all || {})
+      });
       if (proEntitlement) {
         console.log('🔐 Pro entitlement details (validation):', {
           isActive: proEntitlement?.isActive ?? null,
@@ -1027,6 +1060,7 @@ export interface SubscriptionPlanDetails {
   nextResetDate: string; // ISO date string
   originalPurchaseDate: string; // ISO date string
   productIdentifier: string;
+  storeTransactionId: string | null; // For detecting new subscriptions
 }
 
 // Helper function to get subscription plan details for usage limits
@@ -1044,7 +1078,8 @@ export const getSubscriptionPlanDetails = async (): Promise<SubscriptionPlanDeta
         billingCycleStart: now.toISOString(),
         nextResetDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         originalPurchaseDate: now.toISOString(),
-        productIdentifier: 'mock_monthly'
+        productIdentifier: 'mock_monthly',
+        storeTransactionId: 'mock_transaction_id'
       };
     }
 
@@ -1069,6 +1104,11 @@ export const getSubscriptionPlanDetails = async (): Promise<SubscriptionPlanDeta
 
     // Get original purchase date and ensure UTC consistency
     const originalPurchaseDate = proEntitlement.originalPurchaseDate || new Date().toISOString();
+    
+    // Get store transaction ID for new subscription detection
+    const productIdentifier = proEntitlement.productIdentifier || 'unknown';
+    const subscriptionInfo = customerInfo.subscriptionsByProductIdentifier?.[productIdentifier];
+    const storeTransactionId = subscriptionInfo?.storeTransactionId || null;
     
     // Use UTC dates to avoid timezone issues
     const originalDate = new Date(originalPurchaseDate);
@@ -1143,7 +1183,8 @@ export const getSubscriptionPlanDetails = async (): Promise<SubscriptionPlanDeta
       billingCycleStart: billingCycleStart.toISOString(),
       nextResetDate: nextResetDate.toISOString(),
       originalPurchaseDate,
-      productIdentifier: proEntitlement.productIdentifier || 'unknown'
+      productIdentifier: proEntitlement.productIdentifier || 'unknown',
+      storeTransactionId
     };
   } catch (error) {
     if (__DEV__) {
@@ -1238,7 +1279,7 @@ export const waitForSubscriptionUpdate = async (options: WaitForUpdateOptions = 
 };
 
 
-// Proper restore following RevenueCat docs - sync first, then restore
+// Clean restore function following RevenueCat best practices
 export const restorePurchasesSimple = async (): Promise<RestoreResult> => {
   try {
     if (isExpoGo()) {
@@ -1250,63 +1291,32 @@ export const restorePurchasesSimple = async (): Promise<RestoreResult> => {
       };
     }
 
-    // Sync with current Apple ID to prevent cross-Apple-ID carryover
-    await safeResetIdentity();
-    
     if (__DEV__) {
       console.log('🔄 Starting restore purchases...');
     }
     
-    // Store initial state
-    const initialProStatus = useSubscriptionStore.getState().isPro;
+    // RevenueCat best practice: just call restorePurchases() - it handles everything
+    const customerInfo = await Purchases.restorePurchases();
     
-    // STEP 1: Invalidate cache first (avoid pre-sync in sandbox; restore will refresh receipt)
-    try {
-      if (__DEV__) console.log('🔒 Invalidating cache before sync...');
-      await Purchases.invalidateCustomerInfoCache();
-      // No pre-sync: let restore flow refresh the receipt tied to current Apple ID
-    } catch (syncError) {
-      if (__DEV__) {
-        console.log('⚠️ Sync failed, will try restore:', syncError);
-      }
-    }
+    // Check for active entitlements 
+    const proEntitlement = customerInfo.entitlements.active['pro'];
+    const hasActiveEntitlements = isEntitlementTrulyActive(proEntitlement);
     
-    // STEP 2: If sync didn't find purchases, try restore (may prompt user)
-    if (__DEV__) {
-      console.log('🔄 Sync found no purchases, trying restore...');
-    }
-    
-    const restore = await Purchases.restorePurchases();
-    
-    // Force fresh data after restore: invalidate and fetch
-    try { await Purchases.invalidateCustomerInfoCache(); } catch {}
-    const freshInfo = await getCustomerInfo();
-    let finalProStatus = false;
-    let proEntitlement: any = null;
-    if (freshInfo) {
-      const entitlementsAny: any = (freshInfo as any)?.entitlements ?? {};
-      proEntitlement = entitlementsAny.active?.['pro'] ?? entitlementsAny.all?.['pro'];
-      finalProStatus = isEntitlementTrulyActive(proEntitlement);
-      useSubscriptionStore.getState().setIsPro(finalProStatus);
-      useSubscriptionStore.getState().setExpirationDate(proEntitlement?.expirationDate ?? null);
-    } else {
-      // As a fallback, run the standard status check
-      finalProStatus = await checkSubscriptionStatus();
-    }
+    // Update store with restore result
+    useSubscriptionStore.getState().setIsPro(hasActiveEntitlements);
+    useSubscriptionStore.getState().setExpirationDate(proEntitlement?.expirationDate ?? null);
     
     if (__DEV__) {
       console.log('🔄 Restore complete:', {
-        hadProBefore: initialProStatus,
-        hasProNow: finalProStatus,
+        hasActiveEntitlements,
         rcIsActive: proEntitlement?.isActive ?? null,
-        willRenew: proEntitlement?.willRenew ?? null,
         expirationDate: proEntitlement?.expirationDate ?? null,
       });
     }
     
     return {
       success: true,
-      hasActiveEntitlements: finalProStatus
+      hasActiveEntitlements
     };
   } catch (error: any) {
     if (__DEV__) {

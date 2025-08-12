@@ -2,13 +2,13 @@ import { DeviceTwoRowCarousel } from '@/components/DeviceTwoRowCarousel';
 import { FeatureCardsList } from '@/components/FeatureCardsList';
 import { QuickActionRail } from '@/components/QuickActionRail';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { presentPaywall, validatePremiumAccess } from '@/services/revenuecat';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
-import { presentPaywall } from '@/services/revenuecat';
-import { UserIdPersistenceService } from '@/services/userIdPersistence';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
-import React, { useState, useEffect } from 'react';
-import { Alert, ScrollView, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeGalleryLikeScreen() {
@@ -39,8 +39,31 @@ export default function HomeGalleryLikeScreen() {
     return () => clearTimeout(loadTimer);
   }, []);
 
+  // Subtle drop-back effect for screen when launching picker (Remini-like feedback)
+  const dropProgress = useSharedValue(0);
+  const engageDropEffect = useCallback(() => {
+    dropProgress.value = withTiming(1, { duration: 180, easing: Easing.out(Easing.quad) });
+  }, [dropProgress]);
+  const releaseDropEffect = useCallback(() => {
+    dropProgress.value = withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) });
+  }, [dropProgress]);
+
+  const screenAnimationStyle = useAnimatedStyle(() => ({
+    transform: [
+      // Avoid double animation with native picker on iOS
+      { scale: 1 - (Platform.OS === 'ios' ? 0 : 0.04) * dropProgress.value },
+      { translateY: (Platform.OS === 'ios' ? 0 : 12) * dropProgress.value },
+    ],
+  }));
+
+  // iOS-only subtle dark overlay to avoid double transform with native picker
+  const overlayAnimationStyle = useAnimatedStyle(() => ({
+    opacity: Platform.OS === 'ios' ? 0.08 * dropProgress.value : 0,
+  }));
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0B0B0F' }} edges={['top', 'left', 'right']}>
+    <Animated.View style={[{ flex: 1 }, screenAnimationStyle]}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#0B0B0F' }} edges={['top', 'left', 'right']}>
       {/* Header */}
       <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Text style={{ color: '#FFFFFF', fontSize: 26, fontWeight: '700', letterSpacing: -0.5 }}>Clever</Text>
@@ -104,7 +127,7 @@ export default function HomeGalleryLikeScreen() {
         
         {/* Two tall examples side-by-side for Back to life (video friendly) */}
         {componentsLoaded && HeroBackToLifeExamples ? (
-          <HeroBackToLifeExamples />
+          <HeroBackToLifeExamples onBeforePicker={engageDropEffect} onAfterPicker={releaseDropEffect} />
         ) : (
           <View style={{ height: 200, justifyContent: 'center', alignItems: 'center' }}>
             <ActivityIndicator color="#8B5CF6" />
@@ -178,6 +201,16 @@ export default function HomeGalleryLikeScreen() {
       {/* Bottom quick action rail */}
       <QuickActionRail />
     </SafeAreaView>
+    {Platform.OS === 'ios' && (
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#000' },
+          overlayAnimationStyle,
+        ]}
+      />
+    )}
+    </Animated.View>
   );
 }
 

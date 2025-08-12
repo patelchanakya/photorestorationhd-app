@@ -4,7 +4,7 @@ import { photoRestorationKeys } from '@/hooks/usePhotoRestoration';
 import { getSupportedLanguages, useTranslation } from '@/i18n';
 import { deviceTrackingService } from '@/services/deviceTracking';
 import { restorationTrackingService } from '@/services/restorationTracking';
-import { getAppUserId, presentPaywall, restorePurchasesDetailed, restorePurchasesSimple } from '@/services/revenuecat';
+import { getAppUserId, presentPaywall, restorePurchasesDetailed, restorePurchasesSimple, checkSubscriptionStatus } from '@/services/revenuecat';
 import { photoStorage } from '@/services/storage';
 import { localStorageHelpers } from '@/services/supabase';
 import { useRestorationStore } from '@/store/restorationStore';
@@ -19,7 +19,8 @@ import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import * as StoreReview from 'expo-store-review';
 import * as WebBrowser from 'expo-web-browser';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   ActivityIndicator,
   Alert,
@@ -49,6 +50,7 @@ export default function SettingsModalScreen() {
   
   // Local loading states
   const [isRestoring, setIsRestoring] = useState(false);
+  const [isResettingIdentity, setIsResettingIdentity] = useState(false);
   const [timeUntilNext, setTimeUntilNext] = useState<string>('Available now');
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [revenueCatUserId, setRevenueCatUserId] = useState<string | null>(null);
@@ -57,22 +59,33 @@ export default function SettingsModalScreen() {
   const supportedLanguages = getSupportedLanguages();
 
   // Fetch Back to Life usage data for Pro users
-  useEffect(() => {
-    const fetchUsageData = async () => {
-      if (isPro) {
-        try {
-          const usage = await backToLifeService.checkUsage();
-          setBackToLifeUsage(usage);
-        } catch (error) {
-          if (__DEV__) {
-            console.error('❌ Failed to fetch Back to Life usage:', error);
-          }
+  const fetchUsageData = useCallback(async () => {
+    if (isPro) {
+      try {
+        const usage = await backToLifeService.checkUsage();
+        setBackToLifeUsage(usage);
+        if (__DEV__) {
+          console.log('📊 Settings: Updated Back to Life usage:', usage);
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.error('❌ Failed to fetch Back to Life usage:', error);
         }
       }
-    };
-
-    fetchUsageData();
+    }
   }, [isPro]);
+
+  // Initial fetch on mount
+  useEffect(() => {
+    fetchUsageData();
+  }, [fetchUsageData]);
+
+  // Refetch usage data when settings modal gets focus (after video generation)
+  useFocusEffect(
+    useCallback(() => {
+      fetchUsageData();
+    }, [fetchUsageData])
+  );
   
   // Get current language info
   const getCurrentLanguageInfo = () => {
@@ -293,6 +306,100 @@ export default function SettingsModalScreen() {
     }
   };
 
+  // Reset subscription identity - safe way to clear RevenueCat cache/anonymous ID
+  const handleResetSubscriptionIdentity = async () => {
+    const isExpoGo = Constants.appOwnership === 'expo';
+    if (isExpoGo) {
+      Alert.alert('Not Available', 'This feature is not available in Expo Go.');
+      return;
+    }
+
+    Alert.alert(
+      'Reset Subscription Identity',
+      'This will reset your RevenueCat identity and sync with the current Apple ID. Use this if you\'re having subscription issues. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Reset', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              setIsResettingIdentity(true);
+
+              if (__DEV__) {
+                console.log('🔄 Manual subscription identity reset initiated');
+              }
+
+              // Force new anonymous ID creation for anonymous users
+              const { default: Purchases } = await import('react-native-purchases');
+              
+              try {
+                // Try logout first (works for identified users)
+                await Purchases.logOut();
+              } catch (logoutError: any) {
+                if (logoutError.message?.includes('anonymous')) {
+                  if (__DEV__) {
+                    console.log('🔄 User is anonymous - forcing new identity creation');
+                  }
+                  
+                  // For anonymous users, we need to force a complete reset
+                  // This is the nuclear option that creates a fresh anonymous ID
+                  try {
+                    await Purchases.invalidateCustomerInfoCache();
+                    
+                    // Reconfigure RevenueCat to force new anonymous ID
+                    const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY;
+                    if (apiKey) {
+                      await Purchases.configure({ 
+                        apiKey: apiKey,
+                        useAmazon: false,
+                      });
+                    }
+                  } catch (reconfigError) {
+                    if (__DEV__) {
+                      console.log('⚠️ Reconfigure failed, continuing with cache invalidation only');
+                    }
+                  }
+                } else {
+                  throw logoutError; // Re-throw non-anonymous errors
+                }
+              }
+              
+              await Purchases.invalidateCustomerInfoCache();
+              
+              // @ts-ignore - method available at runtime  
+              await (Purchases as any).syncPurchases?.();
+              
+              await checkSubscriptionStatus();
+
+              if (__DEV__) {
+                console.log('✅ Manual subscription identity reset complete');
+              }
+
+              Alert.alert(
+                'Reset Complete',
+                'Subscription identity has been reset and synced with your current Apple ID.',
+                [{ text: 'OK' }]
+              );
+              
+            } catch (error) {
+              if (__DEV__) {
+                console.error('❌ Manual subscription reset failed:', error);
+              }
+              Alert.alert(
+                'Reset Failed',
+                'Unable to reset subscription identity. Please try again.',
+                [{ text: 'OK' }]
+              );
+            } finally {
+              setIsResettingIdentity(false);
+            }
+          }
+        }
+      ]
+    );
+  };
 
   // Handle paywall presentation
   const handleShowPaywall = async () => {
@@ -760,13 +867,28 @@ Best regards`;
 
                 {/* Video Usage - Only show for Pro users */}
                 {isPro && backToLifeUsage && (
-                  <View style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16,
-                    borderBottomWidth: 1,
-                    borderBottomColor: 'rgba(255,255,255,0.1)'
-                  }}>
+                  <TouchableOpacity 
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      padding: 16,
+                      borderBottomWidth: 1,
+                      borderBottomColor: 'rgba(255,255,255,0.1)'
+                    }}
+                    onPress={async () => {
+                      try {
+                        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        if (__DEV__) {
+                          console.log('🔄 Refreshing Back to Life usage from Supabase...');
+                        }
+                        await fetchUsageData();
+                      } catch (error) {
+                        if (__DEV__) {
+                          console.error('❌ Failed to refresh usage data:', error);
+                        }
+                      }
+                    }}
+                  >
                     <View style={{
                       width: 36,
                       height: 36,
@@ -786,6 +908,9 @@ Best regards`;
                       <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
                         Back to Life Videos
                       </Text>
+                      <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
+                        Tap to refresh
+                      </Text>
                     </View>
                     <View style={{
                       backgroundColor: !backToLifeUsage.canUse ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.2)',
@@ -801,7 +926,7 @@ Best regards`;
                         {backToLifeUsage.used}/{backToLifeUsage.limit}
                       </Text>
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 )}
 
                 {/* Restore Purchases */}
@@ -842,6 +967,7 @@ Best regards`;
                   </View>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </TouchableOpacity>
+
 
               </View>
             </View>

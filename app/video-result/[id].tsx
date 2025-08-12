@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { permissionsService } from '@/services/permissions';
+import { supabase } from '@/services/supabaseClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Purchases from 'react-native-purchases';
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -23,6 +25,8 @@ import Animated, {
     withSpring,
     withTiming
 } from 'react-native-reanimated';
+import { useCropModalStore } from '@/store/cropModalStore';
+import { useVideoToastStore } from '@/store/videoToastStore';
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -87,23 +91,100 @@ export default function VideoResultScreen() {
     transform: [{ rotate: `${spinnerRotation.value}deg` }],
   }));
   
-  // Load video data from AsyncStorage
+  // Clear toast and modal when user navigates to video page
+  useEffect(() => {
+    // Clear any existing toast/modal states since user is now viewing the video
+    const cropModalStore = useCropModalStore.getState();
+    const videoToastStore = useVideoToastStore.getState();
+    
+    if (cropModalStore.processingStatus === 'completed') {
+      cropModalStore.setProcessingStatus(null);
+      cropModalStore.setCompletedRestorationId(null);
+      cropModalStore.setIsProcessing(false);
+      
+      if (__DEV__) {
+        console.log('🔄 Cleared toast state - user is viewing video');
+      }
+    }
+    
+    // Clear video completion modal overlay
+    if (videoToastStore.showCompletionModal) {
+      videoToastStore.hideModal();
+      
+      if (__DEV__) {
+        console.log('🔄 Cleared video modal overlay - user is viewing video');
+      }
+    }
+  }, []);
+
+  // Load video: try Replicate for real prediction IDs; otherwise fall back to local storage keys
   useEffect(() => {
     const loadVideoData = async () => {
       try {
-        const videoDataJson = await AsyncStorage.getItem(`video_${id}`);
-        if (videoDataJson) {
-          const videoData = JSON.parse(videoDataJson);
-          setVideoUrl(videoData.url);
-          console.log('🎬 Video data loaded:', videoData);
+        const rawId = typeof id === 'string' ? id : String(id);
+        const predictionId = rawId.startsWith('video-') ? rawId.replace('video-', '') : rawId;
+        const isLikelyLocalTimestamp = /^\d{10,}$/.test(predictionId);
+
+        // Try Replicate only if it looks like a real prediction ID (UUID-like with hyphens)
+        if (!isLikelyLocalTimestamp) {
+          console.log('🔍 Loading video from Replicate API:', predictionId);
+          const response = await fetch(`https://api.replicate.com/v1/predictions/${predictionId}`, {
+            headers: {
+              // Newer Replicate docs prefer Bearer; support that here
+              Authorization: `Bearer ${process.env.EXPO_PUBLIC_REPLICATE_API_TOKEN}`,
+            },
+          });
+
+          console.log('🔍 Replicate API response status:', response.status);
+
+          if (response.ok) {
+            const prediction = await response.json();
+            console.log('🔍 Replicate API prediction:', {
+              status: prediction.status,
+              hasOutput: !!prediction.output,
+              created_at: prediction.created_at,
+              completed_at: prediction.completed_at,
+            });
+
+            if (prediction.status === 'succeeded' && prediction.output) {
+              setVideoUrl(prediction.output);
+              console.log('✅ Video loaded from Replicate API:', prediction.output);
+              return;
+            }
+          } else {
+            const errorText = await response.text();
+            console.log('❌ Replicate API error:', response.status, errorText);
+          }
         }
+
+        // Fallback: AsyncStorage for legacy/local IDs and dev flows
+        console.log('🔍 Trying AsyncStorage fallbacks');
+        const tryKeys = [
+          `video_video-${predictionId}`,
+          `video_${predictionId}`,
+          typeof id === 'string' ? `video_${id}` : undefined,
+        ].filter(Boolean) as string[];
+
+        for (const key of tryKeys) {
+          const json = await AsyncStorage.getItem(key);
+          if (json) {
+            const data = JSON.parse(json);
+            if (data?.url) {
+              setVideoUrl(data.url);
+              console.log('🎬 Video data loaded from AsyncStorage:', { key });
+              return;
+            }
+          }
+        }
+
+        console.log('⚠️ No video found via Replicate or local storage');
       } catch (error) {
         console.log('❌ Could not load video data:', error);
       } finally {
         setLoading(false);
       }
     };
-    
+
     if (id) {
       loadVideoData();
     }

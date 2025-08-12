@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, Animated } from 'react-native';
+import { Animated, Image, Text, TouchableOpacity, View } from 'react-native';
+import ReAnimated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
-import ReAnimated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence } from 'react-native-reanimated';
+import { BlurView } from 'expo-blur';
 import { IconSymbol } from './ui/IconSymbol';
 
 interface VideoProcessingToastProps {
@@ -12,8 +13,14 @@ interface VideoProcessingToastProps {
   timeRemaining?: number; // in seconds
   jobType?: 'video' | 'photo';
   status?: 'loading' | 'completed' | 'error';
+  errorMessage?: string | null;
+  mode?: string; // Animation mode like "hug", "group", "fun"
   onPress?: () => void;
   onCancel?: () => void;
+  onViewVideo?: () => void; // "View Video" action
+  onMaybeLater?: () => void; // "Maybe Later" action
+  stackLevel?: number; // z-index stacking for overlay ordering
+  interactable?: boolean; // disable touches when under content
 }
 
 // Psychologically engaging multi-layer loading spinner
@@ -88,31 +95,8 @@ const LoadingSpinner = () => {
     opacity: opacity.value,
   }));
 
-  // Background glow effect
-  const glowStyle = useAnimatedStyle(() => ({
-    opacity: colorIntensity.value * 0.3,
-    transform: [{ scale: 1.2 + (colorIntensity.value * 0.1) }],
-  }));
-
   return (
     <View className="w-6 h-6 items-center justify-center">
-      {/* Background glow layer */}
-      <ReAnimated.View 
-        style={[glowStyle, { position: 'absolute' }]}
-      >
-        <Svg width="24" height="24" viewBox="0 0 24 24">
-          <Circle
-            cx="12"
-            cy="12"
-            r="11"
-            fill="none"
-            stroke="#3B82F6"
-            strokeWidth="1"
-            strokeOpacity="0.2"
-          />
-        </Svg>
-      </ReAnimated.View>
-
       {/* Main animated spinner */}
       <ReAnimated.View style={spinnerStyle}>
         <Svg width="20" height="20" viewBox="0 0 24 24">
@@ -140,8 +124,12 @@ export function VideoProcessingToast({
   timeRemaining = 120, // default 2 minutes
   jobType = 'video',
   status = 'loading',
+  errorMessage = null,
+  mode,
   onPress,
-  onCancel
+  onCancel,
+  stackLevel = 1000,
+  interactable = true
 }: VideoProcessingToastProps) {
   const insets = useSafeAreaInsets();
   const translateY = React.useRef(new Animated.Value(-100)).current;
@@ -187,8 +175,8 @@ export function VideoProcessingToast({
         };
       case 'error':
         return {
-          title: 'Something went wrong',
-          subtitle: 'Tap to try again',
+          title: isVideo ? 'Can’t generate video' : 'Can’t generate photo',
+          subtitle: errorMessage || 'Tap to try again',
           label: isVideo ? 'BACK TO LIFE' : 'PHOTO RESTORE'
         };
     }
@@ -201,81 +189,106 @@ export function VideoProcessingToast({
       className="absolute left-0 right-0"
       style={{ 
         top: insets.top + 60, // Below nav header
+        zIndex: stackLevel,
+        // On Android, zIndex has limited effect without elevation
+        // keep elevation small to avoid drawing above modals
+        elevation: Math.min(stackLevel, 2),
         transform: [{ translateY }],
         paddingHorizontal: 16,
       }}
+      pointerEvents={interactable ? 'auto' : 'none'}
     >
-      <View
-        className={`backdrop-blur rounded-2xl shadow-lg relative ${
-          status === 'completed' 
-            ? 'bg-gray-800/90 border border-blue-500/20 shadow-2xl' 
-            : 'bg-gray-900/95'
-        }`}
-        style={status === 'completed' ? {
-          shadowColor: '#3B82F6',
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.15,
-          shadowRadius: 12,
-        } : undefined}
+      <BlurView
+        intensity={30}
+        tint="dark"
+        className="rounded-3xl overflow-hidden border border-white/20 relative"
+        style={{
+          backgroundColor: status === 'completed' 
+            ? 'rgba(255, 255, 255, 0.18)'
+            : 'rgba(255, 255, 255, 0.12)',
+          shadowColor: '#000',
+          shadowOpacity: 0.4,
+          shadowRadius: 24,
+          shadowOffset: { width: 0, height: 10 }
+        }}
       >
-        {/* Cancel button */}
-        {onCancel && (
+        {/* Glass Cancel button (hidden when completed) */}
+        {onCancel && status !== 'completed' && (
           <TouchableOpacity
             onPress={onCancel}
-            className="absolute top-2 right-2 w-8 h-8 rounded-full items-center justify-center z-10"
+            className="absolute top-3 right-3 w-7 h-7 rounded-full items-center justify-center z-10 border border-white/20"
             activeOpacity={0.7}
+            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+            style={{ backgroundColor: 'rgba(255, 255, 255, 0.15)' }}
           >
-            <IconSymbol name="xmark" size={16} color="#9CA3AF" />
+            <IconSymbol name="xmark" size={14} color="#FFFFFF" />
           </TouchableOpacity>
         )}
         
-        {/* Main content - now wrapped in TouchableOpacity */}
+        {/* Glass Main content */}
         <TouchableOpacity
           onPress={onPress}
-          activeOpacity={0.9}
-          className="p-4 flex-row items-center"
+          activeOpacity={0.8}
+          className="p-5 flex-row items-center"
         >
-        {/* Thumbnail */}
-        {imageUri && (
-          <View className="w-14 h-14 rounded-xl overflow-hidden mr-4">
-            <Image 
-              source={{ uri: imageUri }}
-              className="w-full h-full"
-              resizeMode="cover"
-            />
-          </View>
-        )}
-        
-        {/* Content */}
-        <View className="flex-1">
-          <Text className="text-gray-400 text-xs font-semibold mb-1 tracking-wider">
-            {statusContent.label}
-          </Text>
-          <Text className="text-white font-semibold text-base mb-1">
-            {statusContent.title}
-          </Text>
-          <Text className="text-gray-300 text-sm">
-            {statusContent.subtitle}
-          </Text>
-        </View>
-        
-        {/* Loading indicator - spinning circle */}
-        {status === 'loading' && (
-          <View className="mr-2">
-            <LoadingSpinner />
-          </View>
-        )}
-        
-        {/* Success indicator - arrow icon */}
-        {status === 'completed' && (
-          <View className="ml-3">
-            <View className="w-8 h-8 bg-blue-500/20 rounded-full items-center justify-center border border-blue-500/30">
-              <Text className="text-white text-lg font-semibold">›</Text>
+          {/* Glass Thumbnail */}
+          {imageUri && (
+            <View className="w-16 h-16 rounded-2xl overflow-hidden mr-4 border border-white/30"
+                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}>
+              <Image 
+                source={{ uri: imageUri }}
+                className="w-full h-full"
+                resizeMode="cover"
+              />
             </View>
+          )}
+          
+          {/* Glass Content */}
+          <View className="flex-1">
+            {/* Glass Tags */}
+            <View className="flex-row mb-2 space-x-2">
+              <View className="px-2.5 py-1 rounded-full border border-white/20"
+                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}>
+                <Text className="text-white/80 text-xs font-medium tracking-wide">
+                  {statusContent.label}
+                </Text>
+              </View>
+              {/* Mode tag - only show for videos and when mode exists */}
+              {mode && jobType === 'video' && (
+                <View className="px-2.5 py-1 rounded-full border border-white/20"
+                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}>
+                  <Text className="text-white/80 text-xs font-medium tracking-wide">
+                    {mode.toUpperCase()}
+                  </Text>
+                </View>
+              )}
+            </View>
+            <Text className="text-white text-lg font-bold mb-1">
+              {statusContent.title}
+            </Text>
+            <Text className="text-white/80 text-base">
+              {statusContent.subtitle}
+            </Text>
           </View>
-        )}
+          
+          {/* Glass Loading indicator */}
+          {status === 'loading' && (
+            <View className="ml-4">
+              <LoadingSpinner />
+            </View>
+          )}
+          
+          {/* Glass Success indicator */}
+          {status === 'completed' && (
+            <View className="ml-4">
+              <View className="w-12 h-12 rounded-full items-center justify-center border-2 border-white/40"
+                    style={{ backgroundColor: 'rgba(34, 197, 94, 0.2)' }}>
+                <IconSymbol name="checkmark" size={20} color="#22C55E" />
+              </View>
+            </View>
+          )}
         </TouchableOpacity>
-      </View>
+      </BlurView>
     </Animated.View>
   );
 }

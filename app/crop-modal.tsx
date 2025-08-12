@@ -70,10 +70,18 @@ function CropModalScreen() {
     }
   }, [imageUri, resetForNewImage]);
 
-  // Cleanup store on unmount
+  // Cleanup store on unmount (but preserve video toast state)
   useEffect(() => {
     return () => {
-      reset();
+      // Import videoToastStore dynamically to check if video toast is active
+      import('@/store/videoToastStore').then(module => {
+        const videoToastState = module.useVideoToastStore.getState();
+        if (!videoToastState.isVisible) {
+          reset();
+        } else if (__DEV__) {
+          console.log('🎬 Crop modal unmount: Preserving state due to active video toast');
+        }
+      });
     };
   }, [reset]);
   
@@ -139,7 +147,36 @@ function CropModalScreen() {
       return;
     }
 
-    // Start loading animation only after network check passes
+    // CRITICAL: Check for Pro-only features before processing
+    const proOnlyFeatures = ['outfit', 'background'];
+    const isProOnlyFeature = proOnlyFeatures.includes(functionType as string);
+    
+    if (isProOnlyFeature) {
+      const currentIsPro = useSubscriptionStore.getState().isPro;
+      if (!currentIsPro) {
+        console.log(`🔒 Pro feature "${functionType}" requires subscription`);
+        const success = await presentPaywall();
+        if (!success) {
+          console.log(`🔒 Pro feature "${functionType}" cancelled - no purchase`);
+          return;
+        }
+        
+        // Wait for listener to update subscription state
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const updatedIsPro = useSubscriptionStore.getState().isPro;
+        
+        if (!updatedIsPro) {
+          Alert.alert('Purchase Error', 'Please try again or restore purchases if you already have a subscription.');
+          return;
+        }
+        
+        console.log(`✅ Pro feature "${functionType}" unlocked after purchase`);
+      } else {
+        console.log(`✅ Pro feature "${functionType}" - user already has Pro access`);
+      }
+    }
+
+    // Start loading animation only after network check and Pro validation passes
     setUseImageLoading(true);
     buttonScale.value = withSequence(
       withTiming(0.95, { duration: 100 }),
@@ -275,21 +312,11 @@ function CropModalScreen() {
     );
 
     // Show processing modal immediately (Remini-style) without navigating yet
-    const isVideo = (functionType as string) === 'backtolife';
     const simulateToast = (typeof simulateVideo === 'string') && (simulateVideo === '1' || simulateVideo.toLowerCase() === 'true');
     setIsProcessing(true);
     setCurrentImageUri(imageUri);
-    setProgress(1);
-    setCanCancel(isVideo || simulateToast);
-
-    // Local progress timer until 95%
-    const startTime = Date.now();
-    const estimatedDuration = isVideo ? 120 : 7; // seconds
-    let progressIntervalId: NodeJS.Timeout | null = setInterval(() => {
-      const elapsed = (Date.now() - startTime) / 1000;
-      const pct = Math.min(Math.floor((elapsed / estimatedDuration) * 95), 95);
-      setProgress(pct);
-    }, 1000);
+    setProgress(0); // Start at 0, no fake progress
+    setCanCancel(simulateToast);
 
     // Start photo restoration directly from here
     photoRestoration.mutate(
@@ -301,10 +328,6 @@ function CropModalScreen() {
       },
       {
         onSuccess: (data) => {
-          if (progressIntervalId) {
-            clearInterval(progressIntervalId);
-            progressIntervalId = null;
-          }
           setProgress(100);
           setTimeout(() => setIsProcessing(false), 300);
           setUseImageLoading(false);
@@ -321,10 +344,6 @@ function CropModalScreen() {
           }
         },
         onError: (err) => {
-          if (progressIntervalId) {
-            clearInterval(progressIntervalId);
-            progressIntervalId = null;
-          }
           setUseImageLoading(false);
           setIsProcessing(false);
           setButtonText('Use Image');

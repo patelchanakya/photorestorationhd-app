@@ -11,13 +11,16 @@ import InitialLoadingScreen from '@/components/InitialLoadingScreen';
 import { JobProvider } from '@/contexts/JobContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { LanguageProvider } from '@/i18n';
+import { useSubscriptionStore } from '@/store/subscriptionStore';
 import NetInfo from '@react-native-community/netinfo';
 import { QueryClient, QueryClientProvider, focusManager, onlineManager } from '@tanstack/react-query';
 import { Image as ExpoImage } from 'expo-image';
 import React, { useEffect } from 'react';
 import { AppState, AppStateStatus, LogBox, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Purchases, { CustomerInfo } from 'react-native-purchases';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import Constants from 'expo-constants';
 
 // Configure LogBox for production
 if (!__DEV__) {
@@ -161,6 +164,97 @@ export default function RootLayout() {
 }
 
 function MainNavigator() {
+  const { setIsPro, setExpirationDate } = useSubscriptionStore();
+
+  // Set up RevenueCat customer info listener for real-time subscription updates
+  useEffect(() => {
+    const isExpoGo = Constants.appOwnership === 'expo';
+    
+    if (isExpoGo) {
+      if (__DEV__) {
+        console.log('⚠️ Skipping RevenueCat listener setup in Expo Go');
+      }
+      return;
+    }
+
+    let listenerRemover: (() => void) | null = null;
+
+    const setupListener = async () => {
+      try {
+        // Check if RevenueCat is configured before setting up listener
+        const isConfigured = await Purchases.isConfigured();
+        
+        if (!isConfigured) {
+          if (__DEV__) {
+            console.log('🔄 RevenueCat not yet configured, listener will be set up after initialization');
+          }
+          return;
+        }
+
+        if (__DEV__) {
+          console.log('🎧 Setting up RevenueCat customer info listener');
+        }
+
+        listenerRemover = Purchases.addCustomerInfoUpdateListener((customerInfo: CustomerInfo) => {
+          if (__DEV__) {
+            console.log('🔄 Customer info updated via listener:', {
+              activeEntitlements: Object.keys(customerInfo.entitlements.active),
+              allEntitlements: Object.keys(customerInfo.entitlements.all)
+            });
+          }
+
+          // Use the same validation logic as checkSubscriptionStatus
+          const entitlementsAny: any = (customerInfo as any)?.entitlements ?? {};
+          const proEntitlement = entitlementsAny.active?.['pro'] ?? entitlementsAny.all?.['pro'];
+          
+          // Import isEntitlementTrulyActive function inline to avoid circular dependency
+          const isEntitlementActive = (entitlement: any): boolean => {
+            if (!entitlement?.isActive) {
+              return false;
+            }
+            if (entitlement?.expirationDate) {
+              const expiration = new Date(entitlement.expirationDate);
+              const now = new Date();
+              const bufferMs = 5 * 60 * 1000; // 5 minute buffer
+              return expiration.getTime() > (now.getTime() - bufferMs);
+            }
+            return entitlement.isActive === true;
+          };
+
+          const hasProEntitlement = isEntitlementActive(proEntitlement);
+
+          // Update subscription store
+          setIsPro(hasProEntitlement);
+          setExpirationDate(proEntitlement?.expirationDate ?? null);
+
+          if (__DEV__) {
+            console.log('🔄 Listener updated subscription status:', hasProEntitlement);
+          }
+        });
+
+        if (__DEV__) {
+          console.log('✅ RevenueCat customer info listener set up successfully');
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.error('❌ Failed to set up RevenueCat listener:', error);
+        }
+      }
+    };
+
+    // Set up listener immediately if RevenueCat is ready, otherwise wait
+    setupListener();
+
+    return () => {
+      if (listenerRemover) {
+        listenerRemover();
+        if (__DEV__) {
+          console.log('🎧 RevenueCat customer info listener removed');
+        }
+      }
+    };
+  }, [setIsPro, setExpirationDate]);
+
   return (
     <Stack initialRouteName="explore">
       <Stack.Screen name="explore" options={{ headerShown: false }} />

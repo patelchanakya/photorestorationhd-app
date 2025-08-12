@@ -1,14 +1,13 @@
 import { presentPaywall } from '@/services/revenuecat';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { useFocusEffect } from '@react-navigation/native';
-import { FlashList } from '@shopify/flash-list';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import React from 'react';
-import { AppState, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { AppState, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 interface OutfitItem {
@@ -24,10 +23,10 @@ interface OutfitItem {
 const DEFAULT_OUTFITS: OutfitItem[] = [
   { 
     id: 'outfit-1', 
-    title: 'Casual Day', 
+    title: 'Fix Clothes', 
     type: 'video', 
-    video: require('../assets/videos/magic/outfits/thumbnail/casual-day/outfit-0.mp4'), 
-    outfitPrompt: "Change the subject's clothing to casual, comfortable wear such as a t-shirt and jeans or a relaxed summer outfit. Keep the subject's face, hairstyle, pose, lighting, and background unchanged. Ensure the clothing appears soft, naturally worn, and fits realistically with natural fabric folds and textures." 
+    video: require('../assets/videos/magic/outfits/thumbnail/fix-clothes/niceclothes.mp4'), 
+    outfitPrompt: "Clean ALL clothing completely. Remove ALL stains and dirt from shirt, pants, dress, everything. Keep same colors. Keep same style. Only clean, nothing else changes." 
   },
   { 
     id: 'outfit-2', 
@@ -38,10 +37,10 @@ const DEFAULT_OUTFITS: OutfitItem[] = [
   },
   { 
     id: 'outfit-3', 
-    title: 'Fix Clothes', 
+    title: 'Job Interview', 
     type: 'video', 
-    video: require('../assets/videos/magic/outfits/thumbnail/fix-clothes/niceclothes.mp4'), 
-    outfitPrompt: "Clean ALL clothing completely. Remove ALL stains and dirt from shirt, pants, dress, everything. Keep same colors. Keep same style. Only clean, nothing else changes." 
+    video: require('../assets/videos/magic/outfits/thumbnail/job-interview/jobinterview.mp4'), 
+    outfitPrompt: "Replace the subject's clothing with smart business casual attire suitable for a job interview: a nice blazer with dark jeans or smart trousers, or a professional dress that's approachable and friendly. Use neutral, professional colors that look confident but not intimidating. Keep the subject's face, hairstyle, pose, lighting, and background unchanged. Ensure clothing appears realistic with natural fabric folds and texture." 
   },
   { 
     id: 'outfit-4', 
@@ -59,10 +58,10 @@ const DEFAULT_OUTFITS: OutfitItem[] = [
   },
   { 
     id: 'outfit-6', 
-    title: 'Job Interview', 
+    title: 'Casual Day', 
     type: 'video', 
-    video: require('../assets/videos/magic/outfits/thumbnail/job-interview/jobinterview.mp4'), 
-    outfitPrompt: "Replace the subject's clothing with smart business casual attire suitable for a job interview: a nice blazer with dark jeans or smart trousers, or a professional dress that's approachable and friendly. Use neutral, professional colors that look confident but not intimidating. Keep the subject's face, hairstyle, pose, lighting, and background unchanged. Ensure clothing appears realistic with natural fabric folds and texture." 
+    video: require('../assets/videos/magic/outfits/thumbnail/casual-day/outfit-0.mp4'), 
+    outfitPrompt: "Change the subject's clothing to casual, comfortable wear such as a t-shirt and jeans or a relaxed summer outfit. Keep the subject's face, hairstyle, pose, lighting, and background unchanged. Ensure the clothing appears soft, naturally worn, and fits realistically with natural fabric folds and textures." 
   }
 ];
 
@@ -90,19 +89,26 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
 
   React.useEffect(() => {
     if (!player) return;
-    const baseDelay = videoIndex * 250;
-    const randomOffset = Math.random() * 300;
+    
+    // Stagger start times more dramatically for visual comfort
+    const baseDelay = videoIndex * 250; // 250ms between each video
+    const randomOffset = Math.random() * 300; // 0-300ms random variation
     const totalDelay = baseDelay + randomOffset;
+    
     const playTimer = setTimeout(() => {
+      // Seek to different starting points to break up synchronization
       try {
         player.currentTime = initialSeek;
-      } catch {}
-      try {
-        if (!player.playing) {
-          player.play();
-        }
-      } catch {}
+      } catch (e) {
+        // Ignore seek errors on initial load
+      }
+      
+      // Start playing with the varied playback rate
+      if (!player.playing) {
+        player.play();
+      }
     }, totalDelay);
+    
     return () => clearTimeout(playTimer);
   }, [player, videoIndex, initialSeek]);
 
@@ -111,13 +117,12 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
     const handleAppStateChange = (nextAppState: string) => {
       if (nextAppState === 'active') {
         // Resume video playback when app returns to foreground
-        try {
-          if (player && !player.playing) {
-            setTimeout(() => {
-              try { player.play(); } catch {}
-            }, 100 + videoIndex * 50);
-          }
-        } catch {}
+        if (player && !player.playing) {
+          // Small delay to let the app settle
+          setTimeout(() => {
+            player.play();
+          }, 100 + videoIndex * 50);
+        }
       }
     };
 
@@ -129,13 +134,11 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
   useFocusEffect(
     React.useCallback(() => {
       // Resume playback when screen comes into focus
-      try {
-        if (player && !player.playing) {
-          setTimeout(() => {
-            try { player.play(); } catch {}
-          }, 100 + videoIndex * 50);
-        }
-      } catch {}
+      if (player && !player.playing) {
+        setTimeout(() => {
+          player.play();
+        }, 100 + videoIndex * 50);
+      }
       
       return () => {
         // Optional: pause when leaving screen
@@ -163,10 +166,6 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
 export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: OutfitItem[] }) {
   const router = useRouter();
   const isPro = useSubscriptionStore((state) => state.isPro);
-  const { width: screenWidth } = useWindowDimensions();
-  const spacing = 10;
-  const tileWidth = Math.round(Math.min(140, Math.max(110, screenWidth * 0.3)));
-  const [visibleSet, setVisibleSet] = React.useState<Set<number>>(new Set());
 
   const handleOutfitSelect = async (outfit: OutfitItem) => {
     // Check current PRO status
@@ -211,110 +210,98 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
     }
   };
 
-  const renderItem = React.useCallback(({ item, index }: { item: OutfitItem; index: number }) => {
-    const isVisible = visibleSet.has(index);
-    return (
-      <Animated.View
-        entering={FadeIn.delay(index * 40).duration(250)}
-        style={{ width: tileWidth, marginRight: index === outfits.length - 1 ? 0 : spacing }}
-      >
-        <TouchableOpacity
-          activeOpacity={0.9}
-          onPress={() => handleOutfitSelect(item)}
-          style={{ 
-            width: tileWidth, 
-            aspectRatio: 9/16, 
-            borderRadius: 16, 
-            overflow: 'hidden', 
-            borderWidth: 1, 
-            borderColor: 'rgba(255,255,255,0.08)', 
-            backgroundColor: '#0b0b0f' 
-          }}
-        >
-          {item.type === 'video' && item.video ? (
-            isVisible ? (
-              <VideoViewWithPlayer video={item.video} index={index} />
-            ) : (
-              <View style={{ width: '100%', height: '100%', backgroundColor: '#0b0b0f' }} />
-            )
-          ) : (
-            <ExpoImage 
-              source={item.image} 
-              style={{ width: '100%', height: '100%' }} 
-              contentFit="cover" 
-              transition={0} 
-            />
-          )}
-
-          <LinearGradient
-            colors={["transparent", "rgba(0,0,0,0.3)", "rgba(0,0,0,0.85)"]}
-            start={{ x: 0.5, y: 0.3 }}
-            end={{ x: 0.5, y: 1 }}
-            style={{ position: 'absolute', inset: 0 as any }}
-          />
-
-          <View style={{ position: 'absolute', left: 10, bottom: 10 }}>
-            {!isPro && (
-              <View style={{ 
-                backgroundColor: 'rgba(0,0,0,0.7)',
-                borderRadius: 10,
-                paddingHorizontal: 6,
-                paddingVertical: 3,
-                borderWidth: 0.5,
-                borderColor: 'rgba(249,115,22,0.5)',
-                alignSelf: 'flex-start',
-                marginBottom: 4
-              }}>
-                <Text style={{ color: '#f97316', fontSize: 9, fontWeight: '600', letterSpacing: 0.3 }}>PRO</Text>
-              </View>
-            )}
-            <Text style={{ 
-              color: '#FFFFFF', 
-              fontWeight: '600', 
-              fontSize: 14, 
-              textShadowColor: 'rgba(0,0,0,0.8)', 
-              textShadowOffset: { width: 0, height: 1 }, 
-              textShadowRadius: 3 
-            }}>
-              {item.title}
-            </Text>
-          </View>
-        </TouchableOpacity>
-      </Animated.View>
-    );
-  }, [visibleSet, tileWidth, spacing, outfits.length, isPro]);
-
-  const onViewableItemsChanged = React.useRef(({ viewableItems }: { viewableItems: Array<{ index: number | null }> }) => {
-    const next = new Set<number>();
-    for (const v of viewableItems) {
-      if (typeof v.index === 'number') next.add(v.index);
-    }
-    setVisibleSet(next);
-  }).current;
-
-  const viewabilityConfig = React.useRef({ itemVisiblePercentThreshold: 30, minimumViewTime: 0 }).current;
-
   return (
     <View style={{ marginTop: 16, marginBottom: 8, position: 'relative' }}>
-      <FlashList
-        horizontal
-        data={outfits}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+      <ScrollView 
+        horizontal 
         showsHorizontalScrollIndicator={false}
-        estimatedItemSize={tileWidth + spacing}
         contentContainerStyle={{ paddingHorizontal: 16 }}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
-        extraData={visibleSet}
-        ItemSeparatorComponent={() => <View style={{ width: spacing }} />}
-      />
-
+      >
+        {outfits.map((item, index) => (
+          <Animated.View
+            key={item.id}
+            entering={FadeIn.delay(index * 100).duration(800)}
+            style={{ width: 120, marginRight: index === outfits.length - 1 ? 0 : 10 }}
+          >
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() => handleOutfitSelect(item)}
+              style={{ 
+                width: 120, 
+                aspectRatio: 9/16, 
+                borderRadius: 16, 
+                overflow: 'hidden', 
+                borderWidth: 1, 
+                borderColor: 'rgba(255,255,255,0.08)', 
+                backgroundColor: '#0b0b0f' 
+              }}
+            >
+              {/* Render video or image based on type */}
+              {item.type === 'video' && item.video ? (
+                <VideoViewWithPlayer video={item.video} index={index} />
+              ) : (
+                <ExpoImage 
+                  source={item.image} 
+                  style={{ width: '100%', height: '100%' }} 
+                  contentFit="cover" 
+                  transition={0} 
+                />
+              )}
+              
+              {/* Gradient overlay */}
+              <LinearGradient
+                colors={["transparent", "rgba(0,0,0,0.3)", "rgba(0,0,0,0.85)"]}
+                start={{ x: 0.5, y: 0.3 }}
+                end={{ x: 0.5, y: 1 }}
+                style={{ position: 'absolute', inset: 0 as any }}
+              />
+              
+              {/* Bottom label with PRO badge */}
+              <View style={{ position: 'absolute', left: 10, bottom: 10 }}>
+                {/* PRO badge for non-pro users - positioned above title */}
+                {!isPro && (
+                  <View style={{ 
+                    backgroundColor: 'rgba(0,0,0,0.7)',
+                    borderRadius: 10,
+                    paddingHorizontal: 6,
+                    paddingVertical: 3,
+                    borderWidth: 0.5,
+                    borderColor: 'rgba(249,115,22,0.5)',
+                    alignSelf: 'flex-start',
+                    marginBottom: 4
+                  }}>
+                    <Text style={{ color: '#f97316', fontSize: 9, fontWeight: '600', letterSpacing: 0.3 }}>PRO</Text>
+                  </View>
+                )}
+                <Text style={{ 
+                  color: '#FFFFFF', 
+                  fontWeight: '600', 
+                  fontSize: 14, 
+                  textShadowColor: 'rgba(0,0,0,0.8)', 
+                  textShadowOffset: { width: 0, height: 1 }, 
+                  textShadowRadius: 3 
+                }}>
+                  {item.title}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </Animated.View>
+        ))}
+      </ScrollView>
+      
+      {/* Right edge gradient */}
       <LinearGradient
         colors={['transparent', '#0B0B0F']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
-        style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 30, pointerEvents: 'none' }}
+        style={{ 
+          position: 'absolute', 
+          right: 0, 
+          top: 0, 
+          bottom: 0, 
+          width: 30, 
+          pointerEvents: 'none' 
+        }}
       />
     </View>
   );

@@ -109,9 +109,28 @@ class PhotoStorage {
       const destination = `${this.basePath}videos/${fileName}`;
       
       if (__DEV__) {
-        console.log(`⬇️ Downloading video from: ${url}`);
+        console.log(`⬇️ Processing video from: ${url}`);
       }
-      const result = await FileSystem.downloadAsync(url, destination);
+      
+      let result;
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        // Remote URL - download
+        if (__DEV__) {
+          console.log('📥 Downloading from remote URL');
+        }
+        result = await FileSystem.downloadAsync(url, destination);
+      } else {
+        // Local file - copy
+        if (__DEV__) {
+          console.log('📂 Copying local file');
+        }
+        await FileSystem.copyAsync({
+          from: url,
+          to: destination
+        });
+        // Create a mock result for consistency
+        result = { status: 200, uri: destination };
+      }
       
       if (result.status === 200) {
         if (__DEV__) {
@@ -119,7 +138,7 @@ class PhotoStorage {
         }
         return fileName;
       } else {
-        throw new Error(`Video download failed with status: ${result.status}`);
+        throw new Error(`Video processing failed with status: ${result.status}`);
       }
     } catch (error) {
       if (__DEV__) {
