@@ -3,13 +3,18 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import Replicate from 'replicate';
 import { getModelConfig, type FunctionType } from './modelConfigs';
 
+// NOTE: For photo restoration only - video generation uses secure server-side API
+// The EXPO_PUBLIC_REPLICATE_API_TOKEN is still needed for photo restoration
+// but should eventually be moved server-side for complete security
+
 // Validate API token
 const apiToken = process.env.EXPO_PUBLIC_REPLICATE_API_TOKEN;
 if (!apiToken) {
   console.error('EXPO_PUBLIC_REPLICATE_API_TOKEN is not set in environment variables');
 } else {
   if (__DEV__) {
-    console.log('✅ Replicate API token loaded successfully');
+    console.log('✅ Replicate API token loaded for photo restoration');
+    console.log('ℹ️  Note: Video generation uses secure server-side API');
   }
 }
 

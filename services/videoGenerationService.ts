@@ -6,19 +6,24 @@ import Replicate from 'replicate';
 import { photoStorage } from './storage';
 import { supabase } from './supabaseClient';
 
-// Validate API token
+// NOTE: This service is deprecated in favor of secure server-side API
+// The EXPO_PUBLIC_REPLICATE_API_TOKEN is no longer used for security
+// All video generation now goes through secure server endpoints
+
+// Validate API token (kept for legacy compatibility)
 const apiToken = process.env.EXPO_PUBLIC_REPLICATE_API_TOKEN;
 if (!apiToken) {
-  console.error('EXPO_PUBLIC_REPLICATE_API_TOKEN is not set in environment variables');
+  console.warn('EXPO_PUBLIC_REPLICATE_API_TOKEN is not set - using secure server-side API instead');
 } else {
   if (__DEV__) {
-    console.log('✅ Replicate API token loaded for video generation');
+    console.warn('⚠️  EXPO_PUBLIC_REPLICATE_API_TOKEN found but should be removed for security');
+    console.warn('⚠️  This service is deprecated - use videoApiService.ts instead');
   }
 }
 
-const replicate = new Replicate({
+const replicate = apiToken ? new Replicate({
   auth: apiToken,
-});
+}) : null;
 
 // Animation-specific prompts optimized for Kling v2.1
 const ANIMATION_PROMPTS = {
@@ -250,15 +255,14 @@ export async function generateVideo(
   animationPrompt: string,
   options: VideoGenerationOptions = {}
 ): Promise<string> {
-  // DANGER: This should NOT be called if mock mode is enabled
+  // DANGER: This service is deprecated and should not be used
   if (__DEV__) {
-    console.log('⚡ ===============================================');
-    console.log('⚡ REAL KLING API CALLED - THIS COSTS MONEY!');
-    console.log('⚡ ===============================================');
-    console.log('💰 WARNING: Real API call will be charged');
-    console.log('🎬 Image:', imageUri.substring(0, 50) + '...');
-    console.log('🎬 Prompt:', animationPrompt);
-    console.log('⚡ ===============================================');
+    console.log('⚠️  ===============================================');
+    console.log('⚠️  DEPRECATED SERVICE CALLED - USE SERVER API!');
+    console.log('⚠️  ===============================================');
+    console.log('⚠️  This service exposes API tokens to clients');
+    console.log('⚠️  Use videoApiService.ts for secure server-side calls');
+    console.log('⚠️  ===============================================');
   }
   // Create a unique key for this request to prevent duplicates
   const requestKey = `${imageUri}_${animationPrompt}`;
@@ -293,8 +297,8 @@ export async function generateVideo(
 
   try {
     // Check if API token is available
-    if (!apiToken) {
-      throw new Error('Replicate API token is not configured. Please check your environment variables.');
+    if (!apiToken || !replicate) {
+      throw new Error('This service is deprecated. Please use the secure server-side API instead (videoApiService.ts).');
     }
 
     // Test network connection

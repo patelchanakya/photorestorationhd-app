@@ -38,18 +38,6 @@ function PlayerView({ url }: { url: string }) {
     p.play();
   });
 
-  useEffect(() => {
-    if (!__DEV__) return;
-    const checkPlayerStatus = () => {
-      if (player) {
-        // Dev-only lightweight status check
-        // Avoid logging large objects frequently in production
-        console.log('🎬 Player status:', player.status, Math.round(player.currentTime));
-      }
-    };
-    const interval = setInterval(checkPlayerStatus, 4000);
-    return () => clearInterval(interval);
-  }, [player]);
 
   return (
     <VideoView
@@ -102,18 +90,12 @@ export default function VideoResultScreen() {
       cropModalStore.setCompletedRestorationId(null);
       cropModalStore.setIsProcessing(false);
       
-      if (__DEV__) {
-        console.log('🔄 Cleared toast state - user is viewing video');
-      }
     }
     
     // Clear video completion modal overlay
     if (videoToastStore.showCompletionModal) {
       videoToastStore.hideModal();
       
-      if (__DEV__) {
-        console.log('🔄 Cleared video modal overlay - user is viewing video');
-      }
     }
   }, []);
 
@@ -125,35 +107,25 @@ export default function VideoResultScreen() {
         const predictionId = rawId.startsWith('video-') ? rawId.replace('video-', '') : rawId;
         const isLikelyLocalTimestamp = /^\d{10,}$/.test(predictionId);
 
-        // Try Replicate only if it looks like a real prediction ID (UUID-like with hyphens)
+        // Try server API only if it looks like a real prediction ID (UUID-like with hyphens)
         if (!isLikelyLocalTimestamp) {
-          console.log('🔍 Loading video from Replicate API:', predictionId);
-          const response = await fetch(`https://api.replicate.com/v1/predictions/${predictionId}`, {
-            headers: {
-              // Newer Replicate docs prefer Bearer; support that here
-              Authorization: `Bearer ${process.env.EXPO_PUBLIC_REPLICATE_API_TOKEN}`,
-            },
-          });
-
-          console.log('🔍 Replicate API response status:', response.status);
-
-          if (response.ok) {
-            const prediction = await response.json();
-            console.log('🔍 Replicate API prediction:', {
-              status: prediction.status,
-              hasOutput: !!prediction.output,
-              created_at: prediction.created_at,
-              completed_at: prediction.completed_at,
-            });
-
-            if (prediction.status === 'succeeded' && prediction.output) {
-              setVideoUrl(prediction.output);
-              console.log('✅ Video loaded from Replicate API:', prediction.output);
+          
+          // Use the new secure server-side API
+          try {
+            const { getVideoStatus } = await import('@/services/videoApiService');
+            const videoStatus = await getVideoStatus(predictionId);
+            
+            if (videoStatus.videoUrl) {
+              setVideoUrl(videoStatus.videoUrl);
+              setLoading(false);
               return;
+            } else {
+              throw new Error('Video URL not available from server');
             }
-          } else {
-            const errorText = await response.text();
-            console.log('❌ Replicate API error:', response.status, errorText);
+          } catch (serverError) {
+            console.error('❌ Server API failed:', serverError);
+            // No direct API fallback - security best practice
+            throw new Error('Video not available from server');
           }
         }
 
@@ -177,7 +149,6 @@ export default function VideoResultScreen() {
           }
         }
 
-        console.log('⚠️ No video found via Replicate or local storage');
       } catch (error) {
         console.log('❌ Could not load video data:', error);
       } finally {
@@ -205,7 +176,6 @@ export default function VideoResultScreen() {
     try {
       const cachedInfo = await FileSystem.getInfoAsync(cachedUri);
       if (cachedInfo.exists && cachedInfo.size && cachedInfo.size > 1000) {
-        console.log('✅ Using cached video file:', cachedUri);
         return cachedUri;
       }
     } catch {
@@ -213,7 +183,6 @@ export default function VideoResultScreen() {
     }
     
     try {
-      console.log('⬇️ Downloading video for sharing/saving:', videoUrl);
       
       // Download with progress tracking
       const downloadResult = await FileSystem.downloadAsync(videoUrl, cachedUri);
@@ -224,18 +193,17 @@ export default function VideoResultScreen() {
         throw new Error('Downloaded video file is corrupted or empty');
       }
       
-      console.log('✅ Video downloaded successfully:', Math.round(downloadedInfo.size / 1024), 'KB');
       return downloadResult.uri;
       
     } catch (error) {
-      console.log('❌ Could not download video:', error);
       
       // Clean up failed download
       try {
         await FileSystem.deleteAsync(cachedUri, { idempotent: true });
       } catch {}
       
-      if (error instanceof Error && error.message.includes('Network')) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (errorMessage.includes('Network')) {
         throw new Error('Network error while downloading video. Please check your internet connection and try again.');
       }
       
@@ -255,9 +223,6 @@ export default function VideoResultScreen() {
         return;
       }
 
-      if (__DEV__) {
-        console.log('🎬 Preparing video for sharing...');
-      }
 
       const videoUri = await getVideoUri();
       
@@ -266,16 +231,14 @@ export default function VideoResultScreen() {
         dialogTitle: 'Share Video',
       });
 
-      if (__DEV__) {
-        console.log('✅ Video shared successfully');
-      }
       
       // Clean up the temporary file
       await FileSystem.deleteAsync(videoUri, { idempotent: true });
       
     } catch (error) {
       console.error('❌ Failed to share video:', error);
-      const message = error.message.includes('not accessible') 
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const message = errorMessage.includes('not accessible') 
         ? 'Video sharing is not yet available. This feature will work with actual generated videos.'
         : 'Could not share video. Please try again.';
       
@@ -313,9 +276,6 @@ export default function VideoResultScreen() {
     );
     
     try {
-      if (__DEV__) {
-        console.log('🎬 Preparing video for save to photos...');
-      }
       
       const videoUri = await getVideoUri();
 
@@ -337,13 +297,11 @@ export default function VideoResultScreen() {
         [{ text: 'OK' }]
       );
       
-      if (__DEV__) {
-        console.log('✅ Video saved to photos:', asset);
-      }
     } catch (error) {
       console.error('❌ Failed to save video:', error);
       
-      const message = error.message.includes('not accessible') 
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const message = errorMessage.includes('not accessible') 
         ? 'Video saving is not yet available. This feature will work with actual generated videos.'
         : 'Could not save video to Photos. Please try again.';
       

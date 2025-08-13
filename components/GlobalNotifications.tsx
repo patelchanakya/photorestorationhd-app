@@ -310,9 +310,9 @@ export function GlobalNotifications() {
         />
       )}
 
-      {/* Always render photo processing modal when photo is processing, regardless of any video toast */}
+      {/* Only show photo processing modal when processing photos (not videos) */}
       <PhotoProcessingModal
-        visible={isProcessing}
+        visible={isProcessing && !isVideoProcessing}
         imageUri={currentImageUri}
         progress={progress}
         canCancel={canCancel}

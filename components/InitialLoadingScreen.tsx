@@ -407,31 +407,12 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
 
   const checkAndRecoverVideos = async () => {
     try {
-      // First check for any persistent pending videos from storage
-      await useVideoToastStore.getState().checkForPendingVideo();
-      
-      // Then check for newly completed videos from database
-      const completedVideos = await checkForCompletedVideos();
-      
-      if (completedVideos.length > 0) {
-        if (__DEV__) {
-          console.log(`🎬 Found ${completedVideos.length} completed video(s) to recover`);
-        }
-        
-        // Show modal for the first completed video if no pending modal is already visible
-        const currentToastState = useVideoToastStore.getState();
-        if (!currentToastState.showCompletionModal) {
-          const firstVideo = completedVideos[0];
-          await useVideoToastStore.getState().showVideoReady({
-            id: firstVideo.prediction_id,
-            localPath: firstVideo.local_video_path,
-            imageUri: firstVideo.image_uri,
-            message: completedVideos.length > 1 
-              ? `${completedVideos.length} videos are ready! 🎬` 
-              : 'Your video is ready! 🎬'
-          });
-        }
+      if (__DEV__) {
+        console.log('🎬 Starting comprehensive video recovery...');
       }
+      
+      // Use the enhanced recovery function that handles ALL video states
+      await useVideoToastStore.getState().checkForPendingVideo();
       
       if (__DEV__) {
         console.log('✅ Video recovery check completed');
@@ -440,6 +421,7 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
       if (__DEV__) {
         console.error('❌ Failed to check for completed videos:', error);
       }
+      // Don't throw - initialization should continue even if video recovery fails
     }
   };
 

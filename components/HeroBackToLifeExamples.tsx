@@ -168,7 +168,7 @@ const VideoViewWithPlayer = ({ video, index, style, isVisible, resumeTick = 0 }:
   );
 };
 
-const pickVideoWithHook = (backToLife: any, onBeforePicker?: () => void, onAfterPicker?: () => void) => async (isPro: boolean, animationPrompt?: string) => {
+const pickVideoWithHook = (backToLife: any, onBeforePicker?: () => void, onAfterPicker?: () => void) => async (isPro: boolean, animationPrompt?: string, modeTitle?: string) => {
   console.log('🎬 Back to Life: Starting Pro-gated flow');
   
   try {
@@ -231,7 +231,7 @@ const pickVideoWithHook = (backToLife: any, onBeforePicker?: () => void, onAfter
       setProgress(1);
       setCanCancel(true);
       // Map example title to a compact mode tag for UI (Hug, Group, Fun, Love, Dance, Smile)
-      setVideoModeTag(item.title || null);
+      setVideoModeTag(modeTitle || null);
       setProcessingStatus('loading');
       setCompletedRestorationId(null);
       
@@ -459,7 +459,7 @@ Thanks!`;
           pressScale.value = withTiming(1, { duration: 140 });
           glowOpacity.value = withTiming(0.5, { duration: 200 });
         }}
-        onPress={isVideoProcessing ? undefined : () => pickVideoWithHook(backToLife, onBeforePicker, onAfterPicker)(isPro, item.animationPrompt)}
+        onPress={isVideoProcessing ? undefined : () => pickVideoWithHook(backToLife, onBeforePicker, onAfterPicker)(isPro, item.animationPrompt, item.title)}
         disabled={isVideoProcessing}
         style={{ 
           width: tileWidth, 

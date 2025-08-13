@@ -18,9 +18,6 @@ export function useBackToLife() {
       // STEP 1: Check if video is already processing (prevent simultaneous video generations)
       const { isVideoProcessing } = useCropModalStore.getState();
       if (isVideoProcessing) {
-        if (__DEV__) {
-          console.log(`🚫 [${new Date().toISOString()}] Duplicate video generation blocked - video already processing`);
-        }
         setErrorMessage('Video is already processing. Please wait for it to complete.');
         // Small delay to let UI update before throwing
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -31,9 +28,6 @@ export function useBackToLife() {
       setIsProcessing(true);
       setIsVideoProcessing(true);
       
-      if (__DEV__) {
-        console.log(`🔒 [${new Date().toISOString()}] Processing state locked - preventing duplicate video generation`);
-      }
       
       try {
         // STEP 2: Check usage limits BEFORE attempting atomic increment
@@ -74,51 +68,74 @@ export function useBackToLife() {
         throw error;
       }
 
-      if (__DEV__) {
-        console.log('🔒 Usage pre-incremented successfully - proceeding with generation');
-        console.log('🎬 Starting Back to Life video generation');
-        console.log('📸 Image:', imageUri.substring(0, 50) + '...');
-        console.log('🎭 Prompt:', animationPrompt);
-      }
 
       try {
-        // STEP 2: Generate video with Kling API (1-2 minutes)
-        const videoUrl = await generateVideo(imageUri, animationPrompt, {
+        // Import the new server-side API service
+        const { startVideoGeneration, pollVideoGeneration } = await import('../services/videoApiService');
+        
+        // STEP 2: Start video generation on server
+        const startResponse = await startVideoGeneration(imageUri, animationPrompt, {
           mode: 'standard',
           duration: 5,
           negativePrompt: 'blurry, distorted, low quality, static, frozen'
         });
 
-        // STEP 3: Video generation succeeded - keep the pre-increment
-        if (__DEV__) {
-          console.log('✅ Video generation successful - usage increment kept');
+        // IMMEDIATELY save pending video state for recovery
+        const { videoModeTag } = useCropModalStore.getState();
+        const pendingVideoData = {
+          predictionId: startResponse.predictionId,
+          localPath: null, // Will be set when completed
+          imageUri: imageUri,
+          message: 'Your video is ready! 🎬',
+          modeTag: videoModeTag || 'Life',
+          timestamp: Date.now(),
+          status: 'processing'
+        };
+        
+        try {
+          await AsyncStorage.setItem('pending_video_toast', JSON.stringify(pendingVideoData));
+          console.log('🔒 Pending video state saved for recovery:', startResponse.predictionId);
+        } catch (storageError) {
+          console.error('⚠️ Failed to save pending video state:', storageError);
+          // Continue anyway - don't fail generation for storage issues
         }
+
+
+        // STEP 3: Poll for completion with the real prediction ID
+        const videoUrl = await pollVideoGeneration(startResponse.predictionId, (status) => {
+        });
+
+        // STEP 4: Video generation succeeded - keep the pre-increment
 
         // Validate video URL before storing
         if (!videoUrl || typeof videoUrl !== 'string') {
-          throw new Error('Invalid video URL received from API');
+          throw new Error('Invalid video URL received from server');
         }
 
         try {
           new URL(videoUrl); // Validate URL format
         } catch {
-          throw new Error('Malformed video URL received from API');
+          throw new Error('Malformed video URL received from server');
         }
 
-        // Create video ID and store in AsyncStorage
-        const videoId = `video-${Date.now()}`;
+        // Use the real prediction ID for consistent tracking
+        const videoId = `video-${startResponse.predictionId}`;
         const videoData = {
           id: videoId,
+          predictionId: startResponse.predictionId, // Store the real prediction ID
           url: videoUrl,
           originalImage: imageUri,
           prompt: animationPrompt,
           created_at: new Date().toISOString(),
           status: 'completed',
-          service: 'kling-v2.1'
+          service: 'secure-server-api'
         };
 
         try {
           await AsyncStorage.setItem(`video_${videoId}`, JSON.stringify(videoData));
+          
+          // Also store the prediction ID mapping for easier lookup
+          await AsyncStorage.setItem(`prediction_${startResponse.predictionId}`, videoId);
           
           // Verify storage worked
           const stored = await AsyncStorage.getItem(`video_${videoId}`);
@@ -126,10 +143,6 @@ export function useBackToLife() {
             throw new Error('Failed to store video data');
           }
 
-          if (__DEV__) {
-            console.log('✅ Back to Life video completed and stored:', videoId);
-            console.log('📦 Stored data size:', stored.length, 'characters');
-          }
         } catch (error) {
           if (__DEV__) {
             console.error('❌ Failed to store video data:', error);
@@ -137,17 +150,11 @@ export function useBackToLife() {
           throw new Error('Failed to save video data locally');
         }
 
-        return { id: videoId, url: videoUrl };
+        return { id: videoId, url: videoUrl, predictionId: startResponse.predictionId };
       } catch (error) {
         // STEP 4: Video generation failed - rollback the pre-increment
-        if (__DEV__) {
-          console.log('❌ Video generation failed - rolling back usage increment');
-        }
         
         const rollbackSuccess = await backToLifeService.rollbackUsage();
-        if (__DEV__) {
-          console.log(rollbackSuccess ? '✅ Usage rollback successful' : '⚠️ Usage rollback failed');
-        }
         
         // Re-throw the original error
         throw error;
@@ -165,17 +172,14 @@ export function useBackToLife() {
       setIsVideoProcessing(false);
 
       // Also show through videoToastStore for persistence
-      await showVideoReady({
-        id: data.id.replace('video-', ''), // Remove prefix for consistency
+      showVideoReady({
+        id: data.predictionId, // Use the real prediction ID
         localPath: data.url, // Using URL as localPath for now
         imageUri: currentImageUri,
         message: 'Your video is ready! 🎬',
         modeTag: videoModeTag || null,
       });
 
-      if (__DEV__) {
-        console.log(`🎬 [${new Date().toISOString()}] Back to Life success! Processing state cleared. Video toast shown via videoToastStore.`);
-      }
     },
 
     onError: (error) => {

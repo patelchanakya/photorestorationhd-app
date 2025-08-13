@@ -90,6 +90,21 @@ const onAppStateChange = (status: AppStateStatus) => {
     console.log('🔄 App state changed:', status);
   }
   focusManager.setFocused(status === 'active');
+  
+  // Trigger video recovery when app becomes active
+  if (status === 'active') {
+    // Use a slight delay to let other initialization complete
+    setTimeout(async () => {
+      try {
+        const { useVideoToastStore } = await import('@/store/videoToastStore');
+        const { checkForPendingVideo } = useVideoToastStore.getState();
+        console.log('🎬 Triggering video recovery on app foreground');
+        await checkForPendingVideo();
+      } catch (error) {
+        console.error('❌ Video recovery failed on app foreground:', error);
+      }
+    }, 500);
+  }
 };
 
 export default function RootLayout() {
