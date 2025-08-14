@@ -1,10 +1,12 @@
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
+import { useQuickEditStore } from '@/store/quickEditStore';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Alert, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Text, TouchableOpacity, View, Animated } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { IconSymbol } from './ui/IconSymbol';
 
 type CardItem = {
@@ -31,8 +33,26 @@ type FeatureCardsListProps = {
   onOpenClothes?: () => void;
 };
 
+// Helper: choose icon per function type
+function getFunctionIcon(functionType?: CardItem['functionType']): string {
+  switch (functionType) {
+    case 'restoration':
+      return 'wand.and.stars';
+    case 'descratch':
+      return 'bandage';
+    case 'unblur':
+      return 'sparkles';
+    case 'colorize':
+      return 'paintpalette';
+    case 'enlighten':
+      return 'sun.max';
+    default:
+      return 'photo.on.rectangle';
+  }
+}
+
 // Memoize individual card to prevent re-renders
-const Card = React.memo(({ 
+const FeatureCardBase = ({ 
   item, 
   onPress 
 }: { 
@@ -42,9 +62,12 @@ const Card = React.memo(({
   <TouchableOpacity
     activeOpacity={0.9}
     onPress={() => onPress(item)}
+    onPressIn={() => {
+      try { Haptics.selectionAsync(); } catch {}
+    }}
     style={{ marginHorizontal: 16, marginBottom: 14 }}
   >
-    <View style={{ height: 240, borderRadius: 22, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.10)' }}>
+    <Animated.View style={{ height: 240, borderRadius: 22, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.10)' }}>
       <ExpoImage 
         source={item.image} 
         style={{ width: '100%', height: '100%' }} 
@@ -54,20 +77,32 @@ const Card = React.memo(({
         placeholderContentFit="cover"
         transition={0} // Disable transition to prevent flash
       />
+      {/* Subtle top vignette to improve title contrast */}
+      <LinearGradient
+        colors={[ 'rgba(0,0,0,0.12)', 'transparent' ]}
+        style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '20%' }}
+      />
       <LinearGradient
         colors={[ 'rgba(0,0,0,0.05)', 'rgba(0,0,0,0.65)' ]}
         style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '55%' }}
       />
       <View style={{ position: 'absolute', left: 16, right: 56, bottom: 14 }}>
-        <Text style={{ color: '#FFFFFF', fontSize: 24, fontWeight: '700', letterSpacing: -0.3 }} numberOfLines={1}>{item.title}</Text>
-        <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, marginTop: 2 }} numberOfLines={2}>{item.subtitle}</Text>
+        <Text style={{ color: '#FFFFFF', fontSize: 24, fontWeight: '700', letterSpacing: -0.3 }} numberOfLines={1}>
+          {item.title}
+        </Text>
+        <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14, marginTop: 4, lineHeight: 20 }} numberOfLines={2}>
+          {item.subtitle}
+        </Text>
       </View>
-      <View style={{ position: 'absolute', right: 12, bottom: 12, width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
-        <IconSymbol name={'photo.stack'} size={16} color={'#FFFFFF'} />
+      <View style={{ position: 'absolute', right: 12, bottom: 12, width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.12)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }}>
+        <IconSymbol name={getFunctionIcon(item.functionType)} size={16} color={'#FFFFFF'} />
       </View>
-    </View>
+    </Animated.View>
   </TouchableOpacity>
-));
+);
+
+const Card = React.memo(FeatureCardBase);
+Card.displayName = 'FeatureCard';
 
 // Handle request idea email
 async function handleRequestIdea() {
@@ -122,6 +157,8 @@ export function FeatureCardsList({
       onOpenClothes();
       return;
     }
+    const functionType = item.functionType ?? 'restoration';
+    // Open native picker first, then open Quick Edit sheet prefilled
     const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (res.status !== 'granted') return;
     const result = await ImagePicker.launchImageLibraryAsync({ 
@@ -130,10 +167,9 @@ export function FeatureCardsList({
       quality: 1 
     });
     if (!result.canceled && result.assets[0]) {
-      const uri = result.assets[0].uri;
-      const functionType = item.functionType ?? 'restoration';
-      const styleKeyParam = item.styleKey ? `&styleKey=${encodeURIComponent(item.styleKey)}` : '';
-      router.push(`/crop-modal?imageUri=${encodeURIComponent(uri)}&functionType=${functionType}&imageSource=gallery${styleKeyParam}`);
+      try {
+        useQuickEditStore.getState().openWithImage({ functionType, imageUri: result.assets[0].uri, styleKey: item.styleKey });
+      } catch {}
     }
   }, [onOpenBackgrounds, onOpenClothes, router]);
 
@@ -154,13 +190,15 @@ export function FeatureCardsList({
           borderRadius: 22, 
           overflow: 'hidden', 
           borderWidth: 1.5, 
-          borderColor: 'rgba(249,115,22,0.3)',
-          backgroundColor: '#0b0b0f',
+          borderColor: 'rgba(255,255,255,0.18)',
+          backgroundColor: 'rgba(255,255,255,0.06)',
           alignItems: 'center',
           justifyContent: 'center'
         }}>
           <LinearGradient
-            colors={['rgba(249,115,22,0.05)', 'rgba(249,115,22,0.15)']}
+            colors={["rgba(255,255,255,0.06)", "transparent"]}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 0.6 }}
             style={{ position: 'absolute', inset: 0 }}
           />
           
@@ -169,15 +207,17 @@ export function FeatureCardsList({
               width: 50,
               height: 50,
               borderRadius: 25,
-              backgroundColor: 'rgba(249,115,22,0.15)',
+              backgroundColor: 'rgba(255,255,255,0.12)',
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.2)',
               alignItems: 'center',
               justifyContent: 'center',
               marginBottom: 12
             }}>
-              <IconSymbol name="lightbulb" size={24} color="#f97316" />
+              <IconSymbol name="lightbulb" size={24} color="#F59E0B" />
             </View>
             <Text style={{ 
-              color: '#f97316', 
+              color: '#F59E0B', 
               fontSize: 20, 
               fontWeight: '700', 
               letterSpacing: -0.3,
@@ -186,7 +226,7 @@ export function FeatureCardsList({
               Request your idea
             </Text>
             <Text style={{ 
-              color: 'rgba(255,255,255,0.6)', 
+              color: 'rgba(255,255,255,0.7)', 
               fontSize: 13,
               textAlign: 'center',
               paddingHorizontal: 40
@@ -196,16 +236,18 @@ export function FeatureCardsList({
           </View>
           
           <View style={{
-            backgroundColor: 'rgba(249,115,22,0.2)',
+            backgroundColor: 'rgba(255,255,255,0.12)',
             borderRadius: 14,
             paddingHorizontal: 16,
             paddingVertical: 8,
             flexDirection: 'row',
             alignItems: 'center',
-            gap: 6
+            gap: 6,
+            borderWidth: 1,
+            borderColor: 'rgba(255,255,255,0.18)'
           }}>
-            <IconSymbol name="envelope" size={14} color="#f97316" />
-            <Text style={{ color: '#f97316', fontSize: 13, fontWeight: '600' }}>
+            <IconSymbol name="envelope" size={14} color="#F59E0B" />
+            <Text style={{ color: '#F59E0B', fontSize: 13, fontWeight: '600' }}>
               Send Request
             </Text>
           </View>

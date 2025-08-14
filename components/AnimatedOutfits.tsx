@@ -184,29 +184,16 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
       }
     }
     
-    // Launch image picker for user to select photo
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: false,
-      quality: 1,
-    });
-
+    // Launch image picker then open Quick Edit sheet in outfit mode
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 1 });
     if (!result.canceled && result.assets[0]) {
-      // Debug: Show what prompt will be used
-      if (__DEV__) {
-        console.log('👔 Outfit selected:', outfit.title);
-        console.log('📝 Prompt to be used:', outfit.outfitPrompt || outfit.title);
+      try {
+        const { useQuickEditStore } = await import('@/store/quickEditStore');
+        useQuickEditStore.getState().openWithImage({ functionType: 'outfit' as any, imageUri: result.assets[0].uri, customPrompt: outfit.outfitPrompt || outfit.title });
+      } catch {
+        // fallback: existing flow
+        router.push({ pathname: '/text-edits', params: { imageUri: result.assets[0].uri, prompt: outfit.outfitPrompt || outfit.title, mode: 'outfit' } });
       }
-      
-      // Navigate to processing with outfit prompt
-      router.push({
-        pathname: '/text-edits',
-        params: {
-          imageUri: result.assets[0].uri,
-          prompt: outfit.outfitPrompt || outfit.title,
-          mode: 'outfit'
-        }
-      });
     }
   };
 
@@ -216,6 +203,7 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
         horizontal 
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 16 }}
+        extraData={isPro}
       >
         {outfits.map((item, index) => (
           <Animated.View
@@ -256,9 +244,8 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
                 style={{ position: 'absolute', inset: 0 as any }}
               />
               
-              {/* Bottom label with PRO badge */}
+              {/* Bottom label + PRO for non-pro users */}
               <View style={{ position: 'absolute', left: 10, bottom: 10 }}>
-                {/* PRO badge for non-pro users - positioned above title */}
                 {!isPro && (
                   <View style={{ 
                     backgroundColor: 'rgba(0,0,0,0.7)',

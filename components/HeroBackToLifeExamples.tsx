@@ -513,10 +513,10 @@ Thanks!`;
           }} />
         )}
         
-        {/* Bottom label with PRO badge and soft glow */}
+        {/* Bottom label */}
         <View style={{ position: 'absolute', left: 10, bottom: 10 }}>
-          {/* PRO badge for pro users - positioned above title */}
-          {isPro && (
+          {/* Show PRO badge for non-pro users only */}
+          {!isPro && (
             <View style={{ 
               backgroundColor: 'rgba(0,0,0,0.7)',
               borderRadius: 10,
@@ -607,7 +607,7 @@ export function HeroBackToLifeExamples({ examples = DEFAULT_EXAMPLES, onBeforePi
   const ListFooterComponent = (
     <Animated.View
       entering={FadeInDown.delay(examples.length * 120).duration(1000).springify().damping(20)}
-      style={{ width: tileWidth, marginRight: 0 }}
+      style={{ width: tileWidth, marginRight: 0, marginLeft: spacing * 2 }}
     >
       <TouchableOpacity
         activeOpacity={0.9}
@@ -618,35 +618,35 @@ export function HeroBackToLifeExamples({ examples = DEFAULT_EXAMPLES, onBeforePi
           borderRadius: 16, 
           overflow: 'hidden', 
           borderWidth: 1.5, 
-          borderColor: 'rgba(249,115,22,0.3)', 
-          backgroundColor: 'rgba(249,115,22,0.05)',
+          borderColor: 'rgba(255,255,255,0.18)', 
+          backgroundColor: 'rgba(255,255,255,0.06)',
           alignItems: 'center',
           justifyContent: 'center'
         }}
       >
         <LinearGradient
-          colors={["rgba(249,115,22,0.1)", "rgba(249,115,22,0.05)", "rgba(0,0,0,0.8)"]}
+          colors={["rgba(255,255,255,0.06)", "transparent"]}
           start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
+          end={{ x: 0.5, y: 0.6 }}
           style={{ position: 'absolute', inset: 0 as any }}
         />
         <View style={{ 
           width: 44,
           height: 44,
           borderRadius: 22,
-          backgroundColor: 'rgba(249,115,22,0.15)',
-          borderWidth: 1.5,
-          borderColor: 'rgba(249,115,22,0.4)',
+          backgroundColor: 'rgba(255,255,255,0.12)',
+          borderWidth: 1,
+          borderColor: 'rgba(255,255,255,0.2)',
           alignItems: 'center',
           justifyContent: 'center',
           marginBottom: 8
         }}>
-          <IconSymbol name="plus" size={24} color="#f97316" />
+          <IconSymbol name="plus" size={24} color="#F59E0B" />
         </View>
-        <Text style={{ color: '#f97316', fontWeight: '600', fontSize: 12, textAlign: 'center', paddingHorizontal: 10 }}>
+        <Text style={{ color: '#F59E0B', fontWeight: '600', fontSize: 12, textAlign: 'center', paddingHorizontal: 10 }}>
           Request
         </Text>
-        <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10, textAlign: 'center', paddingHorizontal: 10, marginTop: 2 }}>
+        <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 10, textAlign: 'center', paddingHorizontal: 10, marginTop: 2 }}>
           Tell us your idea
         </Text>
       </TouchableOpacity>
@@ -667,7 +667,7 @@ export function HeroBackToLifeExamples({ examples = DEFAULT_EXAMPLES, onBeforePi
         viewabilityConfig={viewabilityConfig}
         ListFooterComponent={ListFooterComponent}
         ItemSeparatorComponent={() => <View style={{ width: spacing }} />}
-        extraData={visibleSet}
+        extraData={{ visibleSet, isPro }}
       />
       <LinearGradient
         colors={['transparent', '#0B0B0F']}

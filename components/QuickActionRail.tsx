@@ -12,9 +12,19 @@ const ACTIONS: { route: string; label: string; icon: string }[] = [
 
 export function QuickActionRail() {
   const router = useRouter();
+  const [busy, setBusy] = React.useState(false);
   const insets = useSafeAreaInsets();
 
-  const go = (route: string) => router.push(route as any);
+  const go = async (route: string) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await router.push(route as any);
+    } finally {
+      // Small delay to prevent rapid re-entry if animations stack
+      setTimeout(() => setBusy(false), 400);
+    }
+  };
 
   return (
     <View

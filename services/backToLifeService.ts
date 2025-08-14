@@ -40,11 +40,11 @@ export const backToLifeService = {
         };
       }
 
-      // Get stable tracking ID for video usage
-      const userId = await getVideoTrackingId();
-      if (!userId) {
+      // Get stable device ID for video usage tracking (simplified approach)
+      const stableUserId = await getVideoTrackingId();
+      if (!stableUserId) {
         if (__DEV__) {
-          console.log('🎬 BackToLife: No video tracking ID available');
+          console.log('🎬 BackToLife: No stable user ID available');
         }
         return {
           canUse: false,
@@ -57,9 +57,13 @@ export const backToLifeService = {
         };
       }
 
+      // Use stable device ID as primary database key (single-ID strategy)
+      const databaseKey = stableUserId;
+
       if (__DEV__) {
-        console.log('📊 BackToLife Usage Check:', {
-          user_id: userId,
+        console.log('📊 BackToLife Usage Check (Single ID Strategy):', {
+          stable_user_id: stableUserId,
+          database_key: databaseKey,
           plan_type: planDetails.planType,
           usage_limit: planDetails.usageLimit,
           billing_cycle_start: planDetails.billingCycleStart,
@@ -67,8 +71,8 @@ export const backToLifeService = {
         });
       }
 
-      // Get or create usage record
-      const usageRecord = await this.getOrCreateUsageRecord(userId, planDetails);
+      // Get or create usage record using the stable device ID
+      const usageRecord = await this.getOrCreateUsageRecord(databaseKey, stableUserId, planDetails);
       
       // Check if user can use today (daily limit: 1 video per day for weekly plans only)
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
@@ -81,8 +85,9 @@ export const backToLifeService = {
       }
       
       if (__DEV__) {
-        console.log('🎬 BackToLife Usage Status:', {
-          user_id: userId,
+        console.log('🎬 BackToLife Usage Status (Single ID Strategy):', {
+          stable_user_id: stableUserId,
+          database_key: databaseKey,
           plan_type: planDetails.planType,
           used_count: usageRecord.back_to_life_count,
           limit: planDetails.usageLimit,
@@ -135,17 +140,21 @@ export const backToLifeService = {
         return false;
       }
 
-      const userId = await getVideoTrackingId();
-      if (!userId) {
+      const stableUserId = await getVideoTrackingId();
+      if (!stableUserId) {
         if (__DEV__) {
-          console.log('⚠️ No video tracking ID for usage increment');
+          console.log('⚠️ No stable user ID for usage increment');
         }
         return false;
       }
 
+      // Use stable device ID for database operations (single-ID strategy)
+      const databaseKey = stableUserId;
+
       if (__DEV__) {
-        console.log('🔒 Attempting atomic usage increment:', {
-          user_id: userId,
+        console.log('🔒 Attempting atomic usage increment (Single ID Strategy):', {
+          stable_user_id: stableUserId,
+          database_key: databaseKey,
           plan_type: planDetails.planType,
           usage_limit: planDetails.usageLimit
         });
@@ -153,7 +162,7 @@ export const backToLifeService = {
 
       // Call atomic database function
       const { data, error } = await supabase.rpc('check_and_increment_usage', {
-        p_user_id: userId,
+        p_user_id: databaseKey,  // Use the appropriate database key
         p_plan_type: planDetails.planType,
         p_usage_limit: planDetails.usageLimit,
         p_billing_cycle_start: planDetails.billingCycleStart,
@@ -178,7 +187,7 @@ export const backToLifeService = {
           const { data: verifyData } = await supabase
             .from('user_video_usage')
             .select('back_to_life_count, last_video_date')
-            .eq('user_id', userId)
+            .eq('user_id', databaseKey)
             .single();
           console.log('🔍 Verification query after increment:', verifyData);
         }
@@ -199,20 +208,25 @@ export const backToLifeService = {
    */
   async rollbackUsage(): Promise<boolean> {
     try {
-      const userId = await getVideoTrackingId();
-      if (!userId) {
+      const stableUserId = await getVideoTrackingId();
+      if (!stableUserId) {
         if (__DEV__) {
-          console.log('⚠️ No video tracking ID for rollback');
+          console.log('⚠️ No stable user ID for rollback');
         }
         return false;
       }
 
+      const databaseKey = stableUserId;
+
       if (__DEV__) {
-        console.log('🔄 Rolling back usage increment for user:', userId);
+        console.log('🔄 Rolling back usage increment (Single ID Strategy):', {
+          stable_user_id: stableUserId,
+          database_key: databaseKey
+        });
       }
 
       const { data, error } = await supabase.rpc('rollback_usage', {
-        p_user_id: userId
+        p_user_id: databaseKey
       });
 
       if (error) {
@@ -237,20 +251,24 @@ export const backToLifeService = {
 
   /**
    * Get existing usage record or create new one with current billing cycle
-   * Handles billing cycle resets automatically
+   * Handles billing cycle resets automatically (simplified single-ID approach)
+   * 
+   * @param databaseKey - Primary key for database (stable device ID)
+   * @param stableUserId - The stable device ID for record creation
+   * @param planDetails - Subscription plan information
    */
-  async getOrCreateUsageRecord(userId: string, planDetails: any) {
-    // Try to get existing record
+  async getOrCreateUsageRecord(databaseKey: string, stableUserId: string, planDetails: any) {
+    // Try to get existing record using the database key
     const { data: existingRecord, error: fetchError } = await supabase
       .from('user_video_usage')
       .select('*')
-      .eq('user_id', userId)
+      .eq('user_id', databaseKey)
       .single();
 
     // If record doesn't exist, create it
     if (fetchError?.code === 'PGRST116' || !existingRecord) {
       const newRecord = {
-        user_id: userId,
+        user_id: databaseKey,  // Use stable device ID as primary key
         back_to_life_count: 0,
         plan_type: planDetails.planType,
         usage_limit: planDetails.usageLimit,
@@ -261,6 +279,13 @@ export const backToLifeService = {
         last_video_date: null,
         updated_at: new Date().toISOString()
       };
+
+      if (__DEV__) {
+        console.log('📊 Creating new usage record (Single ID Strategy):', {
+          stable_user_id: stableUserId,
+          database_key: databaseKey
+        });
+      }
 
       const { data, error } = await supabase
         .from('user_video_usage')
@@ -324,7 +349,7 @@ export const backToLifeService = {
       const { data, error } = await supabase
         .from('user_video_usage')
         .update(resetRecord)
-        .eq('user_id', userId)
+        .eq('user_id', databaseKey)
         .select()
         .single();
 

@@ -1,5 +1,6 @@
 import { type FunctionType } from '@/services/modelConfigs';
 import { permissionsService } from '@/services/permissions';
+import { useQuickEditStore } from '@/store/quickEditStore';
 import { validatePremiumAccess } from '@/services/revenuecat';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -147,7 +148,7 @@ export function DeviceTwoRowCarousel({ functionType }: DeviceTwoRowCarouselProps
     return (
       <View style={{ paddingHorizontal: 16 }}>
         <View style={{ backgroundColor: '#ffffff', borderRadius: 24, padding: 16 }}>
-          <Text style={{ color: '#111', fontWeight: '800', fontSize: 17, marginBottom: 6 }}>You didn't give Clever access to Photos.</Text>
+          <Text style={{ color: '#111', fontWeight: '800', fontSize: 17, marginBottom: 6 }}>You didn&apos;t give Clever access to Photos.</Text>
           <Text style={{ color: '#374151', fontSize: 14, marginBottom: 14 }}>To get started, allow access or select a single photo.</Text>
           <TouchableOpacity
             onPress={handlePermissionPress}
@@ -205,7 +206,12 @@ export function DeviceTwoRowCarousel({ functionType }: DeviceTwoRowCarouselProps
                   const info = await MediaLibrary.getAssetInfoAsync(asset.id);
                   const uri = info.localUri || info.uri;
                   if (uri) {
-                    router.push(`/crop-modal?imageUri=${encodeURIComponent(uri)}&functionType=${functionType}&imageSource=gallery`);
+                    const normalized = (functionType === 'repair' ? 'restoration' : functionType) as any;
+                    try {
+                      useQuickEditStore.getState().openWithImage({ functionType: normalized, imageUri: uri });
+                    } catch {
+                      router.push(`/crop-modal?imageUri=${encodeURIComponent(uri)}&functionType=${normalized}&imageSource=gallery`);
+                    }
                   }
                 }}
                 style={{

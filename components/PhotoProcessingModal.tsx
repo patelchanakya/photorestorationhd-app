@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Dimensions, Image, Modal, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Dimensions, Modal, Text, TouchableOpacity, View } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 
 interface PhotoProcessingModalProps {
   visible: boolean;
@@ -101,44 +102,45 @@ export function PhotoProcessingModal({
           )}
           
            <View className="flex-1 p-6">
-            {/* Large image taking most of the space */}
-            {imageUri && (
-              <View className="flex-1 relative rounded-2xl overflow-hidden mb-6">
-                {/* Main image - large and prominent */}
-                <Image 
-                  source={{ uri: imageUri }}
-                  className="w-full h-full"
-                  resizeMode="cover"
+          {/* Image preview area (fixed height, no overflow) */}
+          {imageUri && (
+            <View className="relative rounded-2xl overflow-hidden mb-4" style={{ height: 200, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.10)' }}>
+              <ExpoImage 
+                source={{ uri: imageUri }}
+                style={{ width: '100%', height: '100%' }}
+                contentFit="contain"
+                cachePolicy="memory-disk"
+                transition={0}
+              />
+              {/* Minimal spinner overlay */}
+              <View className="absolute inset-0 items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.25)' }}>
+                <Animated.View
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 28,
+                    borderWidth: 3,
+                    borderColor: 'rgba(255,255,255,0.15)',
+                    borderTopColor: '#F59E0B',
+                    borderRightColor: 'rgba(245,158,11,0.45)',
+                    transform: [{ rotate: spin }],
+                  }}
                 />
-                
-                {/* Minimal spinner overlay */}
-                <View className="absolute inset-0 bg-black/30 items-center justify-center">
-                  <Animated.View
-                    style={{
-                      width: 60,
-                      height: 60,
-                      borderRadius: 30,
-                      borderWidth: 3,
-                      borderColor: 'rgba(255,255,255,0.15)',
-                      borderTopColor: '#f97316',
-                      borderRightColor: 'rgba(249,115,22,0.4)',
-                      transform: [{ rotate: spin }],
-                      shadowColor: '#f97316',
-                      shadowOffset: { width: 0, height: 0 },
-                      shadowOpacity: 0.3,
-                      shadowRadius: 8,
-                    }}
-                  />
-                </View>
               </View>
-            )}
+            </View>
+          )}
+
+          {/* Progress bar */}
+          {typeof progress === 'number' && progress > 0 && (
+            <View style={{ height: 6, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden', marginBottom: 12 }}>
+              <View style={{ width: `${Math.min(100, Math.max(0, progress))}%`, height: '100%', backgroundColor: '#F59E0B' }} />
+            </View>
+          )}
             
             {/* Text below image - simple and clean */}
             <View className="items-center">
               <Text className="text-2xl font-semibold text-white mb-2">{title}</Text>
-              <Text className="text-center text-gray-300 text-base">
-                Hang tight — this usually takes about 10 seconds.
-              </Text>
+              <Text className="text-center text-gray-300 text-base">This usually takes 5–10 seconds.</Text>
             </View>
           </View>
         </View>

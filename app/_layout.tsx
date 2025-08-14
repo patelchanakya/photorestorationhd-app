@@ -278,7 +278,14 @@ function MainNavigator() {
       <Stack.Screen name="restoration/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="video-result/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="gallery-modal" options={{ presentation: 'modal', headerShown: false }} />
-      <Stack.Screen name="settings-modal" options={{ presentation: 'modal', headerShown: false }} />
+      <Stack.Screen
+        name="settings-modal"
+        options={{
+          presentation: 'fullScreenModal',
+          headerShown: false,
+          contentStyle: { backgroundColor: 'black' },
+        }}
+      />
       <Stack.Screen name="crop-modal" options={{ presentation: 'modal', headerShown: false }} />
       <Stack.Screen name="gallery-image/[id]" options={{ presentation: 'modal', headerShown: false }} />
       <Stack.Screen name="text-edits" options={{ headerShown: false }} />

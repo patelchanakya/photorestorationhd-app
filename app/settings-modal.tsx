@@ -32,8 +32,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+// Using React Native SafeAreaView to avoid double-insetting
 import Animated, {
-  FadeIn,
   useAnimatedStyle,
   useSharedValue,
   withSpring
@@ -445,29 +445,7 @@ export default function SettingsModalScreen() {
 
 
 
-  // Format subscription status
-  const getSubscriptionStatus = () => {
-    if (isPro) {
-      if (expirationDate) {
-        const expDate = new Date(expirationDate);
-        const isExpired = expDate < new Date();
-        
-        if (isExpired) {
-          return 'Expired';
-        } else {
-          return `Active until ${expDate.toLocaleDateString()}`;
-        }
-      }
-      return 'Active';
-    }
-    
-    // This should only be shown for free users now
-    const status = `Free (${freeRestorationsUsed}/${freeRestorationsLimit} used)`;
-    if (timeUntilNext === 'Available now') {
-      return status;
-    }
-    return `${status} • Reset in ${timeUntilNext}`;
-  };
+  // Subscription status helper no longer needed in UI (subtitle removed)
 
   // Social media URLs
   const socialMediaUrls = {
@@ -713,30 +691,17 @@ Best regards`;
   }));
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: 'black' }}>
-      <Animated.View entering={FadeIn} style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'black' }}> 
+      <View className="flex-1">
         {/* Header */}
-        <View style={{ 
-          flexDirection: 'row', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          paddingHorizontal: 16, 
-          paddingVertical: 12, 
-          borderBottomWidth: 1, 
-          borderBottomColor: 'rgba(255,255,255,0.1)' 
-        }}>
+        <View className="flex-row items-center justify-between px-4 py-3 border-b border-white/10">
           <View style={{ width: 32 }} />
-          <Text style={{ color: 'white', fontSize: 18, fontWeight: '600' }}>
+          <Text className="text-white text-lg font-semibold">
             {t('settings.title')}
           </Text>
           <TouchableOpacity
             onPress={handleClose}
-            style={{ 
-              width: 32, 
-              height: 32, 
-              alignItems: 'center', 
-              justifyContent: 'center' 
-            }}
+            className="w-8 h-8 items-center justify-center"
           >
             <IconSymbol name="chevron.down" size={20} color="#fff" />
           </TouchableOpacity>
@@ -744,85 +709,56 @@ Best regards`;
 
         {/* Content */}
         <ScrollView 
-          style={{ flex: 1, paddingHorizontal: 16 }}
+          className="flex-1 px-4"
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 12, paddingTop: 0 }}
+          contentInsetAdjustmentBehavior="never"
+          automaticallyAdjustContentInsets={false}
         >
-          <View style={{ paddingVertical: 20 }}>
+          <View className="pt-0 pb-0">
             
             {/* Subscription Section */}
-            <View style={{ marginBottom: 32 }}>
-              <Text style={{ 
-                color: 'rgba(249,115,22,1)', 
-                fontSize: 16, 
-                fontWeight: '600', 
-                marginBottom: 16 
-              }}>
+            <View className="mb-8">
+              <Text className="text-amber-500 text-base font-semibold mb-4">
                 {t('settings.subscription')}
               </Text>
               
-              <View style={{ 
-                backgroundColor: 'rgba(255,255,255,0.05)', 
-                borderRadius: 12, 
-                overflow: 'hidden' 
-              }}>
+              <View className="bg-white/5 rounded-xl overflow-hidden">
                 
                 {/* Free Restoration Status */}
                 {!isPro && (
                   <TouchableOpacity
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      padding: 16,
-                      borderBottomWidth: 1,
-                      borderBottomColor: 'rgba(255,255,255,0.1)'
-                    }}
+                    className="flex-row items-center p-4 border-b border-white/10"
                     onPress={handleShowPaywall}
                   >
-                    <View style={{
-                      width: 36,
-                      height: 36,
-                      backgroundColor: freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' 
-                        ? 'rgba(239,68,68,0.2)' 
-                        : 'rgba(34,197,94,0.2)',
-                      borderRadius: 18,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: 12
-                    }}>
+                    <View
+                      className={`w-9 h-9 rounded-full items-center justify-center mr-3 ${
+                        freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now'
+                          ? 'bg-red-500/20'
+                          : 'bg-green-500/20'
+                      }`}
+                    >
                       <IconSymbol 
-                        name={freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' 
-                          ? "clock" 
-                          : "gift"} 
-                        size={18} 
-                        color={freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' 
-                          ? "#ef4444" 
-                          : "#22c55e"} 
+                        name={freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' ? 'clock' : 'gift'}
+                        size={18}
+                        color={freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' ? '#ef4444' : '#22c55e'}
                       />
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
+                    <View className="flex-1">
+                      <Text className="text-white text-base font-medium">
                         {t('settings.freeRestorations')}
                       </Text>
-                      <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                        {timeUntilNext === 'Available now' ? t('language.availableNow') : t('language.nextIn', { time: timeUntilNext })}
-                      </Text>
                     </View>
-                    <View style={{
-                      backgroundColor: freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' 
-                        ? 'rgba(239,68,68,0.2)' 
-                        : 'rgba(34,197,94,0.2)',
-                      borderRadius: 8,
-                      paddingHorizontal: 8,
-                      paddingVertical: 4,
-                      marginRight: 8
-                    }}>
-                      <Text style={{
-                        color: freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' 
-                          ? '#ef4444' 
-                          : '#22c55e',
-                        fontSize: 12,
-                        fontWeight: '600'
-                      }}>
+                    <View
+                      className={`rounded-md px-2 py-1 mr-2 ${
+                        freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' ? 'bg-red-500/20' : 'bg-green-500/20'
+                      }`}
+                    >
+                      <Text
+                        className={`text-xs font-semibold ${
+                          freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' ? 'text-red-500' : 'text-green-500'
+                        }`}
+                      >
                         {freeRestorationsUsed}/{freeRestorationsLimit}
                       </Text>
                     </View>
@@ -832,34 +768,13 @@ Best regards`;
 
                 {/* Subscription Status - Only show for Pro users */}
                 {isPro && (
-                  <View style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16,
-                    borderBottomWidth: 1,
-                    borderBottomColor: 'rgba(255,255,255,0.1)'
-                  }}>
-                    <View style={{
-                      width: 36,
-                      height: 36,
-                      backgroundColor: 'rgba(34,197,94,0.2)',
-                      borderRadius: 18,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: 12
-                    }}>
-                      <IconSymbol 
-                        name="crown.fill"
-                        size={18} 
-                        color="#22c55e"
-                      />
+                  <View className="flex-row items-center p-4 border-b border-white/10">
+                    <View className="w-9 h-9 bg-green-500/20 rounded-full items-center justify-center mr-3">
+                      <IconSymbol name="crown.fill" size={18} color="#22c55e" />
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
+                    <View className="flex-1">
+                      <Text className="text-white text-base font-medium">
                         {t('settings.proSubscription')}
-                      </Text>
-                      <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                        {getSubscriptionStatus()}
                       </Text>
                     </View>
                   </View>
@@ -868,13 +783,7 @@ Best regards`;
                 {/* Video Usage - Only show for Pro users */}
                 {isPro && backToLifeUsage && (
                   <TouchableOpacity 
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      padding: 16,
-                      borderBottomWidth: 1,
-                      borderBottomColor: 'rgba(255,255,255,0.1)'
-                    }}
+                    className="flex-row items-center p-4 border-b border-white/10"
                     onPress={async () => {
                       try {
                         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -889,40 +798,15 @@ Best regards`;
                       }
                     }}
                   >
-                    <View style={{
-                      width: 36,
-                      height: 36,
-                      backgroundColor: 'rgba(168,85,247,0.2)',
-                      borderRadius: 18,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: 12
-                    }}>
-                      <IconSymbol 
-                        name="video.fill"
-                        size={18}
-                        color="#a855f7"
-                      />
+                    <View className="w-9 h-9 bg-purple-500/20 rounded-full items-center justify-center mr-3">
+                      <IconSymbol name="video.fill" size={18} color="#a855f7" />
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                        Back to Life Videos
-                      </Text>
-                      <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                        Tap to refresh
-                      </Text>
+                    <View className="flex-1">
+                      <Text className="text-white text-base font-medium">Back to Life Videos</Text>
+                      <Text className="text-white/60 text-sm">Tap to refresh</Text>
                     </View>
-                    <View style={{
-                      backgroundColor: !backToLifeUsage.canUse ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.2)',
-                      paddingHorizontal: 8,
-                      paddingVertical: 4,
-                      borderRadius: 12
-                    }}>
-                      <Text style={{
-                        color: !backToLifeUsage.canUse ? '#ef4444' : '#22c55e',
-                        fontSize: 12,
-                        fontWeight: '600'
-                      }}>
+                    <View className={`${!backToLifeUsage.canUse ? 'bg-red-500/20' : 'bg-green-500/20'} px-2 py-1 rounded-xl`}>
+                      <Text className={`${!backToLifeUsage.canUse ? 'text-red-500' : 'text-green-500'} text-xs font-semibold`}>
                         {backToLifeUsage.used}/{backToLifeUsage.limit}
                       </Text>
                     </View>
@@ -931,37 +815,22 @@ Best regards`;
 
                 {/* Restore Purchases */}
                 <TouchableOpacity 
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16,
-                    borderBottomWidth: isPro ? 1 : 0,
-                    borderBottomColor: 'rgba(255,255,255,0.1)',
-                    opacity: isRestoring ? 0.7 : 1
-                  }}
+                  className={`flex-row items-center p-4 ${isPro ? 'border-b border-white/10' : ''}`}
                   onPress={handleRestorePurchases}
                   disabled={isRestoring}
                 >
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
+                  <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
                     {isRestoring ? (
                       <ActivityIndicator size="small" color="#f97316" />
                     ) : (
                       <IconSymbol name="arrow.clockwise" size={18} color="#f97316" />
                     )}
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
+                  <View className="flex-1">
+                    <Text className="text-white text-base font-medium">
                       {isRestoring ? t('common.loading') : t('settings.restorePurchases')}
                     </Text>
-                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
+                    <Text className="text-white/60 text-sm">
                       {isRestoring ? t('common.loading') : t('settings.restorePurchasesDescription')}
                     </Text>
                   </View>
@@ -973,42 +842,19 @@ Best regards`;
             </View>
             
             {/* Connect & Support Section */}
-            <View style={{ marginBottom: 32 }}>
-              <Text style={{ 
-                color: 'rgba(249,115,22,1)', 
-                fontSize: 16, 
-                fontWeight: '600', 
-                marginBottom: 16 
-              }}>
+            <View className="mb-8">
+              <Text className="text-amber-500 text-base font-semibold mb-4">
                 {t('settings.connectSupport')}
               </Text>
               
-              <View style={{ 
-                backgroundColor: 'rgba(255,255,255,0.05)', 
-                borderRadius: 12, 
-                overflow: 'hidden' 
-              }}>
+              <View className="bg-white/5 rounded-xl overflow-hidden">
                 
                 {/* Follow Us */}
-                <TouchableOpacity style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: 'rgba(255,255,255,0.1)'
-                }}>
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
+                <TouchableOpacity className="flex-row items-center p-4 border-b border-white/10">
+                  <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
                     <Ionicons name="people" size={18} color="#f97316" />
                   </View>
-                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
+                  <Text className="text-white text-base font-medium flex-1">
                     {t('settings.followUs')}
                   </Text>
                   <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -1057,30 +903,17 @@ Best regards`;
 
                 {/* Email Support */}
                 <AnimatedTouchableOpacity 
-                  style={[{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16,
-                    borderBottomWidth: 1,
-                    borderBottomColor: 'rgba(255,255,255,0.1)'
-                  }, emailStyle]}
+                  style={emailStyle}
+                  className="flex-row items-center p-4 border-b border-white/10"
                   onPress={handleEmailSupport}
                   activeOpacity={0.8}
                   accessibilityLabel="Email support"
                   accessibilityHint="Opens email to contact support"
                 >
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
+                  <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
                     <Ionicons name="mail" size={18} color="#f97316" />
                   </View>
-                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
+                  <Text className="text-white text-base font-medium flex-1">
                     {t('settings.emailSupport')}
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
@@ -1088,30 +921,17 @@ Best regards`;
 
                 {/* Rate Us */}
                 <AnimatedTouchableOpacity 
-                  style={[{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16,
-                    borderBottomWidth: 1,
-                    borderBottomColor: 'rgba(255,255,255,0.1)'
-                  }, rateStyle]}
+                  style={rateStyle}
+                  className="flex-row items-center p-4 border-b border-white/10"
                   onPress={handleRateUs}
                   activeOpacity={0.8}
                   accessibilityLabel="Rate us"
                   accessibilityHint="Opens rating prompt or app store page"
                 >
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
+                  <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
                     <Ionicons name="star" size={18} color="#f97316" />
                   </View>
-                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
+                  <Text className="text-white text-base font-medium flex-1">
                     {t('settings.rateUs')}
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
@@ -1119,28 +939,17 @@ Best regards`;
 
                 {/* Share App */}
                 <AnimatedTouchableOpacity 
-                  style={[{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16
-                  }, shareStyle]}
+                  style={shareStyle}
+                  className="flex-row items-center p-4"
                   onPress={handleShareApp}
                   activeOpacity={0.8}
                   accessibilityLabel="Share app"
                   accessibilityHint="Opens share sheet to share app with others"
                 >
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
+                  <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
                     <Ionicons name="share-social" size={18} color="#f97316" />
                   </View>
-                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
+                  <Text className="text-white text-base font-medium flex-1">
                     {t('settings.shareApp')}
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
@@ -1149,50 +958,31 @@ Best regards`;
             </View>
             
             {/* Preferences Section */}
-            <View style={{ marginBottom: 32 }}>
-              <Text style={{ 
-                color: 'rgba(249,115,22,1)', 
-                fontSize: 16, 
-                fontWeight: '600', 
-                marginBottom: 16 
-              }}>
+            <View className="mb-8">
+              <Text className="text-amber-500 text-base font-semibold mb-4">
                 {t('settings.preferences')}
               </Text>
               
-              <View style={{ 
-                backgroundColor: 'rgba(255,255,255,0.05)', 
-                borderRadius: 12, 
-                overflow: 'hidden' 
-              }}>
+              <View className="bg-white/5 rounded-xl overflow-hidden">
                 
                 {/* Language */}
                 <TouchableOpacity 
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16
-                  }}
+                  className="flex-row items-center p-4"
                   onPress={() => setShowLanguageModal(true)}
                 >
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
+                  <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
                     <Ionicons name="globe" size={18} color="#f97316" />
                   </View>
-                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
+                  <Text className="text-white text-base font-medium flex-1">
                     {t('settings.language')}
                   </Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Text style={{ fontSize: 20 }}>{getCurrentLanguageInfo().flag}</Text>
-                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 15 }}>{getCurrentLanguageInfo().nativeName}</Text>
+                  <View className="flex-row items-center">
+                    <Text className="text-xl mr-1">{getCurrentLanguageInfo().flag}</Text>
+                    <Text className="text-white/60 text-sm">{getCurrentLanguageInfo().nativeName}</Text>
                   </View>
-                  <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" style={{ marginLeft: 8 }} />
+                  <View className="ml-2">
+                    <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
+                  </View>
                 </TouchableOpacity>
                 
 
@@ -1203,47 +993,26 @@ Best regards`;
 
 
             {/* Storage Section */}
-            <View style={{ marginBottom: 32 }}>
-              <Text style={{ 
-                color: 'rgba(249,115,22,1)', 
-                fontSize: 16, 
-                fontWeight: '600', 
-                marginBottom: 16 
-              }}>
+            <View className="mb-8">
+              <Text className="text-amber-500 text-base font-semibold mb-4">
                 {t('settings.storage')}
               </Text>
               
-              <View style={{ 
-                backgroundColor: 'rgba(255,255,255,0.05)', 
-                borderRadius: 12, 
-                overflow: 'hidden' 
-              }}>
+              <View className="bg-white/5 rounded-xl overflow-hidden">
                 
 
                 {/* Delete All Photos */}
                 <TouchableOpacity 
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16
-                  }}
+                  className="flex-row items-center p-4"
                   onPress={handleDeleteAllPhotos}>
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(239,68,68,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
+                  <View className="w-9 h-9 bg-red-500/20 rounded-full items-center justify-center mr-3">
                     <Ionicons name="trash" size={18} color="#ef4444" />
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
+                  <View className="flex-1">
+                    <Text className="text-white text-base font-medium">
                       {t('settings.deleteAllPhotos')}
                     </Text>
-                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
+                    <Text className="text-white/60 text-sm">
                       {t('settings.deleteAllPhotosDescription')}
                     </Text>
                   </View>
@@ -1254,44 +1023,22 @@ Best regards`;
 
 
             {/* Account & Legal Section */}
-            <View style={{ marginBottom: 32 }}>
-              <Text style={{ 
-                color: 'rgba(249,115,22,1)', 
-                fontSize: 16, 
-                fontWeight: '600', 
-                marginBottom: 16 
-              }}>
+            <View className="mb-8">
+              <Text className="text-amber-500 text-base font-semibold mb-4">
                 {t('settings.accountLegal')}
               </Text>
               
-              <View style={{ 
-                backgroundColor: 'rgba(255,255,255,0.05)', 
-                borderRadius: 12, 
-                overflow: 'hidden' 
-              }}>
+              <View className="bg-white/5 rounded-xl overflow-hidden">
                 
                 {/* Privacy Policy */}
                 <TouchableOpacity 
                   onPress={() => WebBrowser.openBrowserAsync('https://cleverapp.lovable.app/privacy-policy')}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16,
-                    borderBottomWidth: 1,
-                    borderBottomColor: 'rgba(255,255,255,0.1)'
-                  }}>
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
+                  className="flex-row items-center p-4 border-b border-white/10"
+                >
+                  <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
                     <Ionicons name="lock-closed" size={18} color="#f97316" />
                   </View>
-                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
+                  <Text className="text-white text-base font-medium flex-1">
                     {t('settings.privacyPolicy')}
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
@@ -1300,23 +1047,12 @@ Best regards`;
                 {/* Terms of Use */}
                 <TouchableOpacity 
                   onPress={() => WebBrowser.openBrowserAsync('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16
-                  }}>
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
+                  className="flex-row items-center p-4"
+                >
+                  <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
                     <Ionicons name="document-text" size={18} color="#f97316" />
                   </View>
-                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
+                  <Text className="text-white text-base font-medium flex-1">
                     {t('settings.termsOfUse')}
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
@@ -1325,45 +1061,23 @@ Best regards`;
             </View>
 
             {/* About Section */}
-            <View style={{ marginBottom: 32 }}>
-              <Text style={{ 
-                color: 'rgba(249,115,22,1)', 
-                fontSize: 16, 
-                fontWeight: '600', 
-                marginBottom: 16 
-              }}>
+            <View className="mb-0">
+              <Text className="text-amber-500 text-base font-semibold mb-4">
                 {t('settings.about')}
               </Text>
               
-              <View style={{ 
-                backgroundColor: 'rgba(255,255,255,0.05)', 
-                borderRadius: 12, 
-                overflow: 'hidden' 
-              }}>
+              <View className="bg-white/5 rounded-xl overflow-hidden">
                 
                 {/* Version */}
-                <View style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 16,
-                  borderBottomWidth: 0
-                }}>
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
+                <View className="flex-row items-center p-4">
+                  <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
                     <IconSymbol name="info.circle" size={18} color="#f97316" />
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
+                  <View className="flex-1">
+                    <Text className="text-white text-base font-medium">
                       {t('settings.version')}
                     </Text>
-                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
+                    <Text className="text-white/60 text-sm">
                       1.0.5
                     </Text>
                   </View>
@@ -1382,7 +1096,7 @@ Best regards`;
           
           
         </ScrollView>
-      </Animated.View>
+      </View>
     </SafeAreaView>
   );
 }

@@ -1,4 +1,5 @@
 import { analyticsService } from '@/services/analytics';
+import { getStableUserId } from '@/services/stableUserId';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import Constants from 'expo-constants';
 import Purchases, {
@@ -971,20 +972,41 @@ export const getAppUserId = async (): Promise<string | null> => {
   }
 };
 
+// Interface for video tracking identifiers
+// DEPRECATED: VideoTrackingIds interface no longer needed
+// Using simplified single-ID approach based on test results
+// export interface VideoTrackingIds {
+//   deviceId: string;
+//   transactionId: string | null;
+// }
+
 /**
- * Get stable tracking ID for video usage that persists across reinstalls
- * Uses originalAppUserId which is stable after restore/purchase
- * Returns null if not Pro or CustomerInfo not ready
+ * Get stable user ID for video tracking - SIMPLIFIED SINGLE-ID APPROACH
  * 
- * IMPORTANT: This ID is used to query the backend where the canonical
- * user_id is maintained via RevenueCat webhooks
+ * Based on test results: originalTransactionId is NOT available during trials,
+ * only after trial converts to paid subscription. This creates UX confusion.
+ * 
+ * New Strategy: Use only stable device ID for ALL users (trial + paid)
+ * - ✅ Works from day 1 (trial users can use videos immediately)
+ * - ✅ Cross-platform compatible (iOS + Android)
+ * - ✅ RevenueCat best practice (custom App User ID)
+ * - ❌ Video limits reset on app reinstall (acceptable trade-off)
+ * 
+ * Additional abuse prevention can be added via IP limiting, device fingerprinting, etc.
  */
 export async function getVideoTrackingId(): Promise<string | null> {
   try {
-    // Get latest customer info
-    const customerInfo = await getCustomerInfo();
+    // Get stable device ID (used as RevenueCat App User ID)
+    const deviceId = await getStableUserId();
+    if (!deviceId) {
+      if (__DEV__) {
+        console.log('🎬 Video tracking: No stable device ID found');
+      }
+      return null;
+    }
     
-    // No customer info = not ready yet
+    // Get customer info for subscription verification
+    const customerInfo = await getCustomerInfo();
     if (!customerInfo) {
       if (__DEV__) {
         console.log('🎬 Video tracking: CustomerInfo not ready');
@@ -992,7 +1014,7 @@ export async function getVideoTrackingId(): Promise<string | null> {
       return null;
     }
     
-    // Check Pro entitlement
+    // Verify Pro entitlement
     const proEntitlement = customerInfo.entitlements?.active?.pro;
     if (!proEntitlement?.isActive) {
       if (__DEV__) {
@@ -1001,49 +1023,24 @@ export async function getVideoTrackingId(): Promise<string | null> {
       return null;
     }
     
-    // Get the stable original ID (available after restore)
-    // This is the canonical ID that persists across reinstalls
-    const stableId = (customerInfo as any).originalAppUserId;
-    const currentId = await Purchases.getAppUserID();
-    
     if (__DEV__) {
-      console.log('📊 Video Tracking Debug:', {
-        has_stable_id: !!stableId,
-        stable_id: stableId,
-        current_id: currentId,
-        is_promotional: proEntitlement.store === 'promotional',
+      console.log('📊 Video Tracking (Single ID Strategy):', {
+        stable_device_id: deviceId,
         product_id: proEntitlement.productIdentifier,
+        period_type: proEntitlement.periodType,
+        is_trial: proEntitlement.periodType === 'TRIAL',
+        is_promotional: proEntitlement.store === 'promotional',
         expires_date: proEntitlement.expirationDate
       });
     }
     
-    if (!stableId) {
-      // This can happen for:
-      // 1. Promotional/granted entitlements (no purchase)
-      // 2. User hasn't restored yet (shouldn't have Pro then)
-      
-      if (proEntitlement.store === 'promotional') {
-        // Promotional entitlements use anonymous ID
-        if (__DEV__) {
-          console.log('🎬 Video tracking: Promotional entitlement, using anonymous:', currentId);
-        }
-        return currentId;
-      }
-      
-      // Unexpected: Pro but no originalAppUserId
-      // This shouldn't happen in production as Pro requires purchase/restore
-      if (__DEV__) {
-        console.warn('⚠️ Video tracking: Pro user but no originalAppUserId - restore may be needed');
-      }
-      // Fall back to current ID as last resort
-      return currentId;
-    }
-    
     if (__DEV__) {
-      console.log('✅ Video tracking: Using stable ID:', stableId);
+      console.log('✅ Video tracking: Using stable device ID for all users');
+      console.log('📱 Device ID (primary key):', deviceId);
+      console.log('📋 Note: Video limits reset on app reinstall (by design)');
     }
     
-    return stableId;
+    return deviceId;
   } catch (error) {
     if (__DEV__) {
       console.error('❌ Failed to get video tracking ID:', error);

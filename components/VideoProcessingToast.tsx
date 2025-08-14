@@ -246,18 +246,18 @@ export function VideoProcessingToast({
           {/* Glass Content */}
           <View className="flex-1">
             {/* Glass Tags */}
-            <View className="flex-row mb-2 space-x-2">
-              <View className="px-2.5 py-1 rounded-full border border-white/20"
+            <View className="flex-row mb-3 space-x-3">
+              <View className="px-3 py-1.5 rounded-full border border-white/20"
                     style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}>
-                <Text className="text-white/80 text-xs font-medium tracking-wide">
+                <Text className="text-white/90 text-xs font-medium tracking-wide">
                   {statusContent.label}
                 </Text>
               </View>
               {/* Mode tag - only show for videos and when mode exists */}
               {mode && jobType === 'video' && (
-                <View className="px-2.5 py-1 rounded-full border border-white/20"
+                <View className="px-3 py-1.5 rounded-full border border-white/20"
                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}>
-                  <Text className="text-white/80 text-xs font-medium tracking-wide">
+                  <Text className="text-white/90 text-xs font-medium tracking-wide">
                     {mode.toUpperCase()}
                   </Text>
                 </View>
@@ -266,7 +266,7 @@ export function VideoProcessingToast({
             <Text className="text-white text-lg font-bold mb-1">
               {statusContent.title}
             </Text>
-            <Text className="text-white/80 text-base">
+            <Text className="text-white/90 text-base">
               {statusContent.subtitle}
             </Text>
           </View>

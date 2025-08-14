@@ -5,6 +5,7 @@ import { networkStateService } from '@/services/networkState';
 import { notificationService } from '@/services/notificationService';
 import { permissionsService } from '@/services/permissions';
 import { checkSubscriptionStatus } from '@/services/revenuecat';
+import { getOrCreateStableUserId } from '@/services/stableUserId';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { checkForCompletedVideos } from '@/services/videoGenerationService';
 import { useVideoToastStore } from '@/store/videoToastStore';
@@ -256,6 +257,35 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
           }
           setIsPro(false);
           return;
+        }
+
+        // CRITICAL: Set stable user ID for RevenueCat tracking
+        // This enables consistent user identification for video limits
+        try {
+          if (__DEV__) {
+            console.log('🔑 Setting up stable user ID for RevenueCat...');
+          }
+          
+          const stableId = await getOrCreateStableUserId();
+          await Purchases.logIn(stableId);
+          
+          if (__DEV__) {
+            console.log('✅ Logged into RevenueCat with stable ID:', stableId);
+          }
+          
+          // CRITICAL: Sync purchases to preserve Pro status for existing users
+          // This ensures that existing Pro subscribers maintain their access
+          await Purchases.syncPurchases();
+          
+          if (__DEV__) {
+            console.log('✅ Purchases synced - existing Pro status preserved');
+          }
+        } catch (stableIdError) {
+          if (__DEV__) {
+            console.error('❌ Failed to set stable user ID:', stableIdError);
+          }
+          // Continue with initialization even if stable ID setup fails
+          // RevenueCat will fall back to anonymous ID
         }
         
         // CRITICAL: Establish correct subscription truth at app startup

@@ -156,29 +156,16 @@ export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { bac
       await checkSubscriptionStatus();
     }
     
-    // Launch image picker for user to select photo
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: false,
-      quality: 1,
-    });
-
+    // Launch image picker then open Quick Edit sheet in background mode
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 1 });
     if (!result.canceled && result.assets[0]) {
-      // Debug: Show what prompt will be used
-      if (__DEV__) {
-        console.log('🌅 Background selected:', background.title);
-        console.log('📝 Prompt to be used:', background.backgroundPrompt || background.title);
+      try {
+        const { useQuickEditStore } = await import('@/store/quickEditStore');
+        useQuickEditStore.getState().openWithImage({ functionType: 'background' as any, imageUri: result.assets[0].uri, customPrompt: background.backgroundPrompt || background.title });
+      } catch {
+        // fallback: existing flow
+        router.push({ pathname: '/text-edits', params: { imageUri: result.assets[0].uri, prompt: background.backgroundPrompt || background.title, mode: 'background' } });
       }
-      
-      // Navigate to processing with background prompt
-      router.push({
-        pathname: '/text-edits',
-        params: {
-          imageUri: result.assets[0].uri,
-          prompt: background.backgroundPrompt || background.title,
-          mode: 'background'
-        }
-      });
     }
   };
 
@@ -188,6 +175,7 @@ export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { bac
         horizontal 
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 16 }}
+        extraData={isPro}
       >
         {backgrounds.map((item, index) => (
           <Animated.View
@@ -228,9 +216,8 @@ export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { bac
                 style={{ position: 'absolute', inset: 0 as any }}
               />
               
-              {/* Bottom label with PRO badge */}
+              {/* Bottom label + PRO for non-pro users */}
               <View style={{ position: 'absolute', left: 10, bottom: 10 }}>
-                {/* PRO badge for non-pro users - positioned above title */}
                 {!isPro && (
                   <View style={{ 
                     backgroundColor: 'rgba(0,0,0,0.7)',

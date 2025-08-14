@@ -38,7 +38,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 function CropModalScreen() {
   const router = useRouter();
-  const { imageUri, functionType, imageSource, customPrompt, simulateVideo } = useLocalSearchParams();
+  const { imageUri, functionType, imageSource, customPrompt, simulateVideo, returnTo } = useLocalSearchParams();
   const [error] = useState<string | null>(null);
   
   // Use Zustand store for state management
@@ -57,6 +57,13 @@ function CropModalScreen() {
     resetForNewImage,
     reset,
   } = useCropModalStore();
+
+  // If invoked from Quick Edit sheet, show crop tool immediately
+  useEffect(() => {
+    if (returnTo === 'quick-edit') {
+      setShowCropTool(true);
+    }
+  }, [returnTo, setShowCropTool]);
 
   // Reset store state when imageUri changes (new image loaded)
   useEffect(() => {
@@ -390,23 +397,7 @@ function CropModalScreen() {
         {/* Placeholder to balance X button for perfect center alignment */}
         <View className="w-10 h-10" />
       </View>
-      {isProcessing ? (
-        <View style={{ flex: 1, backgroundColor: '#0B0B0F', justifyContent: 'center', alignItems: 'center' }}>
-          <Animated.View
-            style={[
-              {
-                width: 48,
-                height: 48,
-                borderRadius: 24,
-                borderWidth: 3,
-                borderColor: 'rgba(249,115,22,0.25)',
-                borderTopColor: '#f97316',
-              },
-              animatedCenterStyle,
-            ]}
-          />
-        </View>
-      ) : showCropTool ? (
+      {showCropTool ? (
         <View style={{
           flex: 1,
           marginTop: 60,
@@ -423,25 +414,34 @@ function CropModalScreen() {
               console.log('🔍 CustomImageCropper onEditingComplete called with:', result);
               console.log('🔍 Cropped URI:', result?.uri);
               
-              setShowCropTool(false);
-              
-              if (result?.uri) {
-                console.log('✅ Cropped URI exists, updating current image');
-                // Update the current image to the cropped version
-                resetForNewImage(result.uri);
-                console.log('✅ Image updated to cropped version, returning to main crop modal view');
-              } else {
-                console.log('❌ No valid cropped URI found, keeping original image');
-                // Keep the original image if cropping failed
-                // User stays in main view with original image
+              // If this crop was initiated from Quick Edit, return there with the new image
+              if (returnTo === 'quick-edit') {
+                const cropped = result?.uri || currentImageUri;
+                try {
+                  const { useQuickEditStore } = require('@/store/quickEditStore');
+                  useQuickEditStore.getState().openWithImage({ functionType: (functionType as any) || 'restoration', imageUri: cropped });
+                } catch {}
+                router.back();
+                return;
               }
-              
-              // Note: We don't call handleRestoration() here anymore
-              // User can now see the cropped image and decide when to click "Restore"
+
+              setShowCropTool(false);
+              if (result?.uri) {
+                resetForNewImage(result.uri);
+              }
             }}
             onEditingCancel={() => {
               console.log('🔍 CustomImageCropper onEditingCancel called');
-              setShowCropTool(false);
+              if (returnTo === 'quick-edit') {
+                // Return to Quick Edit without changes
+                try {
+                  const { useQuickEditStore } = require('@/store/quickEditStore');
+                  useQuickEditStore.getState().openWithImage({ functionType: (functionType as any) || 'restoration', imageUri: currentImageUri });
+                } catch {}
+                router.back();
+              } else {
+                setShowCropTool(false);
+              }
               // Return to main crop modal view with original image (no changes)
             }}
           />

@@ -22,7 +22,12 @@ import { VideoProcessingToast } from './VideoProcessingToast';
  */
 export function GlobalNotifications() {
   const pathname = usePathname();
-  const suppressToastOnRestoration = pathname?.startsWith('/restoration');
+  // Suppress video toasts on screens where they obstruct user workflows
+  const suppressToastHere = (
+    pathname?.startsWith('/restoration') ||
+    pathname === '/text-edits' || pathname?.startsWith('/text-edits') ||
+    pathname === '/crop-modal' || pathname?.startsWith('/crop-modal')
+  );
   const { 
     isProcessing, 
     isVideoProcessing,
@@ -277,7 +282,7 @@ export function GlobalNotifications() {
   return (
     <>
       {/* Show video toast from videoToastStore (highest priority) */}
-      {showVideoToast && !suppressToastOnRestoration && (
+      {showVideoToast && !suppressToastHere && (
         <VideoProcessingToast
           visible={true}
           imageUri={completionImageUri}
@@ -294,7 +299,7 @@ export function GlobalNotifications() {
       )}
       
       {/* Show processing toast from cropModalStore (only if no dedicated video toast) */}
-      {!showVideoToast && showProcessingToast && !suppressToastOnRestoration && (
+      {!showVideoToast && showProcessingToast && !suppressToastHere && (
         <VideoProcessingToast
           visible={shouldShowProcessingToast}
           imageUri={currentImageUri}

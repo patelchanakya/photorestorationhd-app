@@ -2,6 +2,7 @@ import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { useQuickEditStore } from '@/store/quickEditStore';
 import React from 'react';
 import { Dimensions, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS } from 'react-native-reanimated';
@@ -73,7 +74,7 @@ type StyleSheetProps = {
   onClose: () => void;
 };
 
-export const StyleSheet = React.memo(({ type, onClose }: StyleSheetProps) => {
+const StyleSheetBase = ({ type, onClose }: StyleSheetProps) => {
   const router = useRouter();
   const translateY = useSharedValue(700);
   const overlayOpacity = useSharedValue(0);
@@ -107,12 +108,11 @@ export const StyleSheet = React.memo(({ type, onClose }: StyleSheetProps) => {
     });
     
     if (!result.canceled && result.assets[0]) {
-      // Close modal only after selecting image
+      // Open Quick Edit sheet prefilled, then close the style sheet
+      try {
+        useQuickEditStore.getState().openWithImage({ functionType: 'restoration', imageUri: result.assets[0].uri, styleKey });
+      } catch {}
       onClose();
-      // Small delay to let modal close smoothly
-      setTimeout(() => {
-        router.push(`/crop-modal?imageUri=${encodeURIComponent(result.assets[0].uri)}&functionType=restoration&styleKey=${encodeURIComponent(styleKey)}&imageSource=gallery`);
-      }, 100);
     }
   }, [onClose, router]);
 
@@ -246,4 +246,7 @@ export const StyleSheet = React.memo(({ type, onClose }: StyleSheetProps) => {
       </Animated.View>
     </View>
   );
-});
+};
+
+export const StyleSheet = React.memo(StyleSheetBase);
+StyleSheet.displayName = 'StyleSheet';

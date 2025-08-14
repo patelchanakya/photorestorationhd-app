@@ -1,4 +1,6 @@
 import { DeviceTwoRowCarousel } from '@/components/DeviceTwoRowCarousel';
+import { QuickEditSheet } from '@/components/QuickEditSheet';
+import { useQuickEditStore } from '@/store/quickEditStore';
 import { FeatureCardsList } from '@/components/FeatureCardsList';
 import { QuickActionRail } from '@/components/QuickActionRail';
 import { IconSymbol } from '@/components/ui/IconSymbol';
@@ -12,6 +14,12 @@ import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from '
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeGalleryLikeScreen() {
+  const settingsNavLock = React.useRef(false);
+  const openQuick = (functionType: 'restoration' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'background' | 'outfit' | 'custom', styleKey?: string | null) => {
+    try {
+      useQuickEditStore.getState().open({ functionType, styleKey: styleKey ?? null });
+    } catch {}
+  };
   const isPro = useSubscriptionStore((state) => state.isPro);
   const router = useRouter();
   
@@ -111,7 +119,15 @@ export default function HomeGalleryLikeScreen() {
             <Text style={{ color: isPro ? '#f97316' : '#fff', fontWeight: '600', fontSize: 12 }}>PRO</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => router.push('/settings-modal')}
+            onPress={async () => {
+              if (settingsNavLock.current) return;
+              settingsNavLock.current = true;
+              try {
+                await router.push('/settings-modal');
+              } finally {
+                setTimeout(() => { settingsNavLock.current = false; }, 400);
+              }
+            }}
           >
             <IconSymbol name="gear" size={22} color="#EAEAEA" />
           </TouchableOpacity>
@@ -167,6 +183,7 @@ export default function HomeGalleryLikeScreen() {
           <DeviceTwoRowCarousel functionType="repair" />
         </View>
 
+
         {/* Outfits Section */}
         <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '600', letterSpacing: -0.3 }}>Outfits</Text>
@@ -195,12 +212,13 @@ export default function HomeGalleryLikeScreen() {
         <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '600', letterSpacing: -0.3 }}>Magic</Text>
         </View>
-        <FeatureCardsList />
+        <FeatureCardsList onOpenBackgrounds={() => openQuick('background')} onOpenClothes={() => openQuick('outfit')} />
 
       </ScrollView>
       {/* Bottom quick action rail */}
       <QuickActionRail />
     </SafeAreaView>
+    <QuickEditSheet />
     {Platform.OS === 'ios' && (
       <Animated.View
         pointerEvents="none"
