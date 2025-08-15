@@ -7,6 +7,7 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { presentPaywall } from '@/services/revenuecat';
 import React, { useMemo, useState } from 'react';
 import { Alert, FlatList, ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
@@ -52,11 +53,14 @@ export default function OnboardingScreen() {
       return;
     }
 
-    // Prefer a primary feature that exists in ONBOARDING_FEATURES and is not Back to Life (video)
-    const primaryCandidate = ONBOARDING_FEATURES.find(
-      (f) => selectedFeatures.includes(f.id) && f.mapsTo !== 'back_to_life'
-    );
-    const primaryInterest = primaryCandidate?.id ?? selectedFeatures.find((id) => ONBOARDING_FEATURES.some((f) => f.id === id)) ?? selectedFeatures[0];
+    // Determine if user selected ONLY the moving video option
+    const selectedDefs = ONBOARDING_FEATURES.filter(f => selectedFeatures.includes(f.id));
+    const hasNonVideo = selectedDefs.some(f => f.mapsTo !== 'back_to_life');
+    const hasOnlyVideo = selectedDefs.length > 0 && !hasNonVideo;
+
+    // Prefer a primary feature that is not Back to Life when available
+    const primaryCandidate = selectedDefs.find((f) => f.mapsTo !== 'back_to_life');
+    const primaryInterest = primaryCandidate?.id ?? selectedFeatures[0];
     
     // Save selections locally
     await onboardingUtils.saveOnboardingSelections(selectedFeatures, primaryInterest);
@@ -69,7 +73,27 @@ export default function OnboardingScreen() {
       // Silently fail - analytics shouldn't block user flow
     });
 
-    // Move to free attempt
+    // If they selected ONLY Back to Life (moving video), show paywall instead of free attempt
+    if (hasOnlyVideo) {
+      if (isPro) {
+        await onboardingUtils.completeOnboarding();
+        router.replace('/explore');
+        return;
+      }
+      // Present paywall. On success, complete onboarding and continue to app
+      try {
+        const purchased = await presentPaywall();
+        if (purchased) {
+          await onboardingUtils.completeOnboarding();
+          router.replace('/explore');
+        }
+      } catch {
+        // ignore
+      }
+      return;
+    }
+
+    // Otherwise continue to free attempt for photo features
     setCurrentStep('free-attempt');
   };
 
@@ -147,38 +171,82 @@ export default function OnboardingScreen() {
     return `${selectedFeatures.length} selected`;
   }, [currentStep, selectedFeatures.length]);
 
-  const renderStepIndicator = (activeIndex: 0 | 1) => (
-    <View className="flex-row items-center justify-center mb-6">
-      <View className="flex-row items-center space-x-2">
-        {/* Step 1 */}
-        <View className={`w-6 h-6 rounded-full items-center justify-center ${
-          activeIndex >= 0 ? 'bg-yellow-400' : 'bg-gray-700'
-        }`}>
-          <Text className={`text-xs font-semibold ${
-            activeIndex >= 0 ? 'text-black' : 'text-gray-400'
-          }`}>
-            1
-          </Text>
-        </View>
-        
-        {/* Connector Line */}
-        <View className={`w-6 h-0.5 ${
-          activeIndex >= 1 ? 'bg-yellow-400' : 'bg-gray-700'
-        }`} />
-        
-        {/* Step 2 */}
-        <View className={`w-6 h-6 rounded-full items-center justify-center ${
-          activeIndex >= 1 ? 'bg-yellow-400' : 'bg-gray-700'
-        }`}>
-          <Text className={`text-xs font-semibold ${
-            activeIndex >= 1 ? 'text-black' : 'text-gray-400'
-          }`}>
-            2
-          </Text>
+  function StepIndicator({ index }: { index: 0 | 1 }) {
+    const progress = useSharedValue(index);
+    const dot1Opacity = useSharedValue(1);
+    const dot2Opacity = useSharedValue(0.4);
+    
+    React.useEffect(() => {
+      progress.value = withSpring(index, { damping: 12, stiffness: 120 });
+      dot1Opacity.value = withTiming(index === 0 ? 1 : 0.4, { duration: 300 });
+      dot2Opacity.value = withTiming(index === 1 ? 1 : 0.4, { duration: 300 });
+    }, [index]);
+
+    const connectorStyle = useAnimatedStyle(() => ({
+      width: `${progress.value * 100}%`,
+    }));
+
+    const dot1Style = useAnimatedStyle(() => ({
+      transform: [{ scale: withSpring(index === 0 ? 1.2 : 1, { damping: 15 }) }],
+      opacity: dot1Opacity.value,
+    }));
+    
+    const dot2Style = useAnimatedStyle(() => ({
+      transform: [{ scale: withSpring(index === 1 ? 1.2 : 1, { damping: 15 }) }],
+      opacity: dot2Opacity.value,
+    }));
+
+    return (
+      <View className="flex-row items-center justify-center mb-6">
+        <View className="flex-row items-center">
+          <Animated.View 
+            style={dot1Style} 
+            className="w-3 h-3 rounded-full"
+            style={[
+              dot1Style,
+              {
+                backgroundColor: index === 0 ? '#FACC15' : '#6B7280',
+                shadowColor: index === 0 ? '#FACC15' : 'transparent',
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.6,
+                shadowRadius: 8,
+                elevation: 4,
+              }
+            ]}
+          />
+          <View className="mx-3 h-0.5 w-12 bg-gray-700 relative overflow-hidden rounded-full">
+            <Animated.View 
+              style={[
+                connectorStyle,
+                { 
+                  height: 2, 
+                  backgroundColor: '#FACC15',
+                  shadowColor: '#FACC15',
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowOpacity: 0.8,
+                  shadowRadius: 4,
+                }
+              ]} 
+            />
+          </View>
+          <Animated.View 
+            style={[
+              dot2Style,
+              {
+                backgroundColor: index === 1 ? '#FACC15' : '#6B7280',
+                shadowColor: index === 1 ? '#FACC15' : 'transparent',
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.6,
+                shadowRadius: 8,
+                elevation: 4,
+              }
+            ]}
+            className="w-3 h-3 rounded-full"
+          />
         </View>
       </View>
-    </View>
-  );
+    );
+  }
 
   // Small tile data (reuse Explore assets) - each row toggles a single feature id
   const VIDEO_TILES = [
@@ -235,7 +303,10 @@ export default function OnboardingScreen() {
   const getFeatureImage = (mapsTo: string) => FEATURE_IMAGES[mapsTo] ?? FEATURE_IMAGES.restoration;
 
   if (currentStep === 'free-attempt') {
-    const primaryFeature = onboardingUtils.getPrimaryFeature(selectedFeatures, selectedFeatures[0]);
+    // Never use Back to Life (video) as the primary feature for free attempt
+    const primaryFeature =
+      ONBOARDING_FEATURES.find(f => selectedFeatures.includes(f.id) && f.mapsTo !== 'back_to_life') ||
+      ONBOARDING_FEATURES.find(f => selectedFeatures.includes(f.id));
     
     return (
       <View className="flex-1 bg-gray-900">
@@ -246,7 +317,7 @@ export default function OnboardingScreen() {
               <TouchableOpacity onPress={() => setCurrentStep('selection')} className="p-2 -ml-2">
                 <IconSymbol name="chevron.left" size={24} color="#FFFFFF" />
               </TouchableOpacity>
-              {renderStepIndicator(1)}
+          <StepIndicator index={1} />
               <View className="w-9" />
             </View>
             <Text className="text-white text-3xl font-bold text-center mt-2">Try {primaryFeature?.name}</Text>
@@ -309,7 +380,7 @@ export default function OnboardingScreen() {
       {/* Hero header */}
       <View style={{ paddingTop: insets.top + 8 }}>
         <View className="px-5 pb-4">
-          {renderStepIndicator(0)}
+          <StepIndicator index={0} />
           <Text className="text-white text-3xl font-bold text-center">
             What brought you here today?
           </Text>
