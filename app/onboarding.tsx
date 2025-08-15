@@ -7,8 +7,8 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Alert, FlatList, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function OnboardingScreen() {
@@ -132,33 +132,47 @@ export default function OnboardingScreen() {
     router.replace('/explore');
   };
 
+  const selectedCountLabel = useMemo(() => {
+    if (currentStep !== 'selection') return '';
+    if (selectedFeatures.length === 0) return 'Select all that apply';
+    if (selectedFeatures.length === 1) return '1 selected';
+    return `${selectedFeatures.length} selected`;
+  }, [currentStep, selectedFeatures.length]);
+
+  const renderStepIndicator = (activeIndex: 0 | 1) => (
+    <View className="flex-row items-center justify-center mb-6">
+      <View className="flex-row items-center">
+        <View className={`w-9 h-9 rounded-full items-center justify-center ${activeIndex >= 0 ? 'bg-blue-600' : 'bg-gray-200'}`}>
+          <Text className="text-white font-semibold">1</Text>
+        </View>
+        <View className={`h-0.5 w-10 mx-2 ${activeIndex >= 1 ? 'bg-blue-600' : 'bg-gray-200'}`} />
+        <View className={`w-9 h-9 rounded-full items-center justify-center ${activeIndex >= 1 ? 'bg-blue-600' : 'bg-gray-200'}`}>
+          <Text className="text-white font-semibold">2</Text>
+        </View>
+      </View>
+    </View>
+  );
+
   if (currentStep === 'free-attempt') {
     const primaryFeature = onboardingUtils.getPrimaryFeature(selectedFeatures, selectedFeatures[0]);
     
     return (
       <View className="flex-1 bg-white">
         {/* Header */}
-        <View style={{ paddingTop: insets.top + 8, paddingHorizontal: 20, paddingBottom: 16 }}>
-          <View className="flex-row items-center justify-between mb-6">
-            <TouchableOpacity 
-              onPress={() => setCurrentStep('selection')} 
-              className="p-2 -ml-2"
-            >
-              <IconSymbol name="chevron.left" size={24} color="#374151" />
-            </TouchableOpacity>
-            <View className="flex-row space-x-2">
-              <View className="w-8 h-1 bg-blue-500 rounded-full" />
-              <View className="w-8 h-1 bg-blue-500 rounded-full" />
+        <View style={{ paddingTop: insets.top + 8, paddingBottom: 12 }}>
+          <View className="px-5">
+            <View className="flex-row items-center justify-between">
+              <TouchableOpacity onPress={() => setCurrentStep('selection')} className="p-2 -ml-2">
+                <IconSymbol name="chevron.left" size={24} color="#111827" />
+              </TouchableOpacity>
+              {renderStepIndicator(1)}
+              <View className="w-9" />
             </View>
-            <View className="w-8" />
+            <Text className="text-gray-900 text-3xl font-bold text-center mt-2">Try {primaryFeature?.name}</Text>
+            <Text className="text-gray-600 text-center text-base leading-6 mt-2 px-3">
+              Select a photo to see what Photo Restoration HD can do for free.
+            </Text>
           </View>
-          
-          <Text className="text-gray-900 text-3xl font-bold text-center mb-3">
-            Try {primaryFeature?.name}
-          </Text>
-          <Text className="text-gray-600 text-center text-base leading-6">
-            Select a photo to see what Photo Restoration HD can do for free!
-          </Text>
         </View>
 
         {/* Content */}
@@ -170,44 +184,47 @@ export default function OnboardingScreen() {
                 colors={primaryFeature?.gradient || ['#3B82F6', '#1D4ED8']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                className="w-20 h-20 rounded-full items-center justify-center mb-6"
+                className="w-24 h-24 rounded-2xl items-center justify-center"
                 style={{
                   shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 8,
-                  elevation: 4,
+                  shadowOffset: { width: 0, height: 10 },
+                  shadowOpacity: 0.15,
+                  shadowRadius: 20,
+                  elevation: 6,
                 }}
               >
-                <IconSymbol name={primaryFeature?.icon as any} size={36} color="#FFFFFF" />
+                <IconSymbol name={primaryFeature?.icon as any} size={40} color="#FFFFFF" />
               </LinearGradient>
               
-              <Text className="text-gray-900 text-xl font-semibold mb-2 text-center">
+              <Text className="text-gray-900 text-xl font-semibold mt-4">
                 {primaryFeature?.name}
               </Text>
-              <Text className="text-gray-600 text-center text-base leading-6">
+              <Text className="text-gray-600 text-center text-base leading-6 mt-1 px-4">
                 {primaryFeature?.description}
               </Text>
+              <View className="mt-4 px-3 py-2 rounded-xl bg-gray-50">
+                <Text className="text-gray-500 text-xs">This will use one of your free restorations</Text>
+              </View>
             </View>
 
             {/* Call to Action */}
             <TouchableOpacity
               onPress={handleFreeAttempt}
               disabled={isProcessing}
-              className="w-full mb-4"
+              className="w-full mb-4 rounded-2xl overflow-hidden"
               style={{
                 shadowColor: '#3B82F6',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.2,
-                shadowRadius: 8,
-                elevation: 4,
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.25,
+                shadowRadius: 12,
+                elevation: 6,
               }}
             >
               <LinearGradient
                 colors={isProcessing ? ['#9CA3AF', '#6B7280'] : ['#3B82F6', '#1D4ED8']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                className="py-4 rounded-2xl"
+                className="py-4"
               >
                 <Text className="text-white text-center text-lg font-semibold">
                   {isProcessing ? 'Processing...' : 'Select Photo & Try Free'}
@@ -226,105 +243,101 @@ export default function OnboardingScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      {/* Header */}
-      <View style={{ paddingTop: insets.top + 8, paddingHorizontal: 20, paddingBottom: 16 }}>
-        <View className="flex-row items-center justify-center mb-6">
-          <View className="flex-row space-x-2">
-            <View className="w-8 h-1 bg-blue-500 rounded-full" />
-            <View className="w-8 h-1 bg-gray-200 rounded-full" />
-          </View>
-        </View>
-        
-        <Text className="text-gray-900 text-3xl font-bold text-center mb-3">
-          What brought you here today?
-        </Text>
-        <Text className="text-gray-600 text-center text-base leading-6">
-          Select all features that interest you
-        </Text>
+      {/* Hero header */}
+      <View style={{ paddingTop: insets.top + 8 }}>
+        <LinearGradient
+          colors={["#EEF2FF", "#FFFFFF"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          className="px-5 pb-6"
+        >
+          {renderStepIndicator(0)}
+          <Text className="text-gray-900 text-3xl font-bold text-center">
+            What brought you here today?
+          </Text>
+          <Text className="text-gray-600 text-center text-base leading-6 mt-2">
+            {selectedCountLabel}
+          </Text>
+        </LinearGradient>
       </View>
 
-      <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
-        <View className="pb-40">
-          {ONBOARDING_FEATURES.map((feature, index) => {
-            const isSelected = selectedFeatures.includes(feature.id);
-            
-            return (
-              <TouchableOpacity
-                key={feature.id}
-                onPress={() => handleFeatureToggle(feature.id)}
-                className={`rounded-2xl border-2 bg-white ${
-                  isSelected ? 'border-blue-500' : 'border-gray-100'
-                } ${index > 0 ? 'mt-5' : ''}`}
-                style={{
-                  shadowColor: isSelected ? '#3B82F6' : '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: isSelected ? 0.1 : 0.05,
-                  shadowRadius: isSelected ? 8 : 4,
-                  elevation: isSelected ? 3 : 1,
-                }}
-              >
-                <View className="p-5">
-                  <View className="flex-row items-center">
-                    {/* Icon */}
-                    <View className="mr-4">
-                      <LinearGradient
-                        colors={feature.gradient}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        className="w-12 h-12 rounded-xl items-center justify-center"
-                      >
-                        <IconSymbol 
-                          name={feature.icon as any} 
-                          size={20} 
-                          color="#FFFFFF" 
-                        />
-                      </LinearGradient>
-                    </View>
-                    
-                    {/* Content */}
-                    <View className="flex-1">
-                      <Text className="text-gray-900 font-semibold text-lg mb-1">
-                        {feature.name}
-                      </Text>
-                      <Text className="text-gray-600 text-sm leading-5">
-                        {feature.description}
-                      </Text>
-                    </View>
-
-                    {/* Checkbox */}
-                    <View className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
-                      isSelected 
-                        ? 'border-blue-500 bg-blue-500' 
-                        : 'border-gray-300'
-                    }`}>
-                      {isSelected && (
-                        <IconSymbol name="checkmark" size={12} color="#FFFFFF" />
-                      )}
-                    </View>
-                  </View>
+      <FlatList
+        data={ONBOARDING_FEATURES as unknown as any[]}
+        showsVerticalScrollIndicator={false}
+        keyExtractor={(item: any) => item.id}
+        numColumns={2}
+        columnWrapperStyle={{ gap: 12, paddingHorizontal: 20 }}
+        contentContainerStyle={{ paddingTop: 16, paddingBottom: (insets.bottom || 0) + 120 }}
+        renderItem={({ item: feature }: any) => {
+          const isSelected = selectedFeatures.includes(feature.id);
+          return (
+            <TouchableOpacity
+              onPress={() => handleFeatureToggle(feature.id)}
+              className={`flex-1 rounded-2xl border-2 bg-white ${isSelected ? 'border-blue-500' : 'border-gray-100'}`}
+              style={{
+                padding: 16,
+                marginBottom: 12,
+                shadowColor: isSelected ? '#3B82F6' : '#000',
+                shadowOffset: { width: 0, height: 3 },
+                shadowOpacity: isSelected ? 0.12 : 0.06,
+                shadowRadius: isSelected ? 10 : 6,
+                elevation: isSelected ? 3 : 1,
+              }}
+              activeOpacity={0.9}
+            >
+              <View className="flex-row items-center">
+                <LinearGradient
+                  colors={feature.gradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  className="w-12 h-12 rounded-xl items-center justify-center mr-3"
+                >
+                  <IconSymbol name={feature.icon as any} size={20} color="#FFFFFF" />
+                </LinearGradient>
+                <View className="flex-1">
+                  <Text className="text-gray-900 font-semibold text-[16px]" numberOfLines={1}>
+                    {feature.name}
+                  </Text>
+                  <Text className="text-gray-600 text-[12px] leading-5 mt-0.5" numberOfLines={2}>
+                    {feature.description}
+                  </Text>
                 </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </ScrollView>
+                <View className={`w-6 h-6 rounded-full border-2 items-center justify-center ${isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-300'}`}>
+                  {isSelected && <IconSymbol name="checkmark" size={12} color="#FFFFFF" />}
+                </View>
+              </View>
+            </TouchableOpacity>
+          );
+        }}
+      />
 
       {/* Bottom action */}
-      <View 
-        className="absolute bottom-0 left-0 right-0 px-5"
-        style={{ 
-          paddingBottom: insets.bottom + 16,
-          paddingTop: 16,
-        }}
-      >
+      <View className="absolute bottom-0 left-0 right-0 px-5" style={{ paddingBottom: insets.bottom + 16, paddingTop: 12 }}>
         <TouchableOpacity
           onPress={handleContinue}
-          className="bg-blue-600 rounded-2xl justify-center items-center p-4 shadow-lg active:scale-95"
+          className="rounded-2xl overflow-hidden"
+          activeOpacity={0.9}
+          style={{
+            shadowColor: '#3B82F6',
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: 0.22,
+            shadowRadius: 12,
+            elevation: 6,
+          }}
         >
-          <Text className="text-white text-sm font-semibold">
-            Continue
-          </Text>
+          <LinearGradient colors={["#3B82F6", "#1D4ED8"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} className="py-4 items-center justify-center">
+            <Text className="text-white text-base font-semibold">
+              {selectedFeatures.length > 0
+                ? `Continue with ${selectedFeatures.length} feature${selectedFeatures.length > 1 ? 's' : ''}`
+                : 'Continue'}
+            </Text>
+          </LinearGradient>
         </TouchableOpacity>
+        <View className="mt-3">
+          <Text className="text-center text-gray-400 text-xs">
+            You can change preferences later in Settings
+          </Text>
+        </View>
       </View>
     </View>
   );
