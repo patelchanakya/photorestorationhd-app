@@ -8,7 +8,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { Alert, FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -49,7 +50,11 @@ export default function OnboardingScreen() {
       return;
     }
 
-    const primaryInterest = selectedFeatures[0]; // First selected is primary
+    // Prefer a primary feature that exists in ONBOARDING_FEATURES and is not Back to Life (video)
+    const primaryCandidate = ONBOARDING_FEATURES.find(
+      (f) => selectedFeatures.includes(f.id) && f.mapsTo !== 'back_to_life'
+    );
+    const primaryInterest = primaryCandidate?.id ?? selectedFeatures.find((id) => ONBOARDING_FEATURES.some((f) => f.id === id)) ?? selectedFeatures[0];
     
     // Save selections locally
     await onboardingUtils.saveOnboardingSelections(selectedFeatures, primaryInterest);
@@ -142,35 +147,48 @@ export default function OnboardingScreen() {
 
   const renderStepIndicator = (activeIndex: 0 | 1) => (
     <View className="flex-row items-center justify-center mb-6">
-      <View className="flex-row items-center">
-        {/* Step 1 */}
-        <View className="relative">
-          <View className={`w-3 h-3 rounded-full ${activeIndex >= 0 ? 'bg-blue-600' : 'bg-gray-300'}`} />
-          {activeIndex >= 0 && (
-            <View className="absolute inset-0 w-3 h-3 rounded-full bg-blue-600 opacity-30 animate-pulse" />
-          )}
-        </View>
-        
-        {/* Progress line */}
-        <View className="relative mx-4">
-          <View className="h-0.5 w-16 bg-gray-200" />
-          <View 
-            className={`absolute top-0 left-0 h-0.5 bg-blue-600 transition-all duration-500 ${
-              activeIndex >= 1 ? 'w-16' : 'w-0'
-            }`} 
-          />
-        </View>
-        
-        {/* Step 2 */}
-        <View className="relative">
-          <View className={`w-3 h-3 rounded-full ${activeIndex >= 1 ? 'bg-blue-600' : 'bg-gray-300'}`} />
-          {activeIndex >= 1 && (
-            <View className="absolute inset-0 w-3 h-3 rounded-full bg-blue-600 opacity-30 animate-pulse" />
-          )}
-        </View>
+      <View className="flex-row space-x-2">
+        <View className={`w-8 h-1 rounded-full ${activeIndex >= 0 ? 'bg-blue-500' : 'bg-gray-200'}`} />
+        <View className={`w-8 h-1 rounded-full ${activeIndex >= 1 ? 'bg-blue-500' : 'bg-gray-200'}`} />
       </View>
     </View>
   );
+
+  // Small tile data (reuse Explore assets) - each row toggles a single feature id
+  const VIDEO_TILES = [
+    { id: 'btl-0', title: 'Smile', type: 'video' as const, video: require('../assets/videos/magic/backtolife/thumbnail/btl-0.mp4') },
+    { id: 'btl-2', title: 'Fun', type: 'video' as const, video: require('../assets/videos/magic/backtolife/thumbnail/btl-2.mp4') },
+    { id: 'btl-3', title: 'Hug', type: 'video' as const, video: require('../assets/videos/magic/backtolife/thumbnail/btl-3.mp4') },
+  ];
+  const OUTFIT_TILES = [
+    { id: 'outfit-1', title: 'Fix Clothes', type: 'video' as const, video: require('../assets/videos/magic/outfits/thumbnail/fix-clothes/niceclothes.mp4') },
+    { id: 'outfit-2', title: 'Change Color', type: 'video' as const, video: require('../assets/videos/magic/outfits/thumbnail/change-color/colorchange.mp4') },
+    { id: 'outfit-3', title: 'Job Interview', type: 'video' as const, video: require('../assets/videos/magic/outfits/thumbnail/job-interview/jobinterview.mp4') },
+  ];
+  const BACKGROUND_TILES = [
+    { id: 'bg-1', title: 'Garden', type: 'image' as const, image: require('../assets/images/backgrounds/thumbnail/garden/garden.jpeg') },
+    { id: 'bg-2', title: 'Heavenly', type: 'image' as const, image: require('../assets/images/backgrounds/thumbnail/heavenly/heavenly.jpg') },
+    { id: 'bg-4', title: 'Studio', type: 'image' as const, image: require('../assets/images/backgrounds/thumbnail/studio/studio.jpeg') },
+  ];
+
+  function SmallVideoTile({ source, width, isDimmed = false }: { source: any; width: number; isDimmed?: boolean }) {
+    const player = useVideoPlayer(source, (p) => {
+      p.loop = true;
+      p.muted = true;
+    });
+    React.useEffect(() => {
+      let t: any;
+      if (player && !player.playing) {
+        t = setTimeout(() => {
+          try { player.play(); } catch {}
+        }, 150 + Math.random() * 200);
+      }
+      return () => t && clearTimeout(t);
+    }, [player]);
+    return (
+      <VideoView player={player} style={{ width, height: width * (16/9), transform: [{ scaleY: 9/16 }, { scaleX: 16/9 }] as any, opacity: isDimmed ? 0.7 : 1 }} contentFit="cover" nativeControls={false} allowsFullscreen={false} />
+    );
+  }
 
   // Use the same image style as Explore feature posters
   const FEATURE_IMAGES: Record<string, any> = {
@@ -292,85 +310,104 @@ export default function OnboardingScreen() {
         </LinearGradient>
       </View>
 
-      <FlatList
-        data={ONBOARDING_FEATURES as unknown as any[]}
-        keyExtractor={(item: any) => item.id}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingTop: 12, paddingBottom: (insets.bottom || 0) + 120 }}
-        renderItem={({ item: feature }: any) => {
-          const isSelected = selectedFeatures.includes(feature.id);
-          const cardBorder = isSelected ? 'rgba(59,130,246,0.45)' : 'rgba(0,0,0,0.06)';
-          const bubbleBg = isSelected ? '#3B82F6' : 'rgba(255,255,255,0.14)';
-          const bubbleBorder = isSelected ? '#3B82F6' : 'rgba(255,255,255,0.25)';
-          return (
-            <TouchableOpacity
-              activeOpacity={0.9}
-              onPress={() => handleFeatureToggle(feature.id)}
-              style={{ marginHorizontal: 16, marginBottom: 14 }}
-            >
-              <View style={{ height: 220, borderRadius: 22, overflow: 'hidden', borderWidth: 1.5, borderColor: cardBorder }}>
-                <ExpoImage
-                  source={getFeatureImage(feature.mapsTo)}
-                  style={{ width: '100%', height: '100%' }}
-                  contentFit="cover"
-                  cachePolicy="memory-disk"
-                  priority="high"
-                />
-                {/* Vignettes */}
-                <LinearGradient colors={[ 'rgba(0,0,0,0.12)', 'transparent' ]} style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '20%' }} />
-                <LinearGradient colors={[ 'rgba(0,0,0,0.05)', 'rgba(0,0,0,0.65)' ]} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '55%' }} />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: (insets.bottom || 0) + 120 }}>
+        {/* Back to Life row */}
+        <View className="mt-4">
+          <Text className="px-5 text-gray-900 font-semibold text-lg mb-2">Create Moving Videos</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
+            {VIDEO_TILES.map((tile) => {
+              const width = 120;
+              const isSelected = selectedFeatures.includes('create_videos');
+              return (
+                <TouchableOpacity key={tile.id} activeOpacity={0.9} onPress={() => handleFeatureToggle('create_videos')} style={{ width, marginRight: 10 }}>
+                  <View style={{ width, aspectRatio: 9/16, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: isSelected ? 'rgba(59,130,246,0.6)' : 'rgba(0,0,0,0.08)', backgroundColor: '#0b0b0f' }}>
+                    <SmallVideoTile source={tile.video} width={width} isDimmed={!isSelected} />
+                    <LinearGradient colors={["transparent", "rgba(0,0,0,0.3)", "rgba(0,0,0,0.85)"]} start={{ x: 0.5, y: 0.3 }} end={{ x: 0.5, y: 1 }} style={{ position: 'absolute', inset: 0 as any }} />
+                    <View style={{ position: 'absolute', left: 10, bottom: 10 }}>
+                      <Text style={{ color: '#FFFFFF', fontWeight: '600', fontSize: 13 }}>{tile.title}</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
 
-                {/* Text */}
-                <View style={{ position: 'absolute', left: 16, right: 56, bottom: 14 }}>
-                  <Text style={{ color: '#FFFFFF', fontSize: 22, fontWeight: '700', letterSpacing: -0.3 }} numberOfLines={1}>
-                    {feature.name}
-                  </Text>
-                  <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13, marginTop: 4, lineHeight: 18 }} numberOfLines={2}>
-                    {feature.description}
-                  </Text>
-                </View>
+        {/* Outfits row */}
+        <View className="mt-6">
+          <Text className="px-5 text-gray-900 font-semibold text-lg mb-2">Change Clothes</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
+            {OUTFIT_TILES.map((tile) => {
+              const width = 120;
+              const isSelected = selectedFeatures.includes('memorial_touches'); // temporary map to custom until a dedicated id exists
+              return (
+                <TouchableOpacity key={tile.id} activeOpacity={0.9} onPress={() => handleFeatureToggle('memorial_touches')} style={{ width, marginRight: 10 }}>
+                  <View style={{ width, aspectRatio: 9/16, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: isSelected ? 'rgba(59,130,246,0.6)' : 'rgba(0,0,0,0.08)', backgroundColor: '#0b0b0f' }}>
+                    <SmallVideoTile source={tile.video} width={width} isDimmed={!isSelected} />
+                    <LinearGradient colors={["transparent", "rgba(0,0,0,0.3)", "rgba(0,0,0,0.85)"]} start={{ x: 0.5, y: 0.3 }} end={{ x: 0.5, y: 1 }} style={{ position: 'absolute', inset: 0 as any }} />
+                    <View style={{ position: 'absolute', left: 10, bottom: 10 }}>
+                      <Text style={{ color: '#FFFFFF', fontWeight: '600', fontSize: 13 }}>{tile.title}</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
 
-                {/* Icon/Check bubble */}
-                <View style={{ position: 'absolute', right: 12, top: 12, width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: bubbleBg, borderWidth: 1, borderColor: bubbleBorder }}>
-                  {isSelected ? (
-                    <IconSymbol name="checkmark" size={16} color="#FFFFFF" />
-                  ) : (
-                    <IconSymbol name={feature.icon as any} size={16} color={'#FFFFFF'} />
-                  )}
-                </View>
-              </View>
-            </TouchableOpacity>
-          );
-        }}
-      />
+        {/* Backgrounds row */}
+        <View className="mt-6">
+          <Text className="px-5 text-gray-900 font-semibold text-lg mb-2">Change Background</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
+            {BACKGROUND_TILES.map((tile) => {
+              const width = 120;
+              const isSelected = selectedFeatures.includes('memorial_touches'); // same temporary mapping if treated as custom edits
+              return (
+                <TouchableOpacity key={tile.id} activeOpacity={0.9} onPress={() => handleFeatureToggle('memorial_touches')} style={{ width, marginRight: 10 }}>
+                  <View style={{ width, aspectRatio: 9/16, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: isSelected ? 'rgba(59,130,246,0.6)' : 'rgba(0,0,0,0.08)', backgroundColor: '#0b0b0f' }}>
+                    <ExpoImage source={tile.image} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={0} />
+                    <LinearGradient colors={["transparent", "rgba(0,0,0,0.3)", "rgba(0,0,0,0.85)"]} start={{ x: 0.5, y: 0.3 }} end={{ x: 0.5, y: 1 }} style={{ position: 'absolute', inset: 0 as any }} />
+                    <View style={{ position: 'absolute', left: 10, bottom: 10 }}>
+                      <Text style={{ color: '#FFFFFF', fontWeight: '600', fontSize: 13 }}>{tile.title}</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        {/* Classic features row (smaller chips) */}
+        <View className="mt-6">
+          <Text className="px-5 text-gray-900 font-semibold text-lg mb-2">Photo Enhancements</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
+            {ONBOARDING_FEATURES.filter(f => ['restoration','unblur','colorize','descratch'].includes(f.mapsTo)).map((f) => {
+              const isSelected = selectedFeatures.includes(f.id);
+              return (
+                <TouchableOpacity key={f.id} onPress={() => handleFeatureToggle(f.id)} activeOpacity={0.9} style={{ marginRight: 10 }}>
+                  <View className={`flex-row items-center rounded-xl border ${isSelected ? 'border-blue-500' : 'border-gray-200'}`} style={{ paddingHorizontal: 12, paddingVertical: 10 }}>
+                    <LinearGradient colors={f.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} className="w-8 h-8 rounded-lg items-center justify-center mr-3">
+                      <IconSymbol name={f.icon as any} size={16} color="#FFFFFF" />
+                    </LinearGradient>
+                    <Text className="text-gray-900 font-semibold text-[14px]">{f.name}</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+      </ScrollView>
 
       {/* Bottom action */}
-      <View className="absolute bottom-0 left-0 right-0 px-5" style={{ paddingBottom: insets.bottom + 16, paddingTop: 12 }}>
+      <View className="absolute bottom-0 left-0 right-0 px-5" style={{ paddingBottom: insets.bottom + 16, paddingTop: 16 }}>
         <TouchableOpacity
           onPress={handleContinue}
-          className="rounded-2xl overflow-hidden"
-          activeOpacity={0.9}
-          style={{
-            shadowColor: '#3B82F6',
-            shadowOffset: { width: 0, height: 6 },
-            shadowOpacity: 0.22,
-            shadowRadius: 12,
-            elevation: 6,
-          }}
+          className="bg-blue-600 rounded-2xl p-4 shadow-lg active:scale-95"
         >
-          <LinearGradient colors={["#3B82F6", "#1D4ED8"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} className="py-4 items-center justify-center">
-            <Text className="text-white text-base font-semibold">
-              {selectedFeatures.length > 0
-                ? `Continue with ${selectedFeatures.length} feature${selectedFeatures.length > 1 ? 's' : ''}`
-                : 'Continue'}
-            </Text>
-          </LinearGradient>
-        </TouchableOpacity>
-        <View className="mt-3">
-          <Text className="text-center text-gray-400 text-xs">
-            You can change preferences later in Settings
+          <Text className="text-white text-center text-lg font-bold">
+            Continue
           </Text>
-        </View>
+        </TouchableOpacity>
       </View>
     </View>
   );
