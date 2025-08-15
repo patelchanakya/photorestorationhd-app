@@ -7,6 +7,7 @@ import { checkSubscriptionStatus } from '@/services/revenuecat';
 import { getOrCreateStableUserId } from '@/services/stableUserId';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { useVideoToastStore } from '@/store/videoToastStore';
+import { onboardingUtils } from '@/utils/onboarding';
 import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
 import { VideoView, useVideoPlayer } from 'expo-video';
@@ -37,8 +38,42 @@ interface InitialLoadingScreenProps {
 
 export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadingScreenProps) {
   const router = useRouter();
-  const { setIsPro } = useSubscriptionStore();
+  const { setIsPro, isPro } = useSubscriptionStore();
   const insets = useSafeAreaInsets();
+
+  // Helper function to navigate based on onboarding status
+  const navigateToApp = async () => {
+    try {
+      // Pro users skip onboarding
+      if (isPro) {
+        if (__DEV__) {
+          console.log('🎯 Pro user detected - skipping onboarding');
+        }
+        router.replace('/explore');
+        return;
+      }
+
+      // Check if user has completed onboarding
+      const hasSeenOnboarding = await onboardingUtils.hasSeenOnboarding();
+      
+      if (hasSeenOnboarding) {
+        if (__DEV__) {
+          console.log('🎯 User has seen onboarding - going to explore');
+        }
+        router.replace('/explore');
+      } else {
+        if (__DEV__) {
+          console.log('🎯 New user - showing onboarding');
+        }
+        router.replace('/onboarding');
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.error('❌ Navigation error, defaulting to explore:', error);
+      }
+      router.replace('/explore');
+    }
+  };
   
   // Simple retry helper to harden startup against transient failures
   const retry = async <T,>(fn: () => Promise<T>, attempts: number = 2, delayMs: number = 700): Promise<T> => {
@@ -244,8 +279,8 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
     completionStartedRef.current = true;
     // Fade to black, then navigate
     fadeOpacity.value = withTiming(1, { duration: 400 });
-    const t = setTimeout(() => {
-      try { router.replace('/explore'); } catch {}
+    const t = setTimeout(async () => {
+      try { await navigateToApp(); } catch {}
       onLoadingComplete();
     }, 450);
     return () => clearTimeout(t);
@@ -257,8 +292,8 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
       if (completionStartedRef.current) return;
       completionStartedRef.current = true;
       try { fadeOpacity.value = withTiming(1, { duration: 250 }); } catch {}
-      setTimeout(() => {
-        try { router.replace('/explore'); } catch {}
+      setTimeout(async () => {
+        try { await navigateToApp(); } catch {}
         onLoadingComplete();
       }, 280);
     }, 7000);
@@ -408,8 +443,8 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
       withSpring(1, { damping: 16, stiffness: 300 })
     );
     // After bounce completes, leave the screen and navigate
-    const t = setTimeout(() => {
-      try { router.replace('/explore'); } catch {}
+    const t = setTimeout(async () => {
+      try { await navigateToApp(); } catch {}
       onLoadingComplete();
     }, 700);
     return () => clearTimeout(t);

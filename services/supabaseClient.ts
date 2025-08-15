@@ -168,6 +168,32 @@ export interface Database {
           function_type?: string;
         };
       };
+      user_onboarding: {
+        Row: {
+          id: string;
+          user_id: string;
+          selected_features: string[];
+          primary_interest: string;
+          free_attempt_used: boolean;
+          free_attempt_feature: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          selected_features: string[];
+          primary_interest: string;
+          free_attempt_used?: boolean;
+          free_attempt_feature?: string;
+        };
+        Update: {
+          selected_features?: string[];
+          primary_interest?: string;
+          free_attempt_used?: boolean;
+          free_attempt_feature?: string;
+          updated_at?: string;
+        };
+      };
     };
   };
 }

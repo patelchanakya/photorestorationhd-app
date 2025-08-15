@@ -273,6 +273,7 @@ function MainNavigator() {
   return (
     <Stack initialRouteName="explore">
       <Stack.Screen name="explore" options={{ headerShown: false }} />
+      <Stack.Screen name="onboarding" options={{ headerShown: false }} />
       <Stack.Screen name="index" options={{ headerShown: false, title: "Clever" }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="restoration/[id]" options={{ headerShown: false }} />
