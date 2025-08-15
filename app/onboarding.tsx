@@ -8,7 +8,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { Alert, FlatList, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function OnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { width: screenWidth } = useWindowDimensions();
   const photoRestoration = usePhotoRestoration();
   const { isPro } = useSubscriptionStore();
   
@@ -147,9 +149,33 @@ export default function OnboardingScreen() {
 
   const renderStepIndicator = (activeIndex: 0 | 1) => (
     <View className="flex-row items-center justify-center mb-6">
-      <View className="flex-row space-x-2">
-        <View className={`w-8 h-1 rounded-full ${activeIndex >= 0 ? 'bg-blue-500' : 'bg-gray-200'}`} />
-        <View className={`w-8 h-1 rounded-full ${activeIndex >= 1 ? 'bg-blue-500' : 'bg-gray-200'}`} />
+      <View className="flex-row items-center space-x-2">
+        {/* Step 1 */}
+        <View className={`w-6 h-6 rounded-full items-center justify-center ${
+          activeIndex >= 0 ? 'bg-yellow-400' : 'bg-gray-700'
+        }`}>
+          <Text className={`text-xs font-semibold ${
+            activeIndex >= 0 ? 'text-black' : 'text-gray-400'
+          }`}>
+            1
+          </Text>
+        </View>
+        
+        {/* Connector Line */}
+        <View className={`w-6 h-0.5 ${
+          activeIndex >= 1 ? 'bg-yellow-400' : 'bg-gray-700'
+        }`} />
+        
+        {/* Step 2 */}
+        <View className={`w-6 h-6 rounded-full items-center justify-center ${
+          activeIndex >= 1 ? 'bg-yellow-400' : 'bg-gray-700'
+        }`}>
+          <Text className={`text-xs font-semibold ${
+            activeIndex >= 1 ? 'text-black' : 'text-gray-400'
+          }`}>
+            2
+          </Text>
+        </View>
       </View>
     </View>
   );
@@ -186,18 +212,24 @@ export default function OnboardingScreen() {
       return () => t && clearTimeout(t);
     }, [player]);
     return (
-      <VideoView player={player} style={{ width, height: width * (16/9), transform: [{ scaleY: 9/16 }, { scaleX: 16/9 }] as any, opacity: isDimmed ? 0.7 : 1 }} contentFit="cover" nativeControls={false} allowsFullscreen={false} />
+      <VideoView 
+        player={player} 
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: isDimmed ? 0.8 : 1 }} 
+        contentFit="cover" 
+        nativeControls={false} 
+        allowsFullscreen={false} 
+      />
     );
   }
 
-  // Use the same image style as Explore feature posters
+  // Use local onboarding images instead of external URLs
   const FEATURE_IMAGES: Record<string, any> = {
     restoration: require('../assets/images/onboarding/after-2.png'),
     unblur: require('../assets/images/onboarding/before-3.jpg'),
     colorize: require('../assets/images/onboarding/after-3.png'),
     descratch: require('../assets/images/onboarding/before-4.jpg'),
     custom: require('../assets/images/onboarding/after-4.png'),
-    back_to_life: require('../assets/images/onboarding/after-2.png'),
+    back_to_life: require('../assets/images/onboarding/before-2.jpg'),
   };
 
   const getFeatureImage = (mapsTo: string) => FEATURE_IMAGES[mapsTo] ?? FEATURE_IMAGES.restoration;
@@ -206,19 +238,19 @@ export default function OnboardingScreen() {
     const primaryFeature = onboardingUtils.getPrimaryFeature(selectedFeatures, selectedFeatures[0]);
     
     return (
-      <View className="flex-1 bg-white">
+      <View className="flex-1 bg-gray-900">
         {/* Header */}
         <View style={{ paddingTop: insets.top + 8, paddingBottom: 12 }}>
           <View className="px-5">
             <View className="flex-row items-center justify-between">
               <TouchableOpacity onPress={() => setCurrentStep('selection')} className="p-2 -ml-2">
-                <IconSymbol name="chevron.left" size={24} color="#111827" />
+                <IconSymbol name="chevron.left" size={24} color="#FFFFFF" />
               </TouchableOpacity>
               {renderStepIndicator(1)}
               <View className="w-9" />
             </View>
-            <Text className="text-gray-900 text-3xl font-bold text-center mt-2">Try {primaryFeature?.name}</Text>
-            <Text className="text-gray-600 text-center text-base leading-6 mt-2 px-3">
+            <Text className="text-white text-3xl font-bold text-center mt-2">Try {primaryFeature?.name}</Text>
+            <Text className="text-gray-400 text-center text-base leading-6 mt-2 px-3">
               Select a photo to see what Photo Restoration HD can do for free.
             </Text>
           </View>
@@ -227,62 +259,44 @@ export default function OnboardingScreen() {
         {/* Content */}
         <View className="flex-1 justify-center items-center px-6">
           <View className="w-full max-w-sm">
-            {/* Icon Container */}
-            <View className="items-center mb-8">
-              <LinearGradient
-                colors={primaryFeature?.gradient || ['#3B82F6', '#1D4ED8']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                className="w-24 h-24 rounded-2xl items-center justify-center"
-                style={{
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 10 },
-                  shadowOpacity: 0.15,
-                  shadowRadius: 20,
-                  elevation: 6,
-                }}
-              >
-                <IconSymbol name={primaryFeature?.icon as any} size={40} color="#FFFFFF" />
-              </LinearGradient>
+            {/* Feature Display */}
+            <View className="items-center mb-10">
+              <Text style={{ fontSize: 64 }} className="mb-6">
+                {primaryFeature?.id === 'fix_old_damaged' ? '🔧' :
+                 primaryFeature?.id === 'add_color_bw' ? '🎨' :
+                 primaryFeature?.id === 'remove_backgrounds' ? '✂️' :
+                 primaryFeature?.id === 'restore_old_memories' ? '🖼️' :
+                 primaryFeature?.id === 'change_outfits' ? '👕' :
+                 primaryFeature?.id === 'create_videos' ? '🎬' :
+                 primaryFeature?.id === 'face_enhancement' ? '✨' :
+                 primaryFeature?.id === 'photo_upscaling' ? '🔍' : '⚡'}
+              </Text>
               
-              <Text className="text-gray-900 text-xl font-semibold mt-4">
+              <Text className="text-white text-2xl font-bold mb-3 text-center">
                 {primaryFeature?.name}
               </Text>
-              <Text className="text-gray-600 text-center text-base leading-6 mt-1 px-4">
+              <Text className="text-gray-400 text-center text-base leading-6 px-4">
                 {primaryFeature?.description}
               </Text>
-              <View className="mt-4 px-3 py-2 rounded-xl bg-gray-50">
-                <Text className="text-gray-500 text-xs">This will use one of your free restorations</Text>
-              </View>
             </View>
 
             {/* Call to Action */}
             <TouchableOpacity
               onPress={handleFreeAttempt}
               disabled={isProcessing}
-              className="w-full mb-4 rounded-2xl overflow-hidden"
-              style={{
-                shadowColor: '#3B82F6',
-                shadowOffset: { width: 0, height: 6 },
-                shadowOpacity: 0.25,
-                shadowRadius: 12,
-                elevation: 6,
-              }}
+              className={`w-full mb-4 rounded-2xl py-4 ${
+                isProcessing ? 'bg-gray-600' : 'bg-yellow-400'
+              }`}
             >
-              <LinearGradient
-                colors={isProcessing ? ['#9CA3AF', '#6B7280'] : ['#3B82F6', '#1D4ED8']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                className="py-4"
-              >
-                <Text className="text-white text-center text-lg font-semibold">
-                  {isProcessing ? 'Processing...' : 'Select Photo & Try Free'}
-                </Text>
-              </LinearGradient>
+              <Text className={`text-center text-lg font-bold ${
+                isProcessing ? 'text-gray-300' : 'text-black'
+              }`}>
+                {isProcessing ? 'Processing...' : 'Select Photo & Try Free'}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={handleSkipToApp} className="py-3">
-              <Text className="text-gray-500 text-center text-base">Skip for now</Text>
+              <Text className="text-gray-400 text-center text-base">Skip for now</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -291,124 +305,129 @@ export default function OnboardingScreen() {
   }
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-gray-900">
       {/* Hero header */}
       <View style={{ paddingTop: insets.top + 8 }}>
-        <LinearGradient
-          colors={["#EEF2FF", "#FFFFFF"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          className="px-5 pb-6"
-        >
+        <View className="px-5 pb-4">
           {renderStepIndicator(0)}
-          <Text className="text-gray-900 text-3xl font-bold text-center">
+          <Text className="text-white text-3xl font-bold text-center">
             What brought you here today?
           </Text>
-          <Text className="text-gray-600 text-center text-base leading-6 mt-2">
+          <Text className="text-gray-400 text-center text-base leading-6 mt-1">
             {selectedCountLabel}
           </Text>
-        </LinearGradient>
+        </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: (insets.bottom || 0) + 120 }}>
-        {/* Back to Life row */}
-        <View className="mt-4">
-          <Text className="px-5 text-gray-900 font-semibold text-lg mb-2">Create Moving Videos</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
-            {VIDEO_TILES.map((tile) => {
-              const width = 120;
-              const isSelected = selectedFeatures.includes('create_videos');
-              return (
-                <TouchableOpacity key={tile.id} activeOpacity={0.9} onPress={() => handleFeatureToggle('create_videos')} style={{ width, marginRight: 10 }}>
-                  <View style={{ width, aspectRatio: 9/16, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: isSelected ? 'rgba(59,130,246,0.6)' : 'rgba(0,0,0,0.08)', backgroundColor: '#0b0b0f' }}>
-                    <SmallVideoTile source={tile.video} width={width} isDimmed={!isSelected} />
-                    <LinearGradient colors={["transparent", "rgba(0,0,0,0.3)", "rgba(0,0,0,0.85)"]} start={{ x: 0.5, y: 0.3 }} end={{ x: 0.5, y: 1 }} style={{ position: 'absolute', inset: 0 as any }} />
-                    <View style={{ position: 'absolute', left: 10, bottom: 10 }}>
-                      <Text style={{ color: '#FFFFFF', fontWeight: '600', fontSize: 13 }}>{tile.title}</Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
+      <View className="flex-1 px-5 pt-2">
+        <FlatList
+          data={ONBOARDING_FEATURES as unknown as any[]}
+          keyExtractor={(item: any) => item.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: (insets.bottom || 0) + 100 }}
+          renderItem={({ item: feature }: any) => {
+            const isSelected = selectedFeatures.includes(feature.id);
 
-        {/* Outfits row */}
-        <View className="mt-6">
-          <Text className="px-5 text-gray-900 font-semibold text-lg mb-2">Change Clothes</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
-            {OUTFIT_TILES.map((tile) => {
-              const width = 120;
-              const isSelected = selectedFeatures.includes('memorial_touches'); // temporary map to custom until a dedicated id exists
-              return (
-                <TouchableOpacity key={tile.id} activeOpacity={0.9} onPress={() => handleFeatureToggle('memorial_touches')} style={{ width, marginRight: 10 }}>
-                  <View style={{ width, aspectRatio: 9/16, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: isSelected ? 'rgba(59,130,246,0.6)' : 'rgba(0,0,0,0.08)', backgroundColor: '#0b0b0f' }}>
-                    <SmallVideoTile source={tile.video} width={width} isDimmed={!isSelected} />
-                    <LinearGradient colors={["transparent", "rgba(0,0,0,0.3)", "rgba(0,0,0,0.85)"]} start={{ x: 0.5, y: 0.3 }} end={{ x: 0.5, y: 1 }} style={{ position: 'absolute', inset: 0 as any }} />
-                    <View style={{ position: 'absolute', left: 10, bottom: 10 }}>
-                      <Text style={{ color: '#FFFFFF', fontWeight: '600', fontSize: 13 }}>{tile.title}</Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
-
-        {/* Backgrounds row */}
-        <View className="mt-6">
-          <Text className="px-5 text-gray-900 font-semibold text-lg mb-2">Change Background</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
-            {BACKGROUND_TILES.map((tile) => {
-              const width = 120;
-              const isSelected = selectedFeatures.includes('memorial_touches'); // same temporary mapping if treated as custom edits
-              return (
-                <TouchableOpacity key={tile.id} activeOpacity={0.9} onPress={() => handleFeatureToggle('memorial_touches')} style={{ width, marginRight: 10 }}>
-                  <View style={{ width, aspectRatio: 9/16, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: isSelected ? 'rgba(59,130,246,0.6)' : 'rgba(0,0,0,0.08)', backgroundColor: '#0b0b0f' }}>
-                    <ExpoImage source={tile.image} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={0} />
-                    <LinearGradient colors={["transparent", "rgba(0,0,0,0.3)", "rgba(0,0,0,0.85)"]} start={{ x: 0.5, y: 0.3 }} end={{ x: 0.5, y: 1 }} style={{ position: 'absolute', inset: 0 as any }} />
-                    <View style={{ position: 'absolute', left: 10, bottom: 10 }}>
-                      <Text style={{ color: '#FFFFFF', fontWeight: '600', fontSize: 13 }}>{tile.title}</Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
-
-        {/* Classic features row (smaller chips) */}
-        <View className="mt-6">
-          <Text className="px-5 text-gray-900 font-semibold text-lg mb-2">Photo Enhancements</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
-            {ONBOARDING_FEATURES.filter(f => ['restoration','unblur','colorize','descratch'].includes(f.mapsTo)).map((f) => {
-              const isSelected = selectedFeatures.includes(f.id);
-              return (
-                <TouchableOpacity key={f.id} onPress={() => handleFeatureToggle(f.id)} activeOpacity={0.9} style={{ marginRight: 10 }}>
-                  <View className={`flex-row items-center rounded-xl border ${isSelected ? 'border-blue-500' : 'border-gray-200'}`} style={{ paddingHorizontal: 12, paddingVertical: 10 }}>
-                    <LinearGradient colors={f.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} className="w-8 h-8 rounded-lg items-center justify-center mr-3">
-                      <IconSymbol name={f.icon as any} size={16} color="#FFFFFF" />
-                    </LinearGradient>
-                    <Text className="text-gray-900 font-semibold text-[14px]">{f.name}</Text>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
-      </ScrollView>
+            return (
+              <FeatureItem
+                feature={feature}
+                isSelected={isSelected}
+                onToggle={() => handleFeatureToggle(feature.id)}
+              />
+            );
+          }}
+        />
+      </View>
 
       {/* Bottom action */}
       <View className="absolute bottom-0 left-0 right-0 px-5" style={{ paddingBottom: insets.bottom + 16, paddingTop: 16 }}>
         <TouchableOpacity
           onPress={handleContinue}
-          className="bg-blue-600 rounded-2xl p-4 shadow-lg active:scale-95"
+          className="bg-yellow-400 rounded-2xl p-4 shadow-lg active:scale-95"
         >
-          <Text className="text-white text-center text-lg font-bold">
-            Continue
+          <Text className="text-black text-center text-lg font-bold">
+            Next
           </Text>
         </TouchableOpacity>
       </View>
     </View>
+  );
+}
+
+// Animated Feature Item Component
+function FeatureItem({ feature, isSelected, onToggle }: { feature: any, isSelected: boolean, onToggle: () => void }) {
+  const scale = useSharedValue(1);
+  const backgroundColor = useSharedValue(0);
+
+  React.useEffect(() => {
+    backgroundColor.value = withTiming(isSelected ? 1 : 0, { duration: 300 });
+  }, [isSelected]);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    'worklet';
+    const bgOpacity = backgroundColor.value * 0.15 + 0.02;
+    const borderOpacity = backgroundColor.value * 0.6 + 0.1;
+    const borderWidth = backgroundColor.value > 0.5 ? 2 : backgroundColor.value > 0.2 ? 1 : 0;
+    
+    return {
+      transform: [{ scale: scale.value }],
+      backgroundColor: `rgba(59, 130, 246, ${bgOpacity})`,
+      borderColor: `rgba(59, 130, 246, ${borderOpacity})`,
+      borderWidth: borderWidth,
+    };
+  });
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.98);
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1);
+  };
+
+  return (
+    <TouchableOpacity
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={onToggle}
+      activeOpacity={1}
+      className="mb-2"
+    >
+      <Animated.View 
+        style={[animatedStyle]}
+        className="flex-row items-center py-4 px-5 rounded-2xl"
+      >
+        {/* Icon */}
+        <View className="w-12 h-12 items-center justify-center mr-4">
+          <Text style={{ fontSize: 24 }}>
+            {feature.id === 'fix_old_damaged' ? '🔧' :
+             feature.id === 'add_color_bw' ? '🎨' :
+             feature.id === 'remove_backgrounds' ? '✂️' :
+             feature.id === 'restore_old_memories' ? '🖼️' :
+             feature.id === 'change_outfits' ? '👕' :
+             feature.id === 'create_videos' ? '🎬' : 
+             feature.id === 'face_enhancement' ? '✨' :
+             feature.id === 'photo_upscaling' ? '🔍' : '⚡'}
+          </Text>
+        </View>
+        
+        {/* Text content */}
+        <View className="flex-1">
+          <Text className={`font-semibold text-base ${isSelected ? 'text-white' : 'text-gray-200'}`}>
+            {feature.name}
+          </Text>
+          <Text className={`text-xs mt-1 ${isSelected ? 'text-blue-200' : 'text-gray-500'}`} numberOfLines={2}>
+            {feature.description}
+          </Text>
+        </View>
+        
+        {/* Selection indicator */}
+        {isSelected && (
+          <View className="w-6 h-6 rounded-full bg-blue-500 items-center justify-center ml-2">
+            <Text style={{ fontSize: 12, color: 'white' }}>✓</Text>
+          </View>
+        )}
+      </Animated.View>
+    </TouchableOpacity>
   );
 }

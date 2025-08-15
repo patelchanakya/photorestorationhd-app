@@ -30,36 +30,52 @@ export const ONBOARDING_FEATURES = [
     gradient: ['#10b981', '#34d399']
   },
   {
-    id: 'remove_scratches',
-    name: 'Remove Scratches & Marks',
-    description: 'Clean up surface damage and scratches',
-    icon: 'bandage',
-    mapsTo: 'descratch' as const,
-    gradient: ['#ef4444', '#f87171']
-  },
-  {
-    id: 'sharpen_blurry',
-    name: 'Sharpen Blurry Photos',
-    description: 'Make blurry or out-of-focus photos crisp',
-    icon: 'eye',
-    mapsTo: 'unblur' as const,
-    gradient: ['#8b5cf6', '#a78bfa']
-  },
-  {
-    id: 'memorial_touches',
-    name: 'Memorial/Tribute Touches',
-    description: 'Add angel wings, halos, gentle glows',
-    icon: 'heart',
-    mapsTo: 'custom' as const,
-    gradient: ['#6366f1', '#8b5cf6']
-  },
-  {
     id: 'create_videos',
     name: 'Create Moving Videos',
     description: 'Turn photos into magical videos (Pro feature)',
     icon: 'video',
     mapsTo: 'back_to_life' as const,
     gradient: ['#dc2626', '#f87171']
+  },
+  {
+    id: 'restore_old_memories',
+    name: 'Restore Old Family Photos',
+    description: 'Preserve precious memories from decades past',
+    icon: 'photo',
+    mapsTo: 'restoration' as const,
+    gradient: ['#8b5cf6', '#a78bfa']
+  },
+  {
+    id: 'change_outfits',
+    name: 'Change Outfits & Clothing',
+    description: 'Transform clothes, add formal wear, or change styles',
+    icon: 'tshirt',
+    mapsTo: 'custom' as const,
+    gradient: ['#6366f1', '#8b5cf6']
+  },
+  {
+    id: 'remove_backgrounds',
+    name: 'Remove/Change Backgrounds',
+    description: 'Remove or replace photo backgrounds easily',
+    icon: 'scissors',
+    mapsTo: 'restoration' as const,
+    gradient: ['#06b6d4', '#67e8f9']
+  },
+  {
+    id: 'face_enhancement',
+    name: 'Enhance Faces & Skin',
+    description: 'Improve facial features and smooth skin texture',
+    icon: 'sparkles',
+    mapsTo: 'restoration' as const,
+    gradient: ['#ec4899', '#f472b6']
+  },
+  {
+    id: 'photo_upscaling',
+    name: 'Upscale Image Resolution',
+    description: 'Increase photo size while maintaining quality',
+    icon: 'magnifyingglass',
+    mapsTo: 'unblur' as const,
+    gradient: ['#10b981', '#34d399']
   }
 ] as const;
 

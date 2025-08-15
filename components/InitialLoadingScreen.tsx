@@ -99,6 +99,7 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
   const dotsOpacity = useSharedValue(1);
   const checkOpacity = useSharedValue(0);
   const checkScale = useSharedValue(0.8);
+  const videoOpacity = useSharedValue(1);
   const dotScale1 = useSharedValue(1);
   const dotScale2 = useSharedValue(1);
   const dotScale3 = useSharedValue(1);
@@ -120,7 +121,7 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
   const [hasStarted, setHasStarted] = useState(false);
   const [minDotsElapsed, setMinDotsElapsed] = useState(false);
   const [videoDone, setVideoDone] = useState(false);
-  const splashPlayer = useVideoPlayer(require('../assets/videos/newww.mp4'), (player) => {
+  const splashPlayer = useVideoPlayer(require('../assets/videos/splash-video.mp4'), (player) => {
     player.muted = true;
     player.loop = false;
     // Autoplay immediately
@@ -144,6 +145,10 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
 
   const fadeOverlayStyle = useAnimatedStyle(() => ({
     opacity: fadeOpacity.value,
+  }));
+
+  const videoAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: videoOpacity.value,
   }));
 
 
@@ -273,30 +278,27 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
     return () => { clearTimeout(dotsTimer); clearInterval(interval); };
   }, []);
 
-  // Proceed when ready (video finished). Backend init continues in background.
+  // Proceed when BOTH splash video is done AND initialization is complete
   useEffect(() => {
-    if (!videoDone || completionStartedRef.current) return;
+    if (!videoDone || !isComplete || completionStartedRef.current) return;
     completionStartedRef.current = true;
-    // Fade to black, then navigate
-    fadeOpacity.value = withTiming(1, { duration: 400 });
+    // Crossfade: fade video out, fade black overlay in, then navigate
+    try { videoOpacity.value = withTiming(0, { duration: 500 }); } catch {}
+    fadeOpacity.value = withTiming(1, { duration: 500 });
     const t = setTimeout(async () => {
       try { await navigateToApp(); } catch {}
       onLoadingComplete();
     }, 450);
     return () => clearTimeout(t);
-  }, [videoDone, router, onLoadingComplete]);
+  }, [videoDone, isComplete, router, onLoadingComplete]);
 
-  // Absolute fallback: force progression after ~7s to avoid any stuck states
+  // Absolute fallback: after ~7.5s, mark video as done, but still wait for init to finish
   useEffect(() => {
     const failSafe = setTimeout(() => {
       if (completionStartedRef.current) return;
-      completionStartedRef.current = true;
-      try { fadeOpacity.value = withTiming(1, { duration: 250 }); } catch {}
-      setTimeout(async () => {
-        try { await navigateToApp(); } catch {}
-        onLoadingComplete();
-      }, 280);
-    }, 7000);
+      // Mark video logical done; navigate only when isComplete is also true
+      setVideoDone(true);
+    }, 7500);
     return () => clearTimeout(failSafe);
   }, [router, onLoadingComplete]);
 
@@ -660,21 +662,23 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
       <LinearGradient colors={["#0B0B0F", "#0B0B0F"]} style={{ flex: 1 }}>
         <View className="flex-1 justify-center items-center px-6">
           {/* Background video splash (muted, plays once) */}
-          <VideoView
-            player={splashPlayer}
-            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-            allowsFullscreen={false}
-            allowsPictureInPicture={false}
-            nativeControls={false}
-            contentFit="cover"
-          />
+          <Animated.View style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }, videoAnimatedStyle]}>
+            <VideoView
+              player={splashPlayer}
+              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+              allowsFullscreen={false}
+              allowsPictureInPicture={false}
+              nativeControls={false}
+              contentFit="cover"
+            />
+          </Animated.View>
           {/* Fade-to-black overlay */}
           <Animated.View
             pointerEvents="none"
             style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#000' }, fadeOverlayStyle]}
           />
           {/* Minimal overlay content removed to avoid overlap with video */}
-          <Animated.View style={{ opacity: contentOpacity.value }} />
+          <Animated.View style={[{ opacity: 1 }, { opacity: contentOpacity.value } as any]} />
         </View>
         {/* Loading dots/Ready overlay removed to let video take focus */}
       </LinearGradient>
