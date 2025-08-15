@@ -9,6 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Alert, FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function OnboardingScreen() {
@@ -142,16 +143,46 @@ export default function OnboardingScreen() {
   const renderStepIndicator = (activeIndex: 0 | 1) => (
     <View className="flex-row items-center justify-center mb-6">
       <View className="flex-row items-center">
-        <View className={`w-9 h-9 rounded-full items-center justify-center ${activeIndex >= 0 ? 'bg-blue-600' : 'bg-gray-200'}`}>
-          <Text className="text-white font-semibold">1</Text>
+        {/* Step 1 */}
+        <View className="relative">
+          <View className={`w-3 h-3 rounded-full ${activeIndex >= 0 ? 'bg-blue-600' : 'bg-gray-300'}`} />
+          {activeIndex >= 0 && (
+            <View className="absolute inset-0 w-3 h-3 rounded-full bg-blue-600 opacity-30 animate-pulse" />
+          )}
         </View>
-        <View className={`h-0.5 w-10 mx-2 ${activeIndex >= 1 ? 'bg-blue-600' : 'bg-gray-200'}`} />
-        <View className={`w-9 h-9 rounded-full items-center justify-center ${activeIndex >= 1 ? 'bg-blue-600' : 'bg-gray-200'}`}>
-          <Text className="text-white font-semibold">2</Text>
+        
+        {/* Progress line */}
+        <View className="relative mx-4">
+          <View className="h-0.5 w-16 bg-gray-200" />
+          <View 
+            className={`absolute top-0 left-0 h-0.5 bg-blue-600 transition-all duration-500 ${
+              activeIndex >= 1 ? 'w-16' : 'w-0'
+            }`} 
+          />
+        </View>
+        
+        {/* Step 2 */}
+        <View className="relative">
+          <View className={`w-3 h-3 rounded-full ${activeIndex >= 1 ? 'bg-blue-600' : 'bg-gray-300'}`} />
+          {activeIndex >= 1 && (
+            <View className="absolute inset-0 w-3 h-3 rounded-full bg-blue-600 opacity-30 animate-pulse" />
+          )}
         </View>
       </View>
     </View>
   );
+
+  // Use the same image style as Explore feature posters
+  const FEATURE_IMAGES: Record<string, any> = {
+    restoration: require('../assets/images/onboarding/after-2.png'),
+    unblur: require('../assets/images/onboarding/before-3.jpg'),
+    colorize: require('../assets/images/onboarding/after-3.png'),
+    descratch: require('../assets/images/onboarding/before-4.jpg'),
+    custom: require('../assets/images/onboarding/after-4.png'),
+    back_to_life: require('../assets/images/onboarding/after-2.png'),
+  };
+
+  const getFeatureImage = (mapsTo: string) => FEATURE_IMAGES[mapsTo] ?? FEATURE_IMAGES.restoration;
 
   if (currentStep === 'free-attempt') {
     const primaryFeature = onboardingUtils.getPrimaryFeature(selectedFeatures, selectedFeatures[0]);
@@ -263,47 +294,49 @@ export default function OnboardingScreen() {
 
       <FlatList
         data={ONBOARDING_FEATURES as unknown as any[]}
-        showsVerticalScrollIndicator={false}
         keyExtractor={(item: any) => item.id}
-        numColumns={2}
-        columnWrapperStyle={{ gap: 12, paddingHorizontal: 20 }}
-        contentContainerStyle={{ paddingTop: 16, paddingBottom: (insets.bottom || 0) + 120 }}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingTop: 12, paddingBottom: (insets.bottom || 0) + 120 }}
         renderItem={({ item: feature }: any) => {
           const isSelected = selectedFeatures.includes(feature.id);
+          const cardBorder = isSelected ? 'rgba(59,130,246,0.45)' : 'rgba(0,0,0,0.06)';
+          const bubbleBg = isSelected ? '#3B82F6' : 'rgba(255,255,255,0.14)';
+          const bubbleBorder = isSelected ? '#3B82F6' : 'rgba(255,255,255,0.25)';
           return (
             <TouchableOpacity
-              onPress={() => handleFeatureToggle(feature.id)}
-              className={`flex-1 rounded-2xl border-2 bg-white ${isSelected ? 'border-blue-500' : 'border-gray-100'}`}
-              style={{
-                padding: 16,
-                marginBottom: 12,
-                shadowColor: isSelected ? '#3B82F6' : '#000',
-                shadowOffset: { width: 0, height: 3 },
-                shadowOpacity: isSelected ? 0.12 : 0.06,
-                shadowRadius: isSelected ? 10 : 6,
-                elevation: isSelected ? 3 : 1,
-              }}
               activeOpacity={0.9}
+              onPress={() => handleFeatureToggle(feature.id)}
+              style={{ marginHorizontal: 16, marginBottom: 14 }}
             >
-              <View className="flex-row items-center">
-                <LinearGradient
-                  colors={feature.gradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  className="w-12 h-12 rounded-xl items-center justify-center mr-3"
-                >
-                  <IconSymbol name={feature.icon as any} size={20} color="#FFFFFF" />
-                </LinearGradient>
-                <View className="flex-1">
-                  <Text className="text-gray-900 font-semibold text-[16px]" numberOfLines={1}>
+              <View style={{ height: 220, borderRadius: 22, overflow: 'hidden', borderWidth: 1.5, borderColor: cardBorder }}>
+                <ExpoImage
+                  source={getFeatureImage(feature.mapsTo)}
+                  style={{ width: '100%', height: '100%' }}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                  priority="high"
+                />
+                {/* Vignettes */}
+                <LinearGradient colors={[ 'rgba(0,0,0,0.12)', 'transparent' ]} style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '20%' }} />
+                <LinearGradient colors={[ 'rgba(0,0,0,0.05)', 'rgba(0,0,0,0.65)' ]} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '55%' }} />
+
+                {/* Text */}
+                <View style={{ position: 'absolute', left: 16, right: 56, bottom: 14 }}>
+                  <Text style={{ color: '#FFFFFF', fontSize: 22, fontWeight: '700', letterSpacing: -0.3 }} numberOfLines={1}>
                     {feature.name}
                   </Text>
-                  <Text className="text-gray-600 text-[12px] leading-5 mt-0.5" numberOfLines={2}>
+                  <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13, marginTop: 4, lineHeight: 18 }} numberOfLines={2}>
                     {feature.description}
                   </Text>
                 </View>
-                <View className={`w-6 h-6 rounded-full border-2 items-center justify-center ${isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-300'}`}>
-                  {isSelected && <IconSymbol name="checkmark" size={12} color="#FFFFFF" />}
+
+                {/* Icon/Check bubble */}
+                <View style={{ position: 'absolute', right: 12, top: 12, width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: bubbleBg, borderWidth: 1, borderColor: bubbleBorder }}>
+                  {isSelected ? (
+                    <IconSymbol name="checkmark" size={16} color="#FFFFFF" />
+                  ) : (
+                    <IconSymbol name={feature.icon as any} size={16} color={'#FFFFFF'} />
+                  )}
                 </View>
               </View>
             </TouchableOpacity>
