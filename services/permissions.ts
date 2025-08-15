@@ -49,8 +49,9 @@ class PermissionsService {
 
   /**
    * Request essential permissions upfront during app initialization
-   * Note: We only request notifications here, not media/camera permissions
-   * Those are requested on-demand to preserve the native permission dialogs
+   * Behavior change: proactively request media library access on app start
+   * to enable gallery browsing, and only CHECK notifications/camera.
+   * Notification permission is deferred until first successful video generation.
    */
   async requestEssentialPermissions(): Promise<PermissionState> {
     try {
@@ -58,18 +59,23 @@ class PermissionsService {
         console.log('🔐 Requesting essential permissions...');
       }
 
-      // Check (but don't request) media library permissions
+      // Request media library permission up front (cache result)
       try {
-        const mediaLibraryStatus = await ImagePicker.getMediaLibraryPermissionsAsync();
-        this.permissions.mediaLibrary = mediaLibraryStatus.status as PermissionStatus;
-        if (__DEV__) {
-          console.log('📱 Media library permission status:', mediaLibraryStatus.status);
+        const existing = await ImagePicker.getMediaLibraryPermissionsAsync();
+        if (existing.status === 'granted') {
+          this.permissions.mediaLibrary = 'granted';
+          if (__DEV__) console.log('📱 Media library already granted');
+        } else {
+          const request = await ImagePicker.requestMediaLibraryPermissionsAsync();
+          this.permissions.mediaLibrary = request.status as PermissionStatus;
+          if (__DEV__) console.log('📱 Media library permission requested:', request.status);
         }
       } catch (error) {
         if (__DEV__) {
-          console.error('❌ Media library permission check failed:', error);
+          console.error('❌ Media library permission request failed:', error);
         }
-        this.permissions.mediaLibrary = 'undetermined';
+        // Keep previous state; default to undetermined
+        if (this.permissions.mediaLibrary === undefined) this.permissions.mediaLibrary = 'undetermined';
       }
 
       // Check (but don't request) camera permissions
@@ -86,17 +92,18 @@ class PermissionsService {
         this.permissions.camera = 'undetermined';
       }
 
-      // Request notification permissions (these are fine to request upfront)
+      // Only CHECK notifications on startup; do not request here
       try {
-        const notificationResult = await Notifications.requestPermissionsAsync();
-        this.permissions.notifications = notificationResult.status as PermissionStatus;
+        const notificationStatus = await Notifications.getPermissionsAsync();
+        this.permissions.notifications = notificationStatus.status as PermissionStatus;
         if (__DEV__) {
-          console.log('🔔 Notification permission:', notificationResult.status);
+          console.log('🔔 Notification permission (checked only):', notificationStatus.status);
         }
       } catch (error) {
         if (__DEV__) {
-          console.error('❌ Notification permission failed:', error);
+          console.error('❌ Notification permission check failed:', error);
         }
+        // Default to denied for safety
         this.permissions.notifications = 'denied';
       }
 

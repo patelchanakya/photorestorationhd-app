@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useQuickEditStore } from '@/store/quickEditStore';
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
@@ -16,7 +16,6 @@ interface ModeTilesProps {
 }
 
 export function ModeTiles({ compact = false }: ModeTilesProps) {
-  const router = useRouter();
 
   // Placeholder images (using onboarding assets) until custom art provided
   const MODE_TILE_IMAGES: Record<ModeKey, any> = {
@@ -43,7 +42,10 @@ export function ModeTiles({ compact = false }: ModeTilesProps) {
 
       if (!result.canceled && result.assets[0]) {
         const uri = result.assets[0].uri;
-        router.push(`/crop-modal?imageUri=${encodeURIComponent(uri)}&functionType=${mode}&imageSource=gallery`);
+        useQuickEditStore.getState().openWithImage({ 
+          functionType: mode as any, 
+          imageUri: uri 
+        });
       }
     } catch (err) {
       if (__DEV__) {

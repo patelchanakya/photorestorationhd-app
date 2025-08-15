@@ -1,10 +1,11 @@
 import { analyticsService } from '@/services/analytics';
 import { type FunctionType, getModelConfig } from '@/services/modelConfigs';
+import { photoUsageService, useInvalidatePhotoUsage } from '@/services/photoUsageService';
+import { presentPaywall } from '@/services/revenuecat';
 import { restorePhoto } from '@/services/replicate';
 import { restorationTrackingService } from '@/services/restorationTracking';
 import { photoStorage } from '@/services/storage';
 import { restorationService } from '@/services/supabase';
-import { useCropModalStore } from '@/store/cropModalStore';
 import { useRestorationStore } from '@/store/restorationStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -30,7 +31,8 @@ export function usePhotoRestoration() {
   const queryClient = useQueryClient();
   const incrementRestorationCount = useRestorationStore((state) => state.incrementRestorationCount);
   const incrementTotalRestorations = useRestorationStore((state) => state.incrementTotalRestorations);
-  const { isPro, decrementFreeRestorations } = useSubscriptionStore();
+  const { isPro } = useSubscriptionStore();
+  const invalidatePhotoUsage = useInvalidatePhotoUsage();
   
   // Get JobContext functions (we'll use this inside the mutation)
   // Note: We can't use useJob hook directly inside mutation, so we'll pass it via closure
@@ -47,6 +49,44 @@ export function usePhotoRestoration() {
 
       // Track restoration started
       analyticsService.trackRestorationStarted(imageSource || 'gallery');
+      
+      // Check photo usage limits and increment atomically BEFORE processing
+      let canProceed: boolean;
+      try {
+        canProceed = await photoUsageService.checkAndIncrementUsage();
+      } catch (error: any) {
+        // Network errors should bubble up with clear messaging
+        if (error?.message?.includes('Network connection required')) {
+          throw new Error('📡 No internet connection. Please check your connection and try again.');
+        }
+        // Other errors from usage service
+        throw new Error('Unable to verify photo limits. Please try again.');
+      }
+      
+      if (!canProceed) {
+        // Show paywall for free users who hit the limit
+        const paywallSuccess = await presentPaywall();
+        if (!paywallSuccess) {
+          // User didn't upgrade, throw error with clear message
+          throw new Error('Photo limit reached. Upgrade to Pro for unlimited photo restoration.');
+        }
+        // User upgraded, try incrementing usage again
+        try {
+          const canProceedAfterUpgrade = await photoUsageService.checkAndIncrementUsage();
+          if (!canProceedAfterUpgrade) {
+            throw new Error('Unable to process photo. Please try again.');
+          }
+        } catch (error: any) {
+          if (error?.message?.includes('Network connection required')) {
+            throw new Error('📡 No internet connection. Please check your connection and try again.');
+          }
+          throw new Error('Unable to process photo. Please try again.');
+        }
+      }
+      
+      if (__DEV__) {
+        console.log('✅ Photo usage check passed, proceeding with restoration');
+      }
       
       try {
         // Save original photo locally
@@ -278,27 +318,26 @@ export function usePhotoRestoration() {
             : 'restoration'
         );
         
-        // Refund credit for free users on any error
-        if (!isPro) {
-          try {
-            // Pass current time since the restoration just failed
-            await decrementFreeRestorations(new Date().toISOString());
-            if (__DEV__) {
-              console.log('💳 Credit refunded to free user due to restoration error');
-            }
-            
-            // Track credit refund
-            analyticsService.track('Free Credit Refunded', {
-              error_type: errorType,
-              error_message: errorMessage,
-              function_type: functionType,
-              image_source: imageSource || 'gallery',
-              timestamp: new Date().toISOString(),
-            });
-          } catch (refundError) {
-            if (__DEV__) {
-              console.error('Failed to refund credit:', refundError);
-            }
+        // Rollback photo usage increment for any error
+        try {
+          await photoUsageService.rollbackUsage();
+          if (__DEV__) {
+            console.log('🔄 Photo usage rollback completed due to restoration error');
+          }
+          
+          // Track usage rollback
+          analyticsService.track('Photo Usage Rollback', {
+            error_type: errorType,
+            error_message: errorMessage,
+            function_type: functionType,
+            image_source: imageSource || 'gallery',
+            timestamp: new Date().toISOString(),
+          });
+          
+          // Note: No need to invalidate cache here since onError callback will handle it
+        } catch (rollbackError) {
+          if (__DEV__) {
+            console.error('❌ Failed to rollback photo usage:', rollbackError);
           }
         }
         
@@ -311,17 +350,30 @@ export function usePhotoRestoration() {
       
       // Invalidate history to refresh the list
       queryClient.invalidateQueries({ queryKey: photoRestorationKeys.history() });
+      
+      // CRITICAL: Invalidate photo usage cache to update the usage banner
+      invalidatePhotoUsage();
+      
       // Increment restoration count in Zustand
       incrementRestorationCount();
       // Also increment total restorations for rating prompt
       incrementTotalRestorations();
       
+      if (__DEV__) {
+        console.log('✅ Photo restoration success - invalidated photo usage cache');
+      }
     },
     onError: (error, variables) => {
       if (__DEV__) {
         console.error('Photo restoration failed:', error);
       }
       
+      // Invalidate photo usage cache after rollback to ensure accurate count
+      invalidatePhotoUsage();
+      
+      if (__DEV__) {
+        console.log('🔄 Photo restoration error - invalidated photo usage cache after rollback');
+      }
     },
   });
 }

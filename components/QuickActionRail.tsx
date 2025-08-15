@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconSymbol } from './ui/IconSymbol';
 
 const ACTIONS: { route: string; label: string; icon: string }[] = [
-  { route: '/text-edits', label: 'Text edit', icon: 'pencil' },
+  { route: '/text-edits', label: 'Photo Magic', icon: 'wand.and.stars' },
 ];
 
 export function QuickActionRail() {
@@ -111,8 +111,18 @@ export function QuickActionRail() {
                   <IconSymbol name={a.icon as any} size={20} color={'rgba(255,255,255,0.7)'} />
                 </View>
                 <View style={{ marginLeft: 12, flex: 1 }}>
-                  <Text style={{ color: '#FFFFFF', fontWeight: '600', fontSize: 15, letterSpacing: 0.2 }}>{a.label}</Text>
-                  <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: 1 }}>Custom AI edits</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={{ color: '#FFFFFF', fontWeight: '600', fontSize: 15, letterSpacing: 0.2 }}>{a.label}</Text>
+                    {a.label === 'Photo Magic' && (
+                      <View
+                        className="ml-2 px-2 py-0.5 rounded-full border border-amber-400/40 bg-amber-400/10"
+                        accessibilityLabel="New feature"
+                      >
+                        <Text className="text-amber-300 text-[10px] font-extrabold tracking-wider">NEW</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: 1 }}>Custom text edits</Text>
                 </View>
               </View>
               <View style={{ 

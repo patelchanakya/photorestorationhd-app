@@ -7,6 +7,7 @@ import { type FunctionType } from '@/services/modelConfigs';
 import { photoStorage } from '@/services/storage';
 import { restorationService } from '@/services/supabase';
 import { useCropModalStore } from '@/store/cropModalStore';
+import { useQuickEditStore } from '@/store/quickEditStore';
 import { useRestorationScreenStore } from '@/store/restorationScreenStore';
 import { useRestorationStore } from '@/store/restorationStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
@@ -568,10 +569,14 @@ export default function RestorationScreen() {
               });
               
               if (!result.canceled && result.assets[0]) {
-                // Navigate to crop modal with same function type and custom prompt if applicable
+                // Use QuickEditSheet with same function type and custom prompt if applicable
                 const currentFunctionType = restoration?.function_type || functionType || 'restoration';
-                const customPromptParam = customPrompt ? `&customPrompt=${encodeURIComponent(customPrompt as string)}` : '';
-                router.replace(`/crop-modal?imageUri=${encodeURIComponent(result.assets[0].uri)}&functionType=${currentFunctionType}&imageSource=gallery${customPromptParam}`);
+                const prompt = customPrompt ? decodeURIComponent(customPrompt as string) : undefined;
+                useQuickEditStore.getState().openWithImage({
+                  functionType: currentFunctionType as any,
+                  imageUri: result.assets[0].uri,
+                  customPrompt: prompt
+                });
               } else {
                 setIsNavigating(false);
               }

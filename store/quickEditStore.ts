@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type QuickStage = 'hidden' | 'select' | 'preview' | 'loading' | 'done';
+export type QuickStage = 'hidden' | 'select' | 'preview' | 'loading' | 'done' | 'error';
 
 export interface QuickEditState {
   visible: boolean;
@@ -12,6 +12,7 @@ export interface QuickEditState {
   restoredImageUri?: string | null;
   progress: number;
   customPrompt?: string | null;
+  errorMessage?: string | null;
   // Actions
   open: (opts: { functionType: QuickEditState['functionType']; styleKey?: string | null; customPrompt?: string | null }) => void;
   openWithImage: (opts: { functionType: QuickEditState['functionType']; imageUri: string; styleKey?: string | null; customPrompt?: string | null }) => void;
@@ -20,6 +21,7 @@ export interface QuickEditState {
   setProgress: (p: number) => void;
   setResult: (id: string, restoredUri: string) => void;
   setStyleKey: (key: string | null) => void;
+  setError: (message: string) => void;
   close: () => void;
 }
 
@@ -33,6 +35,7 @@ export const useQuickEditStore = create<QuickEditState>((set) => ({
   restoredImageUri: null,
   progress: 0,
   customPrompt: null,
+  errorMessage: null,
   open: ({ functionType, styleKey = null, customPrompt = null }) => set({
     visible: true,
     stage: 'select',
@@ -60,5 +63,6 @@ export const useQuickEditStore = create<QuickEditState>((set) => ({
   setProgress: (p) => set({ progress: Math.max(0, Math.min(100, p)) }),
   setResult: (id, restoredUri) => set({ restoredId: id, restoredImageUri: restoredUri, stage: 'done', progress: 100 }),
   setStyleKey: (key) => set({ styleKey: key }),
-  close: () => set({ visible: false, stage: 'hidden', functionType: null, selectedImageUri: null, restoredId: null, restoredImageUri: null, progress: 0, styleKey: null }),
+  setError: (message) => set({ errorMessage: message, stage: 'error', progress: 0 }),
+  close: () => set({ visible: false, stage: 'hidden', functionType: null, selectedImageUri: null, restoredId: null, restoredImageUri: null, progress: 0, styleKey: null, errorMessage: null }),
 }));

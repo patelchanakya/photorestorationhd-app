@@ -2,14 +2,13 @@ import { LanguageSelectionModal } from '@/components/LanguageSelectionModal';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { photoRestorationKeys } from '@/hooks/usePhotoRestoration';
 import { getSupportedLanguages, useTranslation } from '@/i18n';
-import { deviceTrackingService } from '@/services/deviceTracking';
-import { restorationTrackingService } from '@/services/restorationTracking';
-import { getAppUserId, presentPaywall, restorePurchasesDetailed, restorePurchasesSimple, checkSubscriptionStatus } from '@/services/revenuecat';
+import { getAppUserId, restorePurchasesSimple, checkSubscriptionStatus } from '@/services/revenuecat';
 import { photoStorage } from '@/services/storage';
 import { localStorageHelpers } from '@/services/supabase';
 import { useRestorationStore } from '@/store/restorationStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { backToLifeService, type BackToLifeUsage } from '@/services/backToLifeService';
+import { usePhotoUsage, type PhotoUsage } from '@/services/photoUsageService';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
@@ -45,46 +44,60 @@ export default function SettingsModalScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { setRestorationCount } = useRestorationStore();
-  const { isPro, freeRestorationsUsed, freeRestorationsLimit, expirationDate } = useSubscriptionStore();
+  const { isPro } = useSubscriptionStore();
   const [backToLifeUsage, setBackToLifeUsage] = useState<BackToLifeUsage | null>(null);
+  const [photoUsage, setPhotoUsage] = useState<PhotoUsage | null>(null);
   
   // Local loading states
   const [isRestoring, setIsRestoring] = useState(false);
-  const [isResettingIdentity, setIsResettingIdentity] = useState(false);
-  const [timeUntilNext, setTimeUntilNext] = useState<string>('Available now');
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [revenueCatUserId, setRevenueCatUserId] = useState<string | null>(null);
-  const [msRemaining, setMsRemaining] = useState<number>(0);
   const { t, currentLanguage } = useTranslation();
   const supportedLanguages = getSupportedLanguages();
 
-  // Fetch Back to Life usage data for Pro users
-  const fetchUsageData = useCallback(async () => {
-    if (isPro) {
-      try {
-        const usage = await backToLifeService.checkUsage();
-        setBackToLifeUsage(usage);
+  // Use TanStack Query hook for photo usage
+  const { data: photoUsageFromQuery, refetch: refetchPhotoUsage } = usePhotoUsage();
+  
+  // Fetch video usage for Pro users only
+  const fetchVideoUsageData = useCallback(async () => {
+    try {
+      if (isPro) {
+        const videoUsageData = await backToLifeService.checkUsage();
+        setBackToLifeUsage(videoUsageData);
         if (__DEV__) {
-          console.log('📊 Settings: Updated Back to Life usage:', usage);
+          console.log('🎬 Settings: Updated video usage:', videoUsageData);
         }
-      } catch (error) {
-        if (__DEV__) {
-          console.error('❌ Failed to fetch Back to Life usage:', error);
-        }
+      } else {
+        setBackToLifeUsage(null);
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.error('❌ Failed to fetch video usage data:', error);
       }
     }
   }, [isPro]);
 
+  // Update photo usage from TanStack Query
+  useEffect(() => {
+    if (photoUsageFromQuery) {
+      setPhotoUsage(photoUsageFromQuery);
+      if (__DEV__) {
+        console.log('📸 Settings: Updated photo usage from query:', photoUsageFromQuery);
+      }
+    }
+  }, [photoUsageFromQuery]);
+
   // Initial fetch on mount
   useEffect(() => {
-    fetchUsageData();
-  }, [fetchUsageData]);
+    fetchVideoUsageData();
+  }, [fetchVideoUsageData]);
 
   // Refetch usage data when settings modal gets focus (after video generation)
   useFocusEffect(
     useCallback(() => {
-      fetchUsageData();
-    }, [fetchUsageData])
+      refetchPhotoUsage();
+      fetchVideoUsageData();
+    }, [refetchPhotoUsage, fetchVideoUsageData])
   );
   
   // Get current language info
@@ -111,37 +124,7 @@ export default function SettingsModalScreen() {
     }
   };
 
-  // Update countdown timer for free users
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    const initializeCountdown = async () => {
-      if (!isPro) {
-        // Get initial time remaining from device tracking (only once)
-        const initialMsRemaining = await deviceTrackingService.getTimeUntilNextFreeRestoration();
-        setMsRemaining(initialMsRemaining);
-        setTimeUntilNext(formatTimeWithSeconds(initialMsRemaining));
-        
-        // Start live countdown that decrements locally every second
-        interval = setInterval(() => {
-          setMsRemaining(prev => {
-            const newMs = Math.max(0, prev - 1000); // Subtract 1 second
-            const formattedTime = formatTimeWithSeconds(newMs);
-            setTimeUntilNext(formattedTime);
-            return newMs;
-          });
-        }, 1000);
-      }
-    };
-
-    initializeCountdown();
-
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
-  }, [isPro]);
+  // Note: Countdown timer functionality removed - now using lifetime limits instead of time-based limits
 
   // Fetch RevenueCat user ID on mount
   useEffect(() => {
@@ -725,46 +708,6 @@ Best regards`;
               
               <View className="bg-white/5 rounded-xl overflow-hidden">
                 
-                {/* Free Restoration Status */}
-                {!isPro && (
-                  <TouchableOpacity
-                    className="flex-row items-center p-4 border-b border-white/10"
-                    onPress={handleShowPaywall}
-                  >
-                    <View
-                      className={`w-9 h-9 rounded-full items-center justify-center mr-3 ${
-                        freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now'
-                          ? 'bg-red-500/20'
-                          : 'bg-green-500/20'
-                      }`}
-                    >
-                      <IconSymbol 
-                        name={freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' ? 'clock' : 'gift'}
-                        size={18}
-                        color={freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' ? '#ef4444' : '#22c55e'}
-                      />
-                    </View>
-                    <View className="flex-1">
-                      <Text className="text-white text-base font-medium">
-                        {t('settings.freeRestorations')}
-                      </Text>
-                    </View>
-                    <View
-                      className={`rounded-md px-2 py-1 mr-2 ${
-                        freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' ? 'bg-red-500/20' : 'bg-green-500/20'
-                      }`}
-                    >
-                      <Text
-                        className={`text-xs font-semibold ${
-                          freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' ? 'text-red-500' : 'text-green-500'
-                        }`}
-                      >
-                        {freeRestorationsUsed}/{freeRestorationsLimit}
-                      </Text>
-                    </View>
-                    <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
-                  </TouchableOpacity>
-                )}
 
                 {/* Subscription Status - Only show for Pro users */}
                 {isPro && (
@@ -780,6 +723,55 @@ Best regards`;
                   </View>
                 )}
 
+                {/* Photo Usage - Show for all users (free users have limits) */}
+                {photoUsage && (
+                  <TouchableOpacity 
+                    className="flex-row items-center p-4 border-b border-white/10"
+                    onPress={async () => {
+                      try {
+                        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        if (__DEV__) {
+                          console.log('🔄 Refreshing photo usage from TanStack Query...');
+                        }
+                        await refetchPhotoUsage();
+                      } catch (error) {
+                        if (__DEV__) {
+                          console.error('❌ Failed to refresh photo usage:', error);
+                        }
+                      }
+                    }}
+                  >
+                    <View className="w-9 h-9 bg-blue-500/20 rounded-full items-center justify-center mr-3">
+                      <IconSymbol name="photo.fill" size={18} color="#3b82f6" />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-white text-base font-medium">
+                        {photoUsage.limit === -1 ? 'Photo Restoration (Unlimited)' : 'Photo Restoration'}
+                      </Text>
+                      <Text className="text-white/60 text-sm">
+                        {photoUsage.planType === 'free' ? 'Tap to refresh' : 'Pro subscription active'}
+                      </Text>
+                    </View>
+                    <View className={`${
+                      photoUsage.limit === -1 
+                        ? 'bg-blue-500/20' 
+                        : !photoUsage.canUse 
+                          ? 'bg-red-500/20' 
+                          : 'bg-green-500/20'
+                    } px-2 py-1 rounded-xl`}>
+                      <Text className={`${
+                        photoUsage.limit === -1 
+                          ? 'text-blue-500' 
+                          : !photoUsage.canUse 
+                            ? 'text-red-500' 
+                            : 'text-green-500'
+                      } text-xs font-semibold`}>
+                        {photoUsage.limit === -1 ? '∞' : `${photoUsage.used}/${photoUsage.limit}`}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
+
                 {/* Video Usage - Only show for Pro users */}
                 {isPro && backToLifeUsage && (
                   <TouchableOpacity 
@@ -790,10 +782,10 @@ Best regards`;
                         if (__DEV__) {
                           console.log('🔄 Refreshing Back to Life usage from Supabase...');
                         }
-                        await fetchUsageData();
+                        await fetchVideoUsageData();
                       } catch (error) {
                         if (__DEV__) {
-                          console.error('❌ Failed to refresh usage data:', error);
+                          console.error('❌ Failed to refresh video usage data:', error);
                         }
                       }
                     }}

@@ -1,5 +1,5 @@
 import { supabase, logSupabaseIssue } from './supabaseClient';
-import { deviceTrackingService } from './deviceTracking';
+import { getOrCreateCustomUserId } from './trackingIds';
 
 // Type for restoration metadata that goes to Supabase
 export interface RestorationMetadata {
@@ -25,7 +25,7 @@ export const restorationTrackingService = {
     predictionId?: string
   ): Promise<string | null> {
     try {
-      const deviceId = await deviceTrackingService.getDeviceId();
+      const deviceId = await getOrCreateCustomUserId();
       
       const { data, error } = await supabase
         .from('restorations')
@@ -105,7 +105,7 @@ export const restorationTrackingService = {
     pending: number;
   } | null> {
     try {
-      const deviceId = await deviceTrackingService.getDeviceId();
+      const deviceId = await getOrCreateCustomUserId();
       
       const { data, error } = await supabase
         .from('restorations')

@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
+import { useQuickEditStore } from '@/store/quickEditStore';
 import React from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { IconSymbol } from './ui/IconSymbol';
@@ -15,7 +15,6 @@ const MODES: { key: Mode; label: string; icon: string }[] = [
 ];
 
 export function ModeChips() {
-  const router = useRouter();
 
   const openPicker = async (mode: Mode) => {
     try {
@@ -31,7 +30,10 @@ export function ModeChips() {
       });
       if (!result.canceled && result.assets[0]) {
         const uri = result.assets[0].uri;
-        router.push(`/crop-modal?imageUri=${encodeURIComponent(uri)}&functionType=${mode}&imageSource=gallery`);
+        useQuickEditStore.getState().openWithImage({ 
+          functionType: mode as any, 
+          imageUri: uri 
+        });
       }
     } catch (e) {
       if (__DEV__) console.error('ModeChips picker error:', e);

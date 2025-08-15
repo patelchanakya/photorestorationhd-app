@@ -10,6 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { BottomSheet } from '@/components/sheets/BottomSheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TextEditsScreen() {
@@ -34,6 +35,9 @@ export default function TextEditsScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const photoRestoration = usePhotoRestoration();
+  const [infoVisible, setInfoVisible] = useState(false);
+  const [infoTitle, setInfoTitle] = useState<string>('');
+  const [infoText, setInfoText] = useState<string>('');
   
 useEffect(() => {
   // If we have an image and prompt from navigation, process it ONCE
@@ -51,11 +55,11 @@ useEffect(() => {
       const currentIsPro = useSubscriptionStore.getState().isPro;
       
       if (!currentIsPro) {
-        console.log(`🔒 Text-edits: Pro mode "${editMode}" requires subscription`);
+        console.log(`🔒 Photo Magic: Pro mode "${editMode}" requires subscription`);
         const success = await presentPaywall();
         
         if (!success) {
-          console.log(`🔒 Text-edits: Pro mode "${editMode}" cancelled - returning to previous screen`);
+          console.log(`🔒 Photo Magic: Pro mode "${editMode}" cancelled - returning to previous screen`);
           router.back();
           return;
         }
@@ -70,9 +74,9 @@ useEffect(() => {
           return;
         }
         
-        console.log(`✅ Text-edits: Pro mode "${editMode}" unlocked after purchase`);
+        console.log(`✅ Photo Magic: Pro mode "${editMode}" unlocked after purchase`);
       } else {
-        console.log(`✅ Text-edits: Pro mode "${editMode}" - user already has Pro access`);
+        console.log(`✅ Photo Magic: Pro mode "${editMode}" - user already has Pro access`);
       }
     }
     // Determine the function type based on mode
@@ -188,7 +192,7 @@ useEffect(() => {
         setShowAdvanced(false);
       }
       if (__DEV__) {
-        console.log('🪄 TextEdits - toggle preset:', label, '→ selected:', next);
+        console.log('🪄 Photo Magic - toggle preset:', label, '→ selected:', next);
       }
       return next;
     });
@@ -196,7 +200,9 @@ useEffect(() => {
 
   const handleSuggestionLongPress = (label: string) => {
     const s = SUGGESTIONS.find(x => x.label === label);
-    Alert.alert(label, s?.template || 'More details coming soon.');
+    setInfoTitle(label);
+    setInfoText(s?.template || 'More details coming soon.');
+    setInfoVisible(true);
   };
 
   const buildPromptFromSelections = (): string => {
@@ -218,7 +224,7 @@ useEffect(() => {
       merged += identityClause;
     }
     if (__DEV__) {
-      console.log('🧠 TextEdits - built prompt:', {
+      console.log('🧠 Photo Magic - built prompt:', {
         presets: selectedLabels,
         preserveIdentity,
         preserveComposition,
@@ -237,11 +243,11 @@ useEffect(() => {
     }
     const finalPrompt = buildPromptFromSelections();
     if (!finalPrompt) {
-      Alert.alert('Select a preset', 'Please select at least 1 preset to apply edit.');
+      Alert.alert('Select edits', 'Please select at least 1 preset or write a custom edit.');
       return;
     }
     if (__DEV__) {
-      console.log('🚀 TextEdits - starting apply:', {
+      console.log('🚀 Photo Magic - starting apply:', {
         selectedImage,
         selectedLabels,
         preserveIdentity,
@@ -281,20 +287,15 @@ useEffect(() => {
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={{ color: '#EAEAEA', fontSize: 28 }}>✕</Text>
         </TouchableOpacity>
-        <Text style={{ color: '#EAEAEA', fontSize: 20, fontWeight: '800' }}>Textual Edit</Text>
+        <Text style={{ color: '#EAEAEA', fontSize: 20, fontWeight: '800' }}>Photo Magic</Text>
         <View style={{ width: 28 }} />
       </View>
       <View style={{ paddingHorizontal: 16 }}>
         <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: -2, marginBottom: 8, textAlign: 'center' }}>
-          Choose a preset or write your edit.
+          Write your own edit or use the presets.
         </Text>
       </View>
-      {/* Simple step header */}
-      <View style={{ paddingHorizontal: 16, marginBottom: 6, alignItems: 'center' }}>
-        <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>
-          1. Choose a photo   2. Pick a preset   3. Write your own (optional)   4. Apply
-        </Text>
-      </View>
+      
 
       <ScrollView style={{ flex: 1, paddingHorizontal: 16 }}>
         <View style={{ marginTop: 20 }}>
@@ -326,7 +327,7 @@ useEffect(() => {
 
         <View style={{ marginTop: 16, marginBottom: 8 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <Text style={{ color: '#EAEAEA', fontSize: 16, fontWeight: '600' }}>Magic builder</Text>
+            <Text style={{ color: '#EAEAEA', fontSize: 16, fontWeight: '600' }}>Quick presets</Text>
             <TouchableOpacity onPress={() => setShowAdvanced(!showAdvanced)} accessibilityLabel="Write your own" style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               {!showAdvanced && <IconSymbol name="pencil" size={14} color="rgba(255,255,255,0.6)" />}
               <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, fontWeight: '600' }}>
@@ -337,7 +338,7 @@ useEffect(() => {
           {/* Selected tags summary */}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
             {selectedLabels.length === 0 ? (
-              <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13 }}>Pick a preset below.</Text>
+              <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13 }}>Pick presets below or write custom edits.</Text>
             ) : (
               selectedLabels.map((label) => (
                 <TouchableOpacity key={label} onPress={() => handleSuggestionPress(label)} style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, backgroundColor: 'rgba(245,158,11,0.12)', borderWidth: 1, borderColor: '#F59E0B' }}>
@@ -364,7 +365,7 @@ useEffect(() => {
                     minHeight: 100,
                     textAlignVertical: 'top'
                   }}
-                  placeholder="Describe your edit..."
+                  placeholder="Describe what you want to change..."
                   placeholderTextColor="rgba(255,255,255,0.3)"
                   value={customPrompt}
                   onChangeText={setCustomPrompt}
@@ -439,7 +440,7 @@ useEffect(() => {
           {selectedLabels.length > 0 && (
             <Text style={{ color: 'rgba(255,255,255,0.65)', fontSize: 12, marginBottom: 6 }}>Selected: {selectedLabels.length}</Text>
           )}
-          <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginBottom: 12 }}>Tap to select. Press and hold any preset to learn more.</Text>
+          <Text style={{ color: 'rgba(255,255,255,0.55)', fontSize: 12, marginBottom: 12 }}>Tap to select • Long‑press for info</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
             {(category === 'All' ? SUGGESTIONS : SUGGESTIONS.filter(s => s.category === category)).map(({ label, icon }) => (
               <TouchableOpacity
@@ -491,33 +492,46 @@ useEffect(() => {
         borderColor: 'rgba(255,255,255,0.12)',
         padding: 6
       }}>
-        <TouchableOpacity 
-          onPress={handleProcessImage}
-          activeOpacity={selectedImage && !isSubmitting && !isLoading ? 0.95 : 1} 
-          disabled={!selectedImage || isSubmitting || isLoading}
-          style={{ height: 50, borderRadius: 16, overflow: 'hidden', opacity: selectedImage ? 1 : 0.5 }}
-          accessibilityState={{ disabled: !selectedImage }}
-        >
-          {selectedImage ? (
-            <LinearGradient 
-              colors={['#F59E0B', '#FBBF24']} 
-              start={{ x: 0, y: 0 }} 
-              end={{ x: 1, y: 1 }} 
-              style={{ flex: 1, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' }}
+        {(() => {
+          const canApply = !!selectedImage && !isSubmitting && !isLoading && selectedLabels.length > 0;
+          return (
+            <TouchableOpacity 
+              onPress={handleProcessImage}
+              activeOpacity={canApply ? 0.95 : 1} 
+              disabled={!canApply}
+              style={{ height: 50, borderRadius: 16, overflow: 'hidden', opacity: canApply ? 1 : 0.5 }}
+              accessibilityState={{ disabled: !canApply }}
             >
-              <IconSymbol name='wand.and.stars' size={18} color='#0B0B0F' />
-              <Text style={{ color: '#0B0B0F', fontSize: 16, fontWeight: '900', marginLeft: 8 }}>
-                {isSubmitting || isLoading ? 'Applying…' : 'Apply Edit'}
-              </Text>
-            </LinearGradient>
-          ) : (
-            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.08)' }}>
-              <IconSymbol name='photo' size={18} color='rgba(255,255,255,0.7)' />
-              <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 15, fontWeight: '700', marginLeft: 8 }}>Select Photo Above</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+              {selectedImage ? (
+                <LinearGradient 
+                  colors={['#F59E0B', '#FBBF24']} 
+                  start={{ x: 0, y: 0 }} 
+                  end={{ x: 1, y: 1 }} 
+                  style={{ flex: 1, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' }}
+                >
+                  <IconSymbol name='wand.and.stars' size={18} color='#0B0B0F' />
+                  <Text style={{ color: '#0B0B0F', fontSize: 16, fontWeight: '900', marginLeft: 8 }}>
+                    {isSubmitting || isLoading ? 'Processing…' : 'Apply Edits'}
+                  </Text>
+                </LinearGradient>
+              ) : (
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.08)' }}>
+                  <IconSymbol name='photo' size={18} color='rgba(255,255,255,0.7)' />
+                  <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 15, fontWeight: '700', marginLeft: 8 }}>Select Photo Above</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        })()}
       </View>
+
+      {/* Long-press info sheet */}
+      <BottomSheet visible={infoVisible} onDismiss={() => setInfoVisible(false)} maxHeightPercent={0.65}>
+        <View style={{ padding: 16 }}>
+          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800', marginBottom: 6 }}>{infoTitle}</Text>
+          <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 14, lineHeight: 20 }}>{infoText}</Text>
+        </View>
+      </BottomSheet>
     </KeyboardAvoidingView>
   );
 }

@@ -1,5 +1,7 @@
-import { getSubscriptionPlanDetails, getVideoTrackingId } from './revenuecat';
+import { getSubscriptionPlanDetails } from './revenuecat';
+import { getVideoTrackingId } from './trackingIds';
 import { supabase } from './supabaseClient';
+import { getMonthlyVideoLimit, getWeeklyVideoDailyLimit } from './usageLimits';
 
 export interface BackToLifeUsage {
   canUse: boolean;
@@ -20,15 +22,18 @@ export const backToLifeService = {
   /**
    * Check if user can generate a Back to Life video
    * Always fetches fresh data from RevenueCat and Supabase
+   * FREE USERS ARE COMPLETELY BLOCKED FROM VIDEOS
    */
   async checkUsage(): Promise<BackToLifeUsage> {
     try {
+      console.log('🎬 [TEST] Starting Back to Life usage check...');
       // Get subscription details from RevenueCat
       const planDetails = await getSubscriptionPlanDetails();
-      if (!planDetails) {
-        if (__DEV__) {
-          console.log('🎬 BackToLife: No subscription plan details available');
-        }
+      console.log('📊 [TEST] Subscription plan details:', planDetails);
+      
+      // Block free users from videos completely
+      if (!planDetails || planDetails.planType === 'free') {
+        console.log('❌ [TEST] Free users blocked from video generation');
         return {
           canUse: false,
           used: 0,
@@ -39,12 +44,19 @@ export const backToLifeService = {
           lastVideoDate: null
         };
       }
+      
+      console.log('✅ [TEST] Pro user detected for video generation:', {
+        planType: planDetails.planType,
+        usageLimit: planDetails.usageLimit,
+        billingCycleStart: planDetails.billingCycleStart,
+        nextResetDate: planDetails.nextResetDate
+      });
 
-      // Get stable device ID for video usage tracking (simplified approach)
-      const stableUserId = await getVideoTrackingId();
-      if (!stableUserId) {
+      // Get stable subscriber key for video usage tracking (bulletproof approach)
+      const subscriberKey = await getVideoTrackingId();
+      if (!subscriberKey) {
         if (__DEV__) {
-          console.log('🎬 BackToLife: No stable user ID available');
+          console.log('🎬 BackToLife: No stable subscriber key available');
         }
         return {
           canUse: false,
@@ -57,12 +69,12 @@ export const backToLifeService = {
         };
       }
 
-      // Use stable device ID as primary database key (single-ID strategy)
-      const databaseKey = stableUserId;
+      // Use subscriber key as primary database key (bulletproof strategy)
+      const databaseKey = subscriberKey;
 
       if (__DEV__) {
-        console.log('📊 BackToLife Usage Check (Single ID Strategy):', {
-          stable_user_id: stableUserId,
+        console.log('📊 BackToLife Usage Check (Bulletproof Strategy):', {
+          subscriber_key: subscriberKey,
           database_key: databaseKey,
           plan_type: planDetails.planType,
           usage_limit: planDetails.usageLimit,
@@ -71,8 +83,8 @@ export const backToLifeService = {
         });
       }
 
-      // Get or create usage record using the stable device ID
-      const usageRecord = await this.getOrCreateUsageRecord(databaseKey, stableUserId, planDetails);
+      // Get or create usage record using the subscriber key
+      const usageRecord = await this.getOrCreateUsageRecord(databaseKey, subscriberKey, planDetails);
       
       // Check if user can use today (daily limit: 1 video per day for weekly plans only)
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
@@ -85,8 +97,8 @@ export const backToLifeService = {
       }
       
       if (__DEV__) {
-        console.log('🎬 BackToLife Usage Status (Single ID Strategy):', {
-          stable_user_id: stableUserId,
+        console.log('🎬 BackToLife Usage Status (Bulletproof Strategy):', {
+          subscriber_key: subscriberKey,
           database_key: databaseKey,
           plan_type: planDetails.planType,
           used_count: usageRecord.back_to_life_count,
@@ -133,27 +145,29 @@ export const backToLifeService = {
     try {
       // Get subscription details from RevenueCat
       const planDetails = await getSubscriptionPlanDetails();
-      if (!planDetails) {
+      
+      // Block free users from videos completely
+      if (!planDetails || planDetails.planType === 'free') {
         if (__DEV__) {
-          console.log('🎬 BackToLife: No subscription plan details for increment');
+          console.log('🎬 BackToLife: Free users blocked from video increment');
         }
         return false;
       }
 
-      const stableUserId = await getVideoTrackingId();
-      if (!stableUserId) {
+      const subscriberKey = await getVideoTrackingId();
+      if (!subscriberKey) {
         if (__DEV__) {
-          console.log('⚠️ No stable user ID for usage increment');
+          console.log('⚠️ No subscriber key for usage increment');
         }
         return false;
       }
 
-      // Use stable device ID for database operations (single-ID strategy)
-      const databaseKey = stableUserId;
+      // Use subscriber key for database operations (bulletproof strategy)
+      const databaseKey = subscriberKey;
 
       if (__DEV__) {
-        console.log('🔒 Attempting atomic usage increment (Single ID Strategy):', {
-          stable_user_id: stableUserId,
+        console.log('🔒 Attempting atomic usage increment (Bulletproof Strategy):', {
+          subscriber_key: subscriberKey,
           database_key: databaseKey,
           plan_type: planDetails.planType,
           usage_limit: planDetails.usageLimit
@@ -208,19 +222,28 @@ export const backToLifeService = {
    */
   async rollbackUsage(): Promise<boolean> {
     try {
-      const stableUserId = await getVideoTrackingId();
-      if (!stableUserId) {
+      // Only allow rollback for Pro users (free users can't generate videos)
+      const planDetails = await getSubscriptionPlanDetails();
+      if (!planDetails || planDetails.planType === 'free') {
         if (__DEV__) {
-          console.log('⚠️ No stable user ID for rollback');
+          console.log('🎬 BackToLife: No rollback needed for free users');
         }
         return false;
       }
 
-      const databaseKey = stableUserId;
+      const subscriberKey = await getVideoTrackingId();
+      if (!subscriberKey) {
+        if (__DEV__) {
+          console.log('⚠️ No subscriber key for rollback');
+        }
+        return false;
+      }
+
+      const databaseKey = subscriberKey;
 
       if (__DEV__) {
-        console.log('🔄 Rolling back usage increment (Single ID Strategy):', {
-          stable_user_id: stableUserId,
+        console.log('🔄 Rolling back usage increment (Bulletproof Strategy):', {
+          subscriber_key: subscriberKey,
           database_key: databaseKey
         });
       }
@@ -251,13 +274,13 @@ export const backToLifeService = {
 
   /**
    * Get existing usage record or create new one with current billing cycle
-   * Handles billing cycle resets automatically (simplified single-ID approach)
+   * Handles billing cycle resets automatically (bulletproof subscriber-based approach)
    * 
-   * @param databaseKey - Primary key for database (stable device ID)
-   * @param stableUserId - The stable device ID for record creation
+   * @param databaseKey - Primary key for database (subscriber key: orig: or stable:)
+   * @param subscriberKey - The subscriber key for record creation
    * @param planDetails - Subscription plan information
    */
-  async getOrCreateUsageRecord(databaseKey: string, stableUserId: string, planDetails: any) {
+  async getOrCreateUsageRecord(databaseKey: string, subscriberKey: string, planDetails: any) {
     // Try to get existing record using the database key
     const { data: existingRecord, error: fetchError } = await supabase
       .from('user_video_usage')
@@ -268,7 +291,7 @@ export const backToLifeService = {
     // If record doesn't exist, create it
     if (fetchError?.code === 'PGRST116' || !existingRecord) {
       const newRecord = {
-        user_id: databaseKey,  // Use stable device ID as primary key
+        user_id: databaseKey,  // Use subscriber key as primary key
         back_to_life_count: 0,
         plan_type: planDetails.planType,
         usage_limit: planDetails.usageLimit,
@@ -281,8 +304,8 @@ export const backToLifeService = {
       };
 
       if (__DEV__) {
-        console.log('📊 Creating new usage record (Single ID Strategy):', {
-          stable_user_id: stableUserId,
+        console.log('📊 Creating new usage record (Bulletproof Strategy):', {
+          subscriber_key: subscriberKey,
           database_key: databaseKey
         });
       }

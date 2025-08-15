@@ -1,7 +1,52 @@
 import { analyticsService } from '@/services/analytics';
 import { getStableUserId } from '@/services/stableUserId';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Constants from 'expo-constants';
+
+// Query keys for TanStack Query
+const QUERY_KEYS = {
+  subscriptionStatus: ['subscription-status'] as const,
+  customerInfo: ['customer-info'] as const,
+  subscriptionPlan: ['subscription-plan'] as const,
+} as const;
+
+// Store update callbacks to break circular dependency
+interface SubscriptionStoreCallbacks {
+  setIsPro: (isPro: boolean) => void;
+  setExpirationDate: (date: string | null) => void;
+  getIsPro: () => boolean;
+}
+
+let storeCallbacks: SubscriptionStoreCallbacks | null = null;
+
+/**
+ * Initialize store callbacks to break circular dependency
+ * Call this from subscriptionStore to provide update functions
+ */
+export const initializeStoreCallbacks = (callbacks: SubscriptionStoreCallbacks) => {
+  storeCallbacks = callbacks;
+};
+
+/**
+ * Safe store update helper
+ */
+const updateStore = (isPro: boolean, expirationDate?: string | null) => {
+  if (storeCallbacks) {
+    storeCallbacks.setIsPro(isPro);
+    if (expirationDate !== undefined) {
+      storeCallbacks.setExpirationDate(expirationDate);
+    }
+  }
+};
+
+/**
+ * Safe store getter helper
+ */
+const getCurrentProStatus = (): boolean => {
+  return storeCallbacks?.getIsPro() ?? false;
+};
+import * as SecureStore from 'expo-secure-store';
+import * as Crypto from 'expo-crypto';
 import Purchases, {
     CustomerInfo,
     PURCHASES_ERROR_CODE,
@@ -28,6 +73,39 @@ export interface PurchaseResult {
 
 // Helper to check if we're in Expo Go
 const isExpoGo = () => Constants.appOwnership === 'expo';
+
+// Get or create a stable custom user ID using SecureStore (survives reinstalls)
+const getOrCreateCustomUserId = async (): Promise<string | null> => {
+  try {
+    const CUSTOM_USER_ID_KEY = 'rc_custom_user_id';
+    
+    // Try to get existing ID from SecureStore
+    let customUserId = await SecureStore.getItemAsync(CUSTOM_USER_ID_KEY);
+    
+    if (!customUserId) {
+      // Generate new stable ID
+      customUserId = await Crypto.randomUUID();
+      
+      // Store in SecureStore (survives app reinstalls)
+      await SecureStore.setItemAsync(CUSTOM_USER_ID_KEY, customUserId);
+      
+      if (__DEV__) {
+        console.log('🔑 Generated new custom user ID:', customUserId);
+      }
+    } else {
+      if (__DEV__) {
+        console.log('🔑 Retrieved existing custom user ID:', customUserId);
+      }
+    }
+    
+    return customUserId;
+  } catch (error) {
+    if (__DEV__) {
+      console.error('❌ Failed to get/create custom user ID:', error);
+    }
+    return null;
+  }
+};
 
 // Helper to safely reset identity before restore operations
 // Always logs out to prevent cross-Apple-ID entitlement carryover.
@@ -391,56 +469,80 @@ export const getCustomerInfo = async (): Promise<CustomerInfo | null> => {
 
 export const checkSubscriptionStatus = async (): Promise<boolean> => {
   try {
+    console.log('🔍 [TEST] Starting subscription status check...');
     const customerInfo = await getCustomerInfo();
     
     if (!customerInfo) {
+      console.log('❌ [TEST] No customer info available - setting to non-Pro');
       // Only update store in error case where CustomerInfo is unavailable
-      useSubscriptionStore.getState().setIsPro(false);
-      useSubscriptionStore.getState().setExpirationDate(null);
+      updateStore(false, null);
       return false;
     }
+    
+    console.log('📊 [TEST] Customer Info Retrieved:', {
+      appUserId: customerInfo.originalAppUserId,
+      activeEntitlements: Object.keys(customerInfo.entitlements.active),
+      allEntitlements: Object.keys(customerInfo.entitlements.all),
+      originalPurchaseDate: customerInfo.originalPurchaseDate,
+      firstSeen: customerInfo.firstSeen
+    });
     
     // Prefer active entitlements, but fall back to all to read expiration/debug info
     const entitlementsAny: any = (customerInfo as any)?.entitlements ?? {};
     const proEntitlement = entitlementsAny.active?.['pro'] ?? entitlementsAny.all?.['pro'];
+    
+    if (proEntitlement) {
+      console.log('🎯 [TEST] Pro Entitlement Details:', {
+        isActive: proEntitlement.isActive,
+        willRenew: proEntitlement.willRenew,
+        periodType: proEntitlement.periodType,
+        productIdentifier: proEntitlement.productIdentifier,
+        originalPurchaseDate: proEntitlement.originalPurchaseDate,
+        latestPurchaseDate: proEntitlement.latestPurchaseDate,
+        expirationDate: proEntitlement.expirationDate,
+        originalTransactionId: proEntitlement.originalTransactionId,
+        store: proEntitlement.store,
+        isSandbox: proEntitlement.isSandbox
+      });
+    } else {
+      console.log('❌ [TEST] No Pro entitlement found');
+    }
+    
     const hasProEntitlement = isEntitlementTrulyActive(proEntitlement);
+    console.log('✅ [TEST] Entitlement validation result:', hasProEntitlement);
     
     // Update store if different from current value (for Apple ID switches)
-    const currentProStatus = useSubscriptionStore.getState().isPro;
-    if (__DEV__) {
-      console.log('🔍 Store comparison:', {
-        currentProStatus,
-        hasProEntitlement,
-        needsUpdate: hasProEntitlement !== currentProStatus
-      });
-    }
+    const currentProStatus = getCurrentProStatus();
+    console.log('🔍 [TEST] Store comparison:', {
+      currentProStatus,
+      hasProEntitlement,
+      needsUpdate: hasProEntitlement !== currentProStatus,
+      timestamp: new Date().toISOString()
+    });
+    
     if (hasProEntitlement !== currentProStatus) {
-      useSubscriptionStore.getState().setIsPro(hasProEntitlement);
-      // Keep expiration date in sync for UI
-      useSubscriptionStore.getState().setExpirationDate(proEntitlement?.expirationDate ?? null);
-      if (__DEV__) {
-        console.log('🔄 Updated subscription status on check:', hasProEntitlement);
-        console.log('🔄 Store state after update:', useSubscriptionStore.getState().isPro);
-      }
+      console.log('🔄 [TEST] Updating store with new subscription status:', hasProEntitlement);
+      updateStore(hasProEntitlement, proEntitlement?.expirationDate ?? null);
+      console.log('✅ [TEST] Store updated. New state:', getCurrentProStatus());
+    } else {
+      console.log('ℹ️ [TEST] No store update needed - status unchanged');
     }
     
-    if (__DEV__) {
-      console.log('🔍 Subscription status check:', {
-        result: hasProEntitlement,
-        rcIsActive: proEntitlement?.isActive ?? null,
-        willRenew: proEntitlement?.willRenew ?? null,
-        expirationDate: proEntitlement?.expirationDate ?? null,
-      });
-    }
+    console.log('🔍 [TEST] Final subscription status check result:', {
+      result: hasProEntitlement,
+      rcIsActive: proEntitlement?.isActive ?? null,
+      willRenew: proEntitlement?.willRenew ?? null,
+      expirationDate: proEntitlement?.expirationDate ?? null,
+      timestamp: new Date().toISOString()
+    });
     
     return hasProEntitlement;
   } catch (error) {
-    // Only log errors in development builds
-    if (__DEV__) {
-      console.error('❌ Failed to check subscription status:', error);
-    }
+    console.error('❌ [TEST] Failed to check subscription status:', error);
     // On error, don't change current state - let user keep current access level
-    return useSubscriptionStore.getState().isPro;
+    const currentStatus = getCurrentProStatus();
+    console.log('⚠️ [TEST] Returning current status due to error:', currentStatus);
+    return currentStatus;
   }
 };
 
@@ -492,8 +594,7 @@ export const restorePurchases = async (): Promise<boolean> => {
     const proEntitlement = entitlementsAny.active?.['pro'] ?? entitlementsAny.all?.['pro'];
     const hasProEntitlement = isEntitlementTrulyActive(proEntitlement);
     // Update store explicitly
-    useSubscriptionStore.getState().setIsPro(hasProEntitlement);
-    useSubscriptionStore.getState().setExpirationDate(proEntitlement?.expirationDate ?? null);
+    updateStore(hasProEntitlement, proEntitlement?.expirationDate ?? null);
     
     // Note: Store update handled by CustomerInfo listener in _layout.tsx
     if (__DEV__) {
@@ -543,7 +644,7 @@ export const restorePurchasesDetailed = async (): Promise<RestoreResult> => {
     }
     
     // Add null safety check - but customerInfo can be null even on successful restores
-    if (!info) {
+    if (!customerInfo) {
       if (__DEV__) {
         console.log('⚠️ No customer info returned from detailed restore');
       }
@@ -556,7 +657,7 @@ export const restorePurchasesDetailed = async (): Promise<RestoreResult> => {
       });
       
       if (waitForStoreUpdate.success) {
-        useSubscriptionStore.getState().setIsPro(waitForStoreUpdate.isPro);
+        updateStore(waitForStoreUpdate.isPro);
         if (__DEV__) {
           console.log('✅ Restore successful - store updated with PRO status');
         }
@@ -578,11 +679,10 @@ export const restorePurchasesDetailed = async (): Promise<RestoreResult> => {
     }
     
     // Check entitlement with robust validation
-    const entitlementsAny: any = (info as any)?.entitlements ?? {};
+    const entitlementsAny: any = (customerInfo as any)?.entitlements ?? {};
     const proEntitlement = entitlementsAny.active?.['pro'] ?? entitlementsAny.all?.['pro'];
     const hasProEntitlement = isEntitlementTrulyActive(proEntitlement);
-    useSubscriptionStore.getState().setIsPro(hasProEntitlement);
-    useSubscriptionStore.getState().setExpirationDate(proEntitlement?.expirationDate ?? null);
+    updateStore(hasProEntitlement, proEntitlement?.expirationDate ?? null);
     
     // Note: Store update handled by CustomerInfo listener in _layout.tsx
     if (__DEV__) {
@@ -906,8 +1006,7 @@ export const validatePremiumAccess = async (): Promise<boolean> => {
     
     if (!customerInfo) {
       // Only update store in error case where CustomerInfo is unavailable
-      useSubscriptionStore.getState().setIsPro(false);
-      useSubscriptionStore.getState().setExpirationDate(null);
+      updateStore(false, null);
       if (__DEV__) {
         console.log('🔐 Premium access validation: No customer info, denying access');
       }
@@ -942,7 +1041,7 @@ export const validatePremiumAccess = async (): Promise<boolean> => {
       console.error('❌ Failed to validate premium access:', error);
     }
     // On error, return current state to avoid disrupting user experience
-    return useSubscriptionStore.getState().isPro;
+    return getCurrentProStatus();
   }
 };
 
@@ -972,82 +1071,8 @@ export const getAppUserId = async (): Promise<string | null> => {
   }
 };
 
-// Interface for video tracking identifiers
-// DEPRECATED: VideoTrackingIds interface no longer needed
-// Using simplified single-ID approach based on test results
-// export interface VideoTrackingIds {
-//   deviceId: string;
-//   transactionId: string | null;
-// }
-
-/**
- * Get stable user ID for video tracking - SIMPLIFIED SINGLE-ID APPROACH
- * 
- * Based on test results: originalTransactionId is NOT available during trials,
- * only after trial converts to paid subscription. This creates UX confusion.
- * 
- * New Strategy: Use only stable device ID for ALL users (trial + paid)
- * - ✅ Works from day 1 (trial users can use videos immediately)
- * - ✅ Cross-platform compatible (iOS + Android)
- * - ✅ RevenueCat best practice (custom App User ID)
- * - ❌ Video limits reset on app reinstall (acceptable trade-off)
- * 
- * Additional abuse prevention can be added via IP limiting, device fingerprinting, etc.
- */
-export async function getVideoTrackingId(): Promise<string | null> {
-  try {
-    // Get stable device ID (used as RevenueCat App User ID)
-    const deviceId = await getStableUserId();
-    if (!deviceId) {
-      if (__DEV__) {
-        console.log('🎬 Video tracking: No stable device ID found');
-      }
-      return null;
-    }
-    
-    // Get customer info for subscription verification
-    const customerInfo = await getCustomerInfo();
-    if (!customerInfo) {
-      if (__DEV__) {
-        console.log('🎬 Video tracking: CustomerInfo not ready');
-      }
-      return null;
-    }
-    
-    // Verify Pro entitlement
-    const proEntitlement = customerInfo.entitlements?.active?.pro;
-    if (!proEntitlement?.isActive) {
-      if (__DEV__) {
-        console.log('🎬 Video tracking: No Pro entitlement');
-      }
-      return null;
-    }
-    
-    if (__DEV__) {
-      console.log('📊 Video Tracking (Single ID Strategy):', {
-        stable_device_id: deviceId,
-        product_id: proEntitlement.productIdentifier,
-        period_type: proEntitlement.periodType,
-        is_trial: proEntitlement.periodType === 'TRIAL',
-        is_promotional: proEntitlement.store === 'promotional',
-        expires_date: proEntitlement.expirationDate
-      });
-    }
-    
-    if (__DEV__) {
-      console.log('✅ Video tracking: Using stable device ID for all users');
-      console.log('📱 Device ID (primary key):', deviceId);
-      console.log('📋 Note: Video limits reset on app reinstall (by design)');
-    }
-    
-    return deviceId;
-  } catch (error) {
-    if (__DEV__) {
-      console.error('❌ Failed to get video tracking ID:', error);
-    }
-    return null;
-  }
-}
+// Note: getVideoTrackingId has been moved to services/trackingIds.ts
+// This prevents RevenueCat identity mismatch issues by centralizing ID management
 
 // Interface for subscription plan details
 export interface SubscriptionPlanDetails {
@@ -1212,7 +1237,7 @@ export const waitForSubscriptionUpdate = async (options: WaitForUpdateOptions = 
   } = options;
   
   const startTime = Date.now();
-  const initialProStatus = useSubscriptionStore.getState().isPro;
+  const initialProStatus = getCurrentProStatus();
   let lastProStatus = initialProStatus;
   let stableCheckCount = 0;
   const requiredStableChecks = 3; // Status must be stable for 3 checks
@@ -1223,7 +1248,7 @@ export const waitForSubscriptionUpdate = async (options: WaitForUpdateOptions = 
   
   return new Promise((resolve) => {
     const checkStatus = () => {
-      const currentProStatus = useSubscriptionStore.getState().isPro;
+      const currentProStatus = getCurrentProStatus();
       const elapsed = Date.now() - startTime;
       
       // Check if status is stable
@@ -1300,8 +1325,7 @@ export const restorePurchasesSimple = async (): Promise<RestoreResult> => {
     const hasActiveEntitlements = isEntitlementTrulyActive(proEntitlement);
     
     // Update store with restore result
-    useSubscriptionStore.getState().setIsPro(hasActiveEntitlements);
-    useSubscriptionStore.getState().setExpirationDate(proEntitlement?.expirationDate ?? null);
+    updateStore(hasActiveEntitlements, proEntitlement?.expirationDate ?? null);
     
     if (__DEV__) {
       console.log('🔄 Restore complete:', {
@@ -1327,4 +1351,46 @@ export const restorePurchasesSimple = async (): Promise<RestoreResult> => {
       errorMessage: 'Failed to restore purchases. Please try again.'
     };
   }
+};
+
+// =============================================================================
+// TanStack Query Hooks for Subscription State Management
+// =============================================================================
+
+/**
+ * Hook to get subscription status with TanStack Query caching
+ * Replaces direct store access to break require cycles
+ */
+export const useSubscriptionStatus = () => {
+  return useQuery({
+    queryKey: QUERY_KEYS.subscriptionStatus,
+    queryFn: async () => {
+      const status = await checkSubscriptionStatus();
+      const planDetails = status ? await getSubscriptionPlanDetails() : null;
+      
+      return {
+        isPro: status,
+        planDetails,
+        lastChecked: new Date().toISOString()
+      };
+    },
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: false,
+    retry: 2,
+  });
+};
+
+/**
+ * Hook to invalidate subscription cache when needed
+ */
+export const useInvalidateSubscription = () => {
+  const queryClient = useQueryClient();
+  
+  return () => {
+    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.subscriptionStatus });
+    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.customerInfo });
+    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.subscriptionPlan });
+  };
 };

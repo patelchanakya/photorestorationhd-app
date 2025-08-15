@@ -3,6 +3,8 @@ import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 import { CustomImageCropper } from '@/components/CustomImageCropper';
 import { useQuickEditStore } from '@/store/quickEditStore';
 import { photoStorage } from '@/services/storage';
+import { photoUsageService } from '@/services/photoUsageService';
+import { presentPaywall } from '@/services/revenuecat';
 import { useRouter } from 'expo-router';
 import { Image as ExpoImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,13 +12,17 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import React from 'react';
-import { Dimensions, Modal, Text, TouchableOpacity, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { Alert, Dimensions, Modal, Text, TouchableOpacity, View, Pressable, ActivityIndicator, Platform } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
+import { ProUpgradeModal } from '@/components/ProUpgradeModal';
 
 const { height } = Dimensions.get('window');
 
 export function QuickEditSheet() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const {
     visible,
     stage,
@@ -32,6 +38,8 @@ export function QuickEditSheet() {
     setResult,
     close,
     customPrompt,
+    errorMessage,
+    setError,
   } = useQuickEditStore();
 
   const photoRestoration = usePhotoRestoration();
@@ -75,13 +83,20 @@ export function QuickEditSheet() {
   const saveButtonScale = useSharedValue(1);
   const savedFeedback = useSharedValue(0);
   const handleClose = React.useCallback(() => {
+    // Prevent dismissal while processing
+    if (stage === 'loading') {
+      return;
+    }
+    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
     close();
     // Give the exit animation time, then aggressively free image memory
     setTimeout(() => {
       try { (ExpoImage as any).clearMemoryCache?.(); } catch {}
     }, 320);
-  }, [close]);
+  }, [close, stage]);
   const [rendered, setRendered] = React.useState(false);
+  const [isUploading, setIsUploading] = React.useState(false);
+  const [showUpgrade, setShowUpgrade] = React.useState(false);
   React.useEffect(() => {
     // Mount and animate in
     if (visible) {
@@ -90,13 +105,15 @@ export function QuickEditSheet() {
       overlayOpacity.value = 0;
       // next frame animate
       requestAnimationFrame(() => {
-        translateY.value = withTiming(0, { duration: 280 });
-        overlayOpacity.value = withTiming(1, { duration: 280 });
+        // Slight spring overshoot on open for polish
+        translateY.value = withSpring(0, { damping: 22, stiffness: 260, mass: 0.9 });
+        overlayOpacity.value = withTiming(1, { duration: 280, easing: Easing.bezier(0.22, 1, 0.36, 1) });
       });
+      try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
     } else {
       // Animate out then unmount
-      translateY.value = withTiming(height, { duration: 260 });
-      overlayOpacity.value = withTiming(0, { duration: 260 });
+      translateY.value = withTiming(height, { duration: 260, easing: Easing.bezier(0.4, 0, 0.2, 1) });
+      overlayOpacity.value = withTiming(0, { duration: 260, easing: Easing.linear });
       const t = setTimeout(() => setRendered(false), 270);
       return () => clearTimeout(t);
     }
@@ -110,6 +127,7 @@ export function QuickEditSheet() {
   }));
 
   const handlePick = async () => {
+    try { Haptics.selectionAsync(); } catch {}
     const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (res.status !== 'granted') return;
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 1 });
@@ -120,6 +138,7 @@ export function QuickEditSheet() {
   };
 
   const handleCrop = () => {
+    try { Haptics.selectionAsync(); } catch {}
     if (!selectedImageUri) return;
     hasAppliedCropRef.current = false;
     setIsCropping(true);
@@ -127,7 +146,32 @@ export function QuickEditSheet() {
 
   const handleUpload = async () => {
     if (!selectedImageUri || !functionType) return;
+    if (isUploading) return;
+    setIsUploading(true);
+    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch {}
+
+    // Check photo usage limits before processing
+    const photoUsage = await photoUsageService.checkUsage();
+    
+    if (!photoUsage.canUse && photoUsage.planType === 'free') {
+      setShowUpgrade(true);
+      setIsUploading(false);
+      return;
+    }
+
     setStage('loading');
+    
+    // Atomic pre-increment for free users only
+    let incrementSuccess = true;
+    if (photoUsage.planType === 'free') {
+      incrementSuccess = await photoUsageService.checkAndIncrementUsage();
+      if (!incrementSuccess) {
+        // Hit limit during atomic check - show upgrade prompt
+        setShowUpgrade(true);
+        setIsUploading(false);
+        return;
+      }
+    }
 
     const started = Date.now();
     const interval = setInterval(() => {
@@ -143,10 +187,35 @@ export function QuickEditSheet() {
       const id = data.id;
       const restoredUri = (data as any).restoredImageUri || '';
       setResult(id, restoredUri);
-    } catch (e) {
-      setStage('preview');
+    } catch (e: any) {
+      if (__DEV__) {
+        console.log('🚨 QuickEditSheet caught error:', e?.message);
+        console.log('🚨 Error type:', typeof e);
+        console.log('🚨 Full error:', e);
+      }
+      
+      // Rollback usage increment on failure for free users
+      if (photoUsage.planType === 'free' && incrementSuccess) {
+        await photoUsageService.rollbackUsage();
+        if (__DEV__) {
+          console.log('📸 Photo usage rolled back due to processing failure');
+        }
+      }
+      
+      // Show user-friendly error message
+      const errorMsg = e?.message || 'Something went wrong. Please try again.';
+      if (__DEV__) {
+        console.log('🔴 Setting error message:', errorMsg);
+        console.log('🔴 Calling setError...');
+      }
+      setError(errorMsg);
+      
+      if (__DEV__) {
+        console.log('🔴 setError called, stage should be "error" now');
+      }
     } finally {
       clearInterval(interval);
+      setIsUploading(false);
     }
   };
 
@@ -177,13 +246,26 @@ export function QuickEditSheet() {
   return (
     <Modal visible={true} transparent statusBarTranslucent animationType="none">
       <View style={{ flex: 1, justifyContent: 'flex-end' }}>
-        <Animated.View style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.25)' }, dimStyle]} />
+        <Pressable
+          // Disable backdrop dismiss while processing
+          onPress={stage === 'loading' ? undefined : handleClose}
+          accessibilityRole="button"
+          accessibilityLabel="Close editor"
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+        >
+          <Animated.View style={[{ flex: 1 }, dimStyle]}>
+            {Platform.OS === 'ios' && (
+              <BlurView intensity={12} tint="dark" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+            )}
+            <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.25)' }} />
+          </Animated.View>
+        </Pressable>
         <Animated.View style={[{ paddingBottom: 0 }, sheetStyle]}>
           <View style={{ borderTopLeftRadius: 20, borderTopRightRadius: 20, overflow: 'hidden', backgroundColor: 'rgba(12,12,14,0.96)', borderTopWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}>
-            <View style={{ padding: 16 }}>
+            <View style={{ padding: 16, paddingBottom: Math.max(16, insets.bottom + 12) }}>
               {/* Header */}
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                <TouchableOpacity onPress={handleClose} hitSlop={{ top: 8, left: 8, bottom: 8, right: 8 }} style={{ padding: 4 }}>
+                <TouchableOpacity onPress={handleClose} disabled={stage === 'loading'} hitSlop={{ top: 8, left: 8, bottom: 8, right: 8 }} style={{ padding: 4, opacity: stage === 'loading' ? 0.4 : 1 }}>
                   <IconSymbol name="xmark" size={20} color="#EAEAEA" />
                 </TouchableOpacity>
                 <Text style={{ color: '#EAEAEA', fontSize: 16, fontWeight: '700' }}>
@@ -261,6 +343,19 @@ export function QuickEditSheet() {
                 </View>
               )}
 
+              {/* Error Message */}
+              {stage === 'error' && (
+                <View style={{ marginTop: 12, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, backgroundColor: 'rgba(239,68,68,0.1)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)' }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <IconSymbol name="exclamationmark.triangle.fill" size={16} color="#EF4444" />
+                    <Text style={{ color: '#EF4444', fontWeight: '600', fontSize: 14 }}>Error</Text>
+                  </View>
+                  <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, lineHeight: 18 }}>
+                    {errorMessage}
+                  </Text>
+                </View>
+              )}
+
               {/* Actions */}
               <View style={{ marginTop: 16, marginBottom: 16, flexDirection: 'row', gap: 12, alignItems: 'center' }}>
                 {stage === 'select' && (
@@ -273,10 +368,14 @@ export function QuickEditSheet() {
                     <TouchableOpacity onPress={handleCrop} style={{ paddingHorizontal: 22, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' }}>
                       <Text style={{ color: '#fff', fontWeight: '900', fontSize: 16 }}>Crop</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={handleUpload} style={{ flex: 1, height: 56, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' }}>
+                    <TouchableOpacity onPress={handleUpload} disabled={isUploading} style={{ flex: 1, height: 56, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', opacity: isUploading ? 0.7 : 1 }}>
                       <LinearGradient colors={['#F59E0B', '#F59E0B']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
                       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                        <Text style={{ color: '#0B0B0F', fontWeight: '900', fontSize: 16 }}>Upload</Text>
+                        {isUploading ? (
+                          <ActivityIndicator color="#0B0B0F" />
+                        ) : (
+                          <Text style={{ color: '#0B0B0F', fontWeight: '900', fontSize: 16 }}>Upload</Text>
+                        )}
                       </View>
                     </TouchableOpacity>
                   </>
@@ -290,6 +389,23 @@ export function QuickEditSheet() {
                       <LinearGradient colors={['#F59E0B', '#F59E0B']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
                       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                         <Text style={{ color: '#0B0B0F', fontWeight: '900', fontSize: 16 }}>Done</Text>
+                      </View>
+                    </TouchableOpacity>
+                  </>
+                )}
+                {stage === 'error' && (
+                  <>
+                    <TouchableOpacity onPress={() => setStage('preview')} style={{ paddingHorizontal: 22, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ color: '#fff', fontWeight: '600' }}>Back</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={handleUpload} disabled={isUploading} style={{ flex: 1, height: 56, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', opacity: isUploading ? 0.7 : 1 }}>
+                      <LinearGradient colors={['#F59E0B', '#F59E0B']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+                      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                        {isUploading ? (
+                          <ActivityIndicator color="#0B0B0F" />
+                        ) : (
+                          <Text style={{ color: '#0B0B0F', fontWeight: '900', fontSize: 16 }}>Try Again</Text>
+                        )}
                       </View>
                     </TouchableOpacity>
                   </>
@@ -326,6 +442,21 @@ export function QuickEditSheet() {
           </View>
         </Animated.View>
       </View>
+      {/* Free limit reached modal */}
+      <ProUpgradeModal
+        visible={showUpgrade}
+        onClose={() => setShowUpgrade(false)}
+        title="Free limit reached"
+        message="You've reached your free photo restoration limit. Go Pro to continue."
+        ctaLabel="Go Pro"
+        onSuccess={() => {
+          setShowUpgrade(false);
+          // Resume upload automatically
+          setTimeout(() => {
+            handleUpload();
+          }, 0);
+        }}
+      />
     </Modal>
   );
 }

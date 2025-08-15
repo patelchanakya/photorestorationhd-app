@@ -1,6 +1,6 @@
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
+import { useQuickEditStore } from '@/store/quickEditStore';
 import React, { useMemo, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -26,7 +26,6 @@ const PRESETS: ModePreset[] = [
 ];
 
 export function ModesGallery() {
-  const router = useRouter();
   const [category, setCategory] = useState<ModeCategory>('all');
 
   const filtered = useMemo(() => {
@@ -42,7 +41,11 @@ export function ModesGallery() {
     if (!result.canceled && result.assets[0]) {
       const uri = result.assets[0].uri;
       // Pass styleKey through for backend prompt mapping later
-      router.push(`/crop-modal?imageUri=${encodeURIComponent(uri)}&functionType=restoration&styleKey=${encodeURIComponent(styleKey)}&imageSource=gallery`);
+      useQuickEditStore.getState().openWithImage({ 
+        functionType: 'restoration', 
+        imageUri: uri,
+        styleKey: styleKey
+      });
     }
   };
 

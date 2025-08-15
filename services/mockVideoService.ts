@@ -1,7 +1,7 @@
 import * as FileSystem from 'expo-file-system';
 import { AppState, AppStateStatus } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { VideoGenerationOptions, videoStateManager } from './videoGenerationService';
+import { VideoGenerationOptions } from '@/types/video';
 import { photoStorage } from './storage';
 
 // Local mock video files - using Asset.fromModule to get proper URIs

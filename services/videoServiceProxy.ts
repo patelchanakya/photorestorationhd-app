@@ -5,7 +5,7 @@
  * Set USE_MOCK_VIDEO to false to use secure server-side API
  */
 
-import { VideoGenerationOptions } from './videoGenerationService';
+import { VideoGenerationOptions } from '@/types/video';
 
 // Toggle this flag to switch between mock and real service
 const USE_MOCK_VIDEO = false; // Set to false for secure server-side API

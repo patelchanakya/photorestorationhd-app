@@ -286,7 +286,6 @@ function MainNavigator() {
           contentStyle: { backgroundColor: 'black' },
         }}
       />
-      <Stack.Screen name="crop-modal" options={{ presentation: 'modal', headerShown: false }} />
       <Stack.Screen name="gallery-image/[id]" options={{ presentation: 'modal', headerShown: false }} />
       <Stack.Screen name="text-edits" options={{ headerShown: false }} />
       <Stack.Screen name="+not-found" />

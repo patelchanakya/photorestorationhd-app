@@ -136,6 +136,7 @@ export default function HomeGalleryLikeScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
         
+        
         {/* Back to Life section title */}
         <View style={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '600', letterSpacing: -0.3 }}>Back to Life</Text>
@@ -166,8 +167,11 @@ export default function HomeGalleryLikeScreen() {
             if (res.status !== 'granted') return;
             const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: false, quality: 1 });
             if (!result.canceled && result.assets[0]) {
-              const { router } = await import('expo-router');
-              router.push(`/crop-modal?imageUri=${encodeURIComponent(result.assets[0].uri)}&functionType=repair&imageSource=gallery`);
+              const { useQuickEditStore } = await import('@/store/quickEditStore');
+              useQuickEditStore.getState().openWithImage({ 
+                functionType: 'restoration', 
+                imageUri: result.assets[0].uri 
+              });
             }
           }}
           style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}

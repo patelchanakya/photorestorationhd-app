@@ -8,6 +8,7 @@
 import * as FileSystem from 'expo-file-system';
 import { supabase } from './supabaseClient';
 import Purchases from 'react-native-purchases';
+import { VideoGenerationOptions } from '@/types/video';
 
 // Base URL for video API endpoints
 const getVideoApiBaseUrl = () => {
@@ -17,13 +18,6 @@ const getVideoApiBaseUrl = () => {
   }
   return `${supabaseUrl}/functions/v1`;
 };
-
-export interface VideoGenerationOptions {
-  mode?: 'standard' | 'pro';
-  duration?: 5 | 10;
-  negativePrompt?: string;
-  subscriptionTier?: 'free' | 'pro';
-}
 
 export interface VideoStartResponse {
   predictionId: string;

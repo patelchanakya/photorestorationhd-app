@@ -4,7 +4,7 @@ import { photoStorage } from '@/services/storage';
 import { localStorageHelpers } from '@/services/supabase';
 import { useRestorationStore } from '@/store/restorationStore';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
+import { useQuickEditStore } from '@/store/quickEditStore';
 import React, { useEffect } from 'react';
 import {
   Dimensions,
@@ -212,7 +212,10 @@ export default function GalleryModalScreen() {
 
                 if (!result.canceled && result.assets[0]) {
                   const imageUri = result.assets[0].uri;
-                  router.push(`/crop-modal?imageUri=${encodeURIComponent(imageUri)}&functionType=restoration&imageSource=gallery`);
+                  useQuickEditStore.getState().openWithImage({ 
+                    functionType: 'restoration', 
+                    imageUri: imageUri 
+                  });
                 }
               } catch (error) {
                 console.error('Error picking image:', error);

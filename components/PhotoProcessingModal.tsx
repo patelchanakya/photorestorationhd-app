@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Dimensions, Modal, Text, TouchableOpacity, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image as ExpoImage } from 'expo-image';
 
 interface PhotoProcessingModalProps {
@@ -21,6 +23,7 @@ export function PhotoProcessingModal({
   canCancel = false,
   onCancel 
 }: PhotoProcessingModalProps) {
+  const insets = useSafeAreaInsets();
   // Minimal fast spinner (thin arc that rotates) - hooks must be before early returns
   const rotate = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -34,6 +37,11 @@ export function PhotoProcessingModal({
     loop.start();
     return () => loop.stop();
   }, [rotate]);
+  useEffect(() => {
+    if (visible) {
+      try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+    }
+  }, [visible]);
   const spin = rotate.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
   
   if (!visible) return null;
@@ -79,7 +87,7 @@ export function PhotoProcessingModal({
           {canCancel && onCancel && (
             <View className="absolute top-4 right-4 z-10">
               <TouchableOpacity 
-                onPress={onCancel}
+                onPress={() => { try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}; onCancel(); }}
                 style={{
                   width: 36,
                   height: 36,
@@ -101,7 +109,7 @@ export function PhotoProcessingModal({
             </View>
           )}
           
-           <View className="flex-1 p-6">
+           <View className="flex-1 p-6" style={{ paddingBottom: Math.max(12, insets.bottom + 6) }}>
           {/* Image preview area (fixed height, no overflow) */}
           {imageUri && (
             <View className="relative rounded-2xl overflow-hidden mb-4" style={{ height: 200, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.10)' }}>

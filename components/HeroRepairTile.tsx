@@ -2,7 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useQuickEditStore } from '@/store/quickEditStore';
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { IconSymbol } from './ui/IconSymbol';
@@ -18,7 +18,6 @@ export function HeroRepairTile({
   subtitle = 'Fix damage & enhance',
   image = require('../assets/images/onboarding/after-2.png'),
 }: HeroRepairTileProps) {
-  const router = useRouter();
 
   const handlePick = async () => {
     try {
@@ -34,7 +33,10 @@ export function HeroRepairTile({
       });
       if (!result.canceled && result.assets[0]) {
         const uri = result.assets[0].uri;
-        router.push(`/crop-modal?imageUri=${encodeURIComponent(uri)}&functionType=restoration&imageSource=gallery`);
+        useQuickEditStore.getState().openWithImage({ 
+          functionType: 'restoration', 
+          imageUri: uri 
+        });
       }
     } catch (e) {
       if (__DEV__) console.error('HeroRepairTile picker error:', e);

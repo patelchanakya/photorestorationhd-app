@@ -1,6 +1,6 @@
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
+import { useQuickEditStore } from '@/store/quickEditStore';
 import React from 'react';
 import { Dimensions, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
@@ -66,7 +66,6 @@ const SECTIONS: SectionConfig[] = [
 ];
 
 export function StyleCollections() {
-  const router = useRouter();
   const { width: SCREEN_WIDTH } = Dimensions.get('window');
   const H_PADDING = 12; // matches container padding
   const GAP = 10; // gap between tiles
@@ -80,7 +79,11 @@ export function StyleCollections() {
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: false, quality: 1 });
     if (!result.canceled && result.assets[0]) {
       const uri = result.assets[0].uri;
-      router.push(`/crop-modal?imageUri=${encodeURIComponent(uri)}&functionType=restoration&styleKey=${encodeURIComponent(styleKey)}&imageSource=gallery`);
+      useQuickEditStore.getState().openWithImage({ 
+        functionType: 'restoration', 
+        imageUri: uri,
+        styleKey: styleKey
+      });
     }
   };
 

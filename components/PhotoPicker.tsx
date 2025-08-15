@@ -1,6 +1,6 @@
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
+import { useQuickEditStore } from '@/store/quickEditStore';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
@@ -20,7 +20,6 @@ interface PhotoPickerProps {
 
 const PhotoPickerComponent = ({ onPhotoSelected, isProcessing = false, functionType = 'restoration' }: PhotoPickerProps) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const router = useRouter();
 
   // Reset state when screen comes into focus (e.g., when returning from restoration screen)
   useFocusEffect(
@@ -71,8 +70,11 @@ const PhotoPickerComponent = ({ onPhotoSelected, isProcessing = false, functionT
 
     if (!result.canceled && result.assets[0]) {
       const uri = result.assets[0].uri;
-      // For both camera and gallery images, use crop modal for consistent UX
-      router.push(`/crop-modal?imageUri=${encodeURIComponent(uri)}&functionType=${functionType}&imageSource=${source}`);
+      // Use QuickEditSheet with image already selected
+      useQuickEditStore.getState().openWithImage({ 
+        functionType: functionType as any, 
+        imageUri: uri 
+      });
     }
   };
 

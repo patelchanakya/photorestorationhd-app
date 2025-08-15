@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Modal, TouchableOpacity, Dimensions } from 'react-native';
+import * as Haptics from 'expo-haptics';
 
 interface JobBlockingModalProps {
   visible: boolean;
@@ -58,7 +59,7 @@ export function JobBlockingModal({ visible, jobType = 'video', onDismiss }: JobB
           
           {/* Action Button */}
           <TouchableOpacity
-            onPress={onDismiss}
+            onPress={() => { try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}; onDismiss(); }}
             className="bg-gray-900 dark:bg-white rounded-2xl py-4 px-6"
             activeOpacity={0.8}
           >

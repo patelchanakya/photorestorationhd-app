@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { TouchableOpacity, Text, View, Alert } from 'react-native';
 import { generateVideo, getServiceInfo, isUsingMockVideo } from '@/services/videoServiceProxy';
-import { useCropModalStore } from '@/store/cropModalStore';
-import { photoStorage } from '@/services/storage';
-import { router } from 'expo-router';
+import { useVideoToastStore } from '@/store/videoToastStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface VideoTestButtonProps {
@@ -16,7 +14,7 @@ export function VideoTestButton({
   testPrompt = 'animate with a warm smile'
 }: VideoTestButtonProps) {
   const [isGenerating, setIsGenerating] = useState(false);
-  const { setIsProcessing, setCurrentImageUri, setProcessingStatus, setCompletedRestorationId } = useCropModalStore();
+  const { showToast, setProcessingStatus, setCurrentVideoId } = useVideoToastStore();
   
   const serviceInfo = getServiceInfo();
 
@@ -38,7 +36,7 @@ export function VideoTestButton({
       await AsyncStorage.setItem(`video_${videoId}`, JSON.stringify(videoData));
 
       // Also store the current video ID so the toast can navigate to it
-      setCompletedRestorationId(videoId);
+      setCurrentVideoId(videoId);
 
       if (__DEV__) {
         console.log('🎬 Video data stored:', videoData);
@@ -57,8 +55,7 @@ export function VideoTestButton({
 
     try {
       setIsGenerating(true);
-      setIsProcessing(true);
-      setCurrentImageUri(imageUri);
+      showToast();
       setProcessingStatus('loading');
 
       if (__DEV__) {
@@ -90,7 +87,6 @@ export function VideoTestButton({
       
       // Keep completed state visible - toast will handle navigation
       setTimeout(() => {
-        setIsProcessing(false);
         setProcessingStatus(null);
       }, 3000); // Give user time to see and tap the toast
 
@@ -108,7 +104,6 @@ export function VideoTestButton({
           {
             text: 'OK',
             onPress: () => {
-              setIsProcessing(false);
               setProcessingStatus(null);
             }
           }

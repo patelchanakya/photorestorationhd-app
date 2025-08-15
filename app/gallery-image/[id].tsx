@@ -4,7 +4,7 @@ import { photoStorage } from '@/services/storage';
 import { restorationService } from '@/services/supabase';
 import { Restoration } from '@/types';
 import { useRefreshHistory } from '@/hooks/useRestorationHistory';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { photoUsageService, useInvalidatePhotoUsage } from '@/services/photoUsageService';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import * as MediaLibrary from 'expo-media-library';
@@ -30,7 +30,7 @@ export default function GalleryImageModal() {
   const { id } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const refreshHistory = useRefreshHistory();
-  const { decrementFreeRestorations } = useSubscriptionStore();
+  const invalidatePhotoUsage = useInvalidatePhotoUsage();
   const [restoration, setRestoration] = useState<Restoration | null>(null);
   const [loading, setLoading] = useState(true);
   const [originalUri, setOriginalUri] = useState<string | null>(null);
@@ -198,9 +198,20 @@ export default function GalleryImageModal() {
               await restorationService.delete(restoration.id);
               await photoStorage.deleteRestoration(restoration);
               
-              // Decrement free restoration count if applicable
-              if (restoration.status === 'completed' && restoration.created_at) {
-                await decrementFreeRestorations(restoration.created_at);
+              // Rollback photo usage for completed restorations
+              if (restoration.status === 'completed') {
+                try {
+                  await photoUsageService.rollbackUsage();
+                  // Invalidate cache to update usage banner immediately
+                  invalidatePhotoUsage();
+                  if (__DEV__) {
+                    console.log('🔄 Photo usage rolled back for deleted restoration - cache invalidated');
+                  }
+                } catch (error) {
+                  if (__DEV__) {
+                    console.error('❌ Failed to rollback photo usage on delete:', error);
+                  }
+                }
               }
               
               // Refresh the gallery data before dismissing

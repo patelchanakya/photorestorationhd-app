@@ -25,7 +25,6 @@ import Animated, {
     withSpring,
     withTiming
 } from 'react-native-reanimated';
-import { useCropModalStore } from '@/store/cropModalStore';
 import { useVideoToastStore } from '@/store/videoToastStore';
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);

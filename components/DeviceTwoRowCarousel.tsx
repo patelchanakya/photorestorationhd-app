@@ -5,7 +5,6 @@ import { validatePremiumAccess } from '@/services/revenuecat';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
-import { router } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Dimensions, FlatList, Linking, Platform, Text, TouchableOpacity, View } from 'react-native';
 
@@ -148,8 +147,8 @@ export function DeviceTwoRowCarousel({ functionType }: DeviceTwoRowCarouselProps
     return (
       <View style={{ paddingHorizontal: 16 }}>
         <View style={{ backgroundColor: '#ffffff', borderRadius: 24, padding: 16 }}>
-          <Text style={{ color: '#111', fontWeight: '800', fontSize: 17, marginBottom: 6 }}>You didn&apos;t give Clever access to Photos.</Text>
-          <Text style={{ color: '#374151', fontSize: 14, marginBottom: 14 }}>To get started, allow access or select a single photo.</Text>
+          <Text style={{ color: '#111', fontWeight: '800', fontSize: 17, marginBottom: 6 }}>Photos access is needed to show your gallery.</Text>
+          <Text style={{ color: '#374151', fontSize: 14, marginBottom: 14 }}>Allow access to browse your photos here. You can also pick a single photo instead.</Text>
           <TouchableOpacity
             onPress={handlePermissionPress}
             style={{ backgroundColor: '#111', paddingVertical: 12, borderRadius: 24, alignItems: 'center' }}
@@ -162,7 +161,10 @@ export function DeviceTwoRowCarousel({ functionType }: DeviceTwoRowCarouselProps
             onPress={async () => {
               const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
               if (!result.canceled && result.assets[0]) {
-                router.push(`/crop-modal?imageUri=${encodeURIComponent(result.assets[0].uri)}&functionType=${functionType}&imageSource=gallery`);
+                useQuickEditStore.getState().openWithImage({ 
+                  functionType: functionType as any, 
+                  imageUri: result.assets[0].uri 
+                });
               }
             }}
             style={{ marginTop: 12 }}
@@ -207,11 +209,10 @@ export function DeviceTwoRowCarousel({ functionType }: DeviceTwoRowCarouselProps
                   const uri = info.localUri || info.uri;
                   if (uri) {
                     const normalized = (functionType === 'repair' ? 'restoration' : functionType) as any;
-                    try {
-                      useQuickEditStore.getState().openWithImage({ functionType: normalized, imageUri: uri });
-                    } catch {
-                      router.push(`/crop-modal?imageUri=${encodeURIComponent(uri)}&functionType=${normalized}&imageSource=gallery`);
-                    }
+                    useQuickEditStore.getState().openWithImage({ 
+                      functionType: normalized as any, 
+                      imageUri: uri 
+                    });
                   }
                 }}
                 style={{
