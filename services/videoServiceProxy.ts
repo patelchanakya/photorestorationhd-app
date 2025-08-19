@@ -26,18 +26,19 @@ export async function generateVideo(
     return generateMockVideo(imageUri, animationPrompt, options);
   } else {
     if (__DEV__) {
-      console.log('🔒 USING SECURE SERVER-SIDE API - API token is secure on server!');
+      console.log('🔒 USING WEBHOOK-BASED VIDEO GENERATION - API token is secure on server!');
     }
-    const { startVideoGeneration, pollVideoGeneration } = await import('./videoApiService');
+    const { generateVideoWithPolling } = await import('./videoGenerationV2');
     
-    // Start video generation on server
-    const startResponse = await startVideoGeneration(imageUri, animationPrompt, options);
-    
-    // Poll for completion with progress updates
-    return pollVideoGeneration(startResponse.predictionId, (status) => {
-      if (__DEV__ && status.progress) {
-        console.log(`⏳ Video progress: ${status.progress.phase} (${status.progress.elapsedSeconds}s)`);
-      }
+    // Use webhook-based video generation with polling
+    return generateVideoWithPolling(imageUri, animationPrompt, {
+      duration: options.duration,
+      onProgress: (status) => {
+        if (__DEV__ && status.progress) {
+          console.log(`⏳ Video progress: ${status.progress.phase} (${status.progress.elapsed_seconds}s)`);
+        }
+      },
+      timeoutMs: options.timeoutMs || 180000 // 3 minute default
     });
   }
 }
@@ -50,8 +51,8 @@ export async function cancelVideoGeneration(predictionId?: string): Promise<void
     if (!predictionId) {
       throw new Error('Prediction ID is required for cancellation');
     }
-    const { cancelVideoGeneration: serverCancelVideo } = await import('./videoApiService');
-    await serverCancelVideo(predictionId);
+    const { cancelVideoGeneration: webhookCancelVideo } = await import('./videoGenerationV2');
+    await webhookCancelVideo(predictionId);
   }
 }
 
@@ -85,6 +86,7 @@ export function getVideoGenerationProgress(): {
   progress?: number;
 } {
   if (USE_MOCK_VIDEO) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const mockService = require('./mockVideoService');
     return mockService.getMockVideoGenerationProgress();
   } else {
@@ -107,10 +109,10 @@ export const isUsingMockVideo = () => USE_MOCK_VIDEO;
 
 export const getServiceInfo = () => ({
   isMock: USE_MOCK_VIDEO,
-  serviceName: USE_MOCK_VIDEO ? 'Mock Video Service' : 'Secure Server-Side API',
+  serviceName: USE_MOCK_VIDEO ? 'Mock Video Service' : 'Webhook-Based Video API',
   description: USE_MOCK_VIDEO 
     ? 'Using local test videos from assets/videos/' 
-    : 'Using secure server-side Kling v2.1 API (no client-side token exposure)'
+    : 'Using secure webhook-based Kling v2.1 API (no client-side token exposure)'
 });
 
 if (__DEV__) {
@@ -118,9 +120,9 @@ if (__DEV__) {
   console.log('🎬 ===============================================');
   console.log('🎬 VIDEO SERVICE PROXY INITIALIZED');
   console.log('🎬 ===============================================');
-  console.log('🎬 Mode:', USE_MOCK_VIDEO ? 'MOCK (SAFE)' : 'SECURE SERVER-SIDE API');
+  console.log('🎬 Mode:', USE_MOCK_VIDEO ? 'MOCK (SAFE)' : 'WEBHOOK-BASED API');
   console.log('🎬 Service:', info.serviceName);
   console.log('🎬 Description:', info.description);
-  console.log('🎬 Security:', USE_MOCK_VIDEO ? 'N/A (Mock)' : '✅ API TOKEN SECURE ON SERVER');
+  console.log('🎬 Security:', USE_MOCK_VIDEO ? 'N/A (Mock)' : '✅ WEBHOOK SYSTEM WITH SECURE SERVER TOKENS');
   console.log('🎬 ===============================================');
 }

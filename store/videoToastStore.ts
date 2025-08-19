@@ -219,10 +219,46 @@ export const useVideoToastStore = create<VideoToastState & VideoToastActions>((s
         savedAt: new Date(pendingVideo.timestamp).toISOString()
       });
       
-      // BULLETPROOF DATABASE RECOVERY - Handle ALL possible video states
+      // BULLETPROOF DATABASE RECOVERY - Handle ALL possible video states (webhook-compatible)
       try {
         console.log('🔍 Starting video recovery for prediction:', pendingVideo.predictionId);
         
+        // Handle both webhook system and legacy temp IDs
+        const isWebhookTempId = pendingVideo.predictionId.startsWith('temp-');
+        
+        if (isWebhookTempId) {
+          console.log('🔄 Detected webhook temp ID, using fallback recovery');
+          // For webhook temp IDs, try to recover from AsyncStorage video data
+          const videoId = await AsyncStorage.getItem(`prediction_${pendingVideo.predictionId}`);
+          if (videoId) {
+            const videoData = await AsyncStorage.getItem(`video_${videoId}`);
+            if (videoData) {
+              const parsedData = JSON.parse(videoData);
+              if (parsedData.status === 'completed' && parsedData.url) {
+                console.log('🎬 Found completed webhook video in AsyncStorage');
+                // Trigger completion state
+                set({
+                  showCompletionModal: true,
+                  predictionId: pendingVideo.predictionId,
+                  localPath: parsedData.url,
+                  imageUri: parsedData.originalImage || pendingVideo.imageUri,
+                  message: pendingVideo.message || 'Your video is ready! 🎬',
+                  modeTag: pendingVideo.modeTag || null,
+                  isTransitioning: false,
+                  isDismissed: false,
+                  hasBeenViewed: false,
+                  isVisible: true,
+                });
+                return;
+              }
+            }
+          }
+          console.log('⚠️ Webhook temp ID not found in AsyncStorage - clearing pending state');
+          await AsyncStorage.removeItem(PENDING_VIDEO_KEY);
+          return;
+        }
+        
+        // For real prediction IDs, check Supabase database
         const userId = await Purchases.getAppUserID();
         if (!userId) {
           console.log('❌ No user ID found for recovery');

@@ -8,20 +8,22 @@ export type FunctionType = 'restoration' | 'repair' | 'unblur' | 'colorize' | 'd
 
 export const MODEL_CONFIGS: Record<FunctionType, ModelConfig> = {
   restoration: {
-    model: "flux-kontext-apps/restore-image",
-    buildInput: (base64: string) => ({
-      input_image: `data:image/jpeg;base64,${base64}`
-    })
-  },
-  repair: {
     model: "black-forest-labs/flux-kontext-pro",
     buildInput: (base64: string, customPrompt?: string) => ({
-      prompt: customPrompt || "repair and restore this damaged photo, fix tears, scratches, stains, and imperfections while preserving all original details and facial features",
+      prompt: customPrompt || "repair and restore this damaged photo, fix tears, scratches, stains, and imperfections while preserving all facial features",
       input_image: `data:image/jpeg;base64,${base64}`,
       output_format: "png",
       aspect_ratio: "match_input_image",
-      safety_tolerance: 6,
+      safety_tolerance: 0,
       prompt_upsampling: true
+    })
+  },
+  repair: {
+    model: "flux-kontext-apps/restore-image",
+    buildInput: (base64: string) => ({
+      input_image: `data:image/jpeg;base64,${base64}`,
+      output_format: "png",
+      safety_tolerance: 0
     })
   },
   unblur: {
@@ -49,7 +51,7 @@ export const MODEL_CONFIGS: Record<FunctionType, ModelConfig> = {
   descratch: {
     model: "black-forest-labs/flux-kontext-pro",
     buildInput: (base64: string, customPrompt?: string) => ({
-      prompt: customPrompt || "remove scratches, dust, stains, and damage from this image while preserving all facial features and original details without adding anything extra",
+      prompt: customPrompt || "remove scratches, dust, stains, and damage from this image while preserving all facial features without adding anything extra",
       input_image: `data:image/jpeg;base64,${base64}`,
       output_format: "png",
       aspect_ratio: "match_input_image",

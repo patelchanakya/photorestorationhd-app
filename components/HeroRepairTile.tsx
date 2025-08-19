@@ -27,14 +27,14 @@ export function HeroRepairTile({
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: false,
         quality: 1,
       });
       if (!result.canceled && result.assets[0]) {
         const uri = result.assets[0].uri;
         useQuickEditStore.getState().openWithImage({ 
-          functionType: 'restoration', 
+          functionType: 'repair', 
           imageUri: uri 
         });
       }

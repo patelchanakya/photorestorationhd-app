@@ -11,6 +11,11 @@ export interface Restoration {
   restored_filename?: string;
   thumbnail_filename?: string;
   video_filename?: string;
+  // Add Replicate URLs for immediate display before local saving
+  replicate_url?: string;
+  video_replicate_url?: string;
+  // Track if local files are ready
+  local_files_ready?: boolean;
   status: 'pending' | 'processing' | 'completed' | 'failed';
   processing_time_ms?: number;
   created_at: string;

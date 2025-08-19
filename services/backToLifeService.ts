@@ -304,7 +304,7 @@ export const backToLifeService = {
       };
 
       if (__DEV__) {
-        console.log('📊 Creating new usage record (Bulletproof Strategy):', {
+        console.log('📊 Creating new usage record:', {
           subscriber_key: subscriberKey,
           database_key: databaseKey
         });

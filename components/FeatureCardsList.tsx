@@ -13,7 +13,7 @@ type CardItem = {
   id: string;
   title: string;
   subtitle: string;
-  functionType?: 'restoration' | 'unblur' | 'colorize' | 'descratch' | 'enlighten';
+  functionType?: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten';
   styleKey?: string;
   route?: string;
   image: any; // require('...')
@@ -38,6 +38,8 @@ function getFunctionIcon(functionType?: CardItem['functionType']): string {
   switch (functionType) {
     case 'restoration':
       return 'wand.and.stars';
+    case 'repair':
+      return 'wrench.and.screwdriver';
     case 'descratch':
       return 'bandage';
     case 'unblur':
@@ -162,7 +164,7 @@ export function FeatureCardsList({
     const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (res.status !== 'granted') return;
     const result = await ImagePicker.launchImageLibraryAsync({ 
-      mediaTypes: ImagePicker.MediaTypeOptions.Images, 
+      mediaTypes: ['images'], 
       allowsEditing: false, 
       quality: 1 
     });

@@ -1,8 +1,7 @@
 import { analyticsService } from '@/services/analytics';
 import { type FunctionType, getModelConfig } from '@/services/modelConfigs';
-import { photoUsageService, useInvalidatePhotoUsage } from '@/services/photoUsageService';
-import { presentPaywall } from '@/services/revenuecat';
-import { restorePhoto } from '@/services/replicate';
+import { useInvalidatePhotoUsage } from '@/services/photoUsageService';
+import { generatePhotoWithPolling } from '@/services/photoGenerationV2';
 import { restorationTrackingService } from '@/services/restorationTracking';
 import { photoStorage } from '@/services/storage';
 import { restorationService } from '@/services/supabase';
@@ -18,6 +17,8 @@ export interface RestorationResult {
   error?: string;
   createdAt: Date;
 }
+
+// All function types now use the webhook-based v2 system
 
 // Query key factory
 export const photoRestorationKeys = {
@@ -50,59 +51,32 @@ export function usePhotoRestoration() {
       // Track restoration started
       analyticsService.trackRestorationStarted(imageSource || 'gallery');
       
-      // Check photo usage limits and increment atomically BEFORE processing
-      let canProceed: boolean;
-      try {
-        canProceed = await photoUsageService.checkAndIncrementUsage();
-      } catch (error: any) {
-        // Network errors should bubble up with clear messaging
-        if (error?.message?.includes('Network connection required')) {
-          throw new Error('📡 No internet connection. Please check your connection and try again.');
-        }
-        // Other errors from usage service
-        throw new Error('Unable to verify photo limits. Please try again.');
-      }
+      // Server-side webhook handles all usage limits and paywall presentation
       
-      if (!canProceed) {
-        // Show paywall for free users who hit the limit
-        const paywallSuccess = await presentPaywall();
-        if (!paywallSuccess) {
-          // User didn't upgrade, throw error with clear message
-          throw new Error('Photo limit reached. Upgrade to Pro for unlimited photo restoration.');
-        }
-        // User upgraded, try incrementing usage again
-        try {
-          const canProceedAfterUpgrade = await photoUsageService.checkAndIncrementUsage();
-          if (!canProceedAfterUpgrade) {
-            throw new Error('Unable to process photo. Please try again.');
-          }
-        } catch (error: any) {
-          if (error?.message?.includes('Network connection required')) {
-            throw new Error('📡 No internet connection. Please check your connection and try again.');
-          }
-          throw new Error('Unable to process photo. Please try again.');
-        }
-      }
-      
+      // All function types now use the webhook system with server-side usage tracking
       if (__DEV__) {
-        console.log('✅ Photo usage check passed, proceeding with restoration');
+        console.log('✅ Using webhook system - server handles all usage tracking and limits');
       }
       
       try {
         // Save original photo locally
         const originalFilename = await photoStorage.saveOriginal(imageUri);
 
+        // Get proper user ID from RevenueCat (not anonymous)
+        const { getAppUserId } = await import('@/services/revenuecat');
+        const revenueCatUserId = await getAppUserId();
+        
         // Create restoration record in local database (AsyncStorage)
         const restoration = await restorationService.create({
-          user_id: 'anonymous',
+          user_id: revenueCatUserId || 'fallback-anonymous',
           original_filename: originalFilename,
           status: 'processing',
           function_type: (functionType as any),
         });
 
         // Track restoration start in Supabase (metadata only)
-        const trackingType = (['restoration','unblur','colorize','descratch'] as const).includes(functionType as any)
-          ? (functionType as 'restoration'|'unblur'|'colorize'|'descratch')
+        const trackingType = (['restoration','repair','unblur','colorize','descratch'] as const).includes(functionType as any)
+          ? (functionType as 'restoration'|'repair'|'unblur'|'colorize'|'descratch')
           : 'restoration';
         supabaseRestorationId = await restorationTrackingService.trackRestorationStarted(
           originalFilename,
@@ -115,46 +89,28 @@ export function usePhotoRestoration() {
           console.log(`📡 [TIMING] Starting API call at: +${apiStartTime - startTime}ms`);
         }
         
-        // Start progress simulation for JobContext
-        let lastProgress = 0;
+        // Use webhook-based system with built-in polling and progress tracking
+        if (__DEV__) {
+          console.log('🚀 Using webhook system for generation');
+        }
+
+        // Get styleKey from QuickEditStore if available (passed via global context)
+        const styleKey = (global as any).__quickEditStyleKey || undefined;
         
-        progressInterval = setInterval(async () => {
-          const elapsed = Date.now() - startTime;
-        const modelConfig = getModelConfig(functionType);
-        const USE_BTL_TEST_IMAGE_MODEL = process.env.EXPO_PUBLIC_BTL_TEST_IMAGE_MODEL === '1';
-        const isVideoLike = modelConfig.isVideo && !USE_BTL_TEST_IMAGE_MODEL;
-        const estimatedDuration = isVideoLike ? 120000 : 10000; // 2 minutes for video, 10 seconds for photo
-          const progress = Math.min(Math.floor((elapsed / estimatedDuration) * 95), 95); // Cap at 95% until completion
-          
-          // Only update if progress changed (avoid spam)
-          if (progress !== lastProgress) {
-            lastProgress = progress;
+        const restoredUrl = await generatePhotoWithPolling(imageUri, functionType, {
+          styleKey,
+          customPrompt,
+          userId: revenueCatUserId || 'fallback-anonymous',
+          onProgress: (progress, status) => {
+            // Update global progress tracker for JobContext compatibility
+            (global as any).__currentJobProgress = progress;
             
-            // Update JobContext progress by importing and using the hook inside a try-catch
-            try {
-              // We need to get the JobContext somehow - this is tricky in a mutation
-              // For now, we'll create a global progress tracker
-              (global as any).__currentJobProgress = progress;
-              
-              if (__DEV__) {
-                console.log(`📊 Progress updated: ${progress}%`);
-              }
-            } catch (error) {
-              if (__DEV__) {
-                console.warn('Could not update job progress:', error);
-              }
+            if (__DEV__) {
+              console.log(`📊 Webhook progress: ${progress}% (${status})`);
             }
-          }
-        }, 1000);
-        
-        const restorePromise = restorePhoto(imageUri, functionType, customPrompt);
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => {
-            reject(new Error('Photo restoration timed out. Please check your internet connection and try again.'));
-          }, 180000); // 3 minutes timeout
+          },
+          timeoutMs: 120000 // 2 minutes timeout for webhook system
         });
-        
-        const restoredUrl = await Promise.race([restorePromise, timeoutPromise]);
         const apiEndTime = Date.now();
         if (__DEV__) {
           console.log(`🎉 [TIMING] API completed in ${apiEndTime - apiStartTime}ms, URL:`, restoredUrl);
@@ -166,52 +122,19 @@ export function usePhotoRestoration() {
         // Treat Back to Life as image when test-image flag is on
         const isVideoResult = (modelConfig.isVideo && !USE_BTL_TEST_IMAGE_MODEL) || restoredUrl.includes('.mp4');
         
-        let restoredFilename: string;
-        let restoredUri: string;
-        
-        if (isVideoResult) {
-          // Save as video with .mp4 extension
-          restoredFilename = await photoStorage.saveVideo(restoredUrl, originalFilename);
-          restoredUri = photoStorage.getPhotoUri('video', restoredFilename);
-          if (__DEV__) {
-            console.log('🎬 Video saved:', restoredFilename, restoredUri);
-          }
-        } else {
-          // Save as photo with original extension
-          restoredFilename = await photoStorage.saveRestored(restoredUrl, originalFilename);
-          restoredUri = photoStorage.getPhotoUri('restored', restoredFilename);
-          if (__DEV__) {
-            console.log('💾 Photo saved:', restoredFilename, restoredUri);
-          }
-        }
-
-        // Create thumbnails (skip for video generations)
-        let thumbnailFilename: string | undefined;
-        
-        if (!isVideoResult) {
-          // Only create thumbnails for image restorations
-          thumbnailFilename = await photoStorage.createThumbnail(
-            restoredUri,
-            'restored'
-          );
-          if (__DEV__) {
-            console.log('🖼️ Thumbnail created:', thumbnailFilename);
-          }
-        } else {
-          if (__DEV__) {
-            console.log('🎬 Skipping thumbnail creation for video result');
-          }
-        }
-
-        // Update restoration record in local database
-        await restorationService.update(restoration.id, {
-          restored_filename: restoredFilename,
-          thumbnail_filename: thumbnailFilename,
-          status: 'completed',
+        // Phase 1: Return URL immediately for instant display
+        const intermediateUpdate = {
+          replicate_url: isVideoResult ? undefined : restoredUrl,
+          video_replicate_url: isVideoResult ? restoredUrl : undefined,
+          local_files_ready: false,
+          status: 'completed' as const,
           processing_time_ms: Date.now() - startTime,
           completed_at: new Date().toISOString(),
-        });
-
+        };
+        
+        // Update restoration with Replicate URL for immediate display
+        await restorationService.update(restoration.id, intermediateUpdate);
+        
         // Update restoration tracking in Supabase (metadata only)
         await restorationTrackingService.trackRestorationCompleted(
           supabaseRestorationId,
@@ -219,33 +142,101 @@ export function usePhotoRestoration() {
           Date.now() - startTime
         );
 
-        const completedData: RestorationResult = {
+        // Return immediate result with Replicate URL
+        const immediateResult: RestorationResult = {
           id: restoration.id,
           originalImageUri: imageUri,
-          restoredImageUri: restoredUri,
+          restoredImageUri: restoredUrl, // Direct Replicate URL for instant display
           status: 'completed',
           createdAt: new Date(),
         };
 
-        // Track successful restoration
-        const totalTime = Date.now() - startTime;
+        // Track successful restoration (immediate response)
+        const immediateTime = Date.now() - startTime;
         if (__DEV__) {
-          console.log(`✅ [TIMING] Total restoration completed in ${totalTime}ms (${(totalTime/1000).toFixed(1)}s)`);
-          console.log(`📊 [TIMING] Breakdown: API=${apiEndTime - apiStartTime}ms, Total=${totalTime}ms`);
+          console.log(`⚡ [TIMING] Immediate response in ${immediateTime}ms (${(immediateTime/1000).toFixed(1)}s) - starting background processing`);
+          console.log(`📊 [TIMING] API=${apiEndTime - apiStartTime}ms, Response=${immediateTime}ms`);
         }
         
         await analyticsService.trackRestorationCompleted(
           true, 
           imageSource || 'gallery', 
-          totalTime,
-          (['restoration','unblur','colorize','descratch'] as const).includes(functionType as any)
-            ? (functionType as 'restoration'|'unblur'|'colorize'|'descratch')
+          immediateTime,
+          (['restoration','repair','unblur','colorize','descratch'] as const).includes(functionType as any)
+            ? (functionType as 'restoration'|'repair'|'unblur'|'colorize'|'descratch')
             : 'restoration'
         );
 
-        
-        // Update job progress if this restoration was started via JobContext
-        // This is handled in the onSuccess callback in restoration/[id].tsx
+        // Phase 2: Start background processing for local files (non-blocking)
+        // This happens after the immediate return, so UI shows result instantly
+        setImmediate(async () => {
+          try {
+            if (__DEV__) {
+              console.log('🔄 [BACKGROUND] Starting local file processing...');
+            }
+            
+            let restoredFilename: string;
+            let restoredUri: string;
+            
+            if (isVideoResult) {
+              // Save as video with .mp4 extension
+              restoredFilename = await photoStorage.saveVideo(restoredUrl, originalFilename);
+              restoredUri = photoStorage.getPhotoUri('video', restoredFilename);
+              if (__DEV__) {
+                console.log('🎬 [BACKGROUND] Video saved:', restoredFilename, restoredUri);
+              }
+            } else {
+              // Save as photo with original extension
+              restoredFilename = await photoStorage.saveRestored(restoredUrl, originalFilename);
+              restoredUri = photoStorage.getPhotoUri('restored', restoredFilename);
+              if (__DEV__) {
+                console.log('💾 [BACKGROUND] Photo saved:', restoredFilename, restoredUri);
+              }
+            }
+
+            // Create thumbnails (skip for video generations)
+            let thumbnailFilename: string | undefined;
+            
+            if (!isVideoResult) {
+              // Only create thumbnails for image restorations
+              thumbnailFilename = await photoStorage.createThumbnail(
+                restoredUri,
+                'restored'
+              );
+              if (__DEV__) {
+                console.log('🖼️ [BACKGROUND] Thumbnail created:', thumbnailFilename);
+              }
+            } else {
+              if (__DEV__) {
+                console.log('🎬 [BACKGROUND] Skipping thumbnail creation for video result');
+              }
+            }
+
+            // Final update with local files ready
+            await restorationService.update(restoration.id, {
+              restored_filename: restoredFilename,
+              thumbnail_filename: thumbnailFilename,
+              video_filename: isVideoResult ? restoredFilename : undefined,
+              local_files_ready: true,
+            });
+            
+            const backgroundTime = Date.now() - startTime;
+            if (__DEV__) {
+              console.log(`✅ [BACKGROUND] Local files ready in ${backgroundTime}ms (${(backgroundTime/1000).toFixed(1)}s total)`);
+            }
+            
+            // Invalidate queries to refresh UI with local files
+            queryClient.invalidateQueries({ queryKey: photoRestorationKeys.restoration(restoration.id) });
+            queryClient.invalidateQueries({ queryKey: photoRestorationKeys.history() });
+            
+          } catch (backgroundError) {
+            if (__DEV__) {
+              console.error('❌ [BACKGROUND] Local file processing failed:', backgroundError);
+            }
+            // Don't throw - the user already has the working Replicate URL
+            // Just log the error and continue with URL-only mode
+          }
+        });
         
         // Clear progress interval on success
         if (progressInterval) {
@@ -256,10 +247,10 @@ export function usePhotoRestoration() {
         if (isVideoResult) {
           // Videos are saved with a different naming pattern
           // Store the video filename for later retrieval
-          (completedData as any).videoFilename = restoredFilename;
+          (immediateResult as any).videoFilename = `${originalFilename}_restored.mp4`;
         }
 
-        return completedData;
+        return immediateResult;
       } catch (error) {
         // Clear progress interval on error
         if (progressInterval) {
@@ -295,8 +286,8 @@ export function usePhotoRestoration() {
           errorType,
           errorMessage,
           imageSource || 'gallery',
-          (['restoration','unblur','colorize','descratch'] as const).includes(functionType as any)
-            ? (functionType as 'restoration'|'unblur'|'colorize'|'descratch')
+          (['restoration','repair','unblur','colorize','descratch'] as const).includes(functionType as any)
+            ? (functionType as 'restoration'|'repair'|'unblur'|'colorize'|'descratch')
             : 'restoration'
         );
         
@@ -313,32 +304,14 @@ export function usePhotoRestoration() {
           false, 
           imageSource || 'gallery', 
           Date.now() - startTime,
-          (['restoration','unblur','colorize','descratch'] as const).includes(functionType as any)
-            ? (functionType as 'restoration'|'unblur'|'colorize'|'descratch')
+          (['restoration','repair','unblur','colorize','descratch'] as const).includes(functionType as any)
+            ? (functionType as 'restoration'|'repair'|'unblur'|'colorize'|'descratch')
             : 'restoration'
         );
         
-        // Rollback photo usage increment for any error
-        try {
-          await photoUsageService.rollbackUsage();
-          if (__DEV__) {
-            console.log('🔄 Photo usage rollback completed due to restoration error');
-          }
-          
-          // Track usage rollback
-          analyticsService.track('Photo Usage Rollback', {
-            error_type: errorType,
-            error_message: errorMessage,
-            function_type: functionType,
-            image_source: imageSource || 'gallery',
-            timestamp: new Date().toISOString(),
-          });
-          
-          // Note: No need to invalidate cache here since onError callback will handle it
-        } catch (rollbackError) {
-          if (__DEV__) {
-            console.error('❌ Failed to rollback photo usage:', rollbackError);
-          }
+        // No client-side rollback needed - webhook functions handle server-side rollback
+        if (__DEV__) {
+          console.log('✅ Server-side webhook will handle usage rollback automatically');
         }
         
         throw error;

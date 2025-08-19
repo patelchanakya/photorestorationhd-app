@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeGalleryLikeScreen() {
   const settingsNavLock = React.useRef(false);
-  const openQuick = (functionType: 'restoration' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'background' | 'outfit' | 'custom', styleKey?: string | null) => {
+  const openQuick = (functionType: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'background' | 'outfit' | 'custom', styleKey?: string | null) => {
     try {
       useQuickEditStore.getState().open({ functionType, styleKey: styleKey ?? null });
     } catch {}
@@ -165,11 +165,11 @@ export default function HomeGalleryLikeScreen() {
             const ImagePicker = await import('expo-image-picker');
             const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (res.status !== 'granted') return;
-            const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: false, quality: 1 });
+            const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 1 });
             if (!result.canceled && result.assets[0]) {
               const { useQuickEditStore } = await import('@/store/quickEditStore');
               useQuickEditStore.getState().openWithImage({ 
-                functionType: 'restoration', 
+                functionType: 'repair', 
                 imageUri: result.assets[0].uri 
               });
             }

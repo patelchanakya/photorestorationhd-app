@@ -9,7 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { presentPaywall } from '@/services/revenuecat';
 import React, { useMemo, useState } from 'react';
-import { Alert, FlatList, ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { Alert, FlatList, ScrollView, Text, TouchableOpacity, View, useWindowDimensions, Platform } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { Image as ExpoImage } from 'expo-image';
@@ -21,10 +21,49 @@ export default function OnboardingScreen() {
   const { width: screenWidth } = useWindowDimensions();
   const photoRestoration = usePhotoRestoration();
   const { isPro } = useSubscriptionStore();
+  const MOCK_ONBOARDING_FREE = (process.env.EXPO_PUBLIC_ONBOARDING_MOCK_FREE === '1') || __DEV__;
   
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [currentStep, setCurrentStep] = useState<'selection' | 'free-attempt' | 'demo'>('selection');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showFunOverlay, setShowFunOverlay] = useState(false);
+  const [uploadedImageUri, setUploadedImageUri] = useState<string | null>(null);
+  const [typedText, setTypedText] = useState('');
+  const [cursorOn, setCursorOn] = useState(true);
+  const [messageIndex, setMessageIndex] = useState(0);
+
+  const FUN_MESSAGES = [
+    'image uploaded ✓',
+    'booting up GPUs (on the house)…',
+    'warming up models…',
+    'enhancing details…',
+  ];
+
+  React.useEffect(() => {
+    if (!showFunOverlay) return;
+    const t = setInterval(() => setCursorOn((v) => !v), 500);
+    return () => clearInterval(t);
+  }, [showFunOverlay]);
+
+  const typeNextMessage = React.useCallback((index: number) => {
+    if (index >= FUN_MESSAGES.length) return;
+    const msg = FUN_MESSAGES[index];
+    let i = 0;
+    if (index === 0) setTypedText(''); else setTypedText((prev) => prev + '\n');
+    const interval = setInterval(() => {
+      i++;
+      setTypedText((prev) => prev + msg.slice(i - 1, i));
+      if (i >= msg.length) {
+        clearInterval(interval);
+        setTimeout(() => setMessageIndex((v) => v + 1), 350);
+      }
+    }, 28);
+  }, []);
+
+  React.useEffect(() => {
+    if (!showFunOverlay) return;
+    typeNextMessage(messageIndex);
+  }, [showFunOverlay, messageIndex, typeNextMessage]);
 
   // If user is Pro, skip onboarding
   React.useEffect(() => {
@@ -105,7 +144,7 @@ export default function OnboardingScreen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: false,
       quality: 1,
     });
@@ -136,7 +175,22 @@ export default function OnboardingScreen() {
     setIsProcessing(true);
 
     try {
-      // Process using 1 of their 5 free restorations
+      // Show fun overlay and run processing concurrently
+      setUploadedImageUri(result.assets[0].uri);
+      setShowFunOverlay(true);
+      setTypedText('');
+      setMessageIndex(0);
+
+      if (MOCK_ONBOARDING_FREE) {
+        // Mock path: don't spend credit. Simulate work then exit.
+        await new Promise((r) => setTimeout(r, 3600));
+        await onboardingUtils.completeOnboarding();
+        setShowFunOverlay(false);
+        setIsProcessing(false);
+        router.replace('/explore');
+        return;
+      }
+
       const restoration = await photoRestoration.mutateAsync({
         imageUri: result.assets[0].uri,
         functionType: primaryFeature.mapsTo as any,
@@ -150,11 +204,14 @@ export default function OnboardingScreen() {
       // Complete onboarding
       await onboardingUtils.completeOnboarding();
 
-      // Navigate to result
-      router.replace(`/restoration/${restoration.id}`);
+      // Small delay to let last line finish
+      setTimeout(() => {
+        router.replace(`/restoration/${restoration.id}`);
+      }, 450);
 
     } catch (error: any) {
       setIsProcessing(false);
+      setShowFunOverlay(false);
       Alert.alert('Processing Failed', error?.message || 'Something went wrong. Please try again.');
     }
   };
@@ -200,7 +257,6 @@ export default function OnboardingScreen() {
       <View className="flex-row items-center justify-center mb-6">
         <View className="flex-row items-center">
           <Animated.View 
-            style={dot1Style} 
             className="w-3 h-3 rounded-full"
             style={[
               dot1Style,
@@ -421,6 +477,31 @@ export default function OnboardingScreen() {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Fun terminal overlay */}
+      {showFunOverlay && (
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} pointerEvents="none">
+          <LinearGradient colors={["#0B0B0F", "#0B0B0F"]} style={{ flex: 1, paddingTop: insets.top + 20, paddingHorizontal: 16, paddingBottom: insets.bottom + 24 }}>
+            {uploadedImageUri && (
+              <View style={{ borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', marginBottom: 16 }}>
+                <View style={{ backgroundColor: '#111318', paddingVertical: 8, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center' }}>
+                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#ef4444', marginRight: 6 }} />
+                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#f59e0b', marginRight: 6 }} />
+                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#10b981' }} />
+                  <Text style={{ color: '#9CA3AF', marginLeft: 8, fontSize: 12 }}>restoration.log</Text>
+                </View>
+                <ExpoImage source={{ uri: uploadedImageUri }} style={{ width: '100%', height: 220 }} contentFit="cover" />
+              </View>
+            )}
+            <View style={{ flex: 1, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', backgroundColor: '#0E1015', padding: 14 }}>
+              <Text style={{ color: '#A3E635', fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }) as any, fontSize: 13, lineHeight: 20 }}>
+                $ {typedText}
+                {cursorOn ? '|' : ' '}
+              </Text>
+            </View>
+          </LinearGradient>
+        </View>
+      )}
     </View>
   );
 }

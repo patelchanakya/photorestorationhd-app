@@ -21,7 +21,7 @@ export const restorationTrackingService = {
    */
   async trackRestorationStarted(
     originalFilename: string,
-    functionType: 'restoration' | 'unblur' | 'colorize' | 'descratch' = 'restoration',
+    functionType: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' = 'restoration',
     predictionId?: string
   ): Promise<string | null> {
     try {

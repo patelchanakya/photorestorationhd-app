@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Replicate from "https://esm.sh/replicate@0.15.0"
+import { verifyAndIncrementUsage, rollbackUsage } from '../_shared/verifyAccess.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,6 +15,7 @@ interface VideoStartRequest {
   prompt: string;
   modeTag: string;
   duration?: number;
+  user_id?: string;
 }
 
 interface VideoStartResponse {
@@ -59,29 +61,7 @@ async function getCurrentUserId(): Promise<string | null> {
   }
 }
 
-async function checkUserUsage(supabase: any, userId: string): Promise<{ canUse: boolean; reason?: string }> {
-  try {
-    // Check user's video usage limits
-    const { data: usage, error } = await supabase
-      .from('user_video_usage')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (error && error.code !== 'PGRST116') { // Not found error is OK
-      throw error;
-    }
-
-    // For now, allow all requests - usage checking will be handled by existing client-side logic
-    // In production, implement proper server-side usage validation here
-    return { canUse: true };
-  } catch (error) {
-    console.error('Error checking usage:', error);
-    return { canUse: false, reason: 'Failed to check usage limits' };
-  }
-}
+// Removed checkUserUsage function - replaced with verifyAndIncrementUsage from shared module
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -95,6 +75,9 @@ serve(async (req) => {
     });
   }
 
+  let userId: string | undefined; // Declare in outer scope for error handler
+  let supabase: any; // Declare in outer scope for error handler
+  
   try {
     console.log('🔍 Starting video-start function...');
     
@@ -112,7 +95,7 @@ serve(async (req) => {
       throw new Error('Missing Supabase environment variables');
     }
     
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    supabase = createClient(supabaseUrl, supabaseServiceKey);
     console.log('✅ Supabase client created');
 
     // Initialize Replicate client
@@ -136,18 +119,39 @@ serve(async (req) => {
       });
     }
 
-    // For now, use a fixed user ID to disable JWT requirements
-    // TODO: Add proper user authentication when needed
-    const userId = 'demo-user';
+    // Extract user ID from request body (primary enforcement - fallback to client)
+    userId = body.user_id || 'fallback-anonymous';
+    console.log('👤 Processing video request for user:', userId);
 
-    // Check usage limits (disabled for demo)
-    // const usageCheck = await checkUserUsage(supabase, userId);
-    // if (!usageCheck.canUse) {
-    //   return new Response(JSON.stringify({ error: usageCheck.reason || 'Usage limit exceeded' }), {
-    //     status: 403,
-    //     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    //   });
-    // }
+    // Block suspicious or invalid user IDs
+    const invalidUserIds = ['anonymous', 'fallback-anonymous', 'demo-user', '', null, undefined];
+    if (invalidUserIds.includes(userId)) {
+      console.log('❌ Blocked video generation for invalid user ID:', userId);
+      return new Response(JSON.stringify({ 
+        error: 'Invalid user authentication. Please sign in again.',
+        code: 'INVALID_USER_ID'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // PRODUCTION-SCALE VERIFICATION (cached subscription + usage limits)
+    const verificationResult = await verifyAndIncrementUsage(supabase, userId, 'videos');
+    if (!verificationResult.canUse) {
+      console.log('❌ Video generation blocked:', verificationResult.reason);
+      return new Response(JSON.stringify({ 
+        error: verificationResult.reason || 'Access denied',
+        code: verificationResult.code || 'ACCESS_DENIED',
+        current_count: verificationResult.currentCount,
+        limit: verificationResult.limit
+      }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    console.log('✅ Video generation access verified for user:', userId);
 
     // Process image input
     let imageUrl: string;
@@ -229,6 +233,15 @@ serve(async (req) => {
       } catch (cancelError) {
         console.error('Failed to cancel prediction after DB error:', cancelError);
       }
+      
+      // Rollback usage increment since video generation failed
+      try {
+        await rollbackUsage(supabase, userId, 'videos');
+        console.log('✅ Usage rollback completed after DB error');
+      } catch (rollbackError) {
+        console.error('❌ Failed to rollback usage after DB error:', rollbackError);
+      }
+      
       throw new Error('Failed to store video job');
     }
 
@@ -248,6 +261,16 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Video start error:', error);
+    
+    // Rollback usage increment if video generation failed after increment
+    if (userId && userId !== 'anonymous') {
+      try {
+        await rollbackUsage(supabase, userId, 'videos');
+        console.log('✅ Usage rollback completed after video generation error');
+      } catch (rollbackError) {
+        console.error('❌ Failed to rollback usage after error:', rollbackError);
+      }
+    }
     
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     const statusCode = errorMessage.includes('Unauthorized') ? 401 :

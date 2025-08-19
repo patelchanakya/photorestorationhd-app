@@ -318,14 +318,39 @@ class PhotoStorage {
     }
     
     try {
-      // Check if file exists first
+      let localUri = uri;
+      
+      // Check if this is a remote URL (Replicate URL)
+      const isRemoteUrl = uri.startsWith('http://') || uri.startsWith('https://');
+      
+      if (isRemoteUrl) {
+        if (__DEV__) {
+          console.log('🔗 Remote URL detected, downloading file...');
+        }
+        
+        // Download the remote file to a temporary location
+        const tempFilename = `temp_export_${Date.now()}.jpg`;
+        const tempUri = `${this.basePath}${tempFilename}`;
+        
+        const downloadResult = await FileSystem.downloadAsync(uri, tempUri);
+        if (downloadResult.status !== 200) {
+          throw new Error('Failed to download image from URL');
+        }
+        
+        localUri = downloadResult.uri;
+        if (__DEV__) {
+          console.log('✅ Downloaded to:', localUri);
+        }
+      }
+      
+      // Check if file exists 
       if (__DEV__) {
         console.log('🔍 Checking if file exists...');
       }
-      const fileInfo = await FileSystem.getInfoAsync(uri);
+      const fileInfo = await FileSystem.getInfoAsync(localUri);
       if (!fileInfo.exists) {
         if (__DEV__) {
-          console.error('❌ File does not exist:', uri);
+          console.error('❌ File does not exist:', localUri);
         }
         throw new Error('Photo file not found. Please try again.');
       }
@@ -368,13 +393,28 @@ class PhotoStorage {
       }
       // Use ImageManipulator to create a new file with current timestamp
       const processedImage = await ImageManipulator.manipulateAsync(
-        uri,
+        localUri, // Use local URI (downloaded if needed)
         [], // No modifications needed
         { 
           compress: 1, // Keep original quality
           format: ImageManipulator.SaveFormat.JPEG 
         }
       );
+      
+      // Clean up temporary file if we downloaded one
+      if (isRemoteUrl) {
+        try {
+          await FileSystem.deleteAsync(localUri);
+          if (__DEV__) {
+            console.log('🗑️ Cleaned up temporary download file');
+          }
+        } catch (cleanupError) {
+          // Don't fail the export if cleanup fails
+          if (__DEV__) {
+            console.warn('⚠️ Failed to cleanup temp file:', cleanupError);
+          }
+        }
+      }
       if (__DEV__) {
         console.log('✅ Image processed, new URI:', processedImage.uri);
       }

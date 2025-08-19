@@ -1,4 +1,5 @@
 import { LanguageSelectionModal } from '@/components/LanguageSelectionModal';
+import { onboardingUtils } from '@/utils/onboarding';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { photoRestorationKeys } from '@/hooks/usePhotoRestoration';
 import { getSupportedLanguages, useTranslation } from '@/i18n';
@@ -50,6 +51,7 @@ export default function SettingsModalScreen() {
   
   // Local loading states
   const [isRestoring, setIsRestoring] = useState(false);
+  const [isResettingIdentity, setIsResettingIdentity] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [revenueCatUserId, setRevenueCatUserId] = useState<string | null>(null);
   const { t, currentLanguage } = useTranslation();
@@ -957,6 +959,69 @@ Best regards`;
               
               <View className="bg-white/5 rounded-xl overflow-hidden">
                 
+                {/* Onboarding Controls */}
+                <TouchableOpacity 
+                  className="flex-row items-center p-4 border-b border-white/10"
+                  onPress={async () => {
+                    try {
+                      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      await onboardingUtils.resetOnboarding();
+                      Alert.alert('Onboarding Reset', 'Onboarding data cleared. You will see onboarding next app launch unless Always Skip is enabled.');
+                    } catch (e) {}
+                  }}
+                >
+                  <View className="w-9 h-9 bg-blue-500/20 rounded-full items-center justify-center mr-3">
+                    <IconSymbol name="arrow.counterclockwise" size={18} color="#3b82f6" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-white text-base font-medium">Reset Onboarding</Text>
+                    <Text className="text-white/60 text-sm">Clear onboarding progress for testing</Text>
+                  </View>
+                  <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  className="flex-row items-center p-4 border-b border-white/10"
+                  onPress={async () => {
+                    try {
+                      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      const current = await onboardingUtils.getAlwaysSkipOnboarding();
+                      await onboardingUtils.setAlwaysSkipOnboarding(!current);
+                      Alert.alert('Onboarding Preference', !current ? 'Always Skip enabled. Onboarding will not show on launch.' : 'Always Skip disabled. Onboarding will show if not completed.');
+                    } catch (e) {}
+                  }}
+                >
+                  <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
+                    <IconSymbol name="eye.slash" size={18} color="#f59e0b" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-white text-base font-medium">Toggle Always Skip Onboarding</Text>
+                    <Text className="text-white/60 text-sm">Skip onboarding on app launch</Text>
+                  </View>
+                  <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  className="flex-row items-center p-4"
+                  onPress={async () => {
+                    try {
+                      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      const current = await onboardingUtils.getAlwaysShowOnboarding();
+                      await onboardingUtils.setAlwaysShowOnboarding(!current);
+                      Alert.alert('Onboarding Preference', !current ? 'Always Show enabled. Onboarding will always show on launch.' : 'Always Show disabled. Onboarding will show only if not completed.');
+                    } catch (e) {}
+                  }}
+                >
+                  <View className="w-9 h-9 bg-blue-500/20 rounded-full items-center justify-center mr-3">
+                    <IconSymbol name="eye" size={18} color="#3b82f6" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-white text-base font-medium">Toggle Always Show Onboarding</Text>
+                    <Text className="text-white/60 text-sm">Always show onboarding on app launch</Text>
+                  </View>
+                  <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
+                </TouchableOpacity>
+
                 {/* Language */}
                 <TouchableOpacity 
                   className="flex-row items-center p-4"

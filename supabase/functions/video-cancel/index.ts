@@ -45,16 +45,11 @@ serve(async (req) => {
       });
     }
 
-    // For now, use a fixed user ID to disable JWT requirements
-    // TODO: Add proper user authentication when needed
-    const userId = 'demo-user';
-
-    // Check if video job exists and belongs to user
+    // Check if video job exists (no user restriction for cancellation)
     const { data: videoJob, error: dbError } = await supabase
       .from('user_video_jobs')
       .select('*')
       .eq('prediction_id', predictionId)
-      .eq('user_id', userId)
       .single();
 
     if (dbError || !videoJob) {
@@ -79,7 +74,7 @@ serve(async (req) => {
 
     console.log('🛑 Cancelling video generation:', {
       predictionId,
-      userId,
+      userId: videoJob.user_id,
       currentStatus: videoJob.status
     });
 
@@ -116,7 +111,6 @@ serve(async (req) => {
         }
       })
       .eq('prediction_id', predictionId)
-      .eq('user_id', userId)
       .select()
       .single();
 
@@ -127,14 +121,25 @@ serve(async (req) => {
 
     console.log('💾 Video job marked as cancelled in database');
 
+    // Rollback usage since video was cancelled
+    try {
+      await supabase.rpc('rollback_back_to_life_usage', {
+        p_user_id: videoJob.user_id
+      });
+      console.log('✅ Usage rollback completed for cancelled video');
+    } catch (rollbackError) {
+      console.error('❌ Failed to rollback usage for cancelled video:', rollbackError);
+      // Don't fail the cancellation if rollback fails
+    }
+
     // Build success response
     const response: VideoCancelResponse = {
       success: true,
       predictionId: predictionId,
       status: 'canceled',
       message: replicateCancelSuccess 
-        ? 'Video generation cancelled successfully'
-        : 'Video marked as cancelled (may have already completed)'
+        ? 'Video generation cancelled successfully. Usage refunded.'
+        : 'Video marked as cancelled (may have already completed). Usage refunded.'
     };
 
     return new Response(JSON.stringify(response), {

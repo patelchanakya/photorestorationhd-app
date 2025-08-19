@@ -355,7 +355,7 @@ async function pickVideoOLD(isPro: boolean, animationPrompt?: string) {
     // Future: Add video picker when video animation is supported
     console.log('🎬 Back to Life: Launching image picker');
     const result = await ImagePicker.launchImageLibraryAsync({ 
-      mediaTypes: ImagePicker.MediaTypeOptions.Images, 
+      mediaTypes: ['images'], 
       quality: 1 
     });
     

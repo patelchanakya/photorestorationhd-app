@@ -4,7 +4,8 @@ import { networkStateService } from '@/services/networkState';
 import { notificationService } from '@/services/notificationService';
 import { permissionsService } from '@/services/permissions';
 import { checkSubscriptionStatus } from '@/services/revenuecat';
-import { getOrCreateStableUserId } from '@/services/stableUserId';
+import { refreshProStatus } from '@/services/simpleSubscriptionService';
+// Removed: No longer using stable IDs - RevenueCat handles anonymous IDs automatically
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { useVideoToastStore } from '@/store/videoToastStore';
 import { onboardingUtils } from '@/utils/onboarding';
@@ -53,10 +54,14 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
         return;
       }
 
-      // Check if user has completed onboarding
-      const hasSeenOnboarding = await onboardingUtils.hasSeenOnboarding();
+      // Check if user has completed onboarding OR wants to always skip
+      const [hasSeenOnboarding, alwaysSkip, alwaysShow] = await Promise.all([
+        onboardingUtils.hasSeenOnboarding(),
+        onboardingUtils.getAlwaysSkipOnboarding(),
+        onboardingUtils.getAlwaysShowOnboarding(),
+      ]);
       
-      if (hasSeenOnboarding) {
+      if (!alwaysShow && (hasSeenOnboarding || alwaysSkip)) {
         if (__DEV__) {
           console.log('🎯 User has seen onboarding - going to explore');
         }
@@ -65,7 +70,7 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
         if (__DEV__) {
           console.log('🎯 New user - showing onboarding');
         }
-        router.replace('/onboarding');
+        router.replace('/onboarding-v2');
       }
     } catch (error) {
       if (__DEV__) {
@@ -432,25 +437,6 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
               useAmazon: false,
             });
             
-  // Final Pixar-like bounce once all initialization is complete
-  useEffect(() => {
-    if (!initComplete) return;
-    // Bounce up slightly and scale with squash/stretch effect
-    wordTranslateY.value = withSequence(
-      withTiming(-10, { duration: 160 }),
-      withSpring(0, { damping: 14, stiffness: 260 })
-    );
-    wordScale.value = withSequence(
-      withTiming(1.08, { duration: 160 }),
-      withSpring(1, { damping: 16, stiffness: 300 })
-    );
-    // After bounce completes, leave the screen and navigate
-    const t = setTimeout(async () => {
-      try { await navigateToApp(); } catch {}
-      onLoadingComplete();
-    }, 700);
-    return () => clearTimeout(t);
-  }, [initComplete, onLoadingComplete, router, wordScale, wordTranslateY]);
 
             if (__DEV__) {
               console.log('✅ RevenueCat configured successfully');
@@ -464,26 +450,52 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
           return;
         }
 
-        // CRITICAL: Set stable user ID for RevenueCat tracking
-        // This enables consistent user identification for video limits
+        // CRITICAL: Use RevenueCat anonymous ID (no stable ID needed)
+        // Transaction IDs handle cross-device tracking for Pro users
         try {
           if (__DEV__) {
-            console.log('🔑 Setting up stable user ID for RevenueCat...');
+            console.log('🔑 Using RevenueCat anonymous ID system...');
           }
           
-          const stableId = await getOrCreateStableUserId();
-          await Purchases.logIn(stableId);
+          // Let RevenueCat handle anonymous IDs automatically
+          // No login needed - RevenueCat creates $RCAnonymousID:xxx automatically
           
-          if (__DEV__) {
-            console.log('✅ Logged into RevenueCat with stable ID:', stableId);
-          }
-          
-          // CRITICAL: Sync purchases to preserve Pro status for existing users
-          // This ensures that existing Pro subscribers maintain their access
-          await Purchases.syncPurchases();
-          
-          if (__DEV__) {
-            console.log('✅ Purchases synced - existing Pro status preserved');
+          // CRITICAL: Aggressively sync purchases for fresh installs (like Remini)
+          // This automatically restores Pro status without user interaction
+          try {
+            console.log('🔄 [AGGRESSIVE] Starting automatic purchase sync for fresh install...');
+            
+            // Step 1: Clear any stale cache to ensure fresh data
+            await Purchases.invalidateCustomerInfoCache();
+            
+            // Step 2: Sync purchases with retry logic (key for fresh installs)
+            let syncSuccess = false;
+            for (let attempt = 1; attempt <= 3; attempt++) {
+              try {
+                console.log(`🔄 [AGGRESSIVE] Sync attempt ${attempt}/3...`);
+                await Purchases.syncPurchases();
+                syncSuccess = true;
+                console.log(`✅ [AGGRESSIVE] Sync successful on attempt ${attempt}`);
+                break;
+              } catch (syncError) {
+                console.log(`⚠️ [AGGRESSIVE] Sync attempt ${attempt} failed:`, (syncError as any)?.message);
+                if (attempt < 3) {
+                  await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+              }
+            }
+            
+            if (!syncSuccess) {
+              console.log('⚠️ [AGGRESSIVE] All sync attempts failed - continuing with fresh customer info fetch');
+            }
+            
+            // Step 3: Force fresh customer info fetch from Apple servers
+            console.log('🔄 [AGGRESSIVE] Fetching fresh customer info from Apple...');
+            await Purchases.getCustomerInfo({ fetchPolicy: "FETCH_CURRENT" });
+            
+            console.log('✅ [AGGRESSIVE] Purchase restoration complete - Pro status should be detected');
+          } catch (aggressiveError) {
+            console.log('⚠️ [AGGRESSIVE] Aggressive sync failed (non-fatal):', (aggressiveError as any)?.message);
           }
         } catch (stableIdError) {
           if (__DEV__) {
@@ -537,33 +549,30 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
             if (__DEV__) console.log('❌ Failed to set customer info listener:', (e as any)?.message);
           }
 
-          // This single call establishes the correct subscription state at startup
-          console.log('🔍 [TEST] Calling checkSubscriptionStatus to establish truth...');
-          const hasActiveSubscription = await checkSubscriptionStatus();
-          
-          console.log('✅ [TEST] App startup subscription truth established:', {
-            hasActiveSubscription,
-            storeIsPro: useSubscriptionStore.getState().isPro,
-            timestamp: new Date().toISOString()
-          });
-
-          // For Pro users, sync usage data to ensure billing cycle resets are applied
-          if (hasActiveSubscription) {
-            try {
-              if (__DEV__) {
-                console.log('🎬 App startup: Syncing Pro user Back to Life usage...');
-              }
-              await backToLifeService.checkUsage();
-              if (__DEV__) {
-                console.log('✅ App startup: Back to Life usage synced successfully');
-              }
-            } catch (usageError: any) {
-              if (__DEV__) {
-                console.warn('⚠️ App startup: Back to Life usage sync failed:', usageError?.message);
-              }
-              // Continue with app initialization even if usage sync fails
-            }
+          // Simple Pro status refresh from RevenueCat
+          console.log('🔄 Refreshing Pro status on app startup...');
+          let hasActiveSubscription = false;
+          try {
+            const proStatus = await refreshProStatus();
+            hasActiveSubscription = proStatus.isPro;
+            
+            // Update subscription store to match
+            setIsPro(proStatus.isPro);
+            
+            console.log('✅ Pro status refreshed:', {
+              isPro: proStatus.isPro,
+              planType: proStatus.planType,
+              expiresAt: proStatus.expiresAt,
+              hasTransactionId: !!proStatus.transactionId
+            });
+          } catch (refreshError) {
+            console.error('❌ Failed to refresh Pro status:', refreshError);
+            // Fallback to existing RevenueCat check
+            hasActiveSubscription = await checkSubscriptionStatus();
           }
+
+          // Note: Back to Life usage tracking is handled lazily when user actually uses the feature
+          // No need to pre-sync usage data at startup - saves time and prevents race conditions
         } catch (autoCheckError: any) {
           if (__DEV__) {
             console.warn('⚠️ Startup subscription check failed - user remains non-Pro:', autoCheckError?.message);

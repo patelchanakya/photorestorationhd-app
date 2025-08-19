@@ -92,19 +92,33 @@ serve(async (req) => {
       });
     }
 
-    // For now, use a fixed user ID to disable JWT requirements
-    // TODO: Add proper user authentication when needed
-    const userId = 'demo-user';
+    // First, try to get prediction record to find the associated user_id
+    const { data: videoJob, error: lookupError } = await supabase
+      .from('user_video_jobs')
+      .select('user_id')
+      .eq('prediction_id', predictionId)
+      .single();
 
-    // Fetch video job from database
-    const { data: videoJob, error: dbError } = await supabase
+    if (lookupError || !videoJob) {
+      return new Response(JSON.stringify({ 
+        error: 'Video prediction not found' 
+      }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const userId = videoJob.user_id;
+
+    // Fetch full video job from database
+    const { data: fullVideoJob, error: dbError } = await supabase
       .from('user_video_jobs')
       .select('*')
       .eq('prediction_id', predictionId)
       .eq('user_id', userId)
       .single();
 
-    if (dbError || !videoJob) {
+    if (dbError || !fullVideoJob) {
       console.error('Video job not found:', dbError);
       return new Response(JSON.stringify({ error: 'Video not found' }), {
         status: 404,
@@ -112,16 +126,16 @@ serve(async (req) => {
       });
     }
 
-    let currentStatus = videoJob.status;
-    let videoUrl = videoJob.video_url;
-    let errorMessage = videoJob.error_message;
-    let completedAt = videoJob.completed_at;
+    let currentStatus = fullVideoJob.status;
+    let videoUrl = fullVideoJob.video_url;
+    let errorMessage = fullVideoJob.error_message;
+    let completedAt = fullVideoJob.completed_at;
 
     // If video is still processing, optionally check live status from Replicate
     const shouldRefresh = ['starting', 'processing'].includes(currentStatus);
-    const timeSinceLastCheck = videoJob.webhook_received_at 
-      ? Date.now() - new Date(videoJob.webhook_received_at).getTime()
-      : Date.now() - new Date(videoJob.created_at).getTime();
+    const timeSinceLastCheck = fullVideoJob.webhook_received_at 
+      ? Date.now() - new Date(fullVideoJob.webhook_received_at).getTime()
+      : Date.now() - new Date(fullVideoJob.created_at).getTime();
     
     // Only refresh if it's been more than 30 seconds since last update and status is pending
     if (shouldRefresh && timeSinceLastCheck > 30000) {
@@ -166,7 +180,7 @@ serve(async (req) => {
               
               console.log('📡 Status refreshed from Replicate:', {
                 predictionId,
-                oldStatus: videoJob.status,
+                oldStatus: fullVideoJob.status,
                 newStatus: currentStatus
               });
             }
@@ -175,18 +189,18 @@ serve(async (req) => {
     }
 
     // Calculate progress info
-    const createdAt = new Date(videoJob.created_at);
+    const createdAt = new Date(fullVideoJob.created_at);
     const elapsedSeconds = Math.floor((Date.now() - createdAt.getTime()) / 1000);
     const progressPhase = getProgressPhase(currentStatus, elapsedSeconds);
 
     // Build response
     const response: VideoStatusResponse = {
-      predictionId: videoJob.prediction_id,
+      predictionId: fullVideoJob.prediction_id,
       status: currentStatus as any,
-      imageUri: videoJob.image_uri,
-      prompt: videoJob.prompt,
-      modeTag: videoJob.mode_tag || 'Life',
-      createdAt: videoJob.created_at,
+      imageUri: fullVideoJob.image_uri,
+      prompt: fullVideoJob.prompt,
+      modeTag: fullVideoJob.mode_tag || 'Life',
+      createdAt: fullVideoJob.created_at,
       progress: {
         elapsedSeconds,
         phase: progressPhase
@@ -194,7 +208,7 @@ serve(async (req) => {
     };
 
     if (videoUrl) response.videoUrl = videoUrl;
-    if (videoJob.local_video_path) response.localVideoPath = videoJob.local_video_path;
+    if (fullVideoJob.local_video_path) response.localVideoPath = fullVideoJob.local_video_path;
     if (completedAt) response.completedAt = completedAt;
     if (errorMessage) response.errorMessage = errorMessage;
 

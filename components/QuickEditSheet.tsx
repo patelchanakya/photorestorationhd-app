@@ -1,9 +1,9 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
+import { useSavePhoto } from '@/hooks/useSavePhoto';
 import { CustomImageCropper } from '@/components/CustomImageCropper';
 import { useQuickEditStore } from '@/store/quickEditStore';
 import { photoStorage } from '@/services/storage';
-import { photoUsageService } from '@/services/photoUsageService';
 import { presentPaywall } from '@/services/revenuecat';
 import { useRouter } from 'expo-router';
 import { Image as ExpoImage } from 'expo-image';
@@ -43,6 +43,7 @@ export function QuickEditSheet() {
   } = useQuickEditStore();
 
   const photoRestoration = usePhotoRestoration();
+  const savePhotoMutation = useSavePhoto();
   const [isCropping, setIsCropping] = React.useState(false);
   const hasAppliedCropRef = React.useRef(false);
   const [mediaLoading, setMediaLoading] = React.useState(false);
@@ -58,6 +59,8 @@ export function QuickEditSheet() {
     switch (functionType) {
       case 'restoration':
         return 'Restore';
+      case 'repair':
+        return 'Repair';
       case 'descratch':
         return 'Descratch';
       case 'unblur':
@@ -130,7 +133,7 @@ export function QuickEditSheet() {
     try { Haptics.selectionAsync(); } catch {}
     const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (res.status !== 'granted') return;
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 1 });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
     if (!result.canceled && result.assets[0]) {
       setMediaLoading(true);
       setSelectedImage(result.assets[0].uri);
@@ -150,28 +153,12 @@ export function QuickEditSheet() {
     setIsUploading(true);
     try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch {}
 
-    // Check photo usage limits before processing
-    const photoUsage = await photoUsageService.checkUsage();
-    
-    if (!photoUsage.canUse && photoUsage.planType === 'free') {
-      setShowUpgrade(true);
-      setIsUploading(false);
-      return;
-    }
+    // Pass styleKey through global context for webhook system
+    (global as any).__quickEditStyleKey = styleKey;
+
+    // Server-side webhook handles all usage checking and limits
 
     setStage('loading');
-    
-    // Atomic pre-increment for free users only
-    let incrementSuccess = true;
-    if (photoUsage.planType === 'free') {
-      incrementSuccess = await photoUsageService.checkAndIncrementUsage();
-      if (!incrementSuccess) {
-        // Hit limit during atomic check - show upgrade prompt
-        setShowUpgrade(true);
-        setIsUploading(false);
-        return;
-      }
-    }
 
     const started = Date.now();
     const interval = setInterval(() => {
@@ -182,7 +169,7 @@ export function QuickEditSheet() {
     }, 500);
 
     try {
-      const effectiveFunctionType = (functionType === 'repair' ? 'restoration' : functionType) as any;
+      const effectiveFunctionType = functionType as any;
       const data = await photoRestoration.mutateAsync({ imageUri: selectedImageUri, functionType: effectiveFunctionType, imageSource: 'gallery', customPrompt: customPrompt || undefined });
       const id = data.id;
       const restoredUri = (data as any).restoredImageUri || '';
@@ -194,16 +181,18 @@ export function QuickEditSheet() {
         console.log('🚨 Full error:', e);
       }
       
-      // Rollback usage increment on failure for free users
-      if (photoUsage.planType === 'free' && incrementSuccess) {
-        await photoUsageService.rollbackUsage();
-        if (__DEV__) {
-          console.log('📸 Photo usage rolled back due to processing failure');
-        }
-      }
+      // Note: Hook handles its own rollback logic
       
       // Show user-friendly error message
-      const errorMsg = e?.message || 'Something went wrong. Please try again.';
+      let errorMsg = e?.message || 'Something went wrong. Please try again.';
+      
+      // Override technical error messages with user-friendly ones
+      if (errorMsg.includes('Unable to verify photo limits') || 
+          errorMsg.includes('Servers are loaded') ||
+          errorMsg.includes('Unable to process photo')) {
+        errorMsg = 'Servers are loaded, please try again later.';
+      }
+      
       if (__DEV__) {
         console.log('🔴 Setting error message:', errorMsg);
         console.log('🔴 Calling setError...');
@@ -216,6 +205,8 @@ export function QuickEditSheet() {
     } finally {
       clearInterval(interval);
       setIsUploading(false);
+      // Clean up global styleKey
+      (global as any).__quickEditStyleKey = undefined;
     }
   };
 
@@ -225,14 +216,22 @@ export function QuickEditSheet() {
     saveButtonScale.value = withTiming(0.96, { duration: 90 }, () => {
       saveButtonScale.value = withTiming(1, { duration: 120 });
     });
-    await photoStorage.exportToCameraRoll(restoredImageUri);
-    try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch {}
-    // Show success, then close
-    savedFeedback.value = 1;
-    setTimeout(() => {
-      savedFeedback.value = withTiming(0, { duration: 220 });
-      handleClose();
-    }, 800);
+    
+    savePhotoMutation.mutate({ imageUri: restoredImageUri }, {
+      onSuccess: () => {
+        // Show success, then close
+        savedFeedback.value = 1;
+        setTimeout(() => {
+          savedFeedback.value = withTiming(0, { duration: 220 });
+          handleClose();
+        }, 800);
+      },
+      onError: (error) => {
+        console.error('Save failed:', error);
+        // Reset button animation on error
+        saveButtonScale.value = withTiming(1, { duration: 120 });
+      }
+    });
   };
 
   const handleView = () => {
@@ -413,8 +412,29 @@ export function QuickEditSheet() {
                 {stage === 'done' && (
                   <>
                     <Animated.View style={[saveBtnStyle]}>
-                      <TouchableOpacity onPress={handleSave} style={{ paddingHorizontal: 22, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' }}>
-                        <Text style={{ color: '#fff', fontWeight: '600' }}>Save</Text>
+                      <TouchableOpacity 
+                        onPress={handleSave} 
+                        disabled={savePhotoMutation.isPending}
+                        style={{ 
+                          paddingHorizontal: 22, 
+                          height: 56, 
+                          borderRadius: 28, 
+                          backgroundColor: 'rgba(255,255,255,0.1)', 
+                          borderWidth: 1, 
+                          borderColor: 'rgba(255,255,255,0.25)', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          opacity: savePhotoMutation.isPending ? 0.6 : 1
+                        }}
+                      >
+                        {savePhotoMutation.isPending ? (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <ActivityIndicator size="small" color="#fff" />
+                            <Text style={{ color: '#fff', fontWeight: '600' }}>Saving...</Text>
+                          </View>
+                        ) : (
+                          <Text style={{ color: '#fff', fontWeight: '600' }}>Save</Text>
+                        )}
                       </TouchableOpacity>
                     </Animated.View>
                     <TouchableOpacity onPress={handleView} style={{ flex: 1, height: 56, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' }}>

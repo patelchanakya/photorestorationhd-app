@@ -76,7 +76,7 @@ export function StyleCollections() {
   const openPicker = async (styleKey: string) => {
     const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (res.status !== 'granted') return;
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: false, quality: 1 });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 1 });
     if (!result.canceled && result.assets[0]) {
       const uri = result.assets[0].uri;
       useQuickEditStore.getState().openWithImage({ 

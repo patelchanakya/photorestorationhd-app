@@ -103,7 +103,7 @@ export default function OnboardingScreen() {
 
       // Open device photo library
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: false,
         quality: 1,
         exif: false,

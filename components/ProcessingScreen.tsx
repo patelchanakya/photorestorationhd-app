@@ -16,7 +16,7 @@ interface VideoGenerationState {
 }
 
 interface ProcessingScreenProps {
-  functionType: 'restoration' | 'unblur' | 'colorize' | 'descratch' | 'backtolife';
+  functionType: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'backtolife';
   isProcessing: boolean;
   isError?: boolean;
   videoGenerationState?: VideoGenerationState;

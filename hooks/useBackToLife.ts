@@ -1,8 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useMutation } from '@tanstack/react-query';
-import { backToLifeService } from '../services/backToLifeService';
-import { generateVideo } from '../services/videoServiceProxy';
+// Video generation is now handled by the webhook-based system
 import { useCropModalStore } from '../store/cropModalStore';
+import { useVideoToastStore } from '../store/videoToastStore';
 
 interface BackToLifeParams {
   imageUri: string;
@@ -30,37 +30,9 @@ export function useBackToLife() {
       
       
       try {
-        // STEP 2: Check usage limits BEFORE attempting atomic increment
-        const usage = await backToLifeService.checkUsage();
-        if (!usage.canUse) {
-          if (usage.limit <= 0) {
-            setVideoError('Back to Life videos are a Pro feature.');
-            // Small delay to let UI update before throwing
-            await new Promise(resolve => setTimeout(resolve, 100));
-            throw new Error('PRO_REQUIRED');
-          }
-          if (usage.canUseToday === false) {
-            setVideoError('Daily limit reached. Try again tomorrow.');
-            // Small delay to let UI update before throwing
-            await new Promise(resolve => setTimeout(resolve, 100));
-            throw new Error('DAILY_LIMIT_REACHED');
-          }
-          const nextReset = usage.nextResetDate ? new Date(usage.nextResetDate) : null;
-          const resetSuffix = nextReset ? ` on ${nextReset.toLocaleDateString()}` : '';
-          setVideoError(`Monthly limit reached (${usage.used}/${usage.limit}). Resets${resetSuffix}.`);
-          // Small delay to let UI update before throwing
-          await new Promise(resolve => setTimeout(resolve, 100));
-          throw new Error('MONTHLY_LIMIT_REACHED');
-        }
-        
-        // STEP 3: Atomically pre-increment usage (protects against multi-device race conditions)
-        const canProceed = await backToLifeService.checkAndIncrementUsage();
-        if (!canProceed) {
-          // This should rarely happen since we checked above, but handles edge cases
-          setVideoError('Usage limit reached. Please try again later.');
-          // Small delay to let UI update before throwing
-          await new Promise(resolve => setTimeout(resolve, 100));
-          throw new Error('ATOMIC_INCREMENT_FAILED');
+        // Server-side webhook handles all usage tracking and limits
+        if (__DEV__) {
+          console.log('✅ Using webhook system - server handles all video usage tracking and limits');
         }
       } catch (error) {
         // If we failed before video generation, make sure to reset processing state
@@ -70,20 +42,16 @@ export function useBackToLife() {
 
 
       try {
-        // Import the new server-side API service
-        const { startVideoGeneration, pollVideoGeneration } = await import('../services/videoApiService');
+        // Import the new webhook-based video generation service
+        const { generateVideoWithPolling } = await import('../services/videoGenerationV2');
         
-        // STEP 2: Start video generation on server
-        const startResponse = await startVideoGeneration(imageUri, animationPrompt, {
-          mode: 'standard',
-          duration: 5,
-          negativePrompt: 'blurry, distorted, low quality, static, frozen'
-        });
-
         // IMMEDIATELY save pending video state for recovery
         const { videoModeTag } = useCropModalStore.getState();
+        
+        // Generate a temporary prediction ID for immediate storage
+        const tempPredictionId = `temp-${Date.now()}`;
         const pendingVideoData = {
-          predictionId: startResponse.predictionId,
+          predictionId: tempPredictionId,
           localPath: null, // Will be set when completed
           imageUri: imageUri,
           message: 'Your video is ready! 🎬',
@@ -94,48 +62,62 @@ export function useBackToLife() {
         
         try {
           await AsyncStorage.setItem('pending_video_toast', JSON.stringify(pendingVideoData));
-          console.log('🔒 Pending video state saved for recovery:', startResponse.predictionId);
+          console.log('🔒 Pending video state saved for recovery:', tempPredictionId);
         } catch (storageError) {
           console.error('⚠️ Failed to save pending video state:', storageError);
           // Continue anyway - don't fail generation for storage issues
         }
 
-
-        // STEP 3: Poll for completion with the real prediction ID
-        const videoUrl = await pollVideoGeneration(startResponse.predictionId, (status) => {
+        // STEP 2: Start webhook-based video generation with polling
+        const videoUrl = await generateVideoWithPolling(imageUri, animationPrompt, {
+          duration: 5,
+          onProgress: (status) => {
+            if (__DEV__) {
+              console.log(`⏳ Video webhook progress: ${status.status} - ${status.prediction_id}`);
+            }
+            // Update pending state with real prediction ID once available
+            if (status.prediction_id && status.prediction_id !== tempPredictionId) {
+              const updatedPendingData = {
+                ...pendingVideoData,
+                predictionId: status.prediction_id
+              };
+              AsyncStorage.setItem('pending_video_toast', JSON.stringify(updatedPendingData)).catch(console.error);
+            }
+          },
+          timeoutMs: 180000 // 3 minutes for videos
         });
 
-        // STEP 4: Video generation succeeded - keep the pre-increment
+        // STEP 3: Video generation succeeded - keep the pre-increment
 
         // Validate video URL before storing
         if (!videoUrl || typeof videoUrl !== 'string') {
-          throw new Error('Invalid video URL received from server');
+          throw new Error('Invalid video URL received from webhook system');
         }
 
         try {
           new URL(videoUrl); // Validate URL format
         } catch {
-          throw new Error('Malformed video URL received from server');
+          throw new Error('Malformed video URL received from webhook system');
         }
 
-        // Use the real prediction ID for consistent tracking
-        const videoId = `video-${startResponse.predictionId}`;
+        // Use timestamp-based ID for consistent tracking
+        const videoId = `video-${Date.now()}`;
         const videoData = {
           id: videoId,
-          predictionId: startResponse.predictionId, // Store the real prediction ID
+          predictionId: tempPredictionId, // Use our temp ID for now
           url: videoUrl,
           originalImage: imageUri,
           prompt: animationPrompt,
           created_at: new Date().toISOString(),
           status: 'completed',
-          service: 'secure-server-api'
+          service: 'webhook-system'
         };
 
         try {
           await AsyncStorage.setItem(`video_${videoId}`, JSON.stringify(videoData));
           
           // Also store the prediction ID mapping for easier lookup
-          await AsyncStorage.setItem(`prediction_${startResponse.predictionId}`, videoId);
+          await AsyncStorage.setItem(`prediction_${tempPredictionId}`, videoId);
           
           // Verify storage worked
           const stored = await AsyncStorage.getItem(`video_${videoId}`);
@@ -150,11 +132,12 @@ export function useBackToLife() {
           throw new Error('Failed to save video data locally');
         }
 
-        return { id: videoId, url: videoUrl, predictionId: startResponse.predictionId };
+        return { id: videoId, url: videoUrl, predictionId: tempPredictionId };
       } catch (error) {
-        // STEP 4: Video generation failed - rollback the pre-increment
-        
-        const rollbackSuccess = await backToLifeService.rollbackUsage();
+        // No client-side rollback needed - webhook system handles server-side rollback
+        if (__DEV__) {
+          console.log('✅ Server-side webhook will handle usage rollback automatically');
+        }
         
         // Re-throw the original error
         throw error;
@@ -163,7 +146,7 @@ export function useBackToLife() {
 
     onSuccess: async (data) => {
       const { setCompletedRestorationId, setProcessingStatus, setIsProcessing, setIsVideoProcessing, currentImageUri, videoModeTag } = useCropModalStore.getState();
-      const { showVideoReady } = await import('@/store/videoToastStore').then(m => m.useVideoToastStore.getState());
+      const { showVideoReady } = useVideoToastStore.getState();
       
       // Set completion state for toast
       setCompletedRestorationId(data.id);
@@ -171,10 +154,10 @@ export function useBackToLife() {
       setIsProcessing(false);
       setIsVideoProcessing(false);
 
-      // Also show through videoToastStore for persistence
+      // Also show through videoToastStore for persistence (webhook-system compatible)
       showVideoReady({
-        id: data.predictionId, // Use the real prediction ID
-        localPath: data.url, // Using URL as localPath for now
+        id: data.predictionId, // Use our prediction ID (temp or real)
+        localPath: data.url, // Using URL as localPath for webhook system
         imageUri: currentImageUri,
         message: 'Your video is ready! 🎬',
         modeTag: videoModeTag || null,

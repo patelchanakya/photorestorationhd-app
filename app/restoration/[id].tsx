@@ -2,7 +2,6 @@ import { BeforeAfterSlider } from '@/components/BeforeAfterSlider';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 import { useVideoGeneration } from '@/hooks/useVideoGeneration';
-import { backToLifeService } from '@/services/backToLifeService';
 import { type FunctionType } from '@/services/modelConfigs';
 import { photoStorage } from '@/services/storage';
 import { restorationService } from '@/services/supabase';
@@ -208,18 +207,11 @@ export default function RestorationScreen() {
       // Check if this is a video result
       const isVideoResult = (restorationData as any).videoFilename;
       
-      // Increment video usage counter for back-to-life mode
+      // Video usage tracking is handled server-side by webhook system
       const isBackToLifeMode = functionType === 'backtolife';
       
-      if (isBackToLifeMode) {
-        if (__DEV__) {
-          console.log('🎥 Back to Life video completed, incrementing usage count');
-        }
-        backToLifeService.incrementUsage().catch(error => {
-          if (__DEV__) {
-            console.error('❌ Failed to increment Back to Life usage:', error);
-          }
-        });
+      if (isBackToLifeMode && __DEV__) {
+        console.log('🎥 Back to Life video completed - usage already tracked server-side');
       }
       
       // Navigate to appropriate result screen
@@ -300,7 +292,7 @@ export default function RestorationScreen() {
   };
 
   const handleExport = async () => {
-    if (!restoration?.restored_filename) return;
+    if (!restoration || !restoredUri) return;
 
     try {
       // Start animation sequence
@@ -328,8 +320,8 @@ export default function RestorationScreen() {
       // Change text
       runOnJS(setDownloadText)('Saving...');
       
-      const uri = photoStorage.getPhotoUri('restored', restoration.restored_filename);
-      await photoStorage.exportToCameraRoll(uri);
+      // Use the determined URI (could be local file or Replicate URL)
+      await photoStorage.exportToCameraRoll(restoredUri);
       
       // Success feedback with celebration
       buttonScale.value = withSequence(
@@ -397,12 +389,11 @@ export default function RestorationScreen() {
   };
 
   const handleShare = async () => {
-    if (!restoration?.restored_filename) return;
+    if (!restoration || !restoredUri) return;
 
     try {
-      const uri = photoStorage.getPhotoUri('restored', restoration.restored_filename);
       await Share.share({
-        url: uri,
+        url: restoredUri,
         message: 'Check out my restored photo!',
       });
     } catch (error) {
@@ -518,13 +509,47 @@ export default function RestorationScreen() {
   }
 
   const originalUri = restoration ? photoStorage.getPhotoUri('original', restoration.original_filename) : '';
-  const restoredUri = restoration?.restored_filename
-    ? photoStorage.getPhotoUri('restored', restoration.restored_filename)
-    : null;
+  
+  // Determine the best URI to display: Replicate URL first, then local files when ready
+  const getRestoredUri = () => {
+    if (!restoration) return null;
+    
+    // If local files are ready, use local file (best quality, offline available)
+    if (restoration.local_files_ready && restoration.restored_filename) {
+      return photoStorage.getPhotoUri('restored', restoration.restored_filename);
+    }
+    
+    // If video, check for video Replicate URL
+    if (restoration.video_replicate_url) {
+      return restoration.video_replicate_url;
+    }
+    
+    // If image, check for image Replicate URL
+    if (restoration.replicate_url) {
+      return restoration.replicate_url;
+    }
+    
+    // Fallback to local file if available (legacy support)
+    if (restoration.restored_filename) {
+      return photoStorage.getPhotoUri('restored', restoration.restored_filename);
+    }
+    
+    return null;
+  };
+  
+  const restoredUri = getRestoredUri();
+  const isUsingReplicateUrl = restoration && (
+    (restoration.replicate_url && !restoration.local_files_ready) || 
+    (restoration.video_replicate_url && !restoration.local_files_ready)
+  );
 
   // Debug logging
-  console.log('🖼️ Original URI:', originalUri);
-  console.log('🖼️ Restored URI:', restoredUri);
+  if (__DEV__) {
+    console.log('🖼️ Original URI:', originalUri);
+    console.log('🖼️ Restored URI:', restoredUri);
+    console.log('🔗 Using Replicate URL:', isUsingReplicateUrl);
+    console.log('📁 Local files ready:', restoration?.local_files_ready);
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -563,7 +588,7 @@ export default function RestorationScreen() {
               }
               
               const result = await ImagePicker.launchImageLibraryAsync({ 
-                mediaTypes: ImagePicker.MediaTypeOptions.Images, 
+                mediaTypes: ['images'], 
                 allowsEditing: false, 
                 quality: 1 
               });

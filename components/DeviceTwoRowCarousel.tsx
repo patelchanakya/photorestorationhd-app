@@ -208,7 +208,7 @@ export function DeviceTwoRowCarousel({ functionType }: DeviceTwoRowCarouselProps
                   const info = await MediaLibrary.getAssetInfoAsync(asset.id);
                   const uri = info.localUri || info.uri;
                   if (uri) {
-                    const normalized = (functionType === 'repair' ? 'restoration' : functionType) as any;
+                    const normalized = functionType as any;
                     useQuickEditStore.getState().openWithImage({ 
                       functionType: normalized as any, 
                       imageUri: uri 

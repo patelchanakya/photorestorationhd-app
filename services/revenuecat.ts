@@ -1,5 +1,5 @@
 import { analyticsService } from '@/services/analytics';
-import { getStableUserId } from '@/services/stableUserId';
+// Removed: No longer using stable IDs - RevenueCat handles anonymous IDs automatically
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 
@@ -758,7 +758,24 @@ export const presentPaywall = async (): Promise<boolean> => {
         console.log('📦 RevenueCatUI.presentPaywall:', RevenueCatUI.presentPaywall);
       }
       
-      paywallResult = await RevenueCatUI.presentPaywall();
+      // Fetch offerings and use specific "defaultv2" offering
+      // Clear cache to get fresh offering data
+      await Purchases.invalidateCustomerInfoCache();
+      const offerings = await Purchases.getOfferings();
+      const defaultv2Offering = offerings.all['defaultv2'];
+      
+      if (defaultv2Offering) {
+        if (__DEV__) {
+          console.log('🎯 Using defaultv2 offering (with trial toggle paywall):', defaultv2Offering);
+        }
+        paywallResult = await RevenueCatUI.presentPaywall({ offering: defaultv2Offering });
+      } else {
+        if (__DEV__) {
+          console.log('⚠️ defaultv2 offering not found, using default');
+          console.log('📋 Available offerings:', Object.keys(offerings.all));
+        }
+        paywallResult = await RevenueCatUI.presentPaywall();
+      }
     } catch (uiError) {
       // Only log UI errors in development, not user cancellations
       if (__DEV__) {

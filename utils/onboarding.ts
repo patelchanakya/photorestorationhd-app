@@ -2,6 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ONBOARDING_KEY = 'hasSeenOnboarding';
 const ONBOARDING_DATA_KEY = 'onboardingData';
+const ONBOARDING_ALWAYS_SKIP_KEY = 'alwaysSkipOnboarding';
+const ONBOARDING_ALWAYS_SHOW_KEY = 'alwaysShowOnboarding';
 
 export interface OnboardingData {
   hasSeenOnboarding: boolean;
@@ -91,6 +93,43 @@ export const onboardingUtils = {
     }
   },
 
+  // Always skip onboarding flag
+  async getAlwaysSkipOnboarding(): Promise<boolean> {
+    try {
+      const value = await AsyncStorage.getItem(ONBOARDING_ALWAYS_SKIP_KEY);
+      return value === 'true';
+    } catch (error) {
+      console.error('Error getting always skip onboarding flag:', error);
+      return false;
+    }
+  },
+
+  async setAlwaysSkipOnboarding(skip: boolean): Promise<void> {
+    try {
+      await AsyncStorage.setItem(ONBOARDING_ALWAYS_SKIP_KEY, skip ? 'true' : 'false');
+    } catch (error) {
+      console.error('Error setting always skip onboarding flag:', error);
+    }
+  },
+
+  async getAlwaysShowOnboarding(): Promise<boolean> {
+    try {
+      const value = await AsyncStorage.getItem(ONBOARDING_ALWAYS_SHOW_KEY);
+      return value === 'true';
+    } catch (error) {
+      console.error('Error getting always show onboarding flag:', error);
+      return false;
+    }
+  },
+
+  async setAlwaysShowOnboarding(show: boolean): Promise<void> {
+    try {
+      await AsyncStorage.setItem(ONBOARDING_ALWAYS_SHOW_KEY, show ? 'true' : 'false');
+    } catch (error) {
+      console.error('Error setting always show onboarding flag:', error);
+    }
+  },
+
   // Get onboarding data
   async getOnboardingData(): Promise<OnboardingData | null> {
     try {
@@ -160,6 +199,7 @@ export const onboardingUtils = {
     try {
       await AsyncStorage.removeItem(ONBOARDING_KEY);
       await AsyncStorage.removeItem(ONBOARDING_DATA_KEY);
+      // Do not modify always-skip flag when resetting content
     } catch (error) {
       console.error('Error resetting onboarding:', error);
     }
