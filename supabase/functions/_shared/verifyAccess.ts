@@ -12,8 +12,8 @@ export interface AccessVerificationResult {
 }
 
 /**
- * Simple subscription verification for edge functions
- * Since subscription cache was removed, this now does basic checks
+ * Enhanced subscription verification for edge functions with new ID format support
+ * Handles original transaction IDs, store transaction IDs, and anonymous IDs
  * The app handles the main subscription logic via RevenueCat
  */
 export async function verifySubscriptionAccess(
@@ -22,20 +22,28 @@ export async function verifySubscriptionAccess(
   requiredFeature: 'unlimited_photos' | 'video_generation' | 'premium_styles' = 'unlimited_photos'
 ): Promise<AccessVerificationResult> {
   try {
-    // For videos, check if user has a transaction ID (Pro users only)
+    console.log(`🔍 [EDGE] Verifying access for feature "${requiredFeature}" with userId: ${userId}`);
+    
+    // Validate and parse the user ID format
+    const idInfo = parseTrackingId(userId);
+    console.log(`🎯 [EDGE] Parsed ID info:`, idInfo);
+    
+    // For videos, check if user has any Pro transaction ID
     if (requiredFeature === 'video_generation') {
-      // Transaction ID format: store:xxxxx
-      if (!userId || !userId.startsWith('store:')) {
+      // Only Pro users with transaction IDs can use videos
+      if (!idInfo.isPro) {
+        console.log(`❌ [EDGE] Video access denied: ${idInfo.reason}`);
         return {
           canUse: false,
           isPro: false,
           planType: 'free',
-          reason: 'Video generation requires Pro subscription',
+          reason: idInfo.reason || 'Video generation requires Pro subscription',
           code: 'PRO_REQUIRED'
         };
       }
       
-      // Valid transaction ID means Pro user
+      // Valid Pro user with transaction ID
+      console.log(`✅ [EDGE] Video access granted for Pro user`);
       return {
         canUse: true,
         isPro: true,
@@ -43,35 +51,37 @@ export async function verifySubscriptionAccess(
       };
     }
     
-    // For photos, check if it's an anonymous ID (free) or transaction ID (pro)
+    // For photos, distinguish between free and Pro users
     if (requiredFeature === 'unlimited_photos') {
-      // Anonymous ID format: $RCAnonymousID:xxxxx
-      if (userId && userId.startsWith('$RCAnonymousID:')) {
+      if (idInfo.isPro) {
+        // Pro user - unlimited photos
+        console.log(`✅ [EDGE] Unlimited photo access for Pro user`);
+        return {
+          canUse: true,
+          isPro: true,
+          planType: 'monthly',
+        };
+      } else {
         // Free user - limited photos
+        console.log(`✅ [EDGE] Limited photo access for free user`);
         return {
           canUse: true, // Will be limited by usage tracking
           isPro: false,
           planType: 'free',
         };
       }
-      
-      // No tracking ID or transaction ID = Pro user (unlimited)
-      return {
-        canUse: true,
-        isPro: true,
-        planType: 'monthly',
-      };
     }
     
-    // Default: allow access
+    // Default: allow access for other features
+    console.log(`✅ [EDGE] Default access granted for feature: ${requiredFeature}`);
     return {
       canUse: true,
-      isPro: false,
-      planType: 'free',
+      isPro: idInfo.isPro,
+      planType: idInfo.isPro ? 'monthly' : 'free',
     };
 
   } catch (error) {
-    console.error('❌ Access verification failed:', error);
+    console.error('❌ [EDGE] Access verification failed:', error);
     
     // Fail open for critical errors - allow request to proceed
     return {
@@ -82,6 +92,105 @@ export async function verifySubscriptionAccess(
       code: 'VERIFICATION_ERROR'
     };
   }
+}
+
+/**
+ * Parse and validate tracking ID format
+ * Returns information about the ID type and user status
+ */
+function parseTrackingId(userId: string): {
+  isPro: boolean;
+  idType: string;
+  reason?: string;
+  isValid: boolean;
+} {
+  if (!userId || typeof userId !== 'string') {
+    return {
+      isPro: false,
+      idType: 'invalid',
+      reason: 'Missing or invalid user ID',
+      isValid: false
+    };
+  }
+  
+  // Original transaction ID (stable across renewals) - Pro users
+  if (userId.startsWith('orig:')) {
+    const transactionId = userId.substring(5);
+    if (transactionId.length >= 10) {
+      return {
+        isPro: true,
+        idType: 'original_transaction',
+        isValid: true
+      };
+    }
+    return {
+      isPro: false,
+      idType: 'invalid_original_transaction',
+      reason: 'Invalid original transaction ID format',
+      isValid: false
+    };
+  }
+  
+  // Store transaction ID (changes on renewal) - Pro users
+  if (userId.startsWith('store:')) {
+    const transactionId = userId.substring(6);
+    if (transactionId.length >= 10) {
+      return {
+        isPro: true,
+        idType: 'store_transaction',
+        isValid: true
+      };
+    }
+    return {
+      isPro: false,
+      idType: 'invalid_store_transaction',
+      reason: 'Invalid store transaction ID format',
+      isValid: false
+    };
+  }
+  
+  // Fallback ID (emergency case) - Pro users
+  if (userId.startsWith('fallback:')) {
+    const fallbackId = userId.substring(9);
+    if (fallbackId.startsWith('$RCAnonymousID:') && fallbackId.length > 20) {
+      return {
+        isPro: true, // Pro user using fallback
+        idType: 'fallback_anonymous',
+        isValid: true
+      };
+    }
+    return {
+      isPro: false,
+      idType: 'invalid_fallback',
+      reason: 'Invalid fallback ID format',
+      isValid: false
+    };
+  }
+  
+  // RevenueCat anonymous ID - Free users
+  if (userId.startsWith('$RCAnonymousID:')) {
+    if (userId.length > 20) {
+      return {
+        isPro: false,
+        idType: 'anonymous',
+        isValid: true
+      };
+    }
+    return {
+      isPro: false,
+      idType: 'invalid_anonymous',
+      reason: 'Invalid anonymous ID format',
+      isValid: false
+    };
+  }
+  
+  // Legacy or unknown format
+  return {
+    isPro: false,
+    idType: 'unknown',
+    reason: 'Unknown ID format',
+    isValid: false
+  };
 }
 
 /**

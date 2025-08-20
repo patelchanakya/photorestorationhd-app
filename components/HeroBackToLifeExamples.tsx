@@ -68,6 +68,13 @@ const DEFAULT_EXAMPLES: ExampleItem[] = [
     type: 'video', 
     animationPrompt: 'Let the subject\'s expression shift gently into a soft, natural smile. The movement should be minimal and unforced, as if sparked by a small happy thought or connection. Keep the face relaxed, with a smooth transition into the smile. Background and posture remain unchanged.' 
   },
+  { 
+    id: 'ex-wave', 
+    video: require('../assets/videos/magic/backtolife/thumbnail/btl-1.mp4'), // Temporary - using btl-1.mp4 until wave asset is added
+    title: 'Wave', 
+    type: 'video', 
+    animationPrompt: 'Bring the scene to life with a natural waving gesture. For a single person, let them raise their hand in a friendly wave - smooth and relaxed, as if greeting someone they know. For groups, one or two people might wave while others smile or nod. The wave should feel spontaneous and warm, with natural arm movement and perhaps a slight lean forward. Keep the motion fluid and genuine, avoiding stiff or mechanical movements. Background remains completely still.' 
+  },
 ];
 
 // VideoView component with player hook and AppState handling - optimized

@@ -80,35 +80,36 @@ export const getPhotoTrackingId = async (planType: string): Promise<string | nul
 };
 
 /**
- * Get video tracking ID for Pro users (transaction ID only - bulletproof approach)
+ * Get video tracking ID for Pro users with original transaction ID support
  * Free users are blocked from videos (return null)
  * 
- * Strategy: ONLY use originalTransactionId - no fallbacks to prevent edge cases
- * - If no transaction ID available, block video feature (same UX as network error)
- * - This ensures 100% bulletproof tracking with zero edge cases
- * - Eliminates ID mismatch issues completely
+ * Strategy: Use originalTransactionId (stable across renewals) with smart fallbacks
+ * - Primary: originalTransactionId for consistent cross-renewal tracking
+ * - Fallback 1: storeTransactionId for edge cases
+ * - Fallback 2: anonymous ID with warning for extreme edge cases
+ * - This ensures video feature works while maintaining best tracking possible
  */
 export const getVideoTrackingId = async (options?: { retries?: number, retryDelay?: number }): Promise<string | null> => {
   const { retries = 3, retryDelay = 1000 } = options || {};
   
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      console.log(`🔑 [TEST] Video tracking ID attempt ${attempt}/${retries}...`);
+      console.log(`🔑 [VIDEO] Tracking ID attempt ${attempt}/${retries}...`);
       
       // Get fresh customer info for subscription verification (bypass cache)
-      // This is critical for getting originalTransactionId after app restarts
+      // This is critical for getting transaction IDs after app restarts
       const customerInfo = await Purchases.getCustomerInfo({ fetchPolicy: "FETCH_CURRENT" });
       if (!customerInfo) {
-        console.log('❌ [TEST] Video tracking: CustomerInfo not ready');
+        console.log('❌ [VIDEO] CustomerInfo not ready');
         if (attempt < retries) {
-          console.log(`⏳ [TEST] Retrying in ${retryDelay}ms...`);
+          console.log(`⏳ [VIDEO] Retrying in ${retryDelay}ms...`);
           await new Promise(resolve => setTimeout(resolve, retryDelay));
           continue;
         }
         return null;
       }
       
-      console.log('📊 [TEST] Customer info for video tracking:', {
+      console.log('📊 [VIDEO] Customer info retrieved:', {
         appUserId: customerInfo.originalAppUserId,
         activeEntitlements: Object.keys(customerInfo.entitlements.active),
         allEntitlements: Object.keys(customerInfo.entitlements.all)
@@ -117,63 +118,105 @@ export const getVideoTrackingId = async (options?: { retries?: number, retryDela
       // Check if user has Pro entitlement (blocks free users)
       const proEntitlement = customerInfo.entitlements?.active?.pro;
       if (!proEntitlement?.isActive) {
-        console.log('❌ [TEST] Video tracking: No Pro entitlement - blocking free users');
+        console.log('❌ [VIDEO] No Pro entitlement - blocking free users');
         return null;
       }
       
-      // Cast to access originalTransactionId (RevenueCat types may be incomplete)
-      const entitlementAny = proEntitlement as any;
-      
-      console.log('🎯 [TEST] Pro entitlement found for video tracking:', {
-        isActive: proEntitlement.isActive,
-        productIdentifier: proEntitlement.productIdentifier,
-        originalTransactionId: entitlementAny.originalTransactionId,
-        latestPurchaseDate: proEntitlement.latestPurchaseDate,
-        originalPurchaseDate: proEntitlement.originalPurchaseDate,
-        periodType: proEntitlement.periodType,
-        store: proEntitlement.store,
-        isSandbox: proEntitlement.isSandbox
-      });
-      
-      
-      // Primary Strategy: Get transaction ID from subscription data (iOS correct approach)
+      // Get subscription data for transaction IDs
       const productId = proEntitlement.productIdentifier;
       const subscription = customerInfo.subscriptionsByProductIdentifier?.[productId];
       
-      if (subscription?.storeTransactionId) {
-        const trackingKey = `store:${subscription.storeTransactionId}`;
+      // Cast to access additional fields that may not be in types
+      const subscriptionAny = subscription as any;
+      const entitlementAny = proEntitlement as any;
+      
+      console.log('🎯 [VIDEO] Pro entitlement and subscription data:', {
+        isActive: proEntitlement.isActive,
+        productIdentifier: productId,
+        periodType: proEntitlement.periodType,
+        store: proEntitlement.store,
+        isSandbox: proEntitlement.isSandbox,
+        isFreeTrial: proEntitlement.periodType === 'TRIAL',
         
-        console.log('✅ [TEST] Video Tracking (Store Transaction ID - iOS Primary):', {
-          store_transaction_id: subscription.storeTransactionId,
+        // Subscription object fields
+        subscriptionExists: !!subscription,
+        storeTransactionId: subscription?.storeTransactionId,
+        originalTransactionId: subscriptionAny?.originalTransactionId,
+        
+        // Entitlement object fields (alternative source)
+        entitlementOriginalTransactionId: entitlementAny?.originalTransactionId,
+        
+        attempt: attempt
+      });
+      
+      let trackingKey: string | null = null;
+      let trackingSource: string = '';
+      
+      // Strategy 1: Try originalTransactionId from subscription (preferred)
+      if (subscriptionAny?.originalTransactionId) {
+        trackingKey = `orig:${subscriptionAny.originalTransactionId}`;
+        trackingSource = 'subscription.originalTransactionId';
+      }
+      // Strategy 2: Try originalTransactionId from entitlement
+      else if (entitlementAny?.originalTransactionId) {
+        trackingKey = `orig:${entitlementAny.originalTransactionId}`;
+        trackingSource = 'entitlement.originalTransactionId';
+      }
+      // Strategy 3: Fall back to storeTransactionId (changes on renewal)
+      else if (subscription?.storeTransactionId) {
+        trackingKey = `store:${subscription.storeTransactionId}`;
+        trackingSource = 'subscription.storeTransactionId (fallback)';
+        console.log('⚠️ [VIDEO] Using storeTransactionId fallback - may reset on renewal');
+      }
+      // Strategy 4: Last resort - use anonymous ID with warning
+      else if (customerInfo.originalAppUserId) {
+        trackingKey = `fallback:${customerInfo.originalAppUserId}`;
+        trackingSource = 'originalAppUserId (emergency fallback)';
+        console.log('🚨 [VIDEO] Using emergency fallback ID - investigate transaction ID availability');
+      }
+      
+      if (trackingKey) {
+        console.log('✅ [VIDEO] Tracking ID resolved:', {
           tracking_key: trackingKey,
+          source: trackingSource,
           product_id: productId,
           period_type: proEntitlement.periodType,
           is_trial: proEntitlement.periodType === 'TRIAL',
-          attempt: attempt
+          is_sandbox: proEntitlement.isSandbox,
+          attempt: attempt,
+          stable_across_renewals: trackingSource.includes('original')
         });
         
         return trackingKey;
       }
       
-      // No transaction ID available - retry or fail
-      console.log(`⚠️ [TEST] No transaction ID on attempt ${attempt}/${retries}`);
+      // No ID available - retry or fail
+      console.log(`⚠️ [VIDEO] No transaction ID available on attempt ${attempt}/${retries}`);
+      console.log('🔍 [VIDEO] Debug info for missing transaction ID:', {
+        hasSubscription: !!subscription,
+        hasProEntitlement: !!proEntitlement?.isActive,
+        hasAppUserId: !!customerInfo.originalAppUserId,
+        subscriptionKeys: subscription ? Object.keys(subscription) : [],
+        entitlementKeys: proEntitlement ? Object.keys(proEntitlement) : []
+      });
+      
       if (attempt < retries) {
-        console.log(`⏳ [TEST] Retrying in ${retryDelay}ms for transaction ID...`);
+        console.log(`⏳ [VIDEO] Retrying in ${retryDelay}ms for transaction ID...`);
         await new Promise(resolve => setTimeout(resolve, retryDelay));
         continue;
       }
       
-      console.log('❌ [TEST] No transaction ID after all retries - blocking video feature');
+      console.log('❌ [VIDEO] No transaction ID after all retries - blocking video feature');
       return null;
       
     } catch (error) {
-      console.error(`❌ [TEST] Attempt ${attempt} failed:`, error);
+      console.error(`❌ [VIDEO] Attempt ${attempt} failed:`, error);
       if (attempt < retries) {
-        console.log(`⏳ [TEST] Retrying in ${retryDelay}ms...`);
+        console.log(`⏳ [VIDEO] Retrying in ${retryDelay}ms...`);
         await new Promise(resolve => setTimeout(resolve, retryDelay));
         continue;
       }
-      console.error('❌ [TEST] All video tracking attempts failed');
+      console.error('❌ [VIDEO] All video tracking attempts failed');
       return null;
     }
   }

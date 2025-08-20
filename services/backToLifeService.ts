@@ -174,7 +174,25 @@ export const backToLifeService = {
         });
       }
 
-      // Call atomic database function
+      // Extract original transaction ID from tracking key if available
+      let originalTransactionId: string | null = null;
+      if (databaseKey.startsWith('orig:')) {
+        originalTransactionId = databaseKey.substring(5); // Remove "orig:" prefix
+      }
+      
+      if (__DEV__) {
+        console.log('🔑 Database call parameters:', {
+          user_id: databaseKey,
+          plan_type: planDetails.planType,
+          usage_limit: planDetails.usageLimit,
+          store_transaction_id: planDetails.storeTransactionId,
+          original_transaction_id: originalTransactionId,
+          billing_cycle_start: planDetails.billingCycleStart,
+          next_reset_date: planDetails.nextResetDate
+        });
+      }
+
+      // Call atomic database function with original transaction ID support
       const { data, error } = await supabase.rpc('check_and_increment_usage', {
         p_user_id: databaseKey,  // Use the appropriate database key
         p_plan_type: planDetails.planType,
@@ -182,7 +200,8 @@ export const backToLifeService = {
         p_billing_cycle_start: planDetails.billingCycleStart,
         p_next_reset_date: planDetails.nextResetDate,
         p_original_purchase_date: planDetails.originalPurchaseDate,
-        p_store_transaction_id: planDetails.storeTransactionId
+        p_store_transaction_id: planDetails.storeTransactionId,
+        p_original_transaction_id: originalTransactionId
       });
 
       if (error) {
@@ -381,5 +400,87 @@ export const backToLifeService = {
     }
 
     return existingRecord;
+  }
+};
+
+/**
+ * Get current video usage status for UI display (without incrementing)
+ * Returns detailed information about usage, limits, and reset timing
+ */
+export const getVideoUsageStatus = async (): Promise<{
+  canUse: boolean;
+  currentCount: number;
+  limit: number;
+  nextResetDate: string | null;
+  daysUntilReset: number | null;
+  planType: string;
+  trackingId: string | null;
+  isPro: boolean;
+} | null> => {
+  try {
+    if (__DEV__) {
+      console.log('📊 [VIDEO] Getting usage status for UI display...');
+    }
+
+    // Get subscription details
+    const planDetails = await getSubscriptionPlanDetails();
+    if (!planDetails) {
+      if (__DEV__) {
+        console.log('❌ [VIDEO] No subscription plan details - user is not Pro');
+      }
+      return null; // Not a Pro user
+    }
+
+    // Get tracking ID
+    const trackingId = await getVideoTrackingId();
+    if (!trackingId) {
+      if (__DEV__) {
+        console.log('❌ [VIDEO] No tracking ID available');
+      }
+      return null;
+    }
+
+    if (__DEV__) {
+      console.log('🔍 [VIDEO] Getting usage status for:', {
+        trackingId,
+        planType: planDetails.planType,
+        limit: planDetails.usageLimit
+      });
+    }
+
+    // Call database function to get current status
+    const { data, error } = await supabase.rpc('get_video_usage_status', {
+      p_user_id: trackingId
+    });
+
+    if (error) {
+      if (__DEV__) {
+        console.error('❌ [VIDEO] Database error getting usage status:', error);
+      }
+      return null;
+    }
+
+    const status = Array.isArray(data) ? data[0] : data;
+    
+    if (__DEV__) {
+      console.log('✅ [VIDEO] Usage status retrieved:', status);
+    }
+
+    return {
+      canUse: status?.can_use_today || false,
+      currentCount: status?.current_count || 0,
+      limit: status?.usage_limit || planDetails.usageLimit,
+      nextResetDate: status?.next_reset_date || null,
+      daysUntilReset: status?.days_until_reset || null,
+      planType: status?.plan_type || planDetails.planType,
+      trackingId,
+      isPro: true
+    };
+
+  } catch (error) {
+    if (__DEV__) {
+      console.error('❌ [VIDEO] Failed to get usage status:', error);
+    }
+    return null;
   }
 };
