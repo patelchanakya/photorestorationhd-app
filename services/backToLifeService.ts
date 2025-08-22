@@ -331,7 +331,7 @@ export const backToLifeService = {
 
       const { data, error } = await supabase
         .from('user_video_usage')
-        .insert(newRecord)
+        .upsert(newRecord, { onConflict: 'user_id' })
         .select()
         .single();
 

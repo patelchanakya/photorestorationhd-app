@@ -91,11 +91,28 @@ serve(async (req) => {
         console.error('Invalid video output format:', payload.output)
         updateData.status = 'failed'
         updateData.error_message = 'Invalid video output format received'
+      } else if (!isValidReplicateUrl(videoUrl)) {
+        console.error('Invalid video URL domain:', videoUrl)
+        updateData.status = 'failed'
+        updateData.error_message = 'Video URL from untrusted domain'
       } else {
         updateData.video_url = videoUrl
         updateData.completed_at = payload.completed_at || new Date().toISOString()
         updateData.expires_at = new Date(Date.now() + 3600000).toISOString() // 1 hour
-        console.log('✅ Video generation completed successfully')
+        
+        // Download and cache video locally to prevent URL expiration issues
+        try {
+          const localVideoPath = await downloadAndCacheVideo(videoUrl, payload.id)
+          if (localVideoPath) {
+            updateData.local_video_path = localVideoPath
+            console.log('✅ Video cached locally:', localVideoPath)
+          }
+        } catch (downloadError) {
+          console.error('⚠️ Failed to cache video locally:', downloadError)
+          // Don't fail the webhook if local caching fails - video URL still works for 1 hour
+        }
+        
+        console.log('✅ Video generation completed successfully:', videoUrl.substring(0, 50) + '...')
       }
     }
 
@@ -189,6 +206,65 @@ function mapReplicateStatus(status: string): string {
       return 'failed'
     default:
       return 'processing'
+  }
+}
+
+function isValidReplicateUrl(url: string): boolean {
+  try {
+    const urlObj = new URL(url)
+    // Allow replicate.delivery and its subdomains, plus data URLs for fallback
+    return urlObj.hostname === 'replicate.delivery' || 
+           urlObj.hostname.endsWith('.replicate.delivery') ||
+           url.startsWith('data:')
+  } catch {
+    return false
+  }
+}
+
+async function downloadAndCacheVideo(videoUrl: string, predictionId: string): Promise<string | null> {
+  try {
+    console.log('⬇️ Downloading video for caching:', predictionId)
+    
+    // Download the video file
+    const response = await fetch(videoUrl)
+    if (!response.ok) {
+      throw new Error(`Failed to download video: ${response.status} ${response.statusText}`)
+    }
+    
+    const videoBuffer = await response.arrayBuffer()
+    const videoSize = videoBuffer.byteLength
+    
+    console.log(`📦 Downloaded video: ${(videoSize / 1024 / 1024).toFixed(2)}MB`)
+    
+    // Generate storage path
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+    const fileName = `${predictionId}-${timestamp}.mp4`
+    const storagePath = `cached-videos/${fileName}`
+    
+    // Initialize Supabase Storage client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    
+    // Upload to Supabase Storage
+    const { data, error } = await supabase.storage
+      .from('video-cache')
+      .upload(storagePath, videoBuffer, {
+        contentType: 'video/mp4',
+        cacheControl: '31536000', // 1 year cache
+        upsert: false
+      })
+    
+    if (error) {
+      throw new Error(`Storage upload failed: ${error.message}`)
+    }
+    
+    console.log('✅ Video uploaded to storage:', storagePath)
+    return storagePath
+    
+  } catch (error) {
+    console.error('❌ Video caching failed:', error)
+    return null
   }
 }
 

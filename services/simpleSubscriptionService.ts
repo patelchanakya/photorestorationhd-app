@@ -80,19 +80,33 @@ export class SimpleSubscriptionService {
         return SimpleSubscriptionService.refreshProStatus();
       }
       
-      // Check if Pro status has expired
-      if (cached.isPro && cached.expiresAt && new Date() > new Date(cached.expiresAt)) {
-        console.log('⏰ Pro subscription expired, updating status');
+      // Check if Pro status has expired or is expiring soon (within 5 minutes)
+      if (cached.isPro && cached.expiresAt) {
+        const now = new Date();
+        const expirationDate = new Date(cached.expiresAt);
+        const timeUntilExpiration = expirationDate.getTime() - now.getTime();
+        const fiveMinutesMs = 5 * 60 * 1000;
         
-        // Mark as expired and update cache
-        const expiredStatus: ProStatus = {
-          ...cached,
-          isPro: false,
-          planType: 'free'
-        };
-        
-        await SecureStore.setItemAsync(PRO_STATUS_KEY, JSON.stringify(expiredStatus));
-        return expiredStatus;
+        if (timeUntilExpiration <= 0) {
+          console.log('⏰ Cached Pro subscription appears expired, verifying with RevenueCat...');
+          
+          // CRITICAL FIX: Don't immediately mark as expired based on cache
+          // Always verify with RevenueCat first, as local cache may be stale
+          const freshStatus = await SimpleSubscriptionService.refreshProStatus();
+          
+          if (!freshStatus.isPro) {
+            console.log('✅ RevenueCat confirms subscription is expired');
+            return freshStatus;
+          } else {
+            console.log('🔄 RevenueCat shows active subscription - cache was stale');
+            return freshStatus;
+          }
+        } else if (timeUntilExpiration <= fiveMinutesMs) {
+          console.log(`⚠️ Pro subscription expiring in ${Math.round(timeUntilExpiration / 1000 / 60)} minutes, refreshing from RevenueCat...`);
+          
+          // Refresh from RevenueCat to get latest status
+          return SimpleSubscriptionService.refreshProStatus();
+        }
       }
       
       // Cache is valid
@@ -132,18 +146,52 @@ export class SimpleSubscriptionService {
    */
   static async getUserIdForTracking(): Promise<string | null> {
     try {
+      if (__DEV__) console.log('🔍 Getting user ID for tracking...');
+      
+      // Always get fresh status to ensure we have the latest data after purchases
+      if (__DEV__) console.log('🔄 Getting fresh Pro status to ensure accurate tracking ID');
+      
+      // Get current Pro status (this will now properly verify with RevenueCat if cache is stale)
       const status = await SimpleSubscriptionService.getProStatus();
+      if (__DEV__) console.log('📊 Pro status for tracking:', {
+        isPro: status.isPro,
+        hasTransactionId: !!status.transactionId,
+        transactionId: status.transactionId ? `${status.transactionId.substring(0, 10)}...` : null,
+        expiresAt: status.expiresAt
+      });
       
       if (status.isPro && status.transactionId) {
         // Pro users: use transaction ID for cross-device tracking
-        return `orig:${status.transactionId}`;
-      } else {
-        // Free users: use current RevenueCat anonymous ID
-        const customerInfo = await Purchases.getCustomerInfo();
-        return customerInfo.originalAppUserId;
+        const userId = `store:${status.transactionId}`;
+        if (__DEV__) console.log('✅ Pro user - using transaction ID format:', `store:${status.transactionId.substring(0, 10)}...`);
+        return userId;
+      } else if (status.isPro && !status.transactionId) {
+        if (__DEV__) console.log('⚠️ Pro user but no transaction ID - forcing refresh from RevenueCat...');
+        
+        // Force a fresh refresh to get transaction ID
+        const refreshedStatus = await SimpleSubscriptionService.refreshProStatus();
+        if (refreshedStatus.isPro && refreshedStatus.transactionId) {
+          const userId = `store:${refreshedStatus.transactionId}`;
+          if (__DEV__) console.log('✅ Force refresh successful - got transaction ID:', `store:${refreshedStatus.transactionId.substring(0, 10)}...`);
+          return userId;
+        } else {
+          if (__DEV__) console.error('❌ Pro user confirmed but still no transaction ID - using fallback');
+          // For Pro users without transaction ID, use a special fallback format
+          const customerInfo = await Purchases.getCustomerInfo();
+          const fallbackId = `fallback:${customerInfo.originalAppUserId}`;
+          if (__DEV__) console.log('🆘 Using Pro fallback ID format:', fallbackId);
+          return fallbackId;
+        }
       }
+      
+      // Free users: use current RevenueCat anonymous ID
+      const customerInfo = await Purchases.getCustomerInfo();
+      const anonymousId = customerInfo.originalAppUserId;
+      if (__DEV__) console.log('📱 Using RevenueCat anonymous ID for free user:', anonymousId);
+      return anonymousId;
+      
     } catch (error) {
-      console.error('❌ Failed to get tracking ID:', error);
+      if (__DEV__) console.error('❌ Failed to get tracking ID:', error);
       return null;
     }
   }

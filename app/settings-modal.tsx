@@ -4,6 +4,7 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import { photoRestorationKeys } from '@/hooks/usePhotoRestoration';
 import { getSupportedLanguages, useTranslation } from '@/i18n';
 import { getAppUserId, restorePurchasesSimple, checkSubscriptionStatus } from '@/services/revenuecat';
+import { useCropModalStore } from '@/store/cropModalStore';
 import { photoStorage } from '@/services/storage';
 import { localStorageHelpers } from '@/services/supabase';
 import { useRestorationStore } from '@/store/restorationStore';
@@ -19,11 +20,12 @@ import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import * as StoreReview from 'expo-store-review';
 import * as WebBrowser from 'expo-web-browser';
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   ActivityIndicator,
   Alert,
+  AppState,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -49,6 +51,9 @@ export default function SettingsModalScreen() {
   const [backToLifeUsage, setBackToLifeUsage] = useState<BackToLifeUsage | null>(null);
   const [photoUsage, setPhotoUsage] = useState<PhotoUsage | null>(null);
   
+  // Video processing state management
+  const { isVideoProcessing, reset: resetCropModal } = useCropModalStore();
+  
   // Local loading states
   const [isRestoring, setIsRestoring] = useState(false);
   const [isResettingIdentity, setIsResettingIdentity] = useState(false);
@@ -56,6 +61,9 @@ export default function SettingsModalScreen() {
   const [revenueCatUserId, setRevenueCatUserId] = useState<string | null>(null);
   const { t, currentLanguage } = useTranslation();
   const supportedLanguages = getSupportedLanguages();
+  
+  // Ref to track restore operation for cancellation
+  const restoreOperationRef = useRef<{ cancelled: boolean }>({ cancelled: false });
 
   // Use TanStack Query hook for photo usage
   const { data: photoUsageFromQuery, refetch: refetchPhotoUsage } = usePhotoUsage();
@@ -147,6 +155,67 @@ export default function SettingsModalScreen() {
 
     fetchRevenueCatUserId();
   }, []);
+
+  // AppState listener to cancel restore on backgrounding
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'background' && isRestoring) {
+        console.log('📱 App backgrounded during restore - marking operation as cancelled');
+        restoreOperationRef.current.cancelled = true;
+      }
+    });
+
+    return () => subscription?.remove();
+  }, [isRestoring]);
+
+  // Clear stuck video processing state
+  const handleClearStuckVideo = async () => {
+    try {
+      console.log('🔧 [DEBUG] Clearing stuck video processing state...');
+      
+      // Show confirmation alert
+      Alert.alert(
+        'Clear Stuck Video?',
+        'This will reset any stuck video processing. Use this if a video appears to be processing but nothing is happening.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Clear', 
+            style: 'destructive',
+            onPress: () => {
+              try {
+                // Clear the crop modal state
+                resetCropModal();
+                
+                // Clear any pending video and timestamp from AsyncStorage
+                import('@react-native-async-storage/async-storage').then(({ default: AsyncStorage }) => {
+                  AsyncStorage.removeItem('pendingVideo').catch(() => {});
+                  AsyncStorage.removeItem('lastVideoProcessingTime').catch(() => {});
+                });
+                
+                console.log('✅ [DEBUG] Video processing state cleared');
+                
+                Alert.alert(
+                  'Cleared!',
+                  'Video processing state has been reset. You can now try generating videos again.',
+                  [{ text: 'OK' }]
+                );
+              } catch (error) {
+                console.error('❌ [DEBUG] Failed to clear video state:', error);
+                Alert.alert(
+                  'Error',
+                  'Failed to clear video state. Try restarting the app.',
+                  [{ text: 'OK' }]
+                );
+              }
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('❌ [DEBUG] Error in handleClearStuckVideo:', error);
+    }
+  };
 
   // Format bytes to human readable
   const formatBytes = (bytes: number): string => {
@@ -245,12 +314,32 @@ export default function SettingsModalScreen() {
   // Subscription handlers
   const handleRestorePurchases = async () => {
     try {
+      // Prevent double-tapping
+      if (isRestoring) {
+        console.log('🔒 Restore already in progress, ignoring tap');
+        return;
+      }
+
       // Add haptic feedback
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       
       setIsRestoring(true);
       
+      // Reset cancellation flag
+      restoreOperationRef.current.cancelled = false;
+      
       const result = await restorePurchasesSimple();
+      
+      // Check if operation was cancelled due to backgrounding
+      if (restoreOperationRef.current.cancelled) {
+        console.log('🚫 Restore operation was cancelled due to app backgrounding');
+        Alert.alert(
+          'Operation Interrupted',
+          'The restore was interrupted. Please try again.',
+          [{ text: t('common.ok') }]
+        );
+        return;
+      }
       
       if (result.success) {
         if (result.hasActiveEntitlements) {
@@ -1116,6 +1205,47 @@ Best regards`;
                 </TouchableOpacity>
               </View>
             </View>
+
+{/* Troubleshooting Section - DEV ONLY */}
+            {__DEV__ && (
+              <View className="mb-8">
+                <Text className="text-amber-500 text-base font-semibold mb-4">
+                  Troubleshooting (Dev Only)
+                </Text>
+                
+                <View className="bg-white/5 rounded-xl overflow-hidden">
+                  
+                  {/* Clear Stuck Video */}
+                  <TouchableOpacity 
+                    onPress={handleClearStuckVideo}
+                    className="flex-row items-center p-4"
+                  >
+                    <View className={`w-9 h-9 rounded-full items-center justify-center mr-3 ${
+                      isVideoProcessing ? 'bg-red-500/20' : 'bg-blue-500/20'
+                    }`}>
+                      <Ionicons 
+                        name={isVideoProcessing ? "warning" : "refresh"} 
+                        size={18} 
+                        color={isVideoProcessing ? "#ef4444" : "#3b82f6"} 
+                      />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-white text-base font-medium">
+                        Clear Stuck Video
+                      </Text>
+                      <Text className="text-white/60 text-sm">
+                        {isVideoProcessing 
+                          ? "Video appears stuck - tap to reset" 
+                          : "Reset video processing state"
+                        }
+                      </Text>
+                    </View>
+                    <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
+                  </TouchableOpacity>
+
+                </View>
+              </View>
+            )}
 
             {/* About Section */}
             <View className="mb-0">

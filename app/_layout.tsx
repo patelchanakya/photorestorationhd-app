@@ -8,15 +8,20 @@ import '../global.css';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GlobalNotifications } from '@/components/GlobalNotifications';
 import InitialLoadingScreen from '@/components/InitialLoadingScreen';
+import { VideoToast } from '@/components/VideoToast';
+import { VideoCompletionModal } from '@/components/VideoCompletionModal';
+import { useAutoVideoRecovery, useVideoRecovery } from '@/hooks/useVideoRecovery';
+import { useAutoRollbackRecovery } from '@/hooks/useRollbackRecovery';
 import { JobProvider } from '@/contexts/JobContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { LanguageProvider } from '@/i18n';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { useVideoGenerationStore } from '@/store/videoGenerationStore';
 import NetInfo from '@react-native-community/netinfo';
 import { QueryClient, QueryClientProvider, focusManager, onlineManager } from '@tanstack/react-query';
 import { Image as ExpoImage } from 'expo-image';
 import React, { useEffect } from 'react';
-import { AppState, AppStateStatus, LogBox, View } from 'react-native';
+import { AppState, AppStateStatus, InteractionManager, LogBox, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Purchases, { CustomerInfo } from 'react-native-purchases';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -90,21 +95,6 @@ const onAppStateChange = (status: AppStateStatus) => {
     console.log('🔄 App state changed:', status);
   }
   focusManager.setFocused(status === 'active');
-  
-  // Trigger video recovery when app becomes active
-  if (status === 'active') {
-    // Use a slight delay to let other initialization complete
-    setTimeout(async () => {
-      try {
-        const { useVideoToastStore } = await import('@/store/videoToastStore');
-        const { checkForPendingVideo } = useVideoToastStore.getState();
-        console.log('🎬 Triggering video recovery on app foreground');
-        await checkForPendingVideo();
-      } catch (error) {
-        console.error('❌ Video recovery failed on app foreground:', error);
-      }
-    }, 500);
-  }
 };
 
 export default function RootLayout() {
@@ -119,6 +109,7 @@ export default function RootLayout() {
   });
   
   const [showInitialLoading, setShowInitialLoading] = React.useState(true);
+  const { showCompletionModal, completionModalData, hideCompletionModal } = useVideoGenerationStore();
 
   // Set up network and app state management
   useOnlineManager();
@@ -166,6 +157,15 @@ export default function RootLayout() {
                   <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
                     <MainNavigator />
                     <GlobalNotifications />
+                    <VideoToast />
+                    <VideoCompletionModal
+                      visible={showCompletionModal}
+                      imageUri={completionModalData?.imageUri}
+                      videoPath={completionModalData?.videoUrl}
+                      predictionId={completionModalData?.predictionId}
+                      onMaybeLater={hideCompletionModal}
+                      onClose={hideCompletionModal}
+                    />
                     <StatusBar style="auto" />
                   </ThemeProvider>
                 </JobProvider>
@@ -180,6 +180,29 @@ export default function RootLayout() {
 
 function MainNavigator() {
   const { setIsPro, setExpirationDate } = useSubscriptionStore();
+  const { checkAndRecover } = useVideoRecovery();
+  
+  // Auto-recovery on mount
+  useAutoVideoRecovery();
+  
+  // Auto-rollback recovery for failed usage charges
+  useAutoRollbackRecovery();
+
+  // Enhanced app state management with InteractionManager for video recovery
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        console.log('📱 App foregrounded - scheduling video recovery check');
+        InteractionManager.runAfterInteractions(() => {
+          checkAndRecover();
+        });
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    
+    return () => subscription?.remove();
+  }, [checkAndRecover]);
 
   // Set up RevenueCat customer info listener for real-time subscription updates
   useEffect(() => {
@@ -279,7 +302,6 @@ function MainNavigator() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="restoration/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="video-result/[id]" options={{ headerShown: false }} />
-      <Stack.Screen name="gallery-modal" options={{ presentation: 'modal', headerShown: false }} />
       <Stack.Screen
         name="settings-modal"
         options={{
@@ -288,7 +310,6 @@ function MainNavigator() {
           contentStyle: { backgroundColor: 'black' },
         }}
       />
-      <Stack.Screen name="gallery-image/[id]" options={{ presentation: 'modal', headerShown: false }} />
       <Stack.Screen name="text-edits" options={{ headerShown: false }} />
       <Stack.Screen name="+not-found" />
     </Stack>

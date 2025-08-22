@@ -8,6 +8,10 @@ import { restorationService } from '@/services/supabase';
 import { useRestorationStore } from '@/store/restorationStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { InteractionManager } from 'react-native';
+
+// Request deduplication map to prevent duplicate API calls
+const activeRequests = new Map<string, Promise<RestorationResult>>();
 
 export interface RestorationResult {
   id: string;
@@ -40,13 +44,26 @@ export function usePhotoRestoration() {
 
   return useMutation({
     mutationFn: async ({ imageUri, functionType, imageSource, customPrompt }: { imageUri: string; functionType: FunctionType; imageSource?: 'camera' | 'gallery'; customPrompt?: string }) => {
-      const startTime = Date.now();
-      let supabaseRestorationId: string | null = null;
-      let progressInterval: ReturnType<typeof setInterval> | null = null;
+      // Create deduplication key based on image URI and function type
+      const requestKey = `${imageUri}_${functionType}_${customPrompt || ''}`;
       
-      if (__DEV__) {
-        console.log(`🚀 [TIMING] Starting ${functionType} restoration at:`, new Date().toISOString());
+      // Check if this request is already in progress
+      if (activeRequests.has(requestKey)) {
+        if (__DEV__) {
+          console.log('🔄 Request deduplication: Returning existing promise for', requestKey);
+        }
+        return activeRequests.get(requestKey)!;
       }
+      
+      // Create promise for the actual processing
+      const processingPromise = (async (): Promise<RestorationResult> => {
+        const startTime = Date.now();
+        let supabaseRestorationId: string | null = null;
+        let progressInterval: ReturnType<typeof setInterval> | null = null;
+        
+        if (__DEV__) {
+          console.log(`🚀 [TIMING] Starting ${functionType} restoration at:`, new Date().toISOString());
+        }
 
       // Track restoration started
       analyticsService.trackRestorationStarted(imageSource || 'gallery');
@@ -169,7 +186,7 @@ export function usePhotoRestoration() {
 
         // Phase 2: Start background processing for local files (non-blocking)
         // This happens after the immediate return, so UI shows result instantly
-        setImmediate(async () => {
+        InteractionManager.runAfterInteractions(async () => {
           try {
             if (__DEV__) {
               console.log('🔄 [BACKGROUND] Starting local file processing...');
@@ -315,6 +332,21 @@ export function usePhotoRestoration() {
         }
         
         throw error;
+      }
+      })(); // End of processingPromise
+      
+      // Store the promise in the deduplication map
+      activeRequests.set(requestKey, processingPromise);
+      
+      try {
+        const result = await processingPromise;
+        return result;
+      } finally {
+        // Clean up the request from the deduplication map
+        activeRequests.delete(requestKey);
+        if (__DEV__) {
+          console.log('🧹 Cleaned up request from deduplication map:', requestKey);
+        }
       }
     },
     onSuccess: (data, variables) => {

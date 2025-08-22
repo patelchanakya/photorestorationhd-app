@@ -8,8 +8,9 @@ interface CropModalState {
   progress: number;
   canCancel: boolean;
   completedRestorationId: string | null;
-  processingStatus: 'loading' | 'completed' | 'error' | null;
+  processingStatus: 'loading' | 'completed' | 'error' | 'ready' | null;
   errorMessage: string | null;
+  pendingVideoGeneration: any | null;
 }
 
 interface CropModalActions {
@@ -20,9 +21,10 @@ interface CropModalActions {
   setProgress: (progress: number) => void;
   setCanCancel: (canCancel: boolean) => void;
   setCompletedRestorationId: (id: string | null) => void;
-  setProcessingStatus: (status: 'loading' | 'completed' | 'error' | null) => void;
+  setProcessingStatus: (status: 'loading' | 'completed' | 'error' | 'ready' | null) => void;
   setErrorMessage: (message: string | null) => void;
   setVideoError: (message: string) => void;
+  setPendingVideoGeneration: (context: any) => void;
   reset: () => void;
 }
 
@@ -36,6 +38,7 @@ const initialState: CropModalState = {
   completedRestorationId: null,
   processingStatus: null,
   errorMessage: null,
+  pendingVideoGeneration: null,
 };
 
 export const useCropModalStore = create<CropModalState & CropModalActions>((set) => ({
@@ -51,6 +54,7 @@ export const useCropModalStore = create<CropModalState & CropModalActions>((set)
   setProcessingStatus: (status) => set({ processingStatus: status }),
   setErrorMessage: (message) => set({ errorMessage: message }),
   setVideoError: (message) => set({ errorMessage: message, processingStatus: 'error' }),
+  setPendingVideoGeneration: (context) => set({ pendingVideoGeneration: context }),
   
   reset: () => set(initialState),
 }));

@@ -7,6 +7,7 @@
 
 import * as FileSystem from 'expo-file-system';
 import { supabase } from './supabaseClient';
+import { getPromptDisplayName } from '../constants/videoPrompts';
 import Purchases from 'react-native-purchases';
 import { VideoGenerationOptions } from '@/types/video';
 
@@ -103,17 +104,7 @@ async function convertImageToDataUrl(imageUri: string): Promise<string> {
 
 // Helper function to extract mode tag from prompt
 function extractModeTag(animationPrompt: string): string {
-  const promptModeMap: { [key: string]: string } = {
-    'animate with a warm hug gesture': 'Hug',
-    'animate as a group celebration': 'Group',
-    'animate with love and affection': 'Love',
-    'animate with dancing movements': 'Dance',
-    'animate with fun and playful movements': 'Fun',
-    'animate with a warm smile': 'Smile',
-    'bring this photo to life with natural animation': 'Life'
-  };
-  
-  return promptModeMap[animationPrompt] || 'Life';
+  return getPromptDisplayName(animationPrompt);
 }
 
 /**

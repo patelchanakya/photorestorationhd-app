@@ -1,20 +1,29 @@
 import { DeviceTwoRowCarousel } from '@/components/DeviceTwoRowCarousel';
-import { QuickEditSheet } from '@/components/QuickEditSheet';
-import { useQuickEditStore } from '@/store/quickEditStore';
 import { FeatureCardsList } from '@/components/FeatureCardsList';
 import { QuickActionRail } from '@/components/QuickActionRail';
+import { QuickEditSheet } from '@/components/QuickEditSheet';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { presentPaywall, validatePremiumAccess } from '@/services/revenuecat';
+import { useQuickEditStore } from '@/store/quickEditStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function HomeGalleryLikeScreen() {
   const settingsNavLock = React.useRef(false);
+  const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  const shortestSide = Math.min(width, height);
+  const longestSide = Math.max(width, height);
+  const isTabletLike = shortestSide >= 768;
+  const isSmallPhone = longestSide <= 700;
+  const railApproxHeight = isSmallPhone ? 58 : 86;
+  const basePadding = isTabletLike ? 220 : (isSmallPhone ? 64 : 160);
+  const bottomPadding = Math.max(basePadding, (insets?.bottom || 0) + railApproxHeight);
   const openQuick = (functionType: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'background' | 'outfit' | 'custom', styleKey?: string | null) => {
     try {
       useQuickEditStore.getState().open({ functionType, styleKey: styleKey ?? null });
@@ -23,28 +32,27 @@ export default function HomeGalleryLikeScreen() {
   const isPro = useSubscriptionStore((state) => state.isPro);
   const router = useRouter();
   
-  // Lazy load heavy components after initial render
+  // Components should already be preloaded by splash screen, load immediately
   const [componentsLoaded, setComponentsLoaded] = useState(false);
   const [AnimatedBackgrounds, setAnimatedBackgrounds] = useState<any>(null);
   const [AnimatedOutfits, setAnimatedOutfits] = useState<any>(null);
   const [HeroBackToLifeExamples, setHeroBackToLifeExamples] = useState<any>(null);
   
   useEffect(() => {
-    // Load heavy components after a short delay to improve initial render
-    const loadTimer = setTimeout(() => {
-      Promise.all([
-        import('@/components/AnimatedBackgrounds'),
-        import('@/components/AnimatedOutfits'),
-        import('@/components/HeroBackToLifeExamples')
-      ]).then(([bgModule, outfitsModule, btlModule]) => {
-        setAnimatedBackgrounds(() => bgModule.AnimatedBackgrounds);
-        setAnimatedOutfits(() => outfitsModule.AnimatedOutfits);
-        setHeroBackToLifeExamples(() => btlModule.HeroBackToLifeExamples);
-        setComponentsLoaded(true);
-      });
-    }, 100); // Small delay to let initial UI render first
-    
-    return () => clearTimeout(loadTimer);
+    // Components should be cached from splash screen preload, load immediately
+    Promise.all([
+      import('@/components/AnimatedBackgrounds'),
+      import('@/components/AnimatedOutfits'),
+      import('@/components/HeroBackToLifeExamples')
+    ]).then(([bgModule, outfitsModule, btlModule]) => {
+      setAnimatedBackgrounds(() => bgModule.AnimatedBackgrounds);
+      setAnimatedOutfits(() => outfitsModule.AnimatedOutfits);
+      setHeroBackToLifeExamples(() => btlModule.HeroBackToLifeExamples);
+      setComponentsLoaded(true);
+    }).catch(() => {
+      // Fallback: if preloading failed, components still load but might have brief delay
+      setComponentsLoaded(true);
+    });
   }, []);
 
   // Subtle drop-back effect for screen when launching picker (Remini-like feedback)
@@ -134,7 +142,7 @@ export default function HomeGalleryLikeScreen() {
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomPadding }}>
         
         
         {/* Back to Life section title */}

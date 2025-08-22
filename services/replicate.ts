@@ -165,7 +165,7 @@ export async function restorePhoto(imageUri: string, functionType: FunctionType 
   // Get model configuration to check if this is a video generation request
   const modelConfig = getModelConfig(functionType);
   
-  // Note: Back to Life video generation is handled separately via useBackToLife hook
+  // Note: Back to Life video generation is handled separately via useSimpleBackToLife hook
   // and does not go through the regular image processing pipeline
   
   // Process the image

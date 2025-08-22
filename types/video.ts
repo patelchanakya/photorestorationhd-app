@@ -5,7 +5,7 @@
 
 export interface VideoGenerationOptions {
   mode?: 'standard' | 'pro';
-  duration?: 5 | 10;
+  duration?: number; // Allow any number, will be validated by backend
   negativePrompt?: string;
   subscriptionTier?: 'free' | 'pro';
 }

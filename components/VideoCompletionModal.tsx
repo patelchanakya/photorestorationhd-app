@@ -1,19 +1,16 @@
-import { useVideoToastStore } from '@/store/videoToastStore';
 import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React from 'react';
-import { Dimensions, Image, Modal, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Modal, Text, TouchableOpacity, View, InteractionManager } from 'react-native';
 import Animated, {
-    runOnJS,
     useAnimatedStyle,
     useSharedValue,
     withSpring,
-    withTiming
+    withTiming,
+    cancelAnimation
 } from 'react-native-reanimated';
 import { IconSymbol } from './ui/IconSymbol';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import { useVideoGenerationStore } from '../store/videoGenerationStore';
 
 interface VideoCompletionModalProps {
   visible: boolean;
@@ -46,6 +43,13 @@ export function VideoCompletionModal({
       scale.value = withTiming(0.96, { duration: 180 });
       translateY.value = withTiming(16, { duration: 180 });
     }
+
+    // Cleanup function cancels animations on unmount
+    return () => {
+      cancelAnimation(opacity);
+      cancelAnimation(scale);
+      cancelAnimation(translateY);
+    };
   }, [visible]);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -57,17 +61,32 @@ export function VideoCompletionModal({
   }));
 
   const handleViewVideo = () => {
-    // Mark video as viewed and navigate to video page
-    runOnJS(() => {
-      useVideoToastStore.getState().viewVideo();
-      if (predictionId) {
-        router.push(`/video-result/${predictionId}`);
-      }
-    })();
+    'worklet';
+    try {
+      // Mark video as viewed and schedule navigation after interactions
+      useVideoGenerationStore.getState().markVideoAsViewed();
+      
+      // Use InteractionManager to ensure animations complete before navigation
+      InteractionManager.runAfterInteractions(() => {
+        if (predictionId) {
+          router.push(`/video-result/${predictionId}`);
+        } else {
+          console.error('No prediction ID available for navigation');
+          onMaybeLater();
+        }
+      });
+    } catch (error) {
+      console.error('Failed to handle video view:', error);
+      // Show user-friendly error and close modal
+      onMaybeLater();
+    }
   };
 
   const handleMaybeLater = () => {
-    runOnJS(onMaybeLater)();
+    'worklet';
+    // Call onClose if provided before calling onMaybeLater
+    onClose?.();
+    onMaybeLater();
   };
 
   return (
@@ -110,7 +129,14 @@ export function VideoCompletionModal({
                 <View className="relative w-full aspect-[16/10] rounded-2xl overflow-hidden border border-white/30"
                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}>
                   {imageUri ? (
-                    <Image source={{ uri: imageUri }} className="w-full h-full" resizeMode="cover" />
+                    <Image 
+                      source={{ uri: imageUri }} 
+                      className="w-full h-full" 
+                      resizeMode="cover"
+                      onError={(error) => {
+                        console.error('Failed to load image:', error.nativeEvent.error);
+                      }}
+                    />
                   ) : (
                     <View className="w-full h-full" 
                           style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }} />
@@ -133,7 +159,8 @@ export function VideoCompletionModal({
                       shadowOffset: { width: 0, height: 6 },
                       top: '50%',
                       left: '50%',
-                      transform: [{ translateX: -40 }, { translateY: -40 }]
+                      marginTop: -40, // Half of height (80/2)
+                      marginLeft: -40, // Half of width (80/2)
                     }}
                   >
                     <View style={{ marginLeft: 2 }}>

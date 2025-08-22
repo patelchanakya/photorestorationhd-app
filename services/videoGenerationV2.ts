@@ -1,6 +1,10 @@
+import { canAccessFeature } from '@/services/simpleSubscriptionService';
+import { getVideoTrackingId } from '@/services/trackingIds';
+import { getOrCreateStableUserId } from '@/services/stableUserId';
+import { VideoGenerationOptions } from '@/types/video';
+import { ANIMATION_PROMPTS, DEFAULT_ANIMATION_PROMPT, getPromptDisplayName } from '@/constants/videoPrompts';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
-import { VideoGenerationOptions } from '@/types/video';
 
 // Webhook-based video generation service for secure server-side generation
 // This replaces the client-side polling approach with secure server-side generation
@@ -27,7 +31,7 @@ async function imageToBase64(uri: string): Promise<string> {
 async function processImageIfNeeded(uri: string): Promise<string> {
   try {
     const info = await FileSystem.getInfoAsync(uri);
-    const fileSize = info.size || 0;
+    const fileSize = 'size' in info ? (info as any).size || 0 : 0;
     const maxFileSize = 10 * 1024 * 1024; // 10MB for videos (smaller than photos)
     
     // Get image dimensions
@@ -128,17 +132,7 @@ export interface VideoStatusResponse {
 
 // Helper function to extract mode tag from animation prompt
 function extractModeTag(animationPrompt: string): string {
-  const promptModeMap: { [key: string]: string } = {
-    'animate with a warm hug gesture': 'Hug',
-    'animate as a group celebration': 'Group',
-    'animate with love and affection': 'Love',
-    'animate with dancing movements': 'Dance',
-    'animate with fun and playful movements': 'Fun',
-    'animate with a warm smile': 'Smile',
-    'bring this photo to life with natural animation': 'Life'
-  };
-  
-  return promptModeMap[animationPrompt] || 'Life';
+  return getPromptDisplayName(animationPrompt);
 }
 
 // Generic video generation function
@@ -160,19 +154,110 @@ async function callVideoGenerationEndpoint(
   // Extract mode tag for UI display
   const modeTag = extractModeTag(animationPrompt);
 
-  // Get user ID for server-side limits validation
+  // Get user ID for server-side limits validation with retry logic
+  // Pro: orig:<transactionId>; Free: RC anonymous; Fallback: stable device UUID
   let actualUserId = userId;
   if (!actualUserId) {
-    try {
-      // Try to get user ID from RevenueCat
-      const Purchases = await import('react-native-purchases');
-      actualUserId = await Purchases.default.getAppUserID();
-    } catch (error) {
-      if (__DEV__) {
-        console.warn('Could not get user ID from RevenueCat:', error);
+    // Try with retry for Pro users who might have just subscribed
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        actualUserId = (await getVideoTrackingId()) || undefined;
+        if (actualUserId) {
+          if (__DEV__ && attempt > 1) {
+            console.log(`✅ Got user ID on attempt ${attempt}:`, actualUserId ? `${actualUserId.substring(0, 15)}...` : null);
+          }
+          break;
+        }
+      } catch (e) {
+        if (__DEV__) console.warn(`Attempt ${attempt} failed to get tracking ID:`, (e as any)?.message);
       }
-      actualUserId = 'fallback-anonymous';
+      
+      // Wait between attempts, but only if we haven't got a result
+      if (!actualUserId && attempt < 3) {
+        if (__DEV__) console.log(`⏳ Waiting 1s before retry attempt ${attempt + 1}...`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
     }
+    
+    // Fallback chain if still no ID
+    if (!actualUserId) {
+      try {
+        const Purchases = await import('react-native-purchases');
+        const customerInfo = await Purchases.default.getCustomerInfo();
+        actualUserId = customerInfo.originalAppUserId || null as any;
+      } catch (e) {
+        if (__DEV__) console.warn('Failed to get RC anonymous ID, will use stable ID:', (e as any)?.message);
+      }
+    }
+    if (!actualUserId) {
+      actualUserId = await getOrCreateStableUserId();
+      if (__DEV__) console.log('Using stable device user ID for video generation:', actualUserId);
+    }
+  }
+
+  // Optional preflight: prevent server call if not allowed
+  // Add retry mechanism to handle subscription sync timing issues
+  try {
+    let allowed = await canAccessFeature('video_generation');
+    
+    if (!allowed) {
+      if (__DEV__) console.log('⛔ Preflight failed - trying once more with fresh subscription status...');
+      
+      // Force a fresh refresh and try again (fixes subscription sync timing issues)
+      try {
+        const { refreshProStatus } = await import('@/services/simpleSubscriptionService');
+        const freshStatus = await refreshProStatus();
+        if (__DEV__) console.log('🔄 Fresh subscription status:', { isPro: freshStatus.isPro, hasTransactionId: !!freshStatus.transactionId });
+        
+        // Try the access check again with fresh data
+        allowed = await canAccessFeature('video_generation');
+        if (__DEV__) console.log('🔄 Retry preflight result:', allowed);
+      } catch (refreshError) {
+        if (__DEV__) console.warn('Failed to refresh subscription for retry:', refreshError);
+      }
+    }
+    
+    if (!allowed) {
+      if (__DEV__) console.log('⛔ Preflight: video_generation not allowed after retry');
+      throw new Error('PRO_REQUIRED');
+    } else {
+      if (__DEV__) console.log('✅ Preflight: video_generation allowed');
+    }
+  } catch {}
+
+  // Validate user ID format for Pro users
+  if (actualUserId) {
+    const isStoreFormat = actualUserId.startsWith('store:');
+    const isOrigFormat = actualUserId.startsWith('orig:');
+    
+    if (__DEV__) {
+      console.log('[VideoStart] User ID format validation:', {
+        hasUserId: true,
+        isStoreFormat,
+        isOrigFormat,
+        length: actualUserId.length,
+        preview: `${actualUserId.substring(0, 15)}...`,
+        expectedFormat: 'store:' + 'XXXXXXXXXXXXXXXX (16 digits)'
+      });
+      
+      if (!isStoreFormat && !isOrigFormat) {
+        console.warn('⚠️ User ID has unexpected format (not store: or orig:):', actualUserId);
+      } else if (actualUserId.length < 10) {
+        console.warn('⚠️ Transaction ID seems too short, may be invalid:', actualUserId);
+      } else if (isStoreFormat) {
+        console.log('✅ Using store: format (matches server database)');
+      } else if (isOrigFormat) {
+        console.log('⚠️ Using orig: format (may not match server database)');
+      }
+    }
+  }
+  
+  if (__DEV__) {
+    console.log('[VideoStart] Outgoing user_id:', actualUserId);
+  }
+
+  if (__DEV__) {
+    console.log('[VideoStart] Making request to webhook endpoint...');
   }
 
   const response = await fetch(`${SUPABASE_URL}/functions/v1/video-start`, {
@@ -190,12 +275,32 @@ async function callVideoGenerationEndpoint(
     })
   });
 
+  if (__DEV__) {
+    console.log('[VideoStart] Response received:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+      url: response.url
+    });
+  }
+
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Video generation failed: ${error}`);
+    const errorText = await response.text();
+    if (__DEV__) {
+      console.error('[VideoStart] Error response:', errorText);
+    }
+    throw new Error(`Video generation failed: ${errorText}`);
   }
 
   const data = await response.json();
+  
+  if (__DEV__) {
+    console.log('[VideoStart] Success response data:', {
+      predictionId: data.predictionId,
+      status: data.status,
+      hasError: !!data.error
+    });
+  }
   
   if (!data.predictionId) {
     throw new Error(data.error || 'Video generation failed');
@@ -213,7 +318,7 @@ async function callVideoGenerationEndpoint(
 // Video generation function
 export async function generateVideo(
   imageUri: string,
-  animationPrompt: string = 'bring this photo to life with natural animation',
+  animationPrompt: string = DEFAULT_ANIMATION_PROMPT,
   options: VideoGenerationOptions = {},
   userId?: string
 ): Promise<VideoGenerationResponse> {
@@ -250,6 +355,17 @@ export async function pollVideoStatus(predictionId: string): Promise<VideoStatus
   const isSuccessful = data.status === 'completed' && !!data.videoUrl;
   const hasOutput = !!data.videoUrl;
 
+  // Log video URL source for debugging
+  if (data.videoUrl && __DEV__) {
+    const isReplicateUrl = data.videoUrl.includes('replicate.delivery');
+    const isCachedUrl = data.videoUrl.includes('supabase') || data.localVideoPath;
+    console.log('📹 Video URL type:', { 
+      isReplicateUrl, 
+      isCachedUrl, 
+      hasLocalPath: !!data.localVideoPath 
+    });
+  }
+
   return {
     success: true,
     prediction_id: data.predictionId,
@@ -271,15 +387,16 @@ export async function pollVideoStatus(predictionId: string): Promise<VideoStatus
 // Polling wrapper with timeout and progress tracking (optimized for videos)
 export async function generateVideoWithPolling(
   imageUri: string,
-  animationPrompt: string = 'bring this photo to life with natural animation',
+  animationPrompt: string = DEFAULT_ANIMATION_PROMPT,
   options: {
     duration?: number;
     onProgress?: (progress: VideoStatusResponse) => void;
+    onStart?: (predictionId: string) => void;
     timeoutMs?: number;
     userId?: string;
   } = {}
 ): Promise<string> {
-  const { onProgress, timeoutMs = 180000, userId } = options; // 3 minute default timeout for videos
+  const { onProgress, onStart, timeoutMs = 180000, userId } = options; // 3 minute default timeout for videos
   
   if (__DEV__) {
     console.log('🚀 Starting video generation with webhook-based polling');
@@ -288,6 +405,7 @@ export async function generateVideoWithPolling(
   // Start video generation with user ID for server-side limits
   const startResponse = await generateVideo(imageUri, animationPrompt, options, userId);
   const predictionId = startResponse.prediction_id;
+  try { onStart?.(predictionId); } catch {}
   
   if (__DEV__) {
     console.log(`✅ Video generation started, prediction ID: ${predictionId}`);

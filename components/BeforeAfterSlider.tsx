@@ -30,14 +30,17 @@ const BeforeAfterSliderComponent = ({ beforeUri, afterUri, style, simpleSlider =
 
   const gestureHandler = useAnimatedGestureHandler({
     onStart: (_, context) => {
+      'worklet';
       context.startX = sliderPosition.value;
       runOnJS(setDragging)(true);
     },
     onActive: (event, context) => {
+      'worklet';
       const newPosition = Math.max(0, Math.min(1, event.x / containerWidth));
       sliderPosition.value = newPosition;
     },
     onEnd: () => {
+      'worklet';
       runOnJS(setDragging)(false);
     },
   });

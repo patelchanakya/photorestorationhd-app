@@ -7,15 +7,14 @@ import { checkSubscriptionStatus } from '@/services/revenuecat';
 import { refreshProStatus } from '@/services/simpleSubscriptionService';
 // Removed: No longer using stable IDs - RevenueCat handles anonymous IDs automatically
 import { useSubscriptionStore } from '@/store/subscriptionStore';
-import { useVideoToastStore } from '@/store/videoToastStore';
+// import { useVideoToastStore } from '@/store/videoToastStore';
 import { onboardingUtils } from '@/utils/onboarding';
 import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
-import { VideoView, useVideoPlayer } from 'expo-video';
 import { useRouter } from 'expo-router';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import React, { useEffect, useRef, useState } from 'react';
 import { Dimensions, Platform, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import Animated, {
     useAnimatedStyle,
@@ -26,10 +25,23 @@ import Animated, {
     withSpring,
     withTiming
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Global initialization guards to prevent multiple initializations
 let hasInitializedGlobally = false;
 let initializationPromise: Promise<void> | null = null;
+
+// Sync lock management
+let syncLockAcquired = false;
+const acquireSyncLock = async (): Promise<boolean> => {
+  if (syncLockAcquired) return false;
+  syncLockAcquired = true;
+  return true;
+};
+
+const releaseSyncLock = () => {
+  syncLockAcquired = false;
+};
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -218,8 +230,8 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
     // Listen to video finish
     const interval = setInterval(() => {
       try {
-        const status = splashPlayer.getStatus();
-        if (status?.isLoaded && (status?.didJustFinish || (status?.durationMillis && status?.positionMillis >= status.durationMillis))) {
+        const status = splashPlayer.status as any;
+        if (status?.isLoaded && status?.currentTime >= (status?.duration || 7.53)) {
           setVideoDone(true);
         }
       } catch {}
@@ -346,7 +358,25 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
           // Step 6: Check for completed videos
           await retry(checkAndRecoverVideos, 2, 800);
 
-          // Step 7: Final checks
+          // Step 7: Heavy component preloading (optional performance boost)
+          try {
+            // Preload heavy components that are likely to be needed next
+            await Promise.all([
+              import('@/app/onboarding-v2'),
+              import('@/app/explore'),
+              import('@/components/BeforeAfterSlider'),
+              // import('@/components/ProcessingScreen'), // Skip if not available
+            ]);
+            if (__DEV__) {
+              console.log('✅ Heavy components preloaded');
+            }
+          } catch (error) {
+            if (__DEV__) {
+              console.log('⚠️ Component preloading failed (non-fatal):', error);
+            }
+          }
+
+          // Step 8: Final checks
           await new Promise((r) => setTimeout(r, 500));
           // Extra subscription sanity check
           try { await retry(checkSubscriptionStatus, 2, 700); } catch {}
@@ -363,8 +393,6 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
         try {
           await runInitialization();
           setIsComplete(true);
-          // Post-animation hold for polish
-          await new Promise((r) => setTimeout(r, 1500));
         } finally {
           resolve();
         }
@@ -460,42 +488,72 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
           // Let RevenueCat handle anonymous IDs automatically
           // No login needed - RevenueCat creates $RCAnonymousID:xxx automatically
           
-          // CRITICAL: Aggressively sync purchases for fresh installs (like Remini)
-          // This automatically restores Pro status without user interaction
+          // Safe sync: Only sync for fresh anonymous users (reinstalls), not Apple ID switches
           try {
-            console.log('🔄 [AGGRESSIVE] Starting automatic purchase sync for fresh install...');
+            console.log('🔄 [SAFE] Checking if sync is safe...');
             
-            // Step 1: Clear any stale cache to ensure fresh data
-            await Purchases.invalidateCustomerInfoCache();
+            // Always fetch fresh data from Apple servers (no cache)
+            const customerInfo = await Purchases.getCustomerInfo();
             
-            // Step 2: Sync purchases with retry logic (key for fresh installs)
-            let syncSuccess = false;
-            for (let attempt = 1; attempt <= 3; attempt++) {
+            // Check if this is a fresh anonymous user with no purchase history
+            const isAnonymous = customerInfo.originalAppUserId?.startsWith('$RCAnonymousID:');
+            const hasNoPurchaseHistory = customerInfo.allPurchasedProductIdentifiers?.length === 0;
+            const hasNoActiveEntitlements = Object.keys(customerInfo.entitlements?.active || {}).length === 0;
+            
+            // Safe to sync conditions:
+            // 1. Anonymous user (not logged in)
+            // 2. No purchase history (fresh install, not Apple ID switch)  
+            // 3. No active entitlements (no cached Pro status)
+            const isSafeToSync = isAnonymous && hasNoPurchaseHistory && hasNoActiveEntitlements;
+            
+            console.log('🔍 [SAFE] Sync safety check:', {
+              isAnonymous,
+              hasNoPurchaseHistory,
+              hasNoActiveEntitlements,
+              isSafeToSync,
+              originalAppUserId: customerInfo.originalAppUserId,
+              purchasedProducts: customerInfo.allPurchasedProductIdentifiers?.length || 0
+            });
+            
+            if (isSafeToSync) {
+              // Acquire sync lock to prevent concurrent operations
+              const lockAcquired = await acquireSyncLock();
+              if (!lockAcquired) {
+                console.log('⚠️ [SAFE] Could not acquire sync lock, skipping');
+                return;
+              }
+
               try {
-                console.log(`🔄 [AGGRESSIVE] Sync attempt ${attempt}/3...`);
+                console.log('✅ [SAFE] Fresh anonymous user detected - safe to sync for reinstall restore');
                 await Purchases.syncPurchases();
-                syncSuccess = true;
-                console.log(`✅ [AGGRESSIVE] Sync successful on attempt ${attempt}`);
-                break;
-              } catch (syncError) {
-                console.log(`⚠️ [AGGRESSIVE] Sync attempt ${attempt} failed:`, (syncError as any)?.message);
-                if (attempt < 3) {
-                  await new Promise(resolve => setTimeout(resolve, 1000));
-                }
+                
+                // Fetch updated customer info after sync
+                const updatedInfo = await Purchases.getCustomerInfo();
+                const hasProAfterSync = Object.keys(updatedInfo.entitlements?.active || {}).length > 0;
+                
+                console.log('📊 [SAFE] Post-sync status:', {
+                  hasActiveEntitlements: hasProAfterSync,
+                  restoredProducts: updatedInfo.allPurchasedProductIdentifiers?.length || 0
+                });
+              } finally {
+                releaseSyncLock();
+              }
+            } else {
+              console.log('⚠️ [SAFE] Sync not safe - likely Apple ID switch or existing user');
+              
+              // For non-fresh users, check current entitlements without syncing
+              const hasCurrentEntitlements = Object.keys(customerInfo.entitlements?.active || {}).length > 0;
+              if (hasCurrentEntitlements) {
+                console.log('✅ [SAFE] Current Apple ID has valid Pro subscription');
+              } else {
+                console.log('ℹ️ [SAFE] Current Apple ID has no Pro subscription - user must restore manually');
               }
             }
             
-            if (!syncSuccess) {
-              console.log('⚠️ [AGGRESSIVE] All sync attempts failed - continuing with fresh customer info fetch');
-            }
-            
-            // Step 3: Force fresh customer info fetch from Apple servers
-            console.log('🔄 [AGGRESSIVE] Fetching fresh customer info from Apple...');
-            await Purchases.getCustomerInfo({ fetchPolicy: "FETCH_CURRENT" });
-            
-            console.log('✅ [AGGRESSIVE] Purchase restoration complete - Pro status should be detected');
-          } catch (aggressiveError) {
-            console.log('⚠️ [AGGRESSIVE] Aggressive sync failed (non-fatal):', (aggressiveError as any)?.message);
+            console.log('✅ [SAFE] Purchase check complete');
+          } catch (safeError) {
+            console.log('⚠️ [SAFE] Safe sync failed (non-fatal):', (safeError as any)?.message);
+            // Continue without sync - user remains at current entitlement status
           }
         } catch (stableIdError) {
           if (__DEV__) {
@@ -505,79 +563,100 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
           // RevenueCat will fall back to anonymous ID
         }
         
-        // CRITICAL: Establish correct subscription truth at app startup
-        // Store starts with isPro = false, this call sets the correct value
+        // Auto-recover from any stuck video processing states on app launch
+        try {
+          const { isVideoProcessing, setIsVideoProcessing, setIsProcessing, setErrorMessage } = await import('@/store/cropModalStore').then(m => m.useCropModalStore.getState());
+          
+          if (isVideoProcessing) {
+            console.log('🔧 [STARTUP] Detected stuck video processing state - auto-recovering...');
+            
+            // Check timestamps for ghost processing detection
+            const AsyncStorage = await import('@react-native-async-storage/async-storage').then(m => m.default);
+            const lastProcessingTime = await AsyncStorage.getItem('lastVideoProcessingTime').catch(() => null);
+            const pendingVideo = await AsyncStorage.getItem('pendingVideo').catch(() => null);
+            
+            let shouldClear = false;
+            
+            if (lastProcessingTime) {
+              const timeSinceLastProcessing = Date.now() - parseInt(lastProcessingTime);
+              const STARTUP_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes for startup recovery
+              
+              if (timeSinceLastProcessing > STARTUP_TIMEOUT_MS) {
+                console.log('🔧 [STARTUP] Processing timeout detected - clearing state');
+                shouldClear = true;
+              }
+            } else {
+              console.log('🔧 [STARTUP] No processing timestamp found - likely ghost state');
+              shouldClear = true;
+            }
+            
+            // Check for temp/ghost prediction IDs
+            if (pendingVideo) {
+              try {
+                const pendingData = JSON.parse(pendingVideo);
+                if (pendingData.predictionId?.startsWith('temp-')) {
+                  console.log('🔧 [STARTUP] Ghost processing with temp ID detected - clearing');
+                  shouldClear = true;
+                }
+              } catch (e) {
+                console.log('🔧 [STARTUP] Invalid pending video data - clearing');
+                shouldClear = true;
+              }
+            }
+            
+            if (shouldClear) {
+              setIsVideoProcessing(false);
+              setIsProcessing(false);
+              setErrorMessage(null);
+              
+              // Clean up storage
+              AsyncStorage.removeItem('lastVideoProcessingTime').catch(() => {});
+              AsyncStorage.removeItem('pendingVideo').catch(() => {});
+              
+              console.log('✅ [STARTUP] Video processing state auto-recovered');
+            }
+          }
+        } catch (error) {
+          if (__DEV__) {
+            console.log('⚠️ [STARTUP] Failed to check video processing state:', error);
+          }
+        }
+        
+        // Setup subscription listener and check Pro status
         try {
           if (__DEV__) {
-            console.log('🔍 App startup: Refreshing purchases + checking subscription status...');
-          }
-          
-          // CRITICAL: Establish correct subscription truth at app startup (production-safe)
-          try {
-            console.log('🔍 [TEST] App startup: Syncing purchases + checking subscription status...');
-            
-            // Step 1: Clear stale cache to get fresh data
-            await Purchases.invalidateCustomerInfoCache();
-            
-            // Step 2: Sync purchases with current Apple ID (no UI prompt)
-            // Safe on iOS; no-op on Android. Gets entitlements for current Apple ID.
-            // @ts-ignore - method available at runtime
-            await (Purchases as any).syncPurchases?.();
-            
-            if (__DEV__) {
-              console.log('✅ RevenueCat sync complete - ready for subscription check');
-            }
-          } catch (syncErr) {
-            if (__DEV__) {
-              console.log('⚠️ RevenueCat sync failed (non-fatal):', (syncErr as any)?.message);
-            }
+            console.log('🔄 Setting up subscription system...');
           }
 
-          // Attach live listener to keep store in sync after purchases/restores/expiry
+          // Attach live listener to keep store in sync
           try {
-            if (__DEV__) console.log('🎧 Setting up RevenueCat customer info listener');
             const removeListener = Purchases.addCustomerInfoUpdateListener(async () => {
               try {
                 await checkSubscriptionStatus();
               } catch (e) {
-                if (__DEV__) console.log('⚠️ Customer info listener update failed:', (e as any)?.message);
+                if (__DEV__) console.log('⚠️ Listener update failed:', (e as any)?.message);
               }
             });
-            customerInfoListenerRemoverRef.current = removeListener;
-            if (__DEV__) console.log('✅ RevenueCat customer info listener set up successfully');
+            customerInfoListenerRemoverRef.current = removeListener as any;
+            if (__DEV__) console.log('✅ RevenueCat listener set up');
           } catch (e) {
-            if (__DEV__) console.log('❌ Failed to set customer info listener:', (e as any)?.message);
+            if (__DEV__) console.log('❌ Failed to set listener:', (e as any)?.message);
           }
 
-          // Simple Pro status refresh from RevenueCat
-          console.log('🔄 Refreshing Pro status on app startup...');
-          let hasActiveSubscription = false;
-          try {
-            const proStatus = await refreshProStatus();
-            hasActiveSubscription = proStatus.isPro;
-            
-            // Update subscription store to match
-            setIsPro(proStatus.isPro);
-            
-            console.log('✅ Pro status refreshed:', {
-              isPro: proStatus.isPro,
-              planType: proStatus.planType,
-              expiresAt: proStatus.expiresAt,
-              hasTransactionId: !!proStatus.transactionId
-            });
-          } catch (refreshError) {
-            console.error('❌ Failed to refresh Pro status:', refreshError);
-            // Fallback to existing RevenueCat check
-            hasActiveSubscription = await checkSubscriptionStatus();
-          }
-
-          // Note: Back to Life usage tracking is handled lazily when user actually uses the feature
-          // No need to pre-sync usage data at startup - saves time and prevents race conditions
-        } catch (autoCheckError: any) {
+          // Single Pro status check
+          const proStatus = await refreshProStatus();
+          setIsPro(proStatus.isPro);
+          
           if (__DEV__) {
-            console.warn('⚠️ Startup subscription check failed - user remains non-Pro:', autoCheckError?.message);
+            console.log('✅ Pro status:', {
+              isPro: proStatus.isPro,
+              planType: proStatus.planType
+            });
           }
-          // Ensure non-Pro state on any failure - fail safe
+        } catch (error) {
+          if (__DEV__) {
+            console.warn('⚠️ Subscription setup failed:', (error as any)?.message);
+          }
           setIsPro(false);
         }
       }
@@ -649,11 +728,11 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
   const checkAndRecoverVideos = async () => {
     try {
       if (__DEV__) {
-        console.log('🎬 Starting comprehensive video recovery...');
+        console.log('🎬 Starting video recovery check...');
       }
       
-      // Use the enhanced recovery function that handles ALL video states
-      await useVideoToastStore.getState().checkForPendingVideo();
+      // TODO: Re-implement video recovery when store is available
+      // await useVideoToastStore.getState().checkForPendingVideo();
       
       if (__DEV__) {
         console.log('✅ Video recovery check completed');

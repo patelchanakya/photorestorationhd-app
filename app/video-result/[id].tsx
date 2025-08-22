@@ -1,8 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { permissionsService } from '@/services/permissions';
-import { supabase } from '@/services/supabaseClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Purchases from 'react-native-purchases';
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -20,12 +18,11 @@ import {
 import Animated, {
     useAnimatedStyle,
     useSharedValue,
-    withRepeat,
     withSequence,
-    withSpring,
     withTiming
 } from 'react-native-reanimated';
-import { useVideoToastStore } from '@/store/videoToastStore';
+import { useVideoGenerationStore } from '@/store/videoGenerationStore';
+import { useCropModalStore } from '@/store/cropModalStore';
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -59,30 +56,26 @@ export default function VideoResultScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   
-  // Animation values for Save button
+  // Simple press feedback - no heavy animations needed since we have SavingModal
   const buttonScale = useSharedValue(1);
-  const buttonOpacity = useSharedValue(1);
   
-  // Animated styles
+  const handlePress = () => {
+    // Light press feedback
+    buttonScale.value = withSequence(
+      withTiming(0.96, { duration: 100 }),
+      withTiming(1, { duration: 100 })
+    );
+  };
+  
   const animatedButtonStyle = useAnimatedStyle(() => ({
     transform: [{ scale: buttonScale.value }],
-    opacity: buttonOpacity.value,
-  }));
-
-  // Spinner animation for Save button
-  const spinnerRotation = useSharedValue(0);
-  useEffect(() => {
-    spinnerRotation.value = withRepeat(withTiming(360, { duration: 700 }), -1, false);
-  }, []);
-  const animatedSpinnerStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${spinnerRotation.value}deg` }],
   }));
   
   // Clear toast and modal when user navigates to video page
   useEffect(() => {
     // Clear any existing toast/modal states since user is now viewing the video
     const cropModalStore = useCropModalStore.getState();
-    const videoToastStore = useVideoToastStore.getState();
+    const videoGenerationStore = useVideoGenerationStore.getState();
     
     if (cropModalStore.processingStatus === 'completed') {
       cropModalStore.setProcessingStatus(null);
@@ -92,9 +85,15 @@ export default function VideoResultScreen() {
     }
     
     // Clear video completion modal overlay
-    if (videoToastStore.showCompletionModal) {
-      videoToastStore.hideModal();
-      
+    if (videoGenerationStore.showCompletionModal) {
+      videoGenerationStore.hideCompletionModal();
+    }
+    
+    // Mark video as viewed only if this is the specific unviewed Back to Life video
+    // This prevents other video types from accidentally clearing the blocking mechanism
+    if (videoGenerationStore.hasUnviewedVideo && 
+        videoGenerationStore.lastCompletedVideoId === String(id)) {
+      videoGenerationStore.markVideoAsViewed();
     }
   }, []);
 
@@ -267,28 +266,22 @@ export default function VideoResultScreen() {
       }
     }
 
-    // Start loading animation
     setIsSaving(true);
-    buttonScale.value = withSequence(
-      withTiming(0.95, { duration: 100 }),
-      withSpring(1, { damping: 15 })
-    );
+    handlePress(); // Simple press feedback
     
     try {
       
       const videoUri = await getVideoUri();
 
       // Save to media library
-      const asset = await MediaLibrary.saveToLibraryAsync(videoUri);
+      await MediaLibrary.saveToLibraryAsync(videoUri);
       
       // Clean up the temporary file
       await FileSystem.deleteAsync(videoUri, { idempotent: true });
+
+      // Note: Cached video will be cleaned up automatically by the cleanup function after 30 days
       
-      // Success feedback
-      buttonScale.value = withSequence(
-        withTiming(1.05, { duration: 100 }),
-        withSpring(1, { damping: 10 })
-      );
+      // Success handled by SavingModal - no additional animation needed
       
       Alert.alert(
         'Success!',
@@ -452,29 +445,18 @@ export default function VideoResultScreen() {
             disabled={isSaving}
           >
             {isSaving ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Animated.View
-                  style={[
-                    {
-                      width: 18,
-                      height: 18,
-                      borderRadius: 9,
-                      borderWidth: 2,
-                      borderColor: 'rgba(255,255,255,0.25)',
-                      borderTopColor: '#ffffff',
-                    },
-                    animatedSpinnerStyle,
-                  ]}
-                />
+              <>
+                <ActivityIndicator size="small" color="white" />
                 <Text style={{ 
                   color: '#ffffff', 
                   fontSize: 16, 
                   fontWeight: '600', 
+                  marginLeft: 8,
                   letterSpacing: 0.3 
                 }}>
                   Saving…
                 </Text>
-              </View>
+              </>
             ) : (
               <>
                 <Ionicons name="download-outline" size={18} color="white" />

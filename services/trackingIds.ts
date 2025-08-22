@@ -149,6 +149,16 @@ export const getVideoTrackingId = async (options?: { retries?: number, retryDela
         attempt: attempt
       });
       
+      // Debug: Log all available properties to find originalTransactionId
+      if (__DEV__ && subscription) {
+        console.log('🔍 [VIDEO] All subscription properties:', Object.keys(subscription));
+        console.log('🔍 [VIDEO] Full subscription object:', subscription);
+      }
+      if (__DEV__ && proEntitlement) {
+        console.log('🔍 [VIDEO] All entitlement properties:', Object.keys(proEntitlement));
+        console.log('🔍 [VIDEO] Full entitlement object:', proEntitlement);
+      }
+      
       let trackingKey: string | null = null;
       let trackingSource: string = '';
       
@@ -162,11 +172,11 @@ export const getVideoTrackingId = async (options?: { retries?: number, retryDela
         trackingKey = `orig:${entitlementAny.originalTransactionId}`;
         trackingSource = 'entitlement.originalTransactionId';
       }
-      // Strategy 3: Fall back to storeTransactionId (changes on renewal)
+      // Strategy 3: Fall back to full storeTransactionId (changes on renewal - this is correct for sandbox!)
       else if (subscription?.storeTransactionId) {
         trackingKey = `store:${subscription.storeTransactionId}`;
         trackingSource = 'subscription.storeTransactionId (fallback)';
-        console.log('⚠️ [VIDEO] Using storeTransactionId fallback - may reset on renewal');
+        console.log('🔄 [VIDEO] Using storeTransactionId - will reset on subscription renewal (correct behavior)');
       }
       // Strategy 4: Last resort - use anonymous ID with warning
       else if (customerInfo.originalAppUserId) {

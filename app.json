@@ -8,6 +8,12 @@
     "scheme": "photorestorationhdapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
+    "jsEngine": "hermes",
+    "assetBundlePatterns": [
+      "assets/images/*",
+      "assets/fonts/*",
+      "assets/videos/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.chanakyap.photorestorationhdapp",

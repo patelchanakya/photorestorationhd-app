@@ -23,6 +23,7 @@ export async function verifySubscriptionAccess(
 ): Promise<AccessVerificationResult> {
   try {
     console.log(`🔍 [EDGE] Verifying access for feature "${requiredFeature}" with userId: ${userId}`);
+    console.log(`🔍 [EDGE] User ID details: { length: ${userId?.length}, startsWith: "${userId?.substring(0, 10)}..." }`);
     
     // Validate and parse the user ID format
     const idInfo = parseTrackingId(userId);
@@ -33,17 +34,19 @@ export async function verifySubscriptionAccess(
       // Only Pro users with transaction IDs can use videos
       if (!idInfo.isPro) {
         console.log(`❌ [EDGE] Video access denied: ${idInfo.reason}`);
+        console.log(`❌ [EDGE] ID validation details:`, { idInfo, userId });
         return {
           canUse: false,
           isPro: false,
           planType: 'free',
           reason: idInfo.reason || 'Video generation requires Pro subscription',
-          code: 'PRO_REQUIRED'
+          code: 'PRO_REQUIRED_FOR_VIDEOS'
         };
       }
       
       // Valid Pro user with transaction ID
-      console.log(`✅ [EDGE] Video access granted for Pro user`);
+      console.log(`✅ [EDGE] Video access granted for Pro user with ${idInfo.idType}`);
+      console.log(`✅ [EDGE] Pro user details:`, { idInfo, userId });
       return {
         canUse: true,
         isPro: true,
@@ -149,12 +152,12 @@ function parseTrackingId(userId: string): {
     };
   }
   
-  // Fallback ID (emergency case) - Pro users
+  // Fallback ID (emergency case) - Pro users without transaction ID
   if (userId.startsWith('fallback:')) {
     const fallbackId = userId.substring(9);
     if (fallbackId.startsWith('$RCAnonymousID:') && fallbackId.length > 20) {
       return {
-        isPro: true, // Pro user using fallback
+        isPro: true, // Pro user using fallback (subscription verified but no transaction ID available)
         idType: 'fallback_anonymous',
         isValid: true
       };

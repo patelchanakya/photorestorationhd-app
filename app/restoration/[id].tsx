@@ -1,7 +1,7 @@
 import { BeforeAfterSlider } from '@/components/BeforeAfterSlider';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { SavingModal, type SavingModalRef } from '@/components/SavingModal';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
-import { useVideoGeneration } from '@/hooks/useVideoGeneration';
 import { type FunctionType } from '@/services/modelConfigs';
 import { photoStorage } from '@/services/storage';
 import { restorationService } from '@/services/supabase';
@@ -15,7 +15,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as StoreReview from 'expo-store-review';
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import {
     ActionSheetIOS,
     ActivityIndicator,
@@ -30,9 +30,7 @@ import {
     View
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
-const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
 // Get screen dimensions for responsive design
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -48,8 +46,6 @@ export default function RestorationScreen() {
     setRestoration,
     loading,
     setLoading,
-    downloadText,
-    setDownloadText,
     allRestorations,
     setAllRestorations,
     isNavigating,
@@ -63,7 +59,6 @@ export default function RestorationScreen() {
   
   // Use the photo restoration hook
   const photoRestoration = usePhotoRestoration();
-  const { state: videoState, startMonitoring } = useVideoGeneration();
   const decrementRestorationCount = useRestorationStore((state) => state.decrementRestorationCount);
   const simpleSlider = useRestorationStore((state) => state.simpleSlider);
   const totalRestorations = useRestorationStore((state) => state.totalRestorations);
@@ -81,36 +76,10 @@ export default function RestorationScreen() {
     };
   }, [resetState]);
   
-  // Animation values for the save button
-  const buttonScale = useSharedValue(1);
-  const iconScale = useSharedValue(1);
-  const iconRotation = useSharedValue(0);
-  const successBackground = useSharedValue(0);
+  // Saving modal state
+  const [showSavingModal, setShowSavingModal] = useState(false);
+  const savingModalRef = useRef<SavingModalRef>(null);
 
-  
-  // Animated styles for save button
-  const animatedButtonStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: buttonScale.value }],
-    };
-  });
-
-  const animatedIconStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        { scale: iconScale.value },
-        { rotate: `${iconRotation.value}deg` }
-      ],
-    };
-  });
-
-
-
-  const animatedSuccessStyle = useAnimatedStyle(() => {
-    return {
-      backgroundColor: successBackground.value === 1 ? '#10b981' : '#f97316',
-    };
-  });
 
   const loadRestoration = useCallback(async () => {
     try {
@@ -161,7 +130,7 @@ export default function RestorationScreen() {
       const estimatedDuration = isVideoGeneration ? 120 : 7; // seconds
       
       // Simple progress timer
-      let progressIntervalId: NodeJS.Timeout | null = null;
+      let progressIntervalId: ReturnType<typeof setInterval> | null = null;
       progressIntervalId = setInterval(() => {
         const elapsed = (Date.now() - startTime) / 1000;
         const progress = Math.min(Math.floor((elapsed / estimatedDuration) * 95), 95);
@@ -286,74 +255,34 @@ export default function RestorationScreen() {
     checkFiles();
   }, [restoration, isNewRestoration, setFilesExist]);
 
-  // Reset animation function
-  const resetAnimation = () => {
-    setDownloadText('Save');
-  };
 
   const handleExport = async () => {
     if (!restoration || !restoredUri) return;
 
     try {
-      // Start animation sequence
+      // Show saving modal
+      setShowSavingModal(true);
+      
+      // Haptic feedback
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      
-      // Button press animation
-      buttonScale.value = withSequence(
-        withTiming(0.9, { duration: 100 }),
-        withSpring(1.05, { damping: 15 })
-      );
-      
-      // Icon animation - bounce and rotate
-      iconScale.value = withSequence(
-        withTiming(1.2, { duration: 150 }),
-        withSpring(1, { damping: 10 })
-      );
-      
-      iconRotation.value = withSequence(
-        withTiming(10, { duration: 100 }),
-        withTiming(-10, { duration: 100 }),
-        withTiming(0, { duration: 100 })
-      );
-      
-      
-      // Change text
-      runOnJS(setDownloadText)('Saving...');
       
       // Use the determined URI (could be local file or Replicate URL)
       await photoStorage.exportToCameraRoll(restoredUri);
       
-      // Success feedback with celebration
-      buttonScale.value = withSequence(
-        withTiming(1.08, { duration: 150 }),
-        withSpring(1, { damping: 12 })
-      );
-      
-      // Icon celebration animation
-      iconScale.value = withSequence(
-        withTiming(1.3, { duration: 200 }),
-        withSpring(1, { damping: 8 })
-      );
-      
-      iconRotation.value = withSequence(
-        withTiming(360, { duration: 400 }),
-        withTiming(0, { duration: 0 })
-      );
-      
-      // Haptic feedback
+      // Success haptic feedback
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       
-      // Show success text
-      runOnJS(setDownloadText)('Saved!');
-      
-      // Don't auto-reset - let user see the success state
-      // They can still share or take another photo
+      // Trigger success state in modal
+      savingModalRef.current?.showSuccess();
       
     } catch (err: any) {
+      console.error('Failed to save photo to camera roll:', err);
+      
+      // Hide modal on error
+      setShowSavingModal(false);
+      
       // Error feedback
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      runOnJS(resetAnimation)();
-      console.error('Failed to save photo to camera roll:', err);
       
       // Check if it's a permission or Expo Go error
       if (err.message?.includes('NSPhotoLibraryAddUsageDescription') || 
@@ -651,23 +580,21 @@ export default function RestorationScreen() {
             <View style={{ paddingBottom: isTinyDevice ? 16 : 24 }}>
               <View className="flex-row" style={{ gap: 8 }}>
                 {/* Save Button - 70% width */}
-                <AnimatedTouchableOpacity
-                  style={[
-                    {
-                      flex: 7,
-                      height: 56,
-                      borderRadius: 28,
-                      overflow: 'hidden',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexDirection: 'row',
-                    },
-                    animatedButtonStyle,
-                  ]}
+                <TouchableOpacity
+                  style={{
+                    flex: 7,
+                    height: 56,
+                    borderRadius: 28,
+                    overflow: 'hidden',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexDirection: 'row',
+                  }}
                   onPress={handleExport}
+                  activeOpacity={0.8}
                 >
                   <LinearGradient
-                    colors={downloadText === 'Saved!' ? ['#10b981', '#059669'] : ['#FF7A00', '#FFB54D']}
+                    colors={['#FF7A00', '#FFB54D']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={{
@@ -678,13 +605,13 @@ export default function RestorationScreen() {
                       bottom: 0,
                     }}
                   />
-                  <Animated.View style={animatedIconStyle}>
+                  <View>
                     <IconSymbol 
-                      name={downloadText === 'Saved!' ? "checkmark.circle.fill" : "arrow.down.circle.fill"} 
+                      name="arrow.down.circle.fill" 
                       size={22} 
                       color="#fff" 
                     />
-                  </Animated.View>
+                  </View>
                   <Text style={{ 
                     color: '#fff', 
                     fontSize: 16, 
@@ -692,9 +619,9 @@ export default function RestorationScreen() {
                     marginLeft: 8,
                     letterSpacing: 0.3
                   }}>
-                    {downloadText === 'Saved!' ? 'Saved!' : 'Save to Photos'}
+                    Save to Photos
                   </Text>
-                </AnimatedTouchableOpacity>
+                </TouchableOpacity>
 
                 {/* Share Button - 30% width */}
                 <TouchableOpacity
@@ -727,6 +654,13 @@ export default function RestorationScreen() {
           </View>
         </ScrollView>
         )}
+        
+        {/* Saving Modal */}
+        <SavingModal 
+          ref={savingModalRef}
+          visible={showSavingModal} 
+          onComplete={() => setShowSavingModal(false)}
+        />
       </SafeAreaView>
     </GestureHandlerRootView>
   );

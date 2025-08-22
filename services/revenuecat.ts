@@ -3,6 +3,33 @@ import { analyticsService } from '@/services/analytics';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 
+// Timeout wrapper for RevenueCat API calls to prevent hanging
+const withTimeout = <T>(promise: Promise<T>, timeoutMs: number = 30000): Promise<T> => {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => 
+      setTimeout(() => reject(new Error(`Operation timed out after ${timeoutMs}ms`)), timeoutMs)
+    )
+  ]);
+};
+
+// Mutex for preventing concurrent sync operations
+let syncInProgress = false;
+export const acquireSyncLock = async (): Promise<boolean> => {
+  if (syncInProgress) {
+    console.log('🔒 [SYNC] Another sync operation in progress, skipping');
+    return false;
+  }
+  syncInProgress = true;
+  console.log('🔓 [SYNC] Acquired sync lock');
+  return true;
+};
+
+export const releaseSyncLock = () => {
+  syncInProgress = false;
+  console.log('🔓 [SYNC] Released sync lock');
+};
+
 // Query keys for TanStack Query
 const QUERY_KEYS = {
   subscriptionStatus: ['subscription-status'] as const,
@@ -14,6 +41,7 @@ const QUERY_KEYS = {
 interface SubscriptionStoreCallbacks {
   setIsPro: (isPro: boolean) => void;
   setExpirationDate: (date: string | null) => void;
+  setTransactionId: (transactionId: string | null) => void;
   getIsPro: () => boolean;
 }
 
@@ -30,11 +58,14 @@ export const initializeStoreCallbacks = (callbacks: SubscriptionStoreCallbacks) 
 /**
  * Safe store update helper
  */
-const updateStore = (isPro: boolean, expirationDate?: string | null) => {
+const updateStore = (isPro: boolean, expirationDate?: string | null, transactionId?: string | null) => {
   if (storeCallbacks) {
     storeCallbacks.setIsPro(isPro);
     if (expirationDate !== undefined) {
       storeCallbacks.setExpirationDate(expirationDate);
+    }
+    if (transactionId !== undefined) {
+      storeCallbacks.setTransactionId(transactionId);
     }
   }
 };
@@ -118,6 +149,21 @@ async function safeResetIdentity() {
     if (__DEV__) console.log('ℹ️ safeResetIdentity: logOut error (ignored):', (e as any)?.message);
   }
   try { await Purchases.invalidateCustomerInfoCache(); } catch {}
+}
+
+// Extract transaction ID from entitlement (same logic as simpleSubscriptionService)
+function extractTransactionId(customerInfo: CustomerInfo, proEntitlement: any): string | null {
+  if (!proEntitlement?.productIdentifier) {
+    return null;
+  }
+  
+  try {
+    const subscription = customerInfo.subscriptionsByProductIdentifier?.[proEntitlement.productIdentifier];
+    return subscription?.storeTransactionId || null;
+  } catch (error) {
+    if (__DEV__) console.warn('Failed to extract transaction ID:', error);
+    return null;
+  }
 }
 
 // Robust entitlement validation to avoid granting access for expired subscriptions (esp. in sandbox)
@@ -470,7 +516,7 @@ export const getCustomerInfo = async (): Promise<CustomerInfo | null> => {
 export const checkSubscriptionStatus = async (): Promise<boolean> => {
   try {
     console.log('🔍 [TEST] Starting subscription status check...');
-    const customerInfo = await getCustomerInfo();
+    const customerInfo = await withTimeout(getCustomerInfo());
     
     if (!customerInfo) {
       console.log('❌ [TEST] No customer info available - setting to non-Pro');
@@ -522,7 +568,11 @@ export const checkSubscriptionStatus = async (): Promise<boolean> => {
     
     if (hasProEntitlement !== currentProStatus) {
       console.log('🔄 [TEST] Updating store with new subscription status:', hasProEntitlement);
-      updateStore(hasProEntitlement, proEntitlement?.expirationDate ?? null);
+      const transactionId = extractTransactionId(customerInfo, proEntitlement);
+      if (__DEV__ && transactionId) {
+        console.log('📧 Transaction ID extracted:', `${transactionId.substring(0, 10)}...`);
+      }
+      updateStore(hasProEntitlement, proEntitlement?.expirationDate ?? null, transactionId);
       console.log('✅ [TEST] Store updated. New state:', getCurrentProStatus());
     } else {
       console.log('ℹ️ [TEST] No store update needed - status unchanged');
@@ -569,11 +619,15 @@ export const restorePurchases = async (): Promise<boolean> => {
     // Sync with current Apple ID to prevent cross-Apple-ID carryover
     await safeResetIdentity();
 
-    const customerInfo = await Purchases.restorePurchases();
+    const customerInfo = await withTimeout(Purchases.restorePurchases());
 
     // Force fetch fresh info after restore to avoid stale cache side-effects
-    try { await Purchases.invalidateCustomerInfoCache(); } catch {}
-    const freshInfo = await getCustomerInfo();
+    try { 
+      await Purchases.invalidateCustomerInfoCache(); 
+      // Add explicit delay after cache invalidation to ensure it takes effect
+      await new Promise(resolve => setTimeout(resolve, 100));
+    } catch {}
+    const freshInfo = await withTimeout(getCustomerInfo());
     const info = freshInfo ?? customerInfo;
     
     if (__DEV__) {
@@ -594,7 +648,8 @@ export const restorePurchases = async (): Promise<boolean> => {
     const proEntitlement = entitlementsAny.active?.['pro'] ?? entitlementsAny.all?.['pro'];
     const hasProEntitlement = isEntitlementTrulyActive(proEntitlement);
     // Update store explicitly
-    updateStore(hasProEntitlement, proEntitlement?.expirationDate ?? null);
+    const transactionId = extractTransactionId(info, proEntitlement);
+    updateStore(hasProEntitlement, proEntitlement?.expirationDate ?? null, transactionId);
     
     // Note: Store update handled by CustomerInfo listener in _layout.tsx
     if (__DEV__) {
@@ -637,7 +692,7 @@ export const restorePurchasesDetailed = async (): Promise<RestoreResult> => {
     // Sync with current Apple ID to prevent cross-Apple-ID carryover
     await safeResetIdentity();
 
-    const customerInfo = await Purchases.restorePurchases();
+    const customerInfo = await withTimeout(Purchases.restorePurchases());
     
     if (__DEV__) {
       console.log('✅ Purchases restored:', customerInfo);
@@ -682,7 +737,8 @@ export const restorePurchasesDetailed = async (): Promise<RestoreResult> => {
     const entitlementsAny: any = (customerInfo as any)?.entitlements ?? {};
     const proEntitlement = entitlementsAny.active?.['pro'] ?? entitlementsAny.all?.['pro'];
     const hasProEntitlement = isEntitlementTrulyActive(proEntitlement);
-    updateStore(hasProEntitlement, proEntitlement?.expirationDate ?? null);
+    const transactionId = extractTransactionId(customerInfo, proEntitlement);
+    updateStore(hasProEntitlement, proEntitlement?.expirationDate ?? null, transactionId);
     
     // Note: Store update handled by CustomerInfo listener in _layout.tsx
     if (__DEV__) {
@@ -1342,7 +1398,8 @@ export const restorePurchasesSimple = async (): Promise<RestoreResult> => {
     const hasActiveEntitlements = isEntitlementTrulyActive(proEntitlement);
     
     // Update store with restore result
-    updateStore(hasActiveEntitlements, proEntitlement?.expirationDate ?? null);
+    const transactionId = extractTransactionId(customerInfo, proEntitlement);
+    updateStore(hasActiveEntitlements, proEntitlement?.expirationDate ?? null, transactionId);
     
     if (__DEV__) {
       console.log('🔄 Restore complete:', {

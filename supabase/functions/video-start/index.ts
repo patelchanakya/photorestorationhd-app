@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import Replicate from "https://esm.sh/replicate@0.15.0"
+import Replicate from "https://esm.sh/replicate@1.0.2"
 import { verifyAndIncrementUsage, rollbackUsage } from '../_shared/verifyAccess.ts'
 
 const corsHeaders = {
@@ -33,7 +33,7 @@ const ANIMATION_PROMPTS = {
   'animate with fun and playful movements': 'The scene comes alive with fun, playful yet extremely calm movements like very gentle waves or soft, slow laughs, keeping everything natural and ultra-smooth. Groups interact with light, coordinated, slow playfulness; individuals display very subtle joyful gestures. Prevent any fast actions, focusing on realistic, ultra-fluid, gradual animations while the background stays static.',
   'animate with a warm smile': 'Faces very slowly light up with warm, genuine smiles that spread naturally across the group or individual, accompanied by extremely subtle, gentle head tilts or soft eye sparkles. For multiple people, smiles ripple very softly between them; ensure all expressions are calm, realistic, and gradual, with no sudden changes and a motionless background.',
   'bring this photo to life with natural animation': 'Bring the photo to life with extremely subtle, natural animations like very gentle breathing, soft blinks, or calm, gradual shifts in posture, suitable for individuals or groups. Movements should be ultra-smooth, realistic, and very unhurried, avoiding any fast or artificial effects, while keeping the background completely still for a lifelike feel.',
-  'animate with a friendly wave': 'Bring the scene to life with a natural waving gesture. For a single person, let them raise their hand in a friendly wave - smooth and relaxed, as if greeting someone they know. For groups, one or two people might wave while others smile or nod. The wave should feel spontaneous and warm, with natural arm movement and perhaps a slight lean forward. Keep the motion fluid and genuine, avoiding stiff or mechanical movements. Background remains completely still.'
+  'animate with a friendly wave': 'The person raises their hand in a gentle wave, smooth and natural. For groups, one person waves while others smile. Soft, fluid motion.'
 } as const;
 
 function optimizePromptForKling(originalPrompt: string): string {
@@ -107,6 +107,7 @@ serve(async (req) => {
     
     const replicate = new Replicate({
       auth: replicateToken,
+      useFileOutput: false, // Return URLs instead of FileOutput objects for compatibility
     });
     console.log('✅ Replicate client created');
 
@@ -138,9 +139,13 @@ serve(async (req) => {
     }
 
     // PRODUCTION-SCALE VERIFICATION (cached subscription + usage limits)
+    console.log('🔍 [VIDEO-START] Calling verifyAndIncrementUsage with:', { userId, feature: 'videos' });
     const verificationResult = await verifyAndIncrementUsage(supabase, userId, 'videos');
+    console.log('🎯 [VIDEO-START] Verification result:', verificationResult);
+    
     if (!verificationResult.canUse) {
-      console.log('❌ Video generation blocked:', verificationResult.reason);
+      console.log('❌ [VIDEO-START] Video generation blocked:', verificationResult.reason);
+      console.log('❌ [VIDEO-START] Full verification result:', verificationResult);
       return new Response(JSON.stringify({ 
         error: verificationResult.reason || 'Access denied',
         code: verificationResult.code || 'ACCESS_DENIED',

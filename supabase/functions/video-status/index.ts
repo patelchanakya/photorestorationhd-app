@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import Replicate from "https://esm.sh/replicate@0.15.0"
+import Replicate from "https://esm.sh/replicate@1.0.2"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -145,6 +145,7 @@ serve(async (req) => {
       }
       const replicate = new Replicate({
         auth: replicateToken,
+        useFileOutput: false, // Return URLs instead of FileOutput objects for compatibility
       });
         const prediction = await refreshPredictionStatus(replicate, predictionId);
         
@@ -207,8 +208,27 @@ serve(async (req) => {
       }
     };
 
-    if (videoUrl) response.videoUrl = videoUrl;
-    if (fullVideoJob.local_video_path) response.localVideoPath = fullVideoJob.local_video_path;
+    // Handle video URL with fallback to cached version
+    if (videoUrl || fullVideoJob.local_video_path) {
+      // Check if original URL has expired (1 hour after completion)
+      const videoExpired = fullVideoJob.completed_at && 
+        (Date.now() - new Date(fullVideoJob.completed_at).getTime()) > 3600000; // 1 hour
+      
+      if (fullVideoJob.local_video_path && (videoExpired || !videoUrl)) {
+        // Use cached video URL
+        const { data } = supabase.storage
+          .from('video-cache')
+          .getPublicUrl(fullVideoJob.local_video_path);
+        
+        response.videoUrl = data.publicUrl;
+        response.localVideoPath = fullVideoJob.local_video_path;
+        console.log('📱 Serving cached video URL (original expired)');
+      } else if (videoUrl) {
+        // Use original Replicate URL (still valid)
+        response.videoUrl = videoUrl;
+        if (fullVideoJob.local_video_path) response.localVideoPath = fullVideoJob.local_video_path;
+      }
+    }
     if (completedAt) response.completedAt = completedAt;
     if (errorMessage) response.errorMessage = errorMessage;
 

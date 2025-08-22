@@ -12,7 +12,7 @@ interface VideoProcessingToastProps {
   progress?: number;
   timeRemaining?: number; // in seconds
   jobType?: 'video' | 'photo';
-  status?: 'loading' | 'completed' | 'error';
+  status?: 'loading' | 'completed' | 'error' | 'ready';
   errorMessage?: string | null;
   mode?: string; // Animation mode like "hug", "group", "fun"
   onPress?: () => void;
@@ -167,6 +167,12 @@ export function VideoProcessingToast({
           subtitle: `Ready in: ${formatTime(timeRemaining)}`,
           label: isVideo ? 'BACK TO LIFE' : 'PHOTO RESTORE'
         };
+      case 'ready':
+        return {
+          title: 'Ready to transform!',
+          subtitle: 'Tap generate to start',
+          label: isVideo ? 'BACK TO LIFE' : 'PHOTO RESTORE'
+        };
       case 'completed':
         return {
           title: isVideo ? 'Your video is ready!' : 'Your photo is ready!',
@@ -175,7 +181,7 @@ export function VideoProcessingToast({
         };
       case 'error':
         return {
-          title: isVideo ? 'Can’t generate video' : 'Can’t generate photo',
+          title: isVideo ? 'Can\'t generate video' : 'Can\'t generate photo',
           subtitle: errorMessage || 'Tap to try again',
           label: isVideo ? 'BACK TO LIFE' : 'PHOTO RESTORE'
         };
@@ -246,7 +252,7 @@ export function VideoProcessingToast({
           {/* Glass Content */}
           <View className="flex-1">
             {/* Glass Tags */}
-            <View className="flex-row mb-3 space-x-3">
+            <View className="flex-row mb-3 gap-1.5">
               <View className="px-3 py-1.5 rounded-full border border-white/20"
                     style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}>
                 <Text className="text-white/90 text-xs font-medium tracking-wide">
@@ -263,10 +269,10 @@ export function VideoProcessingToast({
                 </View>
               )}
             </View>
-            <Text className="text-white text-lg font-bold mb-1">
+            <Text className="text-white text-base font-bold mb-1">
               {statusContent.title}
             </Text>
-            <Text className="text-white/90 text-base">
+            <Text className="text-white/90 text-sm">
               {statusContent.subtitle}
             </Text>
           </View>
@@ -277,6 +283,7 @@ export function VideoProcessingToast({
               <LoadingSpinner />
             </View>
           )}
+          
           
           {/* Glass Success indicator */}
           {status === 'completed' && (
