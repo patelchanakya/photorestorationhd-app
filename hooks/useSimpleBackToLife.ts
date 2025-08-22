@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
-import { useVideoGenerationStore } from '../store/videoGenerationStore';
+import { useSimpleVideoStore } from '../store/simpleVideoStore';
+import { simpleVideoService } from '../services/simpleVideoService';
 import { DEFAULT_ANIMATION_PROMPT } from '../constants/videoPrompts';
 
 interface BackToLifeParams {
@@ -9,20 +10,18 @@ interface BackToLifeParams {
 
 export function useSimpleBackToLife() {
   const { 
-    isGenerating, 
+    status,
     hasUnviewedVideo,
-    startGeneration, 
-    updateProgress, 
-    completeGeneration, 
-    failGeneration
-  } = useVideoGenerationStore();
+    currentGeneration,
+    showErrorToast
+  } = useSimpleVideoStore();
 
   return useMutation({
     mutationFn: async ({ imageUri, animationPrompt = DEFAULT_ANIMATION_PROMPT }: BackToLifeParams) => {
       let usageWasIncremented = false;
       
       // Strict duplicate prevention - if already generating, reject
-      if (isGenerating) {
+      if (status === 'starting' || status === 'processing') {
         return Promise.reject(new Error('Video already generating. Please wait.'));
       }
       
@@ -32,164 +31,69 @@ export function useSimpleBackToLife() {
       }
 
       // Additional protection: check if this exact image+prompt combo is already being processed
-      // This prevents double-tap or rapid-fire generation attempts
-      const currentImageUri = useVideoGenerationStore.getState().currentImageUri;
-      if (currentImageUri === imageUri) {
+      if (currentGeneration && currentGeneration.imageUri === imageUri) {
         return Promise.reject(new Error('This image is already being processed.'));
       }
 
-      // Check and increment usage atomically before starting generation
-      const { backToLifeService } = await import('../services/backToLifeService');
-      const usageIncremented = await backToLifeService.checkAndIncrementUsage();
-      usageWasIncremented = usageIncremented;
+      // CRITICAL SECURITY: First validate subscription with iOS StoreKit cross-validation
+      console.log('🔒 [SECURITY] Starting simplified video generation with enhanced security validation...');
       
-      if (!usageIncremented) {
-        // Get detailed usage info for better error message
-        const usageCheck = await backToLifeService.checkUsage();
-        if (!usageCheck.canUse) {
-          if (usageCheck.limit === 0) {
-            return Promise.reject(new Error('Video generation requires PRO subscription'));
-          } else {
-            return Promise.reject(new Error(`You've reached your ${usageCheck.planType} video limit (${usageCheck.used}/${usageCheck.limit}). Resets on ${new Date(usageCheck.nextResetDate).toLocaleDateString()}`));
-          }
+      const { validateForVideoGeneration } = await import('../services/simpleSubscriptionService');
+      const securityValidation = await validateForVideoGeneration();
+      
+      if (!securityValidation.canGenerate) {
+        if (securityValidation.securityViolation) {
+          console.log('🚨 [SECURITY] SECURITY VIOLATION DETECTED:', securityValidation.reason);
+          // Log this for monitoring - this indicates potential Apple ID switching exploit
+          console.log('🚨 [SECURITY] User attempted to bypass subscription validation');
         }
-        return Promise.reject(new Error('Usage limit reached. Please try again later.'));
+        
+        const errorMessage = securityValidation.securityViolation 
+          ? 'Security validation failed. Please restart the app and try again.'
+          : securityValidation.reason;
+          
+        return Promise.reject(new Error(errorMessage));
       }
+      
+      console.log('✅ [SECURITY] Security validation passed, starting simple video generation...');
 
       try {
-        // Import the video generation service
-        const { generateVideo, generateVideoWithPolling } = await import('../services/videoGenerationV2');
+        // Use the simplified video service - it handles everything internally
+        await simpleVideoService.startVideo(imageUri, animationPrompt);
         
-        // Step 1: Get real server prediction ID first (fast - responds immediately)
-        const serverResponse = await generateVideo(imageUri, animationPrompt, { duration: 5 });
-        const realPredictionId = serverResponse.prediction_id;
-        
-        // Step 2: Now save to store with real prediction ID
-        startGeneration(imageUri, realPredictionId, animationPrompt);
-        
-        // Step 3: Start polling loop with the real ID
-        const { pollVideoStatus } = await import('../services/videoGenerationV2');
-        
-        const startTime = Date.now();
-        const timeoutMs = 180000; // 3 minutes
-        
-        const videoUrl = await new Promise<string>((resolve, reject) => {
-          const poll = async () => {
-            try {
-              const elapsed = Date.now() - startTime;
-              
-              if (elapsed > timeoutMs) {
-                reject(new Error('Video generation timed out. Please try again.'));
-                return;
-              }
-
-              const statusResponse = await pollVideoStatus(realPredictionId);
-              
-              // Update progress
-              const progressMap: Record<string, number> = {
-                'starting': 10,
-                'processing': 50,
-                'succeeded': 90
-              };
-              updateProgress(progressMap[statusResponse.status] || 0, realPredictionId);
-
-              if (statusResponse.is_complete) {
-                if (statusResponse.is_successful && statusResponse.video_url) {
-                  resolve(statusResponse.video_url);
-                } else {
-                  const error = statusResponse.error_message || 'Video generation failed';
-                  reject(new Error(error));
-                }
-                return;
-              }
-
-              // Continue polling with adaptive interval
-              let nextPollInterval: number;
-              if (elapsed < 10000) {
-                nextPollInterval = 3000;
-              } else if (elapsed < 30000) {
-                nextPollInterval = 5000;
-              } else {
-                nextPollInterval = 7000;
-              }
-
-              setTimeout(poll, nextPollInterval);
-            } catch (error) {
-              reject(error);
-            }
-          };
-
-          // Start polling after initial delay
-          setTimeout(poll, 5000);
-        });
-
-        const videoData = {
-          id: realPredictionId,
-          url: videoUrl,
-          originalImage: imageUri,
-          prompt: animationPrompt,
-          predictionId: realPredictionId
-        };
-
-        return { ...videoData, usageWasIncremented };
+        // Service handles all polling, state updates, and completion
+        // Return a simple success indicator
+        return { success: true };
       } catch (error) {
-        // Attach usage info to error for rollback decision
-        (error as any).usageWasIncremented = usageWasIncremented;
+        // Let the error propagate to onError handler
         throw error;
       }
     },
 
-    onSuccess: (data) => {
-      completeGeneration(data);
-      console.log(`✅ Video generation completed: ${data.id}`);
+    onSuccess: () => {
+      console.log('✅ Simple video generation initiated successfully');
+      // No need to do anything here - the service handles completion
     },
 
     onError: async (error) => {
       if (error instanceof Error && 
           (error.message === 'Video already generating. Please wait.' ||
-           error.message === 'Please view your completed video before generating a new one.')) {
+           error.message === 'Please view your completed video before generating a new one.' ||
+           error.message === 'This image is already being processed.')) {
         return; // silent no-op for these cases
       }
 
-      // Only rollback usage if it was actually incremented
-      const shouldRollback = (error as any).usageWasIncremented;
-      if (shouldRollback) {
-        try {
-          // Use robust rollback service with retry logic and persistence
-          const { rollbackService } = await import('../services/rollbackService');
-          const { getVideoTrackingId } = await import('../services/trackingIds');
-          
-          const userId = await getVideoTrackingId();
-          if (userId) {
-            const rollbackSuccess = await rollbackService.attemptRollback(
-              userId, 
-              'video', 
-              `Video generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-            );
-            
-            if (rollbackSuccess) {
-              console.log('🔄 Usage count rolled back due to generation failure');
-            } else {
-              console.log('⏳ Usage rollback queued for retry (will be processed in background)');
-            }
-          } else {
-            console.error('⚠️ No user ID available for rollback');
-          }
-        } catch (rollbackError) {
-          console.error('⚠️ Failed to initiate usage rollback:', rollbackError);
-        }
-      }
-
-      let errorMessage = 'Generation failed. Tap to try again.';
+      // Show error in store
+      let errorMessage = 'Generation failed. Please try again.';
       if (error instanceof Error) {
         // Handle specific error types
-        if (error.message === 'PRO_REQUIRED') {
-          errorMessage = 'PRO subscription required.';
-        } else if (error.message.includes('Video generation requires PRO subscription')) {
+        if (error.message === 'PRO_REQUIRED' || error.message.includes('PRO subscription required')) {
           errorMessage = 'PRO subscription required for video generation.';
+        } else if (error.message.includes('Security validation failed')) {
+          errorMessage = 'Please restart the app and try again.';
         } else if (error.message.includes('video limit')) {
           errorMessage = error.message; // Use the detailed limit message
-        } else if (error.message.includes('Network')) {
+        } else if (error.message.includes('Network') || error.message.includes('network')) {
           errorMessage = 'Network error. Please check your connection and try again.';
         } else if (error.message.includes('timeout') || error.message.includes('timed out')) {
           errorMessage = 'Video generation timed out. Please try again.';
@@ -198,8 +102,8 @@ export function useSimpleBackToLife() {
         }
       }
 
-      failGeneration(errorMessage);
-      console.error('❌ Video generation failed:', error);
+      showErrorToast(errorMessage);
+      console.error('❌ Simple video generation failed:', error);
     }
   });
 }

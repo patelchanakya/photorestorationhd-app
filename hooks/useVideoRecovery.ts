@@ -1,24 +1,34 @@
 import { useCallback, useEffect } from 'react';
 import { AppState, InteractionManager } from 'react-native';
 import { useVideoGenerationStore } from '../store/videoGenerationStore';
+import { checkReplicateDirectStatus, shouldUseDirectReplicateFallback, clearReplicateCache } from '../services/replicateDirectCheck';
 
 export function useVideoRecovery() {
   const { 
     pendingGeneration, 
     isGenerating,
+    isRecovering,
     resumeGeneration,
     completeGeneration,
     failGeneration,
     clearGeneration,
-    clearExpiredUnviewedVideo 
+    clearExpiredUnviewedVideo,
+    startRecovery,
+    updateRecoveryAttempt,
+    markRecoverySuccess,
+    shouldAttemptRecovery,
+    setAppForegroundTime,
+    shouldDelayFirstRecovery,
+    updateAllowNewGeneration,
+    shouldTreatAsProcessing
   } = useVideoGenerationStore();
 
   const checkAndRecover = useCallback(async () => {
     // First, clear any expired unviewed videos
     clearExpiredUnviewedVideo();
     
-    // Don't recover if already generating
-    if (isGenerating) {
+    // Don't recover if already generating or recovering
+    if (isGenerating || isRecovering) {
       return;
     }
     
@@ -28,34 +38,123 @@ export function useVideoRecovery() {
       await checkForUnviewedCompletedVideos();
       return;
     }
-
-    const { predictionId, imageUri, prompt, startedAt } = pendingGeneration;
     
-    // Check if the pending generation is too old (3 hours)
-    // Extended timeout since videos are cached in Supabase Storage and remain accessible
-    const now = new Date();
-    const started = new Date(startedAt);
-    const elapsedMs = now.getTime() - started.getTime();
-    const timeoutMs = 3 * 60 * 60 * 1000; // 3 hours
-
-    if (elapsedMs > timeoutMs) {
-      console.log('🧹 Clearing expired pending generation (>3 hours old):', predictionId);
-      clearGeneration();
+    // Check if we should attempt recovery based on backoff logic
+    if (!shouldAttemptRecovery()) {
+      return;
+    }
+    
+    // Check if this is a recent generation that should be treated as normal processing
+    const treatAsProcessing = shouldTreatAsProcessing();
+    
+    // For recent generations (< 3 minutes, < 3 attempts), skip the delay and treat as normal processing
+    if (!treatAsProcessing && shouldDelayFirstRecovery()) {
+      const timeSinceForeground = Date.now() - (useVideoGenerationStore.getState().appForegroundTime || 0);
+      const waitTime = 2000 - timeSinceForeground;
+      
+      if (__DEV__) {
+        console.log(`⏳ Delaying first recovery by ${waitTime}ms to let iOS reconnect`);
+      }
+      
+      // Schedule the recovery attempt after the delay
+      setTimeout(() => {
+        // Re-check conditions after delay
+        if (shouldAttemptRecovery() && !shouldDelayFirstRecovery()) {
+          checkAndRecover();
+        }
+      }, waitTime);
       return;
     }
 
-    // All prediction IDs are now real server IDs from the start
-    // No need to check for local IDs anymore
-
-    console.log('🔄 Attempting to recover pending video generation:', predictionId);
+    const { predictionId, imageUri, prompt, startedAt, recoveryAttempts = 0 } = pendingGeneration;
+    
+    // Start recovery tracking
+    startRecovery();
+    
+    if (__DEV__) {
+      if (treatAsProcessing) {
+        console.log(`🎬 Continuing video processing check for:`, predictionId);
+      } else {
+        console.log(`🔄 Starting recovery attempt ${recoveryAttempts + 1} for:`, predictionId);
+      }
+    }
 
     try {
-      // Resume the UI state
+      // Try our backend first
+      let statusResponse;
+      let useDirectFallback = false;
+      
+      try {
+        if (__DEV__) {
+          console.log('🔄 Checking backend status first...');
+        }
+        
+        const { pollVideoStatus } = await import('../services/videoGenerationV2');
+        statusResponse = await pollVideoStatus(predictionId);
+        
+        markRecoverySuccess();
+        
+      } catch (backendError: any) {
+        const errorMessage = backendError?.message || String(backendError);
+        
+        if (__DEV__) {
+          console.log('❌ Backend check failed:', errorMessage);
+        }
+        
+        // Check if this is a network error that warrants direct Replicate fallback
+        useDirectFallback = shouldUseDirectReplicateFallback(errorMessage);
+        
+        if (useDirectFallback) {
+          if (__DEV__) {
+            console.log('🔗 Using direct Replicate fallback due to network error');
+          }
+          
+          const directResult = await checkReplicateDirectStatus(predictionId);
+          
+          if (directResult.success) {
+            // Convert direct result to status response format
+            statusResponse = {
+              success: true,
+              prediction_id: predictionId,
+              status: directResult.status,
+              mode_tag: 'Life',
+              video_url: directResult.videoUrl,
+              image_uri: imageUri,
+              prompt: prompt,
+              created_at: startedAt,
+              error_message: directResult.error,
+              is_complete: ['succeeded', 'failed', 'canceled', 'expired'].includes(directResult.status),
+              is_successful: directResult.status === 'succeeded' && !!directResult.videoUrl,
+              has_output: !!directResult.videoUrl
+            };
+            
+            if (directResult.isExpired) {
+              if (__DEV__) {
+                console.log('🗑️ Video expired on Replicate - clearing generation');
+              }
+              clearGeneration();
+              clearReplicateCache(predictionId);
+              return;
+            }
+            
+            markRecoverySuccess();
+            
+          } else {
+            // Both backend and direct check failed
+            throw new Error(`Recovery failed: Backend error (${errorMessage}) and direct check failed (${directResult.error})`);
+          }
+        } else {
+          // Not a network error, re-throw
+          throw backendError;
+        }
+      }
+      
+      if (!statusResponse) {
+        throw new Error('No status response available');
+      }
+      
+      // Resume the UI state after we have a response
       resumeGeneration({ predictionId, imageUri, prompt });
-
-      // Check the current status on the server
-      const { pollVideoStatus } = await import('../services/videoGenerationV2');
-      const statusResponse = await pollVideoStatus(predictionId);
 
       if (statusResponse.is_complete) {
         if (statusResponse.is_successful && statusResponse.video_url) {
@@ -80,6 +179,7 @@ export function useVideoRecovery() {
         // Resume polling from where we left off
         
         // Calculate elapsed time to adjust progress
+        const elapsedMs = Date.now() - new Date(startedAt).getTime();
         const elapsedSeconds = Math.floor(elapsedMs / 1000);
         const estimatedTotalSeconds = 120; // 2 minutes estimate
         const initialProgress = Math.min(90, (elapsedSeconds / estimatedTotalSeconds) * 100);
@@ -90,17 +190,36 @@ export function useVideoRecovery() {
         // Continue polling by simulating the ongoing generation
         // We can't use the original generateVideoWithPolling because it starts a new generation
         // Instead, we'll start a polling loop manually
-        startPollingForRecovery(predictionId, elapsedMs);
+        startPollingForRecovery(predictionId, Date.now() - new Date(startedAt).getTime(), useDirectFallback);
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Video recovery failed:', error);
-      failGeneration('Failed to recover video generation. Please try again.');
+      
+      updateRecoveryAttempt();
+      updateAllowNewGeneration(); // Update ability to start new generation
+      
+      // Don't immediately fail - let the recovery system retry with backoff
+      const errorMessage = error?.message || String(error);
+      
+      if (__DEV__) {
+        console.log(`⚠️ Recovery attempt ${recoveryAttempts + 1} failed, will retry with backoff:`, errorMessage);
+      }
+      
+      // Only fail permanently if we've exceeded max attempts or it's been too long
+      if (recoveryAttempts >= 15) {
+        if (__DEV__) {
+          console.log('🛑 Max recovery attempts reached, failing generation');
+        }
+        failGeneration('Video recovery failed after multiple attempts. Please try generating a new video.');
+        clearReplicateCache(predictionId);
+      }
+      // Otherwise, let the backoff system handle the next retry
     }
-  }, [pendingGeneration, isGenerating, resumeGeneration, completeGeneration, failGeneration, clearGeneration]);
+  }, [pendingGeneration, isGenerating, isRecovering, resumeGeneration, completeGeneration, failGeneration, clearGeneration, startRecovery, updateRecoveryAttempt, markRecoverySuccess, shouldAttemptRecovery]);
 
   // Manual polling for recovery (doesn't start new generation)
-  const startPollingForRecovery = useCallback(async (predictionId: string, elapsedMs: number) => {
+  const startPollingForRecovery = useCallback(async (predictionId: string, elapsedMs: number, useDirectFallback = false) => {
     const { updateProgress, completeGeneration, failGeneration } = useVideoGenerationStore.getState();
     const { pollVideoStatus } = await import('../services/videoGenerationV2');
     
@@ -116,7 +235,42 @@ export function useVideoRecovery() {
           return;
         }
 
-        const statusResponse = await pollVideoStatus(predictionId);
+        let statusResponse;
+        
+        if (useDirectFallback) {
+          // Use direct Replicate check for subsequent polls
+          const directResult = await checkReplicateDirectStatus(predictionId);
+          
+          if (directResult.success) {
+            statusResponse = {
+              success: true,
+              prediction_id: predictionId,
+              status: directResult.status,
+              mode_tag: 'Life',
+              video_url: directResult.videoUrl,
+              image_uri: pendingGeneration?.imageUri || '',
+              prompt: pendingGeneration?.prompt || '',
+              created_at: pendingGeneration?.startedAt || new Date().toISOString(),
+              error_message: directResult.error,
+              is_complete: ['succeeded', 'failed', 'canceled', 'expired'].includes(directResult.status),
+              is_successful: directResult.status === 'succeeded' && !!directResult.videoUrl,
+              has_output: !!directResult.videoUrl
+            };
+            
+            if (directResult.isExpired) {
+              console.log('🗑️ Video expired during polling - clearing generation');
+              clearGeneration();
+              clearReplicateCache(predictionId);
+              return;
+            }
+          } else {
+            throw new Error(directResult.error || 'Direct Replicate check failed');
+          }
+        } else {
+          // Use backend as usual
+          const { pollVideoStatus } = await import('../services/videoGenerationV2');
+          statusResponse = await pollVideoStatus(predictionId);
+        }
         
         // Update progress
         const progressMap: Record<string, number> = {
@@ -153,8 +307,22 @@ export function useVideoRecovery() {
         }
 
         setTimeout(poll, nextPollInterval);
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Recovery polling error:', error);
+        
+        // If backend polling fails, try direct Replicate as fallback
+        if (!useDirectFallback && shouldUseDirectReplicateFallback(error?.message || String(error))) {
+          if (__DEV__) {
+            console.log('🔗 Switching to direct Replicate polling due to error');
+          }
+          
+          // Restart polling with direct fallback
+          setTimeout(() => {
+            startPollingForRecovery(predictionId, Date.now() - startTime, true);
+          }, 3000);
+          return;
+        }
+        
         failGeneration('Video generation failed');
       }
     };
@@ -223,6 +391,10 @@ export function useAutoVideoRecovery() {
     const handleAppStateChange = (nextAppState: string) => {
       if (nextAppState === 'active') {
         console.log('📱 App foregrounded - scheduling video recovery check');
+        
+        // Set foreground time for delayed recovery logic
+        useVideoGenerationStore.getState().setAppForegroundTime();
+        
         InteractionManager.runAfterInteractions(() => {
           checkAndRecover();
         });

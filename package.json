@@ -55,6 +55,7 @@
     "react-dom": "19.0.0",
     "react-native": "0.79.5",
     "react-native-gesture-handler": "~2.24.0",
+    "react-native-iap": "^13.0.4",
     "react-native-is-edge-to-edge": "^1.2.1",
     "react-native-purchases": "^9.0.0",
     "react-native-purchases-ui": "^9.0.0",

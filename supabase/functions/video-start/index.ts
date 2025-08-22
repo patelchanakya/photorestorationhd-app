@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import Replicate from "https://esm.sh/replicate@1.0.2"
+import Replicate from "https://esm.sh/replicate@1.0.1"
 import { verifyAndIncrementUsage, rollbackUsage } from '../_shared/verifyAccess.ts'
 
 const corsHeaders = {
@@ -20,6 +20,7 @@ interface VideoStartRequest {
 
 interface VideoStartResponse {
   predictionId: string;
+  startedAt: string;     // ISO timestamp when generation started
   status: 'starting';
   etaSeconds: number;
 }
@@ -42,12 +43,10 @@ function optimizePromptForKling(originalPrompt: string): string {
 }
 
 async function validateImageSize(imageData: string): Promise<void> {
-  // Estimate size from base64 (roughly 4/3 of original)
-  const estimatedSize = (imageData.length * 3) / 4;
-  const maxSize = 10 * 1024 * 1024; // 10MB
-  
-  if (estimatedSize > maxSize) {
-    throw new Error('Image is too large. Please select an image smaller than 10MB.');
+  // No size validation - Kling API accepts any size
+  // Only basic data validation
+  if (!imageData || imageData.length === 0) {
+    throw new Error('Invalid image data provided.');
   }
 }
 
@@ -193,15 +192,11 @@ serve(async (req) => {
       prompt: optimizedPrompt.substring(0, 100) + '...'
     });
 
-    // Get webhook URL
-    const webhookUrl = `${supabaseUrl}/functions/v1/video-webhook`;
-
-    // Create Replicate prediction
+    // Create Replicate prediction (NO WEBHOOK - we'll poll directly)
     const prediction = await replicate.predictions.create({
       version: '97da1f6c1fae926420a16b3c538b778f7fc317b8a16b3750f6bc39b106747793',
-      input,
-      webhook: webhookUrl,
-      webhook_events_filter: ['completed']
+      input
+      // NO webhook parameter - we'll use simple polling instead
     });
 
     if (!prediction.id) {
@@ -254,8 +249,10 @@ serve(async (req) => {
     console.log('💾 Video job stored:', videoJob.id);
 
     // Return success response
+    const startedAt = new Date().toISOString();
     const response: VideoStartResponse = {
       predictionId: prediction.id,
+      startedAt: startedAt,
       status: 'starting',
       etaSeconds: 120 // 2 minute estimate
     };

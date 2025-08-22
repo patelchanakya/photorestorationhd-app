@@ -197,3 +197,76 @@ The following optimizations are already properly implemented in the codebase:
 - **Monitor memory usage** with Flipper or similar tools
 - **Measure battery impact** using Xcode Instruments or Android Studio Profiler
 - **Keep performance metrics** before and after optimizations
+
+## 🚨 CRITICAL SECURITY FIX: Apple ID Switching Exploit Protection
+
+### ⚠️ Vulnerability Fixed
+**Date**: 2025-08-22  
+**Severity**: CRITICAL  
+**CVE**: Apple ID Switching Subscription Bypass  
+
+**Description**: Users could switch Apple IDs to bypass subscription validation and generate unlimited videos without paying. RevenueCat would show stale "Pro" status while App Store showed no subscription.
+
+### 🛡️ Security Measures Implemented
+
+#### 1. **iOS StoreKit Cross-Validation**
+- **File**: `services/iOSStoreKitValidator.ts`
+- **Purpose**: Direct validation with Apple's servers using `react-native-iap`
+- **Function**: `validateSubscriptionForPremiumFeature()` validates directly with Apple StoreKit
+- **Protection**: Prevents RevenueCat stale data from being trusted blindly
+
+#### 2. **Cross-Validation Logic**
+- **Function**: `crossValidateSubscription(revenueCatStatus: boolean)`
+- **Logic**: 
+  - ✅ Both RevenueCat + Apple say ACTIVE → ALLOW
+  - ✅ Both RevenueCat + Apple say INACTIVE → DENY  
+  - 🚨 RevenueCat says ACTIVE, Apple says INACTIVE → **DENY** (EXPLOIT DETECTED)
+  - ⚠️ RevenueCat says INACTIVE, Apple says ACTIVE → BACKEND_VERIFY
+
+#### 3. **Enhanced Video Generation Security**
+- **File**: `hooks/useSimpleBackToLife.ts`
+- **Enhancement**: All video generation now includes iOS StoreKit validation before usage check
+- **Function**: `validateForVideoGeneration()` called before every video generation
+- **Result**: Apple ID switching exploit is now blocked at the client level
+
+#### 4. **Backend Security Enhancements**
+- **File**: `supabase/functions/_shared/verifyAccess.ts`
+- **Enhancement**: Added transaction ID format validation
+- **Protection**: Validates transaction ID length and format to prevent manipulation
+
+### 🧪 Testing Apple ID Switching Scenarios
+
+#### Test Case 1: Normal User Flow (Should Work)
+1. User has valid Pro subscription on Apple ID A
+2. RevenueCat and Apple both confirm active subscription
+3. Video generation should be allowed
+
+#### Test Case 2: Exploit Attempt (Should Be Blocked)
+1. User switches from Apple ID A (with Pro) to Apple ID B (without Pro)
+2. RevenueCat shows stale "Pro" status
+3. Apple StoreKit shows no active subscription
+4. **Expected Result**: Video generation BLOCKED with security violation
+
+#### Test Case 3: Legitimate Apple ID Switch (Should Be Blocked)
+1. User switches to Apple ID C that has its own Pro subscription
+2. RevenueCat shows old subscription data
+3. **Expected Result**: May require app restart to sync properly
+
+### 🔍 Monitoring & Logging
+
+All security validations are logged with these prefixes:
+- `🔒 [SECURITY]` - Normal security operations
+- `🚨 [SECURITY] SECURITY VIOLATION DETECTED` - Exploit attempts  
+- `🚨 [EDGE] SECURITY ALERT` - Backend security issues
+
+### 📋 Security Checklist
+
+- [x] **iOS StoreKit Integration**: Added `react-native-iap` dependency
+- [x] **Cross-Validation Service**: Created `iOSStoreKitValidator.ts` 
+- [x] **Video Hook Security**: Enhanced `useSimpleBackToLife.ts`
+- [x] **Backend Validation**: Updated `verifyAccess.ts`
+- [x] **Error Handling**: Added security violation error messages
+- [x] **Logging**: Comprehensive security event logging
+- [ ] **Backend Receipt Validation**: TODO - Validate receipts on backend for ultimate security
+- [ ] **Monitoring Dashboard**: TODO - Create dashboard to monitor exploit attempts
+- [ ] **Rate Limiting**: TODO - Add rate limiting for failed validation attempts

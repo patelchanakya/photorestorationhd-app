@@ -3,7 +3,7 @@ import { FeatureCardsList } from '@/components/FeatureCardsList';
 import { QuickActionRail } from '@/components/QuickActionRail';
 import { QuickEditSheet } from '@/components/QuickEditSheet';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { presentPaywall, validatePremiumAccess } from '@/services/revenuecat';
+import { presentPaywall, validatePremiumAccess, restorePurchasesSecure } from '@/services/revenuecat';
 import { useQuickEditStore } from '@/store/quickEditStore';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import Constants from 'expo-constants';
@@ -87,12 +87,60 @@ export default function HomeGalleryLikeScreen() {
           <TouchableOpacity 
             onPress={async () => {
               if (isPro) {
-                Alert.alert(
-                  'Pro Member',
-                  'You have unlimited access to all features!',
-                  [{ text: 'Great!' }]
-                );
+                // Pro users: trigger restore to refresh subscription status
+                console.log('🔒 [SECURITY] Pro icon tapped - triggering secure restore to refresh status...');
+                
+                try {
+                  const result = await restorePurchasesSecure();
+                  
+                  if (result.success && result.hasActiveEntitlements) {
+                    Alert.alert(
+                      'Pro Member ✓',
+                      'Your subscription is active! You have unlimited access to all features.',
+                      [{ text: 'Great!' }]
+                    );
+                  } else if (result.success && !result.hasActiveEntitlements) {
+                    Alert.alert(
+                      'Subscription Status',
+                      'No active subscription found. You\'ll have access to free features.',
+                      [{ text: 'OK' }]
+                    );
+                  } else if (result.error === 'cancelled' && result.errorMessage?.includes('Apple ID')) {
+                    Alert.alert(
+                      'Subscription Check',
+                      'No active subscription found on this Apple ID. Please sign in with the Apple ID used for purchase.',
+                      [
+                        { text: 'OK', style: 'default' },
+                        {
+                          text: 'How to Fix',
+                          style: 'default',
+                          onPress: () => {
+                            Alert.alert(
+                              'How to Fix Subscription',
+                              '1. Go to Settings → App Store\n2. Sign in with the Apple ID used for purchase\n3. Return to Clever and tap the PRO badge again',
+                              [{ text: 'Got it', style: 'default' }]
+                            );
+                          }
+                        }
+                      ]
+                    );
+                  } else {
+                    Alert.alert(
+                      'Pro Status Check',
+                      'Unable to verify subscription status. Please try again or check your internet connection.',
+                      [{ text: 'OK' }]
+                    );
+                  }
+                } catch (error) {
+                  console.error('❌ [SECURITY] Pro icon restore failed:', error);
+                  Alert.alert(
+                    'Pro Member',
+                    'You have unlimited access to all features!',
+                    [{ text: 'Great!' }]
+                  );
+                }
               } else {
+                // Non-Pro users: show paywall
                 const isExpoGo = Constants.appOwnership === 'expo';
                 if (isExpoGo) {
                   Alert.alert(

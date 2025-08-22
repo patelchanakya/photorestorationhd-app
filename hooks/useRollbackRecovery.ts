@@ -56,14 +56,10 @@ export function useAutoRollbackRecovery() {
 
   useEffect(() => {
     // Run rollback recovery on mount (app launch)
-    const timeoutId = setTimeout(() => {
-      if (__DEV__) {
-        console.log('🚀 [ROLLBACK] Starting rollback recovery on app launch');
-      }
-      processRollbacks();
-    }, 2000); // 2 second delay to let app settle
-
-    return () => clearTimeout(timeoutId);
+    if (__DEV__) {
+      console.log('🚀 [ROLLBACK] Starting rollback recovery on app launch');
+    }
+    processRollbacks();
   }, [processRollbacks]);
 
   useEffect(() => {

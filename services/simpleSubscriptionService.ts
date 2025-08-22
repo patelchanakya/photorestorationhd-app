@@ -1,5 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import Purchases from 'react-native-purchases';
+import { crossValidateSubscription, validateSubscriptionForPremiumFeature } from './iOSStoreKitValidator';
+import { Platform } from 'react-native';
 
 export interface ProStatus {
   isPro: boolean;
@@ -197,22 +199,145 @@ export class SimpleSubscriptionService {
   }
   
   /**
-   * Check if user can access feature
+   * Check if user can access feature with iOS StoreKit cross-validation
+   * CRITICAL SECURITY: Now includes Apple ID switching exploit protection
    */
   static async canAccessFeature(feature: 'unlimited_photos' | 'video_generation' | 'premium_styles'): Promise<boolean> {
     const status = await SimpleSubscriptionService.getProStatus();
     
+    // For video generation, use enhanced security validation
+    if (feature === 'video_generation') {
+      if (!status.isPro) {
+        return false; // Not Pro according to RevenueCat
+      }
+
+      // CRITICAL SECURITY: Cross-validate with iOS StoreKit for videos
+      if (Platform.OS === 'ios') {
+        console.log('🔒 [SECURITY] Video generation requested - performing iOS StoreKit validation...');
+        
+        try {
+          const crossValidation = await crossValidateSubscription(status.isPro);
+          
+          if (crossValidation.recommendation === 'DENY') {
+            console.log('🚨 [SECURITY] Video access DENIED by cross-validation:', crossValidation.reason);
+            return false;
+          }
+          
+          if (crossValidation.recommendation === 'ALLOW') {
+            console.log('✅ [SECURITY] Video access APPROVED by cross-validation');
+            return true;
+          }
+          
+          // For BACKEND_VERIFY, we err on the side of caution and deny
+          console.log('⚠️ [SECURITY] Video access DENIED - backend verification required:', crossValidation.reason);
+          return false;
+          
+        } catch (error) {
+          console.error('❌ [SECURITY] Cross-validation failed, denying video access:', error);
+          return false;
+        }
+      }
+      
+      // For non-iOS platforms, trust RevenueCat (for now)
+      return status.isPro;
+    }
+    
+    // For other features, use standard validation
     switch (feature) {
       case 'unlimited_photos':
       case 'premium_styles':
         return status.isPro;
-      case 'video_generation':
-        return status.isPro; // Videos require Pro
       default:
         return false;
     }
   }
   
+  /**
+   * CRITICAL SECURITY METHOD for Video Generation
+   * 
+   * Enhanced validation specifically for video generation with Apple ID switching protection
+   * This method should be called before every video generation attempt
+   */
+  static async validateForVideoGeneration(): Promise<{
+    canGenerate: boolean;
+    reason: string;
+    securityViolation: boolean;
+  }> {
+    try {
+      console.log('🔒 [SECURITY] Validating subscription for video generation...');
+
+      // First check RevenueCat status
+      const status = await SimpleSubscriptionService.getProStatus();
+      
+      if (!status.isPro) {
+        return {
+          canGenerate: false,
+          reason: 'No Pro subscription found',
+          securityViolation: false
+        };
+      }
+
+      // On iOS, perform additional StoreKit validation to prevent Apple ID switching exploit
+      if (Platform.OS === 'ios') {
+        console.log('🔒 [SECURITY] Performing iOS StoreKit cross-validation...');
+        
+        try {
+          const premiumValidation = await validateSubscriptionForPremiumFeature();
+          
+          if (!premiumValidation.canAccess) {
+            return {
+              canGenerate: false,
+              reason: premiumValidation.reason,
+              securityViolation: premiumValidation.securityViolation
+            };
+          }
+
+          // Double-check with cross-validation
+          const crossValidation = await crossValidateSubscription(status.isPro);
+          
+          if (crossValidation.recommendation !== 'ALLOW') {
+            return {
+              canGenerate: false,
+              reason: `Cross-validation failed: ${crossValidation.reason}`,
+              securityViolation: crossValidation.recommendation === 'DENY' && crossValidation.revenueCatSaysActive && !crossValidation.appleSaysActive
+            };
+          }
+
+          console.log('✅ [SECURITY] Video generation approved by all validation layers');
+          return {
+            canGenerate: true,
+            reason: 'All validation layers confirm active subscription',
+            securityViolation: false
+          };
+
+        } catch (error) {
+          console.error('❌ [SECURITY] iOS StoreKit validation failed:', error);
+          return {
+            canGenerate: false,
+            reason: `StoreKit validation error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            securityViolation: false
+          };
+        }
+      }
+
+      // For non-iOS platforms, trust RevenueCat for now
+      console.log('✅ [SECURITY] Non-iOS platform - trusting RevenueCat status');
+      return {
+        canGenerate: true,
+        reason: 'RevenueCat confirms Pro status (non-iOS platform)',
+        securityViolation: false
+      };
+
+    } catch (error) {
+      console.error('❌ [SECURITY] Video generation validation failed:', error);
+      return {
+        canGenerate: false,
+        reason: `Validation error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        securityViolation: false
+      };
+    }
+  }
+
   /**
    * Clear cached Pro status (for testing or logout)
    */
@@ -258,3 +383,4 @@ export const isProUser = SimpleSubscriptionService.isProUser;
 export const getTransactionId = SimpleSubscriptionService.getTransactionId;
 export const getUserIdForTracking = SimpleSubscriptionService.getUserIdForTracking;
 export const canAccessFeature = SimpleSubscriptionService.canAccessFeature;
+export const validateForVideoGeneration = SimpleSubscriptionService.validateForVideoGeneration;

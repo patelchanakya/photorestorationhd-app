@@ -132,7 +132,7 @@ export function VideoCompletionModal({
                     <Image 
                       source={{ uri: imageUri }} 
                       className="w-full h-full" 
-                      resizeMode="cover"
+                      resizeMode="contain"
                       onError={(error) => {
                         console.error('Failed to load image:', error.nativeEvent.error);
                       }}

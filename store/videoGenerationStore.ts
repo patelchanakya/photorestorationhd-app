@@ -16,7 +16,16 @@ interface VideoGenerationState {
     imageUri: string;
     prompt: string;
     startedAt: string;
+    // Enhanced recovery tracking
+    lastRecoveryAttempt?: string;
+    recoveryAttempts?: number;
+    lastSuccessfulCheck?: string;
   } | null;
+  
+  // Recovery state (not persisted)
+  isRecovering: boolean;
+  appForegroundTime: number | null;
+  allowNewGeneration: boolean;
   
   // Generated videos (persisted)
   videos: Record<string, {
@@ -48,6 +57,7 @@ interface VideoGenerationState {
   
   // Actions
   startGeneration: (imageUri: string, predictionId: string, prompt: string) => void;
+  updatePredictionId: (predictionId: string) => void;
   updateProgress: (progress: number, predictionId?: string) => void;
   completeGeneration: (videoData: {
     id: string;
@@ -90,6 +100,17 @@ interface VideoGenerationState {
   
   // Recovery function (for use outside hooks)
   checkForPendingVideo: () => Promise<void>;
+  
+  // Enhanced recovery functions
+  startRecovery: () => void;
+  updateRecoveryAttempt: () => void;
+  markRecoverySuccess: () => void;
+  shouldAttemptRecovery: () => boolean;
+  setAppForegroundTime: () => void;
+  shouldDelayFirstRecovery: () => boolean;
+  updateAllowNewGeneration: () => void;
+  isRecentGeneration: () => boolean;
+  shouldTreatAsProcessing: () => boolean;
 }
 
 export const useVideoGenerationStore = create<VideoGenerationState>()(
@@ -110,6 +131,9 @@ export const useVideoGenerationStore = create<VideoGenerationState>()(
       toastMessage: '',
       showCompletionModal: false,
       completionModalData: null,
+      isRecovering: false,
+      appForegroundTime: null,
+      allowNewGeneration: false,
       
       // Actions
       startGeneration: (imageUri: string, predictionId: string, prompt: string) => {
@@ -129,9 +153,22 @@ export const useVideoGenerationStore = create<VideoGenerationState>()(
             predictionId,
             imageUri,
             prompt,
-            startedAt
+            startedAt,
+            recoveryAttempts: 0,
+            lastRecoveryAttempt: undefined,
+            lastSuccessfulCheck: undefined
           }
         });
+      },
+      
+      updatePredictionId: (predictionId: string) => {
+        set((state) => ({
+          currentPredictionId: predictionId,
+          pendingGeneration: state.pendingGeneration ? {
+            ...state.pendingGeneration,
+            predictionId
+          } : null
+        }));
       },
       
       resumeGeneration: (pendingData) => {
@@ -143,7 +180,8 @@ export const useVideoGenerationStore = create<VideoGenerationState>()(
           error: null,
           showToast: true,
           toastType: 'processing' as const,
-          toastMessage: 'Resuming video generation...'
+          toastMessage: 'Resuming video generation...',
+          isRecovering: false // Clear recovery state when resuming
         });
       },
       
@@ -221,7 +259,8 @@ export const useVideoGenerationStore = create<VideoGenerationState>()(
           pendingGeneration: null, // Clear pending on manual clear
           showToast: false,
           toastType: 'processing' as const,
-          toastMessage: ''
+          toastMessage: '',
+          isRecovering: false
         });
       },
       
@@ -319,14 +358,14 @@ export const useVideoGenerationStore = create<VideoGenerationState>()(
           // We can't use the hook here, so we'll manually implement the recovery logic
           const { predictionId, imageUri, prompt, startedAt } = state.pendingGeneration;
           
-          // Check if too old (3 hours) - extended since videos are cached in Supabase Storage
+          // Check if too old (59 minutes) - standardized with simpleVideoStore
           const now = new Date();
           const started = new Date(startedAt);
           const elapsedMs = now.getTime() - started.getTime();
-          const timeoutMs = 3 * 60 * 60 * 1000; // 3 hours
+          const timeoutMs = 59 * 60 * 1000; // 59 minutes
       
           if (elapsedMs > timeoutMs) {
-            console.log('🧹 Clearing expired pending generation (>3 hours old):', predictionId);
+            console.log('🧹 Clearing expired pending generation (>59 minutes old):', predictionId);
             get().clearGeneration();
             return;
           }
@@ -363,6 +402,169 @@ export const useVideoGenerationStore = create<VideoGenerationState>()(
         } catch (error) {
           console.error('❌ Video recovery check failed:', error);
         }
+      },
+      
+      // Enhanced recovery functions
+      startRecovery: () => {
+        const state = get();
+        if (!state.pendingGeneration || state.isRecovering) return;
+        
+        set({ isRecovering: true });
+        
+        const now = new Date().toISOString();
+        const currentAttempts = state.pendingGeneration.recoveryAttempts || 0;
+        
+        set({
+          pendingGeneration: {
+            ...state.pendingGeneration,
+            lastRecoveryAttempt: now,
+            recoveryAttempts: currentAttempts + 1
+          }
+        });
+      },
+      
+      updateRecoveryAttempt: () => {
+        const state = get();
+        if (!state.pendingGeneration) return;
+        
+        const now = new Date().toISOString();
+        const currentAttempts = state.pendingGeneration.recoveryAttempts || 0;
+        
+        set({
+          pendingGeneration: {
+            ...state.pendingGeneration,
+            lastRecoveryAttempt: now,
+            recoveryAttempts: currentAttempts + 1
+          }
+        });
+      },
+      
+      markRecoverySuccess: () => {
+        const state = get();
+        if (!state.pendingGeneration) return;
+        
+        const now = new Date().toISOString();
+        
+        set({
+          pendingGeneration: {
+            ...state.pendingGeneration,
+            lastSuccessfulCheck: now
+          },
+          isRecovering: false
+        });
+      },
+      
+      shouldAttemptRecovery: () => {
+        const state = get();
+        if (!state.pendingGeneration || state.isGenerating || state.isRecovering) {
+          return false;
+        }
+        
+        const { lastRecoveryAttempt, recoveryAttempts = 0, startedAt } = state.pendingGeneration;
+        
+        // Don't attempt if too many attempts (but allow across sessions)
+        if (recoveryAttempts >= 20) {
+          console.log('🛑 Too many recovery attempts, stopping:', recoveryAttempts);
+          return false;
+        }
+        
+        // Don't attempt if too old (59 minutes - standardized with simpleVideoStore)
+        const started = new Date(startedAt);
+        const elapsedMs = Date.now() - started.getTime();
+        const maxAge = 59 * 60 * 1000; // 59 minutes
+        
+        if (elapsedMs > maxAge) {
+          console.log('🛑 Pending generation too old for recovery:', elapsedMs / (60 * 1000), 'minutes');
+          return false;
+        }
+        
+        // Implement responsive backoff for better UX
+        if (lastRecoveryAttempt) {
+          const lastAttempt = new Date(lastRecoveryAttempt);
+          const timeSinceLastAttempt = Date.now() - lastAttempt.getTime();
+          
+          // Responsive backoff schedule - even faster for recent generations
+          let backoffMs;
+          
+          // For recent generations (< 3 minutes old), use faster polling
+          const isRecent = get().isRecentGeneration();
+          
+          if (isRecent && recoveryAttempts <= 10) {
+            // Very fast polling for recent videos still processing
+            backoffMs = 3000; // 3 seconds for first 10 attempts on recent videos
+          } else if (recoveryAttempts <= 3) {
+            backoffMs = 5000; // 5 seconds
+          } else if (recoveryAttempts <= 6) {
+            backoffMs = 10000; // 10 seconds
+          } else if (recoveryAttempts <= 10) {
+            backoffMs = 15000; // 15 seconds
+          } else {
+            backoffMs = 20000; // 20 seconds max
+          }
+          
+          if (timeSinceLastAttempt < backoffMs) {
+            if (__DEV__) {
+              const waitTimeSeconds = Math.ceil((backoffMs - timeSinceLastAttempt) / 1000);
+              console.log(`⏳ Recovery backoff: wait ${waitTimeSeconds}s more (attempt ${recoveryAttempts + 1})`);
+            }
+            return false;
+          }
+        }
+        
+        return true;
+      },
+      
+      // App foreground tracking for delayed recovery
+      setAppForegroundTime: () => {
+        set({ appForegroundTime: Date.now() });
+      },
+      
+      shouldDelayFirstRecovery: () => {
+        const state = get();
+        if (!state.appForegroundTime || !state.pendingGeneration) return false;
+        
+        // Only delay if this is the first attempt after foreground
+        const timeSinceForeground = Date.now() - state.appForegroundTime;
+        const isFirstAttemptAfterForeground = !state.pendingGeneration.lastRecoveryAttempt || 
+          new Date(state.pendingGeneration.lastRecoveryAttempt).getTime() < state.appForegroundTime;
+        
+        return isFirstAttemptAfterForeground && timeSinceForeground < 2000; // 2 second delay
+      },
+      
+      updateAllowNewGeneration: () => {
+        const state = get();
+        const recoveryAttempts = state.pendingGeneration?.recoveryAttempts || 0;
+        
+        // Allow new generation after 5 failed attempts
+        const shouldAllow = recoveryAttempts >= 5;
+        
+        if (shouldAllow !== state.allowNewGeneration) {
+          set({ allowNewGeneration: shouldAllow });
+        }
+      },
+      
+      // Check if generation is recent (still likely processing)
+      isRecentGeneration: () => {
+        const state = get();
+        if (!state.pendingGeneration) return false;
+        
+        const started = new Date(state.pendingGeneration.startedAt);
+        const elapsedMs = Date.now() - started.getTime();
+        const recentThreshold = 3 * 60 * 1000; // 3 minutes - typical video processing time
+        
+        return elapsedMs < recentThreshold;
+      },
+      
+      // Check if we should treat this as active processing vs recovery
+      shouldTreatAsProcessing: () => {
+        const state = get();
+        if (!state.pendingGeneration) return false;
+        
+        const isRecent = get().isRecentGeneration();
+        const hasLowAttempts = (state.pendingGeneration.recoveryAttempts || 0) <= 2;
+        
+        // Treat as processing if it's recent AND hasn't failed multiple times
+        return isRecent && hasLowAttempts;
       }
     }),
     {

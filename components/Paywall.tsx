@@ -9,7 +9,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { IconSymbol } from './ui/IconSymbol';
-import { getOfferings, purchasePackage, restorePurchasesDetailed, RevenueCatOfferings } from '@/services/revenuecat';
+import { getOfferings, purchasePackage, restorePurchasesSecure, RevenueCatOfferings } from '@/services/revenuecat';
 import { PurchasesPackage } from 'react-native-purchases';
 import Constants from 'expo-constants';
 import * as Haptics from 'expo-haptics';
@@ -326,16 +326,12 @@ export function Paywall({ visible, onClose, onSuccess }: PaywallProps) {
                 
                 setIsRestoring(true);
                 
-                if (__DEV__) {
-                  console.log('🔄 Restoring purchases...');
-                }
-                const result = await restorePurchasesDetailed();
+                console.log('🔒 [SECURITY] Starting secure paywall restore with Apple validation...');
+                const result = await restorePurchasesSecure();
                 
                 if (result.success) {
                   if (result.hasActiveEntitlements) {
-                    if (__DEV__) {
-                      console.log('✅ Purchases restored successfully');
-                    }
+                    console.log('✅ [SECURITY] Paywall restore successful - subscription confirmed by Apple');
                     Alert.alert(
                       'Restored!',
                       'Your Pro subscription has been restored.',
@@ -350,6 +346,7 @@ export function Paywall({ visible, onClose, onSuccess }: PaywallProps) {
                       ]
                     );
                   } else {
+                    console.log('ℹ️ [SECURITY] Paywall restore completed but no active subscriptions found');
                     Alert.alert(
                       'No Purchases Found',
                       'No previous purchases were found to restore.',
@@ -357,13 +354,37 @@ export function Paywall({ visible, onClose, onSuccess }: PaywallProps) {
                     );
                   }
                 } else {
-                  // Only show error alert for actual errors, not cancellations
-                  if (result.error !== 'cancelled') {
+                  // Enhanced error handling for security validation failures
+                  if (result.error === 'cancelled' && result.errorMessage?.includes('Apple ID')) {
+                    console.log('🚨 [SECURITY] Paywall restore blocked - no subscription on current Apple ID');
+                    
                     Alert.alert(
-                      'Restore Failed',
-                      result.errorMessage || 'Unable to restore purchases. Please try again.',
-                      [{ text: 'OK' }]
+                      'No Subscription Found',
+                      'No active subscription found on this Apple ID. Please sign in with the Apple ID used for purchase.',
+                      [
+                        { text: 'OK', style: 'default' },
+                        {
+                          text: 'How to Fix',
+                          style: 'default',
+                          onPress: () => {
+                            Alert.alert(
+                              'How to Restore Purchases',
+                              '1. Go to Settings → App Store\n2. Sign in with the Apple ID used for purchase\n3. Return to Clever and tap Restore Purchases again',
+                              [{ text: 'Got it', style: 'default' }]
+                            );
+                          }
+                        }
+                      ]
                     );
+                  } else {
+                    // Only show error alert for actual errors, not security blocks
+                    if (result.error !== 'cancelled') {
+                      Alert.alert(
+                        'Restore Failed',
+                        result.errorMessage || 'Unable to restore purchases. Please try again.',
+                        [{ text: 'OK' }]
+                      );
+                    }
                   }
                 }
               } catch (error) {

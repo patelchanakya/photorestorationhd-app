@@ -79,7 +79,14 @@ class PhotoStorage {
       if (__DEV__) {
         console.log(`⬇️ Downloading restored photo from: ${url}`);
       }
-      const result = await FileSystem.downloadAsync(url, destination);
+      
+      // Add timeout to prevent hanging downloads
+      const downloadPromise = FileSystem.downloadAsync(url, destination);
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Download timeout after 10 seconds')), 10000);
+      });
+      
+      const result = await Promise.race([downloadPromise, timeoutPromise]) as FileSystem.FileSystemDownloadResult;
       
       if (result.status === 200) {
         if (__DEV__) {
@@ -162,12 +169,18 @@ class PhotoStorage {
       const fileName = `clever_thumb_${type}_${Date.now()}.jpg`;
       const destination = `${this.basePath}thumbnails/${fileName}`;
       
-      // Create a small thumbnail (300px wide)
-      const result = await ImageManipulator.manipulateAsync(
+      // Create a small thumbnail (300px wide) with timeout
+      const thumbnailPromise = ImageManipulator.manipulateAsync(
         uri,
         [{ resize: { width: 300 } }],
-        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG } // Slightly less compression for speed
       );
+      
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Thumbnail creation timeout after 10 seconds')), 10000);
+      });
+      
+      const result = await Promise.race([thumbnailPromise, timeoutPromise]) as ImageManipulator.ImageResult;
       
       await FileSystem.copyAsync({
         from: result.uri,

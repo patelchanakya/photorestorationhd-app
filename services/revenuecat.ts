@@ -1427,6 +1427,109 @@ export const restorePurchasesSimple = async (): Promise<RestoreResult> => {
   }
 };
 
+// Enhanced secure restore function with StoreKit validation
+export const restorePurchasesSecure = async (): Promise<RestoreResult & {
+  validationPassed: boolean;
+  appleValidation?: {
+    hasSubscription: boolean;
+    transactionId: string | null;
+    productId: string | null;
+  };
+}> => {
+  try {
+    if (isExpoGo()) {
+      return {
+        success: false,
+        hasActiveEntitlements: false,
+        validationPassed: false,
+        error: 'unknown',
+        errorMessage: 'Cannot restore purchases in Expo Go'
+      };
+    }
+
+    console.log('🔒 [SECURITY] Starting secure restore with Apple validation...');
+    
+    // CRITICAL SECURITY: First validate with Apple StoreKit
+    const { validateRestoreOperation } = await import('./iOSStoreKitValidator');
+    const restoreValidation = await validateRestoreOperation();
+    
+    console.log('🔍 [SECURITY] Restore validation result:', {
+      shouldProceed: restoreValidation.shouldProceed,
+      hasAppleSubscription: restoreValidation.hasAppleSubscription,
+      reason: restoreValidation.reason
+    });
+    
+    // If Apple says no subscription on current Apple ID, block the restore
+    if (!restoreValidation.shouldProceed) {
+      console.log('❌ [SECURITY] Restore blocked - no subscription on current Apple ID');
+      
+      // Clear any cached Pro status since Apple has no subscription
+      updateStore(false, null, null);
+      
+      return {
+        success: false,
+        hasActiveEntitlements: false,
+        validationPassed: false,
+        error: 'cancelled', // Use cancelled to avoid retry prompts
+        errorMessage: restoreValidation.errorForUser || 'No subscription found on this Apple ID',
+        appleValidation: {
+          hasSubscription: false,
+          transactionId: null,
+          productId: null
+        }
+      };
+    }
+    
+    // Apple validation passed, proceed with RevenueCat restore
+    console.log('✅ [SECURITY] Apple validation passed, proceeding with RevenueCat restore...');
+    
+    const customerInfo = await Purchases.restorePurchases();
+    
+    // Check for active entitlements 
+    const proEntitlement = customerInfo.entitlements.active['pro'];
+    const hasActiveEntitlements = isEntitlementTrulyActive(proEntitlement);
+    
+    // Update store with restore result
+    const transactionId = extractTransactionId(customerInfo, proEntitlement);
+    updateStore(hasActiveEntitlements, proEntitlement?.expirationDate ?? null, transactionId);
+    
+    if (__DEV__) {
+      console.log('🔄 Secure restore complete:', {
+        hasActiveEntitlements,
+        rcIsActive: proEntitlement?.isActive ?? null,
+        expirationDate: proEntitlement?.expirationDate ?? null,
+        appleValidationPassed: restoreValidation.shouldProceed
+      });
+    }
+    
+    return {
+      success: true,
+      hasActiveEntitlements,
+      validationPassed: true,
+      appleValidation: {
+        hasSubscription: restoreValidation.hasAppleSubscription,
+        transactionId: restoreValidation.transactionId,
+        productId: restoreValidation.productId
+      }
+    };
+  } catch (error: any) {
+    console.error('❌ [SECURITY] Secure restore failed:', error);
+    
+    return {
+      success: false,
+      hasActiveEntitlements: false,
+      validationPassed: false,
+      error: 'unknown',
+      errorMessage: 'Failed to restore purchases. Please try again.',
+      appleValidation: {
+        hasSubscription: false,
+        transactionId: null,
+        productId: null
+      }
+    };
+  }
+};
+
 // =============================================================================
 // TanStack Query Hooks for Subscription State Management
 // =============================================================================

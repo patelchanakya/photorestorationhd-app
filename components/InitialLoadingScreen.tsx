@@ -31,17 +31,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 let hasInitializedGlobally = false;
 let initializationPromise: Promise<void> | null = null;
 
-// Sync lock management
-let syncLockAcquired = false;
-const acquireSyncLock = async (): Promise<boolean> => {
-  if (syncLockAcquired) return false;
-  syncLockAcquired = true;
-  return true;
-};
-
-const releaseSyncLock = () => {
-  syncLockAcquired = false;
-};
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -388,17 +377,15 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
         }
       };
 
-      // Even shorter pre-init delay for faster start
-      const timeoutId = setTimeout(async () => {
+      // Start initialization immediately
+      (async () => {
         try {
           await runInitialization();
           setIsComplete(true);
         } finally {
           resolve();
         }
-      }, 300);
-
-      initializationRef.current = timeoutId;
+      })();
     });
 
     initializationPromise.then(() => {
@@ -406,8 +393,6 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
     });
 
     return () => {
-      const timeoutId = initializationRef.current;
-      if (timeoutId) clearTimeout(timeoutId);
       const remove = customerInfoListenerRemoverRef.current;
       if (remove) {
         try { remove(); } catch {}
@@ -488,72 +473,13 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
           // Let RevenueCat handle anonymous IDs automatically
           // No login needed - RevenueCat creates $RCAnonymousID:xxx automatically
           
-          // Safe sync: Only sync for fresh anonymous users (reinstalls), not Apple ID switches
+          // Always sync purchases to ensure correct Apple ID status
           try {
-            console.log('🔄 [SAFE] Checking if sync is safe...');
-            
-            // Always fetch fresh data from Apple servers (no cache)
-            const customerInfo = await Purchases.getCustomerInfo();
-            
-            // Check if this is a fresh anonymous user with no purchase history
-            const isAnonymous = customerInfo.originalAppUserId?.startsWith('$RCAnonymousID:');
-            const hasNoPurchaseHistory = customerInfo.allPurchasedProductIdentifiers?.length === 0;
-            const hasNoActiveEntitlements = Object.keys(customerInfo.entitlements?.active || {}).length === 0;
-            
-            // Safe to sync conditions:
-            // 1. Anonymous user (not logged in)
-            // 2. No purchase history (fresh install, not Apple ID switch)  
-            // 3. No active entitlements (no cached Pro status)
-            const isSafeToSync = isAnonymous && hasNoPurchaseHistory && hasNoActiveEntitlements;
-            
-            console.log('🔍 [SAFE] Sync safety check:', {
-              isAnonymous,
-              hasNoPurchaseHistory,
-              hasNoActiveEntitlements,
-              isSafeToSync,
-              originalAppUserId: customerInfo.originalAppUserId,
-              purchasedProducts: customerInfo.allPurchasedProductIdentifiers?.length || 0
-            });
-            
-            if (isSafeToSync) {
-              // Acquire sync lock to prevent concurrent operations
-              const lockAcquired = await acquireSyncLock();
-              if (!lockAcquired) {
-                console.log('⚠️ [SAFE] Could not acquire sync lock, skipping');
-                return;
-              }
-
-              try {
-                console.log('✅ [SAFE] Fresh anonymous user detected - safe to sync for reinstall restore');
-                await Purchases.syncPurchases();
-                
-                // Fetch updated customer info after sync
-                const updatedInfo = await Purchases.getCustomerInfo();
-                const hasProAfterSync = Object.keys(updatedInfo.entitlements?.active || {}).length > 0;
-                
-                console.log('📊 [SAFE] Post-sync status:', {
-                  hasActiveEntitlements: hasProAfterSync,
-                  restoredProducts: updatedInfo.allPurchasedProductIdentifiers?.length || 0
-                });
-              } finally {
-                releaseSyncLock();
-              }
-            } else {
-              console.log('⚠️ [SAFE] Sync not safe - likely Apple ID switch or existing user');
-              
-              // For non-fresh users, check current entitlements without syncing
-              const hasCurrentEntitlements = Object.keys(customerInfo.entitlements?.active || {}).length > 0;
-              if (hasCurrentEntitlements) {
-                console.log('✅ [SAFE] Current Apple ID has valid Pro subscription');
-              } else {
-                console.log('ℹ️ [SAFE] Current Apple ID has no Pro subscription - user must restore manually');
-              }
-            }
-            
-            console.log('✅ [SAFE] Purchase check complete');
-          } catch (safeError) {
-            console.log('⚠️ [SAFE] Safe sync failed (non-fatal):', (safeError as any)?.message);
-            // Continue without sync - user remains at current entitlement status
+            console.log('🔄 Syncing purchases with current Apple ID...');
+            await Purchases.syncPurchases();
+            console.log('✅ Purchase sync complete');
+          } catch (syncError) {
+            console.log('⚠️ Purchase sync failed (non-fatal):', (syncError as any)?.message);
           }
         } catch (stableIdError) {
           if (__DEV__) {

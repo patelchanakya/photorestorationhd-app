@@ -79,13 +79,31 @@ export function usePhotoRestoration() {
         // Save original photo locally
         const originalFilename = await photoStorage.saveOriginal(imageUri);
 
-        // Get proper user ID from RevenueCat (not anonymous)
-        const { getAppUserId } = await import('@/services/revenuecat');
-        const revenueCatUserId = await getAppUserId();
+        // Get unified tracking ID (transaction ID for Pro, anonymous ID for free)
+        const { getUnifiedTrackingId } = await import('@/services/trackingIds');
+        const trackingId = await getUnifiedTrackingId('photo');
+        
+        // Fallback to RevenueCat anonymous ID if unified tracking fails
+        let userId = trackingId;
+        if (!userId) {
+          if (__DEV__) {
+            console.log('⚠️ Unified tracking ID failed, falling back to RevenueCat anonymous ID');
+          }
+          const { getAppUserId } = await import('@/services/revenuecat');
+          userId = await getAppUserId();
+        }
+        
+        if (__DEV__) {
+          console.log('🔑 Photo restoration using tracking ID:', {
+            trackingId: userId,
+            source: trackingId ? 'unified' : 'fallback',
+            isPro: userId?.startsWith('store:') || userId?.startsWith('orig:') || userId?.startsWith('fallback:')
+          });
+        }
         
         // Create restoration record in local database (AsyncStorage)
         const restoration = await restorationService.create({
-          user_id: revenueCatUserId || 'fallback-anonymous',
+          user_id: userId || 'fallback-anonymous',
           original_filename: originalFilename,
           status: 'processing',
           function_type: (functionType as any),
@@ -117,7 +135,7 @@ export function usePhotoRestoration() {
         const restoredUrl = await generatePhotoWithPolling(imageUri, functionType, {
           styleKey,
           customPrompt,
-          userId: revenueCatUserId || 'fallback-anonymous',
+          userId: userId || 'fallback-anonymous',
           onProgress: (progress, status) => {
             // Update global progress tracker for JobContext compatibility
             (global as any).__currentJobProgress = progress;
@@ -188,6 +206,7 @@ export function usePhotoRestoration() {
         // This happens after the immediate return, so UI shows result instantly
         InteractionManager.runAfterInteractions(async () => {
           try {
+            const backgroundStartTime = Date.now();
             if (__DEV__) {
               console.log('🔄 [BACKGROUND] Starting local file processing...');
             }
@@ -197,17 +216,21 @@ export function usePhotoRestoration() {
             
             if (isVideoResult) {
               // Save as video with .mp4 extension
+              const videoDownloadStart = Date.now();
               restoredFilename = await photoStorage.saveVideo(restoredUrl, originalFilename);
               restoredUri = photoStorage.getPhotoUri('video', restoredFilename);
               if (__DEV__) {
-                console.log('🎬 [BACKGROUND] Video saved:', restoredFilename, restoredUri);
+                const videoDownloadTime = Date.now() - videoDownloadStart;
+                console.log(`🎬 [BACKGROUND] Video saved in ${videoDownloadTime}ms:`, restoredFilename, restoredUri);
               }
             } else {
               // Save as photo with original extension
+              const photoDownloadStart = Date.now();
               restoredFilename = await photoStorage.saveRestored(restoredUrl, originalFilename);
               restoredUri = photoStorage.getPhotoUri('restored', restoredFilename);
               if (__DEV__) {
-                console.log('💾 [BACKGROUND] Photo saved:', restoredFilename, restoredUri);
+                const photoDownloadTime = Date.now() - photoDownloadStart;
+                console.log(`💾 [BACKGROUND] Photo saved in ${photoDownloadTime}ms:`, restoredFilename, restoredUri);
               }
             }
 
@@ -216,12 +239,14 @@ export function usePhotoRestoration() {
             
             if (!isVideoResult) {
               // Only create thumbnails for image restorations
+              const thumbnailStart = Date.now();
               thumbnailFilename = await photoStorage.createThumbnail(
                 restoredUri,
                 'restored'
               );
               if (__DEV__) {
-                console.log('🖼️ [BACKGROUND] Thumbnail created:', thumbnailFilename);
+                const thumbnailTime = Date.now() - thumbnailStart;
+                console.log(`🖼️ [BACKGROUND] Thumbnail created in ${thumbnailTime}ms:`, thumbnailFilename);
               }
             } else {
               if (__DEV__) {

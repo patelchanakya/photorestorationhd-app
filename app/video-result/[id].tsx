@@ -94,6 +94,7 @@ export default function VideoResultScreen() {
     if (videoGenerationStore.hasUnviewedVideo && 
         videoGenerationStore.lastCompletedVideoId === String(id)) {
       videoGenerationStore.markVideoAsViewed();
+      videoGenerationStore.hideToast(); // Also hide the toast
     }
   }, []);
 

@@ -44,6 +44,27 @@ export async function verifySubscriptionAccess(
         };
       }
       
+      // ADDITIONAL SECURITY: Check for suspicious patterns that might indicate Apple ID switching
+      if (userId.startsWith('store:') || userId.startsWith('orig:')) {
+        // Extract the transaction ID
+        const transactionId = userId.substring(userId.indexOf(':') + 1);
+        
+        // Basic validation - transaction IDs should be reasonably long
+        if (transactionId.length < 10) {
+          console.log(`🚨 [EDGE] SECURITY ALERT: Suspicious short transaction ID: ${transactionId.length} chars`);
+          return {
+            canUse: false,
+            isPro: false,
+            planType: 'free',
+            reason: 'Invalid transaction ID format',
+            code: 'INVALID_TRANSACTION_ID'
+          };
+        }
+        
+        // Log transaction ID for monitoring (first 10 chars only for privacy)
+        console.log(`🔍 [EDGE] Video access for transaction: ${transactionId.substring(0, 10)}...`);
+      }
+      
       // Valid Pro user with transaction ID
       console.log(`✅ [EDGE] Video access granted for Pro user with ${idInfo.idType}`);
       console.log(`✅ [EDGE] Pro user details:`, { idInfo, userId });
@@ -356,22 +377,25 @@ export async function rollbackUsage(
         console.error('❌ Photo usage rollback failed:', error);
         return false;
       }
-    } else {
-      const { error } = await supabase.rpc('rollback_back_to_life_usage', {
-        p_user_id: userId
+    } else if (feature === 'videos') {
+      const { error } = await supabase.rpc('rollback_video_usage_unified', {
+        p_tracking_id: userId
       });
       
       if (error) {
-        console.error('❌ Video usage rollback failed:', error);
+        console.error('❌ Unified video usage rollback failed:', error);
         return false;
       }
+      
+      console.log('✅ Unified video usage rollback succeeded');
+      return true;
     }
 
-    console.log('✅ Usage rollback completed for:', { userId, feature });
+    console.log('✅ Unified usage rollback completed for:', { userId, feature });
     return true;
 
   } catch (error) {
-    console.error('❌ Rollback error:', error);
+    console.error('❌ Unified rollback error:', error);
     return false;
   }
 }

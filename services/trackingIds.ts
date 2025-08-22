@@ -3,6 +3,56 @@ import * as Crypto from 'expo-crypto';
 import Purchases from 'react-native-purchases';
 import { getCustomerInfo, getSubscriptionPlanDetails } from './revenuecat';
 
+/**
+ * Get unified tracking ID for any feature (photos or videos)
+ * This is the primary function that determines the tracking ID based on subscription status
+ * 
+ * Returns:
+ * - Transaction ID for Pro users (store:xxx or orig:xxx)
+ * - RevenueCat anonymous ID for free users ($RCAnonymousID:xxx)
+ */
+export const getUnifiedTrackingId = async (featureType: 'photo' | 'video' = 'photo'): Promise<string | null> => {
+  try {
+    // Check if user has Pro subscription
+    const planDetails = await getSubscriptionPlanDetails();
+    
+    if (planDetails) {
+      // Pro users: use transaction-based tracking for everything
+      const transactionId = await getVideoTrackingId({ retries: 2, retryDelay: 500 });
+      if (__DEV__) {
+        console.log(`🔑 [UNIFIED] ${featureType.toUpperCase()} Tracking ID (Pro):`, {
+          tracking_id: transactionId,
+          plan_type: planDetails.planType,
+          feature: featureType
+        });
+      }
+      return transactionId;
+    } else {
+      // Free users: use RevenueCat anonymous ID
+      const customerInfo = await getCustomerInfo();
+      if (!customerInfo?.originalAppUserId) {
+        console.error('❌ [UNIFIED] No RevenueCat user ID available');
+        return null;
+      }
+      
+      const trackingId = customerInfo.originalAppUserId;
+      if (__DEV__) {
+        console.log(`🔑 [UNIFIED] ${featureType.toUpperCase()} Tracking ID (Free):`, {
+          tracking_id: trackingId,
+          plan_type: 'free',
+          feature: featureType
+        });
+      }
+      return trackingId;
+    }
+  } catch (error) {
+    if (__DEV__) {
+      console.error('❌ [UNIFIED] Failed to get tracking ID:', error);
+    }
+    return null;
+  }
+};
+
 const CUSTOM_USER_ID_KEY = 'rc_custom_user_id';
 
 /**
@@ -40,19 +90,25 @@ export const getOrCreateCustomUserId = async (): Promise<string | null> => {
 };
 
 /**
- * Get photo tracking ID - simplified to use RevenueCat anonymous IDs
- * Pro users return null (unlimited photos, no tracking needed)
- * Free users use RevenueCat anonymous ID (same as existing users)
+ * Get unified tracking ID for photos
+ * Uses transaction IDs for Pro users and RevenueCat anonymous IDs for free users
+ * Pro users get unlimited photos but we still track for analytics
  */
 export const getPhotoTrackingId = async (planType: string): Promise<string | null> => {
   try {
     if (planType !== 'free') {
-      // Pro users: unlimited photos (no tracking)
-      return null;
+      // Pro users: use video tracking ID system (transaction-based)
+      const videoId = await getVideoTrackingId({ retries: 1, retryDelay: 500 });
+      if (__DEV__) {
+        console.log('📸 Photo Tracking ID (Pro User - Transaction ID):', {
+          tracking_id: videoId,
+          plan_type: planType
+        });
+      }
+      return videoId;
     }
 
-    // Free users: use RevenueCat anonymous ID for simplicity
-    // This matches how existing users work and eliminates complex ID mapping
+    // Free users: use RevenueCat anonymous ID
     const { getCustomerInfo } = await import('./revenuecat');
     const customerInfo = await getCustomerInfo();
     

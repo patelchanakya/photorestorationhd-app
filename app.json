@@ -20,7 +20,25 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSPhotoLibraryAddUsageDescription": "This app needs access to your photo library to save restored photos.",
-        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to select and save photos."
+        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to select and save photos.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false,
+          "NSAllowsArbitraryLoadsInWebContent": false,
+          "NSExceptionDomains": {
+            "supabase.co": {
+              "NSIncludesSubdomains": true,
+              "NSTemporaryExceptionRequiresForwardSecrecy": false
+            },
+            "replicate.com": {
+              "NSIncludesSubdomains": true,
+              "NSTemporaryExceptionRequiresForwardSecrecy": false
+            },
+            "replicate.delivery": {
+              "NSIncludesSubdomains": true,
+              "NSTemporaryExceptionRequiresForwardSecrecy": false
+            }
+          }
+        }
       },
       "storeKitConfiguration": "./PastPix.storekit"
     },

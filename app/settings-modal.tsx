@@ -3,7 +3,7 @@ import { onboardingUtils } from '@/utils/onboarding';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { photoRestorationKeys } from '@/hooks/usePhotoRestoration';
 import { getSupportedLanguages, useTranslation } from '@/i18n';
-import { getAppUserId, restorePurchasesSimple, checkSubscriptionStatus } from '@/services/revenuecat';
+import { getAppUserId, restorePurchasesSecure, checkSubscriptionStatus } from '@/services/revenuecat';
 import { useCropModalStore } from '@/store/cropModalStore';
 import { photoStorage } from '@/services/storage';
 import { localStorageHelpers } from '@/services/supabase';
@@ -328,7 +328,8 @@ export default function SettingsModalScreen() {
       // Reset cancellation flag
       restoreOperationRef.current.cancelled = false;
       
-      const result = await restorePurchasesSimple();
+      console.log('🔒 [SECURITY] Starting secure restore with Apple validation...');
+      const result = await restorePurchasesSecure();
       
       // Check if operation was cancelled due to backgrounding
       if (restoreOperationRef.current.cancelled) {
@@ -343,12 +344,14 @@ export default function SettingsModalScreen() {
       
       if (result.success) {
         if (result.hasActiveEntitlements) {
+          console.log('✅ [SECURITY] Restore successful - subscription confirmed by Apple');
           Alert.alert(
             'Restored!',
             t('alerts.purchasesRestored'),
             [{ text: 'Great!' }]
           );
         } else {
+          console.log('ℹ️ [SECURITY] Restore completed but no active subscriptions found');
           Alert.alert(
             'No Purchases Found',
             t('alerts.noPurchasesFound'),
@@ -356,13 +359,37 @@ export default function SettingsModalScreen() {
           );
         }
       } else {
-        // Only show error alert for actual errors, not cancellations
-        if (result.error !== 'cancelled') {
+        // Enhanced error handling for security validation failures
+        if (result.error === 'cancelled' && result.errorMessage?.includes('Apple ID')) {
+          console.log('🚨 [SECURITY] Restore blocked - no subscription on current Apple ID');
+          
           Alert.alert(
-            t('alerts.restoreFailed'),
-            result.errorMessage || 'Unable to restore purchases. Please try again.',
-            [{ text: t('common.ok') }]
+            'No Subscription Found',
+            'No active subscription found on this Apple ID. Please sign in with the Apple ID used for purchase.',
+            [
+              { text: 'OK', style: 'default' },
+              {
+                text: 'How to Fix',
+                style: 'default',
+                onPress: () => {
+                  Alert.alert(
+                    'How to Restore Purchases',
+                    '1. Go to Settings → App Store\n2. Sign in with the Apple ID used for purchase\n3. Return to Clever and tap Restore Purchases again',
+                    [{ text: 'Got it', style: 'default' }]
+                  );
+                }
+              }
+            ]
           );
+        } else {
+          // Only show error alert for actual errors, not security blocks
+          if (result.error !== 'cancelled') {
+            Alert.alert(
+              t('alerts.restoreFailed'),
+              result.errorMessage || 'Unable to restore purchases. Please try again.',
+              [{ text: t('common.ok') }]
+            );
+          }
         }
       }
     } catch (error) {
@@ -911,10 +938,10 @@ Best regards`;
                   </View>
                   <View className="flex-1">
                     <Text className="text-white text-base font-medium">
-                      {isRestoring ? t('common.loading') : t('settings.restorePurchases')}
+                      {isRestoring ? 'Checking with App Store...' : t('settings.restorePurchases')}
                     </Text>
                     <Text className="text-white/60 text-sm">
-                      {isRestoring ? t('common.loading') : t('settings.restorePurchasesDescription')}
+                      {isRestoring ? 'Verifying your subscription' : t('settings.restorePurchasesDescription')}
                     </Text>
                   </View>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
