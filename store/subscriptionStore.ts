@@ -1,4 +1,4 @@
-import { initializeStoreCallbacks } from '@/services/revenuecat';
+// Removed import - migrating to RevenueCat Context Provider
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -61,10 +61,4 @@ export const useSubscriptionStore = create<SubscriptionState>()(
   )
 );
 
-// Initialize callbacks to break circular dependency with revenuecat service
-initializeStoreCallbacks({
-  setIsPro: (isPro: boolean) => useSubscriptionStore.getState().setIsPro(isPro),
-  setExpirationDate: (date: string | null) => useSubscriptionStore.getState().setExpirationDate(date),
-  setTransactionId: (transactionId: string | null) => useSubscriptionStore.getState().setTransactionId(transactionId),
-  getIsPro: () => useSubscriptionStore.getState().isPro,
-});
+// Callback initialization removed - using RevenueCat Context Provider instead

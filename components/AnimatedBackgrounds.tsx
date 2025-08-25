@@ -1,5 +1,5 @@
-import { checkSubscriptionStatus, presentPaywall } from '@/services/revenuecat';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { checkSubscriptionStatus, presentPaywall, validatePremiumAccess } from '@/services/revenuecat';
+import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -143,17 +143,19 @@ const VideoViewWithPlayer = ({ video, isVisible = true }: { video: any; isVisibl
 
 export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { backgrounds?: BackgroundItem[] }) {
   const router = useRouter();
-  const isPro = useSubscriptionStore((state) => state.isPro);
+  const { isPro } = useRevenueCat();
 
   const handleBackgroundSelect = async (background: BackgroundItem) => {
-    // Check current PRO status
-    const currentIsPro = useSubscriptionStore.getState().isPro;
+    // Check current PRO status with fresh RevenueCat validation
+    const currentIsPro = await validatePremiumAccess();
     
     // If not PRO, show paywall
     if (!currentIsPro) {
       const success = await presentPaywall();
       if (!success) return;
-      await checkSubscriptionStatus();
+      // Verify purchase with fresh RevenueCat validation
+      const updatedIsPro = await validatePremiumAccess();
+      if (!updatedIsPro) return;
     }
     
     // Launch image picker then open Quick Edit sheet in background mode

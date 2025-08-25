@@ -246,6 +246,35 @@ export const restorationService = {
     return restoration;
   },
 
+  // Get restoration by prediction ID (for recovery system)
+  async getByPredictionId(predictionId: string): Promise<Restoration | null> {
+    if (__DEV__) {
+      console.log('🔍 Getting restoration by prediction ID:', predictionId);
+    }
+    
+    try {
+      const allRestorations = await localStorageHelpers.getAllLocalRestorations();
+      const restoration = allRestorations.find(r => r.prediction_id === predictionId);
+      
+      if (restoration) {
+        if (__DEV__) {
+          console.log('✅ Restoration found by prediction ID:', predictionId, '-> ID:', restoration.id);
+        }
+      } else {
+        if (__DEV__) {
+          console.log('⚠️ Restoration not found by prediction ID:', predictionId);
+        }
+      }
+      
+      return restoration || null;
+    } catch (error) {
+      if (__DEV__) {
+        console.error('❌ Error finding restoration by prediction ID:', error);
+      }
+      return null;
+    }
+  },
+
   // Cache for restoration data
   _restorationCache: {
     data: null as Restoration[] | null,

@@ -9,12 +9,13 @@ import { useCropModalStore } from '@/store/cropModalStore';
 import { useQuickEditStore } from '@/store/quickEditStore';
 import { useRestorationScreenStore } from '@/store/restorationScreenStore';
 import { useRestorationStore } from '@/store/restorationStore';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import * as FileSystem from 'expo-file-system';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as StoreReview from 'expo-store-review';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import {
     ActionSheetIOS,
@@ -64,7 +65,7 @@ export default function RestorationScreen() {
   const totalRestorations = useRestorationStore((state) => state.totalRestorations);
   const hasShownRatingPrompt = useRestorationStore((state) => state.hasShownRatingPrompt);
   const setHasShownRatingPrompt = useRestorationStore((state) => state.setHasShownRatingPrompt);
-  const { isPro } = useSubscriptionStore();
+  const { isPro } = useRevenueCat();
   
   // Check if this is a new restoration request
   const isNewRestoration = !!imageUri && !!functionType;
@@ -83,7 +84,16 @@ export default function RestorationScreen() {
 
   const loadRestoration = useCallback(async () => {
     try {
-      const data = await restorationService.getById(id as string);
+      let data = await restorationService.getById(id as string);
+      
+      // If not found by restoration ID, try prediction ID (for recovery system)
+      if (!data) {
+        if (__DEV__) {
+          console.log('🔍 Restoration not found by ID, trying prediction ID:', id);
+        }
+        data = await restorationService.getByPredictionId(id as string);
+      }
+      
       setRestoration(data);
     } catch (error) {
       console.error('Failed to load restoration:', error);
@@ -255,6 +265,19 @@ export default function RestorationScreen() {
     checkFiles();
   }, [restoration, isNewRestoration, setFilesExist]);
 
+  // Helper function to clear active prediction state
+  const clearActivePrediction = async () => {
+    await AsyncStorage.removeItem('activePredictionId');
+    if (__DEV__) {
+      console.log('🧹 [RECOVERY] Cleared prediction state after user action');
+    }
+  };
+
+  // Handler for dismissing the screen (back navigation)
+  const handleDismiss = async () => {
+    await clearActivePrediction();
+    router.back();
+  };
 
   const handleExport = async () => {
     if (!restoration || !restoredUri) return;
@@ -274,6 +297,9 @@ export default function RestorationScreen() {
       
       // Trigger success state in modal
       savingModalRef.current?.showSuccess();
+      
+      // Clear active prediction state since user has saved the result
+      await clearActivePrediction();
       
     } catch (err: any) {
       console.error('Failed to save photo to camera roll:', err);
@@ -325,6 +351,9 @@ export default function RestorationScreen() {
         url: restoredUri,
         message: 'Check out my restored photo!',
       });
+      
+      // Clear active prediction state since user has shared the result
+      await clearActivePrediction();
     } catch (error) {
       console.error('Failed to share photo:', error);
       Alert.alert('Error', 'Failed to share photo');
@@ -485,7 +514,7 @@ export default function RestorationScreen() {
       <SafeAreaView style={{ flex: 1, backgroundColor: '#0B0B0F' }}>
         {/* Clean Header */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)' }}>
-          <TouchableOpacity onPress={() => router.back()} style={{ padding: 8, marginLeft: -8 }}>
+          <TouchableOpacity onPress={handleDismiss} style={{ padding: 8, marginLeft: -8 }}>
             <IconSymbol name="chevron.left" size={isSmallDevice ? 20 : 24} color="#EAEAEA" />
           </TouchableOpacity>
           <View style={{ flex: 1, marginHorizontal: 8 }}>
@@ -550,7 +579,7 @@ export default function RestorationScreen() {
               The photo files have been deleted or moved. This restoration record will be cleaned up.
             </Text>
             <TouchableOpacity 
-              onPress={() => router.back()}
+              onPress={handleDismiss}
               className="bg-blue-500 px-6 py-3 rounded-full"
             >
               <Text className="text-white font-semibold">Go Back</Text>

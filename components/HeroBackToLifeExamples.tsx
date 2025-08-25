@@ -1,16 +1,12 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { useSimpleBackToLife } from '@/hooks/useSimpleBackToLife';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
-import { useVideoGenerationStore } from '@/store/videoGenerationStore';
-import { DEFAULT_ANIMATION_PROMPT } from '@/constants/videoPrompts';
+import { useRevenueCat } from '@/contexts/RevenueCatContext';
+import { presentPaywall, validatePremiumAccess } from '@/services/revenuecat';
 import { useFocusEffect } from '@react-navigation/native';
 import { FlashList } from '@shopify/flash-list';
 import * as Haptics from 'expo-haptics';
 import { Image as ExpoImage } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
-import { VideoView, useVideoPlayer } from 'expo-video';
 import React from 'react';
 import { Alert, AppState, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
@@ -78,137 +74,25 @@ const DEFAULT_EXAMPLES: ExampleItem[] = [
   },
 ];
 
-// VideoView component with player hook and AppState handling - optimized
-const VideoViewWithPlayer = ({ video, index, style, isVisible, resumeTick = 0 }: { video: any; index: number; style: any; isVisible: boolean; resumeTick?: number }) => {
-  // Calculate deterministic values for this video
-  const playbackRate = 1.0; // Do not slow down Back to Life videos
-
-  const initialSeek = React.useMemo(() => {
-    return (index * 0.3) % 2;
-  }, [index]);
-  
-  const player = useVideoPlayer(video, (player) => {
-    player.loop = true;
-    player.muted = true;
-    player.playbackRate = playbackRate;
-    // Don't auto-play to improve initial load
-  });
-
-  // Start/pause based on visibility with staggered delay
-  React.useEffect(() => {
-    if (!player) return;
-
-    let timer: any;
-    if (isVisible) {
-      const startDelay = index * 150 + Math.random() * 200;
-      timer = setTimeout(() => {
-        try {
-          player.currentTime = initialSeek;
-        } catch {}
-        try {
-          if (!player.playing) player.play();
-        } catch {}
-      }, startDelay);
-    } else {
-      try {
-        if (player.playing) player.pause();
-      } catch {}
-    }
-
-    return () => timer && clearTimeout(timer);
-  }, [player, index, isVisible, initialSeek]);
-  
-  // Handle app state changes (backgrounding)
-  React.useEffect(() => {
-    const handleAppStateChange = (nextAppState: string) => {
-      if (nextAppState === 'active' && isVisible) {
-        // Resume video playback when app returns to foreground
-        try {
-          if (player && !player.playing) {
-            player.play();
-          }
-        } catch {}
-      }
-    };
-
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
-    
-    return () => subscription?.remove();
-  }, [player, isVisible]);
-
-  // Explicit resume when parent signals (e.g., app became active or screen re-focused)
-  React.useEffect(() => {
-    try {
-      if (resumeTick > 0 && player && isVisible && !player.playing) {
-        player.play();
-      }
-    } catch {}
-  }, [resumeTick]);
-
-  // Handle navigation focus (returning to screen)
-  useFocusEffect(
-    React.useCallback(() => {
-      // Play video when screen comes into focus
-      try {
-        if (player && !player.playing && isVisible) {
-          player.play();
-        }
-      } catch {}
-      
-      // Optional: pause when leaving screen to save resources
-      return () => {
-        // We could pause here, but keeping them playing for smoother UX
-        // if (player && player.playing) {
-        //   player.pause();
-        // }
-      };
-    }, [player, isVisible])
-  );
-
+// Static image component (videos disabled)
+const StaticImageView = ({ video, style }: { video: any; style: any }) => {
+  // For now, just show a static placeholder since videos are disabled
   return (
-    <VideoView
-      player={player}
-      style={style}
-      contentFit="cover"
-      nativeControls={false}
-      allowsFullscreen={false}
+    <ExpoImage 
+      source={video} 
+      style={style} 
+      contentFit="cover" 
+      transition={0}
     />
   );
 };
 
-const simplePickVideo = (backToLife: any) => async (isPro: boolean, animationPrompt?: string) => {
-  try {
-    // Simple check
-    const { isGenerating } = useVideoGenerationStore.getState();
-    if (isGenerating) {
-      console.log('🚫 Video already generating');
-      return;
-    }
-
-    // Get image
-    const result = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: false,
-      quality: 1,
-    });
-    
-    if (result.canceled || !result.assets?.[0]) return;
-
-    // Check Pro
-    if (!isPro) {
-      const { presentPaywall } = await import('@/services/revenuecat');
-      const success = await presentPaywall();
-      if (!success) return;
-    }
-
-    // Generate video
-    backToLife.mutate({
-      imageUri: result.assets[0].uri,
-      animationPrompt: animationPrompt || DEFAULT_ANIMATION_PROMPT
-    });
-
-  } catch (error) {
-    console.error('Video generation error:', error);
-  }
+const handleComingSoon = () => {
+  Alert.alert(
+    'Coming Soon',
+    'Back to Life video generation is coming soon! Stay tuned for updates.',
+    [{ text: 'OK' }]
+  );
 };
 
 
@@ -216,8 +100,8 @@ const simplePickVideo = (backToLife: any) => async (isPro: boolean, animationPro
 /*
 async function pickVideoOLD(isPro: boolean, animationPrompt?: string) {
   const { setIsProcessing, setCurrentImageUri, setProgress, setCanCancel } = useCropModalStore.getState();
-  // Check current PRO status
-  const currentIsPro = useSubscriptionStore.getState().isPro;
+  // Check current PRO status with fresh RevenueCat validation
+  const currentIsPro = await validatePremiumAccess();
   console.log('🎬 Back to Life: Current PRO status:', currentIsPro);
   
   // If not PRO, show paywall
@@ -227,11 +111,11 @@ async function pickVideoOLD(isPro: boolean, animationPrompt?: string) {
     console.log('🎬 Back to Life: Paywall result:', success);
     if (!success) return;
     
-    // After successful purchase, check if status was updated
-    const updatedIsPro = useSubscriptionStore.getState().isPro;
+    // Verify purchase completion with fresh RevenueCat check
+    const updatedIsPro = await validatePremiumAccess();
     if (!updatedIsPro) {
-      // Wait a moment for the listener to update
-      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log('🎬 Back to Life: Purchase verification failed');
+      return;
     }
   }
 
@@ -242,9 +126,10 @@ async function pickVideoOLD(isPro: boolean, animationPrompt?: string) {
   if (currentIsPro && !debugUnlimited) {
     console.log('🎬 Back to Life: PRO user, checking usage limits');
     try {
-      console.log('🎬 Back to Life: Calling backToLifeService.checkUsage()');
-      const usage = await backToLifeService.checkUsage();
-      console.log('🎬 Back to Life: Usage check result:', usage);
+      console.log('🎬 Back to Life: backToLifeService disabled - skipping usage check');
+      // const usage = await backToLifeService.checkUsage(); // DISABLED - service removed
+      const usage = { canUse: true, canUseToday: true }; // Mock for now
+      console.log('🎬 Back to Life: Usage check result (mocked):', usage);
       
       if (!usage.canUse) {
         let title, message;
@@ -379,10 +264,9 @@ Thanks!`;
 }
 
 // Create animated tile component with glow effect
-  const AnimatedTile = ({ item, index, isPro, backToLife, isVisible, resumeTick, tileWidth, spacing, onBeforePicker, onAfterPicker }: { item: ExampleItem; index: number; isPro: boolean; backToLife: any; isVisible: boolean; resumeTick: number; tileWidth: number; spacing: number; onBeforePicker?: () => void; onAfterPicker?: () => void }) => {
-  // Get video processing state to prevent multiple simultaneous video generations
-  const { isGenerating } = useVideoGenerationStore();
-  const isProcessingAnything = isGenerating;
+  const AnimatedTile = ({ item, index, isPro, isVisible, resumeTick, tileWidth, spacing, onBeforePicker, onAfterPicker }: { item: ExampleItem; index: number; isPro: boolean; isVisible: boolean; resumeTick: number; tileWidth: number; spacing: number; onBeforePicker?: () => void; onAfterPicker?: () => void }) => {
+  // Disabled - no processing for now
+  const isProcessingAnything = false;
   // Subtle glow animation
   const glowOpacity = useSharedValue(0.5);
     const pressScale = useSharedValue(1);
@@ -423,7 +307,7 @@ Thanks!`;
           pressScale.value = withTiming(1, { duration: 140 });
           glowOpacity.value = withTiming(0.5, { duration: 200 });
         }}
-        onPress={isProcessingAnything ? undefined : () => simplePickVideo(backToLife)(isPro, item.animationPrompt)}
+        onPress={handleComingSoon}
         disabled={isProcessingAnything}
         style={{ 
           width: tileWidth, 
@@ -438,12 +322,9 @@ Thanks!`;
       >
         {/* Render video or image based on type */}
         {item.type === 'video' && item.video ? (
-          <VideoViewWithPlayer 
+          <StaticImageView 
             video={item.video} 
-            index={index}
             style={{ width: '100%', height: '100%', opacity: 0.98 }}
-            isVisible={isVisible}
-            resumeTick={resumeTick}
           />
         ) : (
           <ExpoImage source={item.image} style={{ width: '100%', height: '100%', transform: [{ translateY: (item.yOffset ?? 32) }] }} contentFit="cover" transition={0} />
@@ -506,13 +387,13 @@ Thanks!`;
             {item.title}
           </Text>
           <Text style={{ 
-            color: isProcessingAnything ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.4)', 
+            color: 'rgba(255,255,255,0.4)', 
             fontSize: 9, 
             marginTop: 1,
             letterSpacing: 0.8,
             fontWeight: '500'
           }}>
-            {isProcessingAnything ? 'PROCESSING...' : 'TAP TO ANIMATE'}
+            COMING SOON
           </Text>
         </View>
       </TouchableOpacity>
@@ -522,8 +403,7 @@ Thanks!`;
 };
 
 export function HeroBackToLifeExamples({ examples = DEFAULT_EXAMPLES, onBeforePicker, onAfterPicker }: { examples?: ExampleItem[]; onBeforePicker?: () => void; onAfterPicker?: () => void }) {
-  const isPro = useSubscriptionStore((state) => state.isPro);
-  const backToLife = useSimpleBackToLife();
+  const { isPro } = useRevenueCat();
   const { width: screenWidth } = useWindowDimensions();
   const spacing = 10;
   const tileWidth = Math.round(Math.min(140, Math.max(110, screenWidth * 0.3)));
@@ -547,7 +427,6 @@ export function HeroBackToLifeExamples({ examples = DEFAULT_EXAMPLES, onBeforePi
         item={item}
         index={index}
         isPro={isPro}
-        backToLife={backToLife}
         isVisible={isVisible}
         resumeTick={resumeTick}
         tileWidth={tileWidth}
@@ -556,7 +435,7 @@ export function HeroBackToLifeExamples({ examples = DEFAULT_EXAMPLES, onBeforePi
         onAfterPicker={onAfterPicker}
       />
     );
-  }, [visibleSet, isPro, backToLife, resumeTick, tileWidth, spacing, examples.length, onBeforePicker, onAfterPicker]);
+  }, [visibleSet, isPro, resumeTick, tileWidth, spacing, examples.length, onBeforePicker, onAfterPicker]);
 
   const onViewableItemsChanged = React.useRef(({ viewableItems }: { viewableItems: { index: number | null }[] }) => {
     const next = new Set<number>();

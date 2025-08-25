@@ -6,6 +6,7 @@ import { useQuickEditStore } from '@/store/quickEditStore';
 import { photoStorage } from '@/services/storage';
 import { presentPaywall } from '@/services/revenuecat';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image as ExpoImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 // Removed heavy blur to reduce memory/CPU
@@ -85,12 +86,20 @@ export function QuickEditSheet() {
   const MEDIA_HEIGHT = 240;
   const saveButtonScale = useSharedValue(1);
   const savedFeedback = useSharedValue(0);
-  const handleClose = React.useCallback(() => {
+  const handleClose = React.useCallback(async () => {
     // Prevent dismissal while processing
     if (stage === 'loading') {
       return;
     }
     try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+    
+    // Clear active prediction state when dismissing the sheet
+    await AsyncStorage.removeItem('activePredictionId');
+    
+    if (__DEV__) {
+      console.log('❌ [RECOVERY] Cleared prediction state after dismiss');
+    }
+    
     close();
     // Give the exit animation time, then aggressively free image memory
     setTimeout(() => {
@@ -218,7 +227,14 @@ export function QuickEditSheet() {
     });
     
     savePhotoMutation.mutate({ imageUri: restoredImageUri }, {
-      onSuccess: () => {
+      onSuccess: async () => {
+        // Clear active prediction state since user has saved the result
+        await AsyncStorage.removeItem('activePredictionId');
+        
+        if (__DEV__) {
+          console.log('💾 [RECOVERY] Cleared prediction state after save');
+        }
+        
         // Show success, then close
         savedFeedback.value = 1;
         setTimeout(() => {
@@ -234,8 +250,16 @@ export function QuickEditSheet() {
     });
   };
 
-  const handleView = () => {
+  const handleView = async () => {
     if (!restoredId) return;
+    
+    // Clear active prediction state since user is viewing the result
+    await AsyncStorage.removeItem('activePredictionId');
+    
+    if (__DEV__) {
+      console.log('👁️ [RECOVERY] Cleared prediction state after view');
+    }
+    
     close();
     router.push(`/restoration/${restoredId}`);
   };

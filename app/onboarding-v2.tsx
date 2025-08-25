@@ -11,13 +11,13 @@ import { onboardingUtils, ONBOARDING_FEATURES } from '@/utils/onboarding';
 import { onboardingTrackingService } from '@/services/onboardingTracking';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 import { presentPaywall } from '@/services/revenuecat';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { useRevenueCat } from '@/contexts/RevenueCatContext';
 
 export default function OnboardingV2() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const photoRestoration = usePhotoRestoration();
-  const { isPro } = useSubscriptionStore();
+  const { isPro } = useRevenueCat();
 
   const [step, setStep] = useState<0 | 1>(0);
   const [selected, setSelected] = useState<string[]>([]);

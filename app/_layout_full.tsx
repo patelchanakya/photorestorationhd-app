@@ -14,7 +14,7 @@ import { RevenueCatProvider } from '@/contexts/RevenueCatContext';
 import { Platform } from 'react-native';
 import { LOG_LEVEL } from 'react-native-purchases';
 import { useColorScheme } from '@/hooks/useColorScheme';
-// Removed LanguageProvider - translations system removed
+import { LanguageProvider } from '@/i18n';
 // useSubscriptionStore removed - using RevenueCat Context Provider instead
 import NetInfo from '@react-native-community/netinfo';
 import { QueryClient, QueryClientProvider, focusManager, onlineManager } from '@tanstack/react-query';
@@ -22,7 +22,7 @@ import { Image as ExpoImage } from 'expo-image';
 import React, { useEffect } from 'react';
 import { AppState, AppStateStatus, LogBox, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import Purchases from 'react-native-purchases';
+import Purchases, { CustomerInfo } from 'react-native-purchases';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -248,14 +248,15 @@ async function checkActivePrediction() {
       const currentQuickEditState = useQuickEditStore.getState();
       if (currentQuickEditState.visible) {
         console.log('⚠️ [RECOVERY] Quick Edit Sheet already open, skipping duplicate UI update');
-        // Don't clear prediction - let user interact with it first
+        // Clear the prediction ID since we found the completed result but UI is already showing it
+        await AsyncStorage.removeItem('activePredictionId');
         return;
       }
       
       // Check if this is the same prediction that's already displayed
       if (currentQuickEditState.restoredId === activePredictionId) {
         console.log('⚠️ [RECOVERY] Same prediction already displayed, skipping duplicate UI update');
-        // Don't clear prediction - let user interact with it first
+        await AsyncStorage.removeItem('activePredictionId');
         return;
       }
       
@@ -330,14 +331,15 @@ export default function RootLayout() {
   });
   
   const [showInitialLoading, setShowInitialLoading] = React.useState(true);
+  const [revenueCatConfigured, setRevenueCatConfigured] = React.useState(false);
 
   // Set up network and app state management
   useOnlineManager();
   useAppState(onAppStateChange);
 
-  // Configure RevenueCat immediately on app start - following official SDK docs pattern
+  // Configure RevenueCat before any components that use it
   useEffect(() => {
-    const initializeRevenueCat = async () => {
+    const configureRevenueCat = async () => {
       try {
         const isExpoGo = Constants.appOwnership === 'expo';
         
@@ -345,17 +347,20 @@ export default function RootLayout() {
           if (__DEV__) {
             console.log('⚠️ RevenueCat is not available in Expo Go. Using mock data.');
           }
+          setRevenueCatConfigured(true);
           return;
         }
         
-        // Configure log levels first (official docs pattern)
+        // Configure log levels
         if (__DEV__) {
-          await Purchases.setLogLevel(LOG_LEVEL.INFO);
+          Purchases.setLogLevel(LOG_LEVEL.INFO);
+          Purchases.setDebugLogsEnabled(true);
         } else {
-          await Purchases.setLogLevel(LOG_LEVEL.ERROR);
+          Purchases.setLogLevel(LOG_LEVEL.ERROR);
+          Purchases.setDebugLogsEnabled(false);
         }
         
-        // Configure RevenueCat with Apple API key (iOS only for now)
+        // Configure RevenueCat with Apple API key
         if (Platform.OS === 'ios') {
           const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY;
           
@@ -363,48 +368,52 @@ export default function RootLayout() {
             if (__DEV__) {
               console.error('❌ RevenueCat Apple API key not found');
             }
+            setRevenueCatConfigured(true); // Allow app to continue
             return;
           }
           
-          // Check if already configured to avoid double configuration
-          const isConfigured = await Purchases.isConfigured();
-          if (isConfigured) {
-            if (__DEV__) {
-              console.log('✅ RevenueCat already configured');
-            }
-            return;
-          }
-
-          if (__DEV__) {
-            console.log('🔧 Initializing RevenueCat SDK...');
-          }
-          
-          // Configure SDK (following official docs pattern)
-          await Purchases.configure({ 
-            apiKey: apiKey,
-            useAmazon: false,
-          });
-          
-          // Sync purchases after configuration (RevenueCat best practice)
+          // Check if already configured
           try {
-            await Purchases.syncPurchases();
-            if (__DEV__) {
-              console.log('✅ RevenueCat configured and purchases synced successfully');
+            const isConfigured = await Purchases.isConfigured();
+            if (isConfigured) {
+              if (__DEV__) {
+                console.log('✅ RevenueCat already configured');
+              }
+              setRevenueCatConfigured(true);
+            } else {
+              if (__DEV__) {
+                console.log('🔧 Configuring RevenueCat in _layout.tsx...');
+              }
+              
+              await Purchases.configure({ 
+                apiKey: apiKey,
+                useAmazon: false,
+              });
+              
+              if (__DEV__) {
+                console.log('✅ RevenueCat configured successfully in _layout.tsx');
+              }
+              setRevenueCatConfigured(true);
             }
-          } catch (syncError) {
+          } catch (error) {
             if (__DEV__) {
-              console.warn('⚠️ Purchase sync failed (non-fatal):', syncError);
+              console.error('❌ RevenueCat configuration failed in _layout.tsx:', error);
             }
+            setRevenueCatConfigured(true); // Allow app to continue
           }
+        } else {
+          // Android or other platforms
+          setRevenueCatConfigured(true);
         }
       } catch (error) {
         if (__DEV__) {
-          console.error('❌ RevenueCat initialization error:', error);
+          console.error('❌ RevenueCat configuration error:', error);
         }
+        setRevenueCatConfigured(true); // Allow app to continue
       }
     };
 
-    initializeRevenueCat();
+    configureRevenueCat();
   }, []);
 
   // Check for active predictions on app launch
@@ -417,28 +426,16 @@ export default function RootLayout() {
     setShowInitialLoading(false);
   }, []);
 
-  if (!loaded) {
+  if (!loaded || !revenueCatConfigured) {
     // Async font loading only occurs in development.
     return null;
   }
 
   if (showInitialLoading) {
     return (
-      <SafeAreaProvider>
-        <View style={{ flex: 1, backgroundColor: '#000000' }}>
-          <ErrorBoundary>
-            <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#000000' }}>
-              <RevenueCatProvider>
-                <QueryClientProvider client={queryClient}>
-                  <JobProvider>
-                    <InitialLoadingScreen onLoadingComplete={onLoadingComplete} />
-                  </JobProvider>
-                </QueryClientProvider>
-              </RevenueCatProvider>
-            </GestureHandlerRootView>
-          </ErrorBoundary>
-        </View>
-      </SafeAreaProvider>
+      <View style={{ flex: 1, backgroundColor: '#000000' }}>
+        <InitialLoadingScreen onLoadingComplete={onLoadingComplete} />
+      </View>
     );
   }
 
@@ -448,15 +445,17 @@ export default function RootLayout() {
         <ErrorBoundary>
           <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#000000' }}>
             <RevenueCatProvider>
-              <QueryClientProvider client={queryClient}>
-                <JobProvider>
-                  <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                    <MainNavigator />
-                    <GlobalNotifications />
-                    <StatusBar style="auto" />
-                  </ThemeProvider>
-                </JobProvider>
-              </QueryClientProvider>
+              <LanguageProvider>
+                <QueryClientProvider client={queryClient}>
+                  <JobProvider>
+                    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                      <MainNavigator />
+                      <GlobalNotifications />
+                      <StatusBar style="auto" />
+                    </ThemeProvider>
+                  </JobProvider>
+                </QueryClientProvider>
+              </LanguageProvider>
             </RevenueCatProvider>
           </GestureHandlerRootView>
         </ErrorBoundary>
@@ -481,6 +480,7 @@ function MainNavigator() {
       <Stack.Screen name="index" options={{ headerShown: false, title: "Clever" }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="restoration/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="video-result/[id]" options={{ headerShown: false }} />
       <Stack.Screen
         name="settings-modal"
         options={{

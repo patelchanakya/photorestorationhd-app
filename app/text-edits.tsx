@@ -1,7 +1,7 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
-import { presentPaywall } from '@/services/revenuecat';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { presentPaywall, validatePremiumAccess } from '@/services/revenuecat';
+// useSubscriptionStore removed - now using RevenueCat Context
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { Image as ExpoImage } from 'expo-image';
@@ -12,6 +12,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { BottomSheet } from '@/components/sheets/BottomSheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function TextEditsScreen() {
   const router = useRouter();
@@ -52,7 +53,7 @@ useEffect(() => {
     // CRITICAL: Gate Pro-only features before processing
     const proOnlyModes = ['outfit', 'background'];
     if (proOnlyModes.includes(editMode || '')) {
-      const currentIsPro = useSubscriptionStore.getState().isPro;
+      const currentIsPro = await validatePremiumAccess();
       
       if (!currentIsPro) {
         console.log(`🔒 Photo Magic: Pro mode "${editMode}" requires subscription`);
@@ -64,9 +65,8 @@ useEffect(() => {
           return;
         }
         
-        // Wait for listener to update subscription state
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const updatedIsPro = useSubscriptionStore.getState().isPro;
+        // Verify purchase completion with fresh RevenueCat check
+        const updatedIsPro = await validatePremiumAccess();
         
         if (!updatedIsPro) {
           Alert.alert('Purchase Error', 'Please try again or restore purchases if you already have a subscription.');
@@ -84,6 +84,22 @@ useEffect(() => {
     if (editMode === 'outfit') functionType = 'outfit';
     else if (editMode === 'background') functionType = 'background';
 
+    // Store text-edit context for recovery
+    await AsyncStorage.setItem('activeTextEditContext', JSON.stringify({
+      mode: 'text-edits',
+      timestamp: Date.now(),
+      prompt: prompt.substring(0, 100), // Store preview of prompt for logging
+      functionType
+    }));
+    
+    if (__DEV__) {
+      console.log('📝 [TEXT-EDIT] Stored context for recovery:', {
+        mode: 'text_edits',
+        functionType,
+        prompt_preview: prompt.substring(0, 50) + (prompt.length > 50 ? '...' : '')
+      });
+    }
+
     // Local loading UI with progress simulation
     setIsLoading(true);
     setProgress(0);
@@ -96,6 +112,14 @@ useEffect(() => {
     }, 500);
     try {
       const result = await photoRestoration.mutateAsync({ imageUri: uri, functionType, imageSource: 'gallery', customPrompt: prompt });
+      
+      // Clear text-edit context on successful completion since we're navigating away
+      await AsyncStorage.removeItem('activeTextEditContext');
+      
+      if (__DEV__) {
+        console.log('📝 [TEXT-EDIT] Cleared context after successful completion');
+      }
+      
       clearInterval(timer);
       setProgress(100);
       setTimeout(() => {
@@ -105,6 +129,14 @@ useEffect(() => {
     } catch (err: any) {
       clearInterval(timer);
       setIsLoading(false);
+      
+      // Clear text-edit context on error - recovery will handle this if needed
+      await AsyncStorage.removeItem('activeTextEditContext');
+      
+      if (__DEV__) {
+        console.log('📝 [TEXT-EDIT] Cleared context after error');
+      }
+      
       Alert.alert('Processing Failed', err?.message || 'Something went wrong. Please try again.');
     }
   }, [router, photoRestoration]);
@@ -132,43 +164,43 @@ useEffect(() => {
     prefill?: string; // default text to prefill editor
   };
   const SUGGESTIONS: Suggestion[] = [
-    // Memorial
+    // Most Popular Requests (ordered by demand)
+    { label: 'Clear skin', icon: 'bandage', category: 'Looks', template: 'Remove acne and blemishes while keeping natural skin texture.' },
+    { label: 'Slimmer', icon: 'person', category: 'Looks', template: 'Make the subject look slightly slimmer in a natural, realistic way.' },
+    { label: 'Younger', icon: 'clock', category: 'Looks', template: 'Make the subject appear a bit younger while keeping their identity the same.' },
+    { label: 'Older', icon: 'clock', category: 'Looks', template: 'Make the subject appear a bit older while keeping their identity the same.' },
     { label: 'Add angel wings', icon: 'bird', category: 'Memorial', template: 'Add soft, white angel wings behind the subject to create a gentle memorial look.' },
-    { label: 'Add halo', icon: 'circle.dashed', category: 'Memorial', template: 'Add a subtle glowing halo above the subject’s head.' },
+    { label: 'Add halo', icon: 'circle.dashed', category: 'Memorial', template: 'Add a subtle glowing halo above the subject\'s head.' },
+    { label: 'Vintage look', icon: 'camera.filters', category: 'Style', template: 'Apply a subtle vintage film look with soft contrast and warm tones.' },
+    { label: 'Add smile', icon: 'face.smiling', category: 'Looks', template: 'Add a gentle, natural smile to the subject.' },
+    { label: 'Remove watermark/logo', icon: 'square', category: 'Cleanup', template: 'Remove a watermark or logo cleanly while preserving surrounding details.' },
+    { label: 'Fix flyaway hair', icon: 'wand.and.stars', category: 'Looks', template: 'Clean up flyaway hairs while keeping hair texture natural.' },
+
+    // Other Popular Requests
+    { label: 'Smooth skin', icon: 'sparkles', category: 'Looks', template: 'Gently smooth skin while preserving pores and details.' },
+    { label: 'Subtle makeup', icon: 'face.smiling', category: 'Looks', template: 'Apply very subtle, natural-looking makeup enhancement.' },
+    { label: 'Whiten teeth', icon: 'mouth', category: 'Looks', template: 'Whiten teeth naturally without over-brightening.' },
+    { label: 'Brighten eyes', icon: 'eye', category: 'Looks', template: 'Slightly brighten the eyes and enhance clarity.' },
+
+    // Memorial
     { label: 'Gentle memorial glow', icon: 'sun.max', category: 'Memorial', template: 'Add a soft, warm glow around the subject with light bloom for a memorial feel.' },
     { label: 'Add doves', icon: 'bird', category: 'Memorial', template: 'Add a few soft white doves near the subject for a peaceful memorial touch.' },
     { label: 'Memorial text ribbon', icon: 'bookmark', category: 'Memorial', template: 'Add a small memorial ribbon and tasteful memorial text in the corner.', opensEditor: true, prefill: 'In Loving Memory' },
 
     // Creative
-    { label: 'Butterflies', icon: 'leaf', category: 'Creative', template: 'Add a few colorful butterflies around the subject, keeping them subtle and tasteful.' },
     { label: 'Golden hour rays', icon: 'sun.max', category: 'Creative', template: 'Add gentle golden hour light rays from the side, keeping the subject natural.' },
-    { label: 'Sparkles', icon: 'sparkles', category: 'Creative', template: 'Add a few soft sparkles around the subject without overpowering the scene.' },
     { label: 'Portrait bokeh', icon: 'circle.dashed', category: 'Creative', template: 'Add a subtle portrait bokeh effect to the background, keeping the subject crisp.' },
+    { label: 'Butterflies', icon: 'leaf', category: 'Creative', template: 'Add a few colorful butterflies around the subject, keeping them subtle and tasteful.' },
+    { label: 'Sparkles', icon: 'sparkles', category: 'Creative', template: 'Add a few soft sparkles around the subject without overpowering the scene.' },
 
     // Cleanup
-    { label: 'Remove background objects', icon: 'scissors', category: 'Cleanup', template: 'Remove distracting background objects while keeping the subject untouched.' },
-    { label: 'Remove person in background', icon: 'photo', category: 'Cleanup', template: 'Remove a person in the background while keeping the main subject and composition unchanged.' },
-    { label: 'Remove watermark/logo', icon: 'square', category: 'Cleanup', template: 'Remove a watermark or logo cleanly while preserving surrounding details.' },
     { label: 'Remove date stamp', icon: 'pencil.tip', category: 'Cleanup', template: 'Remove any date stamp or overlay text cleanly from the image.' },
 
     // Style
     { label: 'Vintage look', icon: 'camera.filters', category: 'Style', template: 'Apply a subtle vintage film look with soft contrast and warm tones.' },
-    { label: 'Pencil sketch, detailed', icon: 'pencil.tip', category: 'Style', template: 'Convert to pencil sketch with natural graphite lines, cross-hatching, and visible paper texture.' },
     { label: 'Oil painting, rich texture', icon: 'paintpalette', category: 'Style', template: 'Transform to oil painting with visible brushstrokes, thick paint texture, and rich color depth while preserving the original composition and object placement.' },
+    { label: 'Pencil sketch, detailed', icon: 'pencil.tip', category: 'Style', template: 'Convert to pencil sketch with natural graphite lines, cross-hatching, and visible paper texture.' },
     { label: 'Bauhaus style (preserve layout)', icon: 'square.grid.2x2', category: 'Style', template: 'Change to Bauhaus art style while maintaining the original composition and object placement.' },
-
-    // Looks (common requests)
-    { label: 'Remove acne', icon: 'bandage', category: 'Looks', template: 'Remove acne and blemishes while keeping natural skin texture.' },
-    { label: 'Even skin tone', icon: 'sparkles', category: 'Looks', template: 'Even out skin tone gently while preserving natural detail.' },
-    { label: 'Smooth skin', icon: 'sparkles', category: 'Looks', template: 'Gently smooth skin while preserving pores and details.' },
-    { label: 'Whiten teeth', icon: 'mouth', category: 'Looks', template: 'Whiten teeth naturally without over-brightening.' },
-    { label: 'Brighten eyes', icon: 'eye', category: 'Looks', template: 'Slightly brighten the eyes and enhance clarity.' },
-    { label: 'Add smile', icon: 'face.smiling', category: 'Looks', template: 'Add a gentle, natural smile to the subject.' },
-    { label: 'Subtle makeup', icon: 'face.smiling', category: 'Looks', template: 'Apply very subtle, natural-looking makeup enhancement.' },
-    { label: 'Fix flyaway hair', icon: 'wand.and.stars', category: 'Looks', template: 'Clean up flyaway hairs while keeping hair texture natural.' },
-    { label: 'Slimmer look', icon: 'person', category: 'Looks', template: 'Make the subject look slightly slimmer in a natural, realistic way.' },
-    { label: 'Younger look', icon: 'clock', category: 'Looks', template: 'Make the subject appear a bit younger while keeping their identity the same.' },
-    { label: 'Older look', icon: 'clock', category: 'Looks', template: 'Make the subject appear a bit older while keeping their identity the same.' },
   ];
 
   const compositionClause = ' Keep the exact camera angle, subject position, scale, and framing. Only replace the environment.';
@@ -284,7 +316,14 @@ useEffect(() => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={{ paddingHorizontal: 16, paddingTop: insets.top + 8, paddingBottom: 6, alignItems: 'center', justifyContent: 'space-between', flexDirection: 'row' }}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={async () => {
+          // Clear text-edit context when modal is closed
+          await AsyncStorage.removeItem('activeTextEditContext');
+          if (__DEV__) {
+            console.log('📝 [TEXT-EDIT] Cleared context on modal close');
+          }
+          router.back();
+        }}>
           <Text style={{ color: '#EAEAEA', fontSize: 28 }}>✕</Text>
         </TouchableOpacity>
         <Text style={{ color: '#EAEAEA', fontSize: 20, fontWeight: '800' }}>Photo Magic</Text>

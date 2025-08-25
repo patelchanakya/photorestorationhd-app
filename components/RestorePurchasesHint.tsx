@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { UserIdPersistenceService } from '@/services/userIdPersistence';
 import { restorePurchases } from '@/services/revenuecat';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import { IconSymbol } from './ui/IconSymbol';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
@@ -16,7 +16,7 @@ import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 export function RestorePurchasesHint() {
   const [showHint, setShowHint] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
-  const isPro = useSubscriptionStore((state) => state.isPro);
+  const { isPro } = useRevenueCat();
 
   useEffect(() => {
     checkIfShouldShowHint();

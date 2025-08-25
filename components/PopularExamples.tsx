@@ -10,58 +10,72 @@ import React from 'react';
 import { AppState, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
-interface OutfitItem {
+interface PopularItem {
   id: string;
   video?: any; // require('...') for videos
   image?: any; // require('...') for images as fallback
   title: string;
   type?: 'video' | 'image';
-  outfitPrompt?: string; // The prompt to apply this outfit
+  prompt?: string; // The prompt to apply
 }
 
-// Add your outfit transformation videos here
-const DEFAULT_OUTFITS: OutfitItem[] = [
+// Popular photo restoration and editing requests
+const DEFAULT_POPULAR_ITEMS: PopularItem[] = [
   { 
-    id: 'outfit-1', 
-    title: 'Fix Clothes', 
+    id: 'popular-1', 
+    title: 'Clear Skin', 
     type: 'video', 
-    video: require('../assets/videos/magic/outfits/thumbnail/fix-clothes/niceclothes.mp4'), 
-    outfitPrompt: "Clean ALL clothing completely. Remove ALL stains and dirt from shirt, pants, dress, everything. Keep same colors. Keep same style. Only clean, nothing else changes." 
+    video: require('../assets/videos/popular/clear-skin.mp4'), 
+    prompt: "Remove acne, blemishes, and skin imperfections while keeping natural skin texture, tone, and lighting unchanged." 
   },
   { 
-    id: 'outfit-2', 
-    title: 'Change Color', 
+    id: 'popular-2', 
+    title: 'Add Halo', 
     type: 'video', 
-    video: require('../assets/videos/magic/outfits/thumbnail/change-color/colorchange.mp4'), 
-    outfitPrompt: "Keep the subject's clothing design, texture, shape, and style exactly the same, but change the color to a random, attractive color that looks natural and flattering. Avoid overly bright or obnoxious colors - choose something stylish and wearable. Make sure the new color appears natural under the existing lighting and shadows. Do not alter the subject's face, hair, background, accessories, or any other aspect of the photo - only change the clothing color." 
+    video: require('../assets/videos/popular/halo.mp4'), 
+    prompt: "Add a subtle glowing halo above the subject's head." 
   },
   { 
-    id: 'outfit-3', 
-    title: 'Job Interview', 
+    id: 'popular-3', 
+    title: 'Fix Hair', 
     type: 'video', 
-    video: require('../assets/videos/magic/outfits/thumbnail/job-interview/jobinterview.mp4'), 
-    outfitPrompt: "Replace the subject's clothing with smart business casual attire suitable for a job interview: a nice blazer with dark jeans or smart trousers, or a professional dress that's approachable and friendly. Use neutral, professional colors that look confident but not intimidating. Keep the subject's face, hairstyle, pose, lighting, and background unchanged. Ensure clothing appears realistic with natural fabric folds and texture." 
+    video: require('../assets/videos/popular/fix-hair.mp4'), 
+    prompt: "Clean up messy or stray hairs while preserving natural hair texture, style, volume, and keeping hair in place without altering its position on the face." 
   },
   { 
-    id: 'outfit-4', 
-    title: 'Wedding Outfit', 
+    id: 'popular-4', 
+    title: 'Slimmer', 
     type: 'video', 
-    video: require('../assets/videos/magic/outfits/thumbnail/wedding-outfit/outfit-wedding.mp4'), 
-    outfitPrompt: "Replace clothing with wedding attire. Preserve exact head position of all subjects, specifically keeping facial features and head positioning the same, along with pose, background, and lighting. Do not alter any other elements of the image." 
+    video: require('../assets/videos/popular/slimmer.mp4'), 
+    prompt: "Reduce visible body and facial fat while keeping natural proportions, pose, and facial identity intact. Make changes realistic and balanced without distorting the subject." 
   },
   { 
-    id: 'outfit-5', 
-    title: 'Professional', 
+    id: 'popular-5', 
+    title: 'Angel Wings', 
     type: 'video', 
-    video: require('../assets/videos/magic/outfits/thumbnail/formal-wear/professional.mp4'), 
-    outfitPrompt: "Replace ALL of the subject's clothing with a complete professional outfit: a well-tailored black suit with white dress shirt and tie for men, or an elegant professional dress or suit for women. This includes replacing shirts, pants, shorts, dresses, skirts - EVERY piece of clothing. Keep the subject's facial features, hairstyle, pose, lighting, and background exactly the same. Ensure the entire outfit is cohesive, properly fitted, and has natural fabric folds and realistic texture under the existing lighting." 
+    video: require('../assets/videos/popular/angel.mp4'), 
+    prompt: "Add realistic wings that match pose, background, and lighting." 
   },
   { 
-    id: 'outfit-6', 
-    title: 'Casual Day', 
+    id: 'popular-6', 
+    title: 'Younger', 
     type: 'video', 
-    video: require('../assets/videos/magic/outfits/thumbnail/casual-day/outfit-0.mp4'), 
-    outfitPrompt: "Change the subject's clothing to casual, comfortable wear such as a t-shirt and jeans or a relaxed summer outfit. Keep the subject's face, hairstyle, pose, lighting, and background unchanged. Ensure the clothing appears soft, naturally worn, and fits realistically with natural fabric folds and textures." 
+    video: require('../assets/videos/popular/younger.mp4'), 
+    prompt: "Make the subject look a bit younger while keeping their identity, facial features, and natural expression unchanged." 
+  },
+  { 
+    id: 'popular-7', 
+    title: 'Older', 
+    type: 'video', 
+    video: require('../assets/videos/popular/older.mp4'), 
+    prompt: "Make the subject appear slightly older in a natural, age-appropriate way. Preserve facial identity, proportions, and realistic features, adjusting age subtly without exaggeration." 
+  },
+  { 
+    id: 'popular-8', 
+    title: 'Add Smile', 
+    type: 'video', 
+    video: require('../assets/videos/popular/smile.mp4'), 
+    prompt: "Add a natural, authentic smile while preserving facial identity and features." 
   }
 ];
 
@@ -70,8 +84,8 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
   // Deterministic values based on index for visual variety
   const videoIndex = index || 0;
   const playbackRate = React.useMemo(() => {
-    // Slower playback speeds (0.5x to 0.8x) for gentle, easy-on-eyes movement
-    const rates = [0.5, 0.6, 0.7, 0.55, 0.65, 0.75];
+    // Normal playback speeds
+    const rates = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0];
     return rates[videoIndex % rates.length];
   }, [videoIndex]);
   
@@ -163,11 +177,11 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
   );
 };
 
-export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: OutfitItem[] }) {
+export function PopularExamples({ items = DEFAULT_POPULAR_ITEMS }: { items?: PopularItem[] }) {
   const router = useRouter();
   const { isPro } = useRevenueCat();
 
-  const handleOutfitSelect = async (outfit: OutfitItem) => {
+  const handlePopularSelect = async (item: PopularItem) => {
     // Check current PRO status with fresh RevenueCat validation
     const currentIsPro = await validatePremiumAccess();
     
@@ -179,21 +193,15 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
       // Verify purchase completion with fresh RevenueCat check
       const updatedIsPro = await validatePremiumAccess();
       if (!updatedIsPro) {
-        console.log('🎭 Outfits: Purchase verification failed');
+        console.log('🌟 Popular: Purchase verification failed');
         return;
       }
     }
     
-    // Launch image picker then open Quick Edit sheet in outfit mode
+    // Launch image picker then open text-edits with custom prompt
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 1 });
     if (!result.canceled && result.assets[0]) {
-      try {
-        const { useQuickEditStore } = await import('@/store/quickEditStore');
-        useQuickEditStore.getState().openWithImage({ functionType: 'outfit' as any, imageUri: result.assets[0].uri, customPrompt: outfit.outfitPrompt || outfit.title });
-      } catch {
-        // fallback: existing flow
-        router.push({ pathname: '/text-edits', params: { imageUri: result.assets[0].uri, prompt: outfit.outfitPrompt || outfit.title, mode: 'outfit' } });
-      }
+      router.push({ pathname: '/text-edits', params: { imageUri: result.assets[0].uri, prompt: item.prompt || item.title, mode: 'custom' } });
     }
   };
 
@@ -203,17 +211,16 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
         horizontal 
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 16 }}
-        extraData={isPro}
       >
-        {outfits.map((item, index) => (
+        {items.map((item, index) => (
           <Animated.View
             key={item.id}
             entering={FadeIn.delay(index * 100).duration(800)}
-            style={{ width: 120, marginRight: index === outfits.length - 1 ? 0 : 10 }}
+            style={{ width: 120, marginRight: index === items.length - 1 ? 0 : 10 }}
           >
             <TouchableOpacity
               activeOpacity={0.9}
-              onPress={() => handleOutfitSelect(item)}
+              onPress={() => handlePopularSelect(item)}
               style={{ 
                 width: 120, 
                 aspectRatio: 9/16, 

@@ -1,18 +1,18 @@
 import { analyticsService } from '@/services/analytics';
-import { backToLifeService } from '@/services/backToLifeService';
+// import { backToLifeService } from '@/services/backToLifeService'; // REMOVED - service deleted
 import { networkStateService } from '@/services/networkState';
 import { notificationService } from '@/services/notificationService';
 import { permissionsService } from '@/services/permissions';
-import { checkSubscriptionStatus } from '@/services/revenuecat';
+import { checkSubscriptionStatus, getCurrentSubscriptionTransactionInfo } from '@/services/revenuecat';
 import { refreshProStatus } from '@/services/simpleSubscriptionService';
 // Removed: No longer using stable IDs - RevenueCat handles anonymous IDs automatically
-import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { useRevenueCat } from '@/contexts/RevenueCatContext';
 // import { useVideoToastStore } from '@/store/videoToastStore';
 import { onboardingUtils } from '@/utils/onboarding';
 import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { VideoView, useVideoPlayer } from 'expo-video';
+// Removed video imports - using simple loading state
 import React, { useEffect, useRef, useState } from 'react';
 import { Dimensions, Platform, Text, View } from 'react-native';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
@@ -40,7 +40,7 @@ interface InitialLoadingScreenProps {
 
 export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadingScreenProps) {
   const router = useRouter();
-  const { setIsPro, isPro } = useSubscriptionStore();
+  const { isPro, isLoading, refreshCustomerInfo } = useRevenueCat();
   const insets = useSafeAreaInsets();
 
   // Helper function to navigate based on onboarding status
@@ -50,6 +50,8 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
       if (isPro) {
         if (__DEV__) {
           console.log('🎯 Pro user detected - skipping onboarding');
+          // Log transaction info for Pro users
+          getCurrentSubscriptionTransactionInfo().catch(() => {});
         }
         router.replace('/explore');
         return;
@@ -105,15 +107,14 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
   const dotsOpacity = useSharedValue(1);
   const checkOpacity = useSharedValue(0);
   const checkScale = useSharedValue(0.8);
-  const videoOpacity = useSharedValue(1);
+  // Removed video opacity - no longer needed
   const dotScale1 = useSharedValue(1);
   const dotScale2 = useSharedValue(1);
   const dotScale3 = useSharedValue(1);
   const dotTY1 = useSharedValue(0);
   const dotTY2 = useSharedValue(0);
   const dotTY3 = useSharedValue(0);
-  const contentOpacity = useSharedValue(0);
-  const fadeOpacity = useSharedValue(0); // fade-to-black overlay
+  // Removed content and fade opacity - no longer needed
   // Per-letter animation values (avoid hooks in loops)
   const lOp1 = useSharedValue(0), lOp2 = useSharedValue(0), lOp3 = useSharedValue(0), lOp4 = useSharedValue(0), lOp5 = useSharedValue(0), lOp6 = useSharedValue(0);
   const lTy1 = useSharedValue(36), lTy2 = useSharedValue(36), lTy3 = useSharedValue(36), lTy4 = useSharedValue(36), lTy5 = useSharedValue(36), lTy6 = useSharedValue(36);
@@ -126,13 +127,7 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
   const [isComplete, setIsComplete] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [minDotsElapsed, setMinDotsElapsed] = useState(false);
-  const [videoDone, setVideoDone] = useState(false);
-  const splashPlayer = useVideoPlayer(require('../assets/videos/splash-video.mp4'), (player) => {
-    player.muted = true;
-    player.loop = false;
-    // Autoplay immediately
-    try { player.play(); } catch {}
-  });
+  // Simplified loading - no video
   
   // Refs for cleanup
   const initializationRef = useRef<any>(null);
@@ -149,13 +144,9 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
     opacity: loadingOpacity.value,
   }));
 
-  const fadeOverlayStyle = useAnimatedStyle(() => ({
-    opacity: fadeOpacity.value,
-  }));
+  // Removed fade overlay style - no longer needed
 
-  const videoAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: videoOpacity.value,
-  }));
+  // Removed video animation styles
 
 
   const dot1Style = useAnimatedStyle(() => ({
@@ -214,17 +205,9 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
 
   // Start animations
   useEffect(() => {
-    // Minimum time to show bouncing dots before showing check
-    const dotsTimer = setTimeout(() => setMinDotsElapsed(true), 3200);
-    // Listen to video finish
-    const interval = setInterval(() => {
-      try {
-        const status = splashPlayer.status as any;
-        if (status?.isLoaded && status?.currentTime >= (status?.duration || 7.53)) {
-          setVideoDone(true);
-        }
-      } catch {}
-    }, 200);
+    // Reduced minimum time for faster app startup
+    const dotsTimer = setTimeout(() => setMinDotsElapsed(true), 1500);
+    // Removed video checking - using simple time-based completion
     // Letters sequential entrance + shine
     const kick = (op: any, ty: any, sx: any, sy: any, sh: any, delay: number) => {
       op.value = withDelay(delay, withTiming(1, { duration: 360 }));
@@ -280,33 +263,30 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
     dotTY2.value = withDelay(120, makeTy());
     dotTY3.value = withDelay(240, makeTy());
     // Fade-in content
-    contentOpacity.value = withTiming(1, { duration: 500 });
-    return () => { clearTimeout(dotsTimer); clearInterval(interval); };
+    // Removed content opacity animation
+    return () => { clearTimeout(dotsTimer); };
   }, []);
 
-  // Proceed when BOTH splash video is done AND initialization is complete
+  // Proceed when initialization is complete
   useEffect(() => {
-    if (!videoDone || !isComplete || completionStartedRef.current) return;
+    if (!isComplete || completionStartedRef.current) return;
     completionStartedRef.current = true;
-    // Crossfade: fade video out, fade black overlay in, then navigate
-    try { videoOpacity.value = withTiming(0, { duration: 500 }); } catch {}
-    fadeOpacity.value = withTiming(1, { duration: 500 });
+    // Small delay for smooth transition
     const t = setTimeout(async () => {
       try { await navigateToApp(); } catch {}
       onLoadingComplete();
-    }, 450);
+    }, 300);
     return () => clearTimeout(t);
-  }, [videoDone, isComplete, router, onLoadingComplete]);
+  }, [isComplete, onLoadingComplete]);
 
-  // Absolute fallback: after ~7.5s, mark video as done, but still wait for init to finish
+  // Simplified fallback: after 8s, complete loading if not already done
   useEffect(() => {
     const failSafe = setTimeout(() => {
       if (completionStartedRef.current) return;
-      // Mark video logical done; navigate only when isComplete is also true
-      setVideoDone(true);
-    }, 7500);
+      setIsComplete(true);
+    }, 8000); // Reduced from 10s to 8s
     return () => clearTimeout(failSafe);
-  }, [router, onLoadingComplete]);
+  }, []);
 
   // No external sheen dependency
 
@@ -333,7 +313,17 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
           await initializePermissions();
 
           // Step 2: RevenueCat Configuration
-          await retry(initializeRevenueCat, 2, 800);
+          // RevenueCat is configured in _layout.tsx before this component loads
+          // No additional configuration needed here
+
+          // Step 2.5: Wait for RevenueCat Context to be ready with subscription data (non-blocking)
+          try {
+            await waitForRevenueCatContext();
+          } catch (error) {
+            if (__DEV__) {
+              console.log('⚠️ RevenueCat context wait failed, continuing startup:', error);
+            }
+          }
 
           // Step 3: Device Services
           await initializeDeviceServices();
@@ -365,10 +355,11 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
             }
           }
 
-          // Step 8: Final checks
-          await new Promise((r) => setTimeout(r, 500));
-          // Extra subscription sanity check
-          try { await retry(checkSubscriptionStatus, 2, 700); } catch {}
+          // Step 8: Final checks - skip redundant subscription check
+          // RevenueCat Context already handles subscription status
+          if (__DEV__) {
+            console.log('✅ Initialization complete - RevenueCat Context manages subscription state');
+          }
           // Ready
         } catch (error) {
           if (__DEV__) {
@@ -400,96 +391,14 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
     };
   }, [onLoadingComplete]);
 
+  // RevenueCat initialization is handled in _layout.tsx
+  // This function is kept for compatibility but does nothing
   const initializeRevenueCat = async () => {
-    try {
-      const isExpoGo = Constants.appOwnership === 'expo';
-      
-      if (isExpoGo) {
-        if (__DEV__) {
-          console.log('⚠️ RevenueCat is not available in Expo Go. Using mock data.');
-        }
-        setIsPro(false);
-        return;
-      }
-      
-      // Configure log levels
-      if (__DEV__) {
-        Purchases.setLogLevel(LOG_LEVEL.INFO); // Reduced from VERBOSE to avoid JWS token spam
-        Purchases.setDebugLogsEnabled(true);   // Keep debug logs enabled for troubleshooting
-      } else {
-        Purchases.setLogLevel(LOG_LEVEL.ERROR);
-        Purchases.setDebugLogsEnabled(false);
-      }
-      
-      // Configure RevenueCat with Apple API key
-      if (Platform.OS === 'ios') {
-        const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY;
-        
-        if (!apiKey) {
-          if (__DEV__) {
-            console.error('❌ RevenueCat Apple API key not found');
-          }
-          setIsPro(false);
-          return;
-        }
-        
-        // Check if already configured
-        try {
-          const isConfigured = await Purchases.isConfigured();
-          if (isConfigured) {
-            if (__DEV__) {
-              console.log('✅ RevenueCat already configured');
-            }
-          } else {
-            if (__DEV__) {
-              console.log('🔧 Configuring RevenueCat...');
-            }
-            
-            await Purchases.configure({ 
-              apiKey: apiKey,
-              useAmazon: false,
-            });
-            
+    // No-op: RevenueCat is configured in _layout.tsx
+  };
 
-            if (__DEV__) {
-              console.log('✅ RevenueCat configured successfully');
-            }
-          }
-        } catch (error) {
-          if (__DEV__) {
-            console.error('❌ RevenueCat configuration failed:', error);
-          }
-          setIsPro(false);
-          return;
-        }
-
-        // CRITICAL: Use RevenueCat anonymous ID (no stable ID needed)
-        // Transaction IDs handle cross-device tracking for Pro users
-        try {
-          if (__DEV__) {
-            console.log('🔑 Using RevenueCat anonymous ID system...');
-          }
-          
-          // Let RevenueCat handle anonymous IDs automatically
-          // No login needed - RevenueCat creates $RCAnonymousID:xxx automatically
-          
-          // Always sync purchases to ensure correct Apple ID status
-          try {
-            console.log('🔄 Syncing purchases with current Apple ID...');
-            await Purchases.syncPurchases();
-            console.log('✅ Purchase sync complete');
-          } catch (syncError) {
-            console.log('⚠️ Purchase sync failed (non-fatal):', (syncError as any)?.message);
-          }
-        } catch (stableIdError) {
-          if (__DEV__) {
-            console.error('❌ Failed to set stable user ID:', stableIdError);
-          }
-          // Continue with initialization even if stable ID setup fails
-          // RevenueCat will fall back to anonymous ID
-        }
-        
-        // Auto-recover from any stuck video processing states on app launch
+  const initializeVideoRecovery = async () => {
+    // Auto-recover from any stuck video processing states on app launch
         try {
           const { isVideoProcessing, setIsVideoProcessing, setIsProcessing, setErrorMessage } = await import('@/store/cropModalStore').then(m => m.useCropModalStore.getState());
           
@@ -547,50 +456,34 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
             console.log('⚠️ [STARTUP] Failed to check video processing state:', error);
           }
         }
-        
-        // Setup subscription listener and check Pro status
-        try {
-          if (__DEV__) {
-            console.log('🔄 Setting up subscription system...');
-          }
+  };
 
-          // Attach live listener to keep store in sync
-          try {
-            const removeListener = Purchases.addCustomerInfoUpdateListener(async () => {
-              try {
-                await checkSubscriptionStatus();
-              } catch (e) {
-                if (__DEV__) console.log('⚠️ Listener update failed:', (e as any)?.message);
-              }
-            });
-            customerInfoListenerRemoverRef.current = removeListener as any;
-            if (__DEV__) console.log('✅ RevenueCat listener set up');
-          } catch (e) {
-            if (__DEV__) console.log('❌ Failed to set listener:', (e as any)?.message);
-          }
+  // Wait for RevenueCat Context Provider to finish loading subscription data
+  const waitForRevenueCatContext = async () => {
+    const startTime = Date.now();
+    const timeout = 3000; // Reduced to 3 seconds for even faster startup
+    
+    if (__DEV__) {
+      console.log('⏳ Waiting for RevenueCat Context to load subscription data...');
+    }
 
-          // Single Pro status check
-          const proStatus = await refreshProStatus();
-          setIsPro(proStatus.isPro);
-          
-          if (__DEV__) {
-            console.log('✅ Pro status:', {
-              isPro: proStatus.isPro,
-              planType: proStatus.planType
-            });
-          }
-        } catch (error) {
-          if (__DEV__) {
-            console.warn('⚠️ Subscription setup failed:', (error as any)?.message);
-          }
-          setIsPro(false);
-        }
+    // Log transaction info if we have Pro status
+    if (isPro && __DEV__) {
+      console.log('✅ Pro status detected - logging transaction info');
+      getCurrentSubscriptionTransactionInfo().catch(() => {});
+    }
+
+    // Wait for RevenueCat Context to finish loading
+    while (isLoading && (Date.now() - startTime < timeout)) {
+      await new Promise(resolve => setTimeout(resolve, 250)); // Slightly increased for efficiency
+    }
+
+    if (__DEV__) {
+      if (isLoading) {
+        console.log('⚠️ RevenueCat Context loading timed out after 3s - continuing with app startup');
+      } else {
+        console.log('✅ RevenueCat Context ready with subscription data');
       }
-    } catch (error) {
-      if (__DEV__) {
-        console.error('❌ Failed to initialize RevenueCat:', error);
-      }
-      setIsPro(false);
     }
   };
 
@@ -673,28 +566,24 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
 
   return (
     <View className="flex-1">
-      <LinearGradient colors={["#0B0B0F", "#0B0B0F"]} style={{ flex: 1 }}>
+      <LinearGradient colors={["#0B0B0F", "#1a1a2e"]} style={{ flex: 1 }}>
         <View className="flex-1 justify-center items-center px-6">
-          {/* Background video splash (muted, plays once) */}
-          <Animated.View style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }, videoAnimatedStyle]}>
-            <VideoView
-              player={splashPlayer}
-              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-              allowsFullscreen={false}
-              allowsPictureInPicture={false}
-              nativeControls={false}
-              contentFit="cover"
-            />
+          {/* App Title */}
+          <Animated.View style={titleAnimatedStyle} className="items-center mb-12">
+            <Text className="text-white text-4xl font-bold mb-2">Clever</Text>
+            <Text className="text-gray-400 text-lg">AI Photo Restoration</Text>
           </Animated.View>
-          {/* Fade-to-black overlay */}
-          <Animated.View
-            pointerEvents="none"
-            style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#000' }, fadeOverlayStyle]}
-          />
-          {/* Minimal overlay content removed to avoid overlap with video */}
-          <Animated.View style={[{ opacity: 1 }, { opacity: contentOpacity.value } as any]} />
+
+          {/* Loading Animation */}
+          <Animated.View style={loadingAnimatedStyle} className="items-center">
+            <Animated.View style={dotRowStyle} className="flex-row items-center justify-center gap-2">
+              <Animated.View style={dot1Style} className="w-3 h-3 bg-blue-500 rounded-full" />
+              <Animated.View style={dot2Style} className="w-3 h-3 bg-blue-500 rounded-full" />
+              <Animated.View style={dot3Style} className="w-3 h-3 bg-blue-500 rounded-full" />
+            </Animated.View>
+            <Text className="text-gray-400 text-sm mt-4">Initializing...</Text>
+          </Animated.View>
         </View>
-        {/* Loading dots/Ready overlay removed to let video take focus */}
       </LinearGradient>
     </View>
   );

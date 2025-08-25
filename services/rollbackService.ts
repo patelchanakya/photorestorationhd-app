@@ -1,10 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { backToLifeService } from './backToLifeService';
+import { photoUsageService } from './photoUsageService';
 
 interface PendingRollback {
   id: string;
   userId: string;
-  type: 'video' | 'photo';
+  type: 'photo'; // Only photo rollbacks now
   timestamp: number;
   attempts: number;
   lastAttemptTime: number;
@@ -35,7 +35,7 @@ class RollbackService {
    */
   async attemptRollback(
     userId: string, 
-    type: 'video' | 'photo', 
+    type: 'photo', 
     reason: string = 'Generation failed'
   ): Promise<boolean> {
     try {
@@ -173,15 +173,9 @@ class RollbackService {
 
   // Private methods
 
-  private async performRollback(userId: string, type: 'video' | 'photo'): Promise<boolean> {
+  private async performRollback(userId: string, type: 'photo'): Promise<boolean> {
     try {
-      if (type === 'video') {
-        return await backToLifeService.rollbackUsage();
-      } else {
-        // Import photo service dynamically to avoid circular dependencies
-        const { photoUsageService } = await import('./photoUsageService');
-        return await photoUsageService.rollbackUsage();
-      }
+      return await photoUsageService.rollbackUsage();
     } catch (error) {
       if (__DEV__) {
         console.error(`❌ [ROLLBACK] ${type} rollback failed:`, error);
@@ -190,7 +184,7 @@ class RollbackService {
     }
   }
 
-  private async addToPendingQueue(userId: string, type: 'video' | 'photo', reason: string): Promise<void> {
+  private async addToPendingQueue(userId: string, type: 'photo', reason: string): Promise<void> {
     const rollback: PendingRollback = {
       id: `${type}-${userId}-${Date.now()}`,
       userId,
@@ -223,7 +217,7 @@ class RollbackService {
     await this.updateMetrics('pending');
   }
 
-  private async removeFromPendingQueue(userId: string, type: 'video' | 'photo'): Promise<void> {
+  private async removeFromPendingQueue(userId: string, type: 'photo'): Promise<void> {
     const pending = await this.getPendingRollbacks();
     const filtered = pending.filter(p => !(p.userId === userId && p.type === type));
     await this.savePendingRollbacks(filtered);
@@ -375,7 +369,7 @@ class RollbackService {
   private logAnalytics(
     eventType: 'rollback_attempted' | 'rollback_success' | 'rollback_failed' | 'rollback_queued',
     userId: string,
-    type: 'video' | 'photo',
+    type: 'photo',
     metadata?: any
   ): void {
     // Structured logging for analytics and monitoring

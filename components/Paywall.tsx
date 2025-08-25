@@ -9,7 +9,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { IconSymbol } from './ui/IconSymbol';
-import { getOfferings, purchasePackage, restorePurchasesSecure, RevenueCatOfferings } from '@/services/revenuecat';
+import { getOfferings, purchasePackageEnhanced, restorePurchasesSecure, RevenueCatOfferings } from '@/services/revenuecat';
 import { PurchasesPackage } from 'react-native-purchases';
 import Constants from 'expo-constants';
 import * as Haptics from 'expo-haptics';
@@ -88,9 +88,9 @@ export function Paywall({ visible, onClose, onSuccess }: PaywallProps) {
         console.log('🛒 Starting purchase for:', packageToPurchase.identifier);
       }
       
-      const success = await purchasePackage(packageToPurchase);
+      const result = await purchasePackageEnhanced(packageToPurchase);
       
-      if (success) {
+      if (result.success) {
         if (__DEV__) {
           console.log('✅ Purchase completed successfully');
         }
@@ -107,34 +107,81 @@ export function Paywall({ visible, onClose, onSuccess }: PaywallProps) {
             },
           ]
         );
-      } else {
-        // Purchase was cancelled or failed - this is normal user behavior
-        // No need to log cancellations as they are expected user actions
-      }
-    } catch (error) {
-      // Only log errors in development builds
-      if (__DEV__) {
-        console.error('❌ Purchase error:', error);
-      }
-      // Don't show error alert for user cancellations
-      if (!error.userCancelled && error.code !== '1') {
+      } else if (result.cancelled) {
+        // User cancelled - just close paywall without error
+        handleClose();
+      } else if (result.requiresRestore) {
+        // Show restore purchases dialog
         Alert.alert(
-          'Purchase Failed', 
-          'Something went wrong. Please try again.',
+          'Restore Required',
+          'It looks like you may have already purchased this. Would you like to restore your purchases?',
           [
+            { text: 'Cancel', style: 'cancel' },
             {
-              text: 'OK',
-              onPress: () => {
-                // Close paywall on error acknowledgment
-                handleClose();
+              text: 'Restore',
+              onPress: async () => {
+                try {
+                  setIsRestoring(true);
+                  const restoreResult = await restorePurchasesSecure();
+                  if (restoreResult.success && restoreResult.hasActiveEntitlements) {
+                    Alert.alert(
+                      'Restored!',
+                      'Your Pro subscription has been restored.',
+                      [{
+                        text: 'Great!',
+                        onPress: () => {
+                          onSuccess();
+                          onClose();
+                        }
+                      }]
+                    );
+                  } else {
+                    Alert.alert('No Purchases Found', 'No previous purchases were found to restore.');
+                  }
+                } catch (error) {
+                  Alert.alert('Restore Failed', 'Unable to restore purchases. Please try again.');
+                } finally {
+                  setIsRestoring(false);
+                }
               }
             }
           ]
         );
       } else {
-        // For cancellations, just close the paywall
-        handleClose();
+        // Handle specific error types with user-friendly messages
+        let errorTitle = 'Purchase Failed';
+        let errorMessage = result.errorMessage || 'Something went wrong. Please try again.';
+        
+        if (result.shouldRetry) {
+          errorMessage += '\n\nPlease try again in a moment.';
+        }
+        
+        // Show error with appropriate action
+        Alert.alert(
+          errorTitle,
+          errorMessage,
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                if (!result.shouldRetry) {
+                  handleClose();
+                }
+              }
+            }
+          ]
+        );
       }
+    } catch (error) {
+      // Fallback error handling
+      if (__DEV__) {
+        console.error('❌ Purchase error:', error);
+      }
+      Alert.alert(
+        'Purchase Failed',
+        'An unexpected error occurred. Please try again.',
+        [{ text: 'OK', onPress: () => handleClose() }]
+      );
     } finally {
       setPurchasing(null);
     }

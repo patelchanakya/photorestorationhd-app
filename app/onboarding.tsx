@@ -1,7 +1,7 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 import { onboardingTrackingService } from '@/services/onboardingTracking';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import { ONBOARDING_FEATURES, onboardingUtils } from '@/utils/onboarding';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
@@ -20,7 +20,7 @@ export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
   const photoRestoration = usePhotoRestoration();
-  const { isPro } = useSubscriptionStore();
+  const { isPro } = useRevenueCat();
   const MOCK_ONBOARDING_FREE = (process.env.EXPO_PUBLIC_ONBOARDING_MOCK_FREE === '1') || __DEV__;
   
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);

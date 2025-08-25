@@ -1,14 +1,20 @@
 {
   "expo": {
     "name": "Clever",
-    "slug": "photorestorationhd-app",
+    "slug": "photorestorationhd-app", 
     "version": "1.0.5",
+    "sdkVersion": "53.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "photorestorationhdapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
     "jsEngine": "hermes",
+    "splash": {
+      "image": "./assets/images/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
     "assetBundlePatterns": [
       "assets/images/*",
       "assets/fonts/*",

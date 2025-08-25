@@ -10,7 +10,7 @@ export const MODEL_CONFIGS: Record<FunctionType, ModelConfig> = {
   restoration: {
     model: "black-forest-labs/flux-kontext-pro",
     buildInput: (base64: string, customPrompt?: string) => ({
-      prompt: customPrompt || "repair and restore this damaged photo, fix tears, scratches, stains, and imperfections while preserving all facial features",
+      prompt: "repair and restore this damaged photo, fix tears, scratches, stains, and imperfections while preserving all facial features",
       input_image: `data:image/jpeg;base64,${base64}`,
       output_format: "png",
       aspect_ratio: "match_input_image",
@@ -29,7 +29,7 @@ export const MODEL_CONFIGS: Record<FunctionType, ModelConfig> = {
   unblur: {
     model: "black-forest-labs/flux-kontext-pro",
     buildInput: (base64: string, customPrompt?: string) => ({
-      prompt: customPrompt || "enhance and restore this image, sharpen and unblur, improve clarity and focus without losing any facial features or adding anything extra",
+      prompt: "Remove blur and restore clarity to the image. Sharpen details so that edges, textures, and facial features are clear and natural. Keep the original colors and tones exactly as they are, without altering or enhancing them. Preserve the background and overall composition.",
       input_image: `data:image/jpeg;base64,${base64}`,
       output_format: "png",
       aspect_ratio: "match_input_image",
@@ -40,7 +40,7 @@ export const MODEL_CONFIGS: Record<FunctionType, ModelConfig> = {
   colorize: {
     model: "black-forest-labs/flux-kontext-pro",
     buildInput: (base64: string, customPrompt?: string) => ({
-      prompt: customPrompt || "apply photo restoration and repair, enhance and improve colors throughout the image, and upscale the final image without losing any specific facial feature or adding anything extra",
+      prompt: "apply photo restoration and repair, enhance and improve colors throughout the image, and upscale the final image without losing any specific facial feature or adding anything extra",
       input_image: `data:image/jpeg;base64,${base64}`,
       output_format: "png",
       aspect_ratio: "match_input_image",
@@ -51,7 +51,7 @@ export const MODEL_CONFIGS: Record<FunctionType, ModelConfig> = {
   descratch: {
     model: "black-forest-labs/flux-kontext-pro",
     buildInput: (base64: string, customPrompt?: string) => ({
-      prompt: customPrompt || "remove scratches, dust, stains, and damage from this image while preserving all facial features without adding anything extra",
+      prompt: "Remove all scratches, stains, and visible damage from the image. Repair damaged areas so they blend seamlessly with the surrounding texture, lighting, and shading. Keep the original colors and tones exactly as they are, without altering or enhancing them. Preserve all facial features, background, and composition.",
       input_image: `data:image/jpeg;base64,${base64}`,
       output_format: "png",
       aspect_ratio: "match_input_image",
@@ -62,7 +62,7 @@ export const MODEL_CONFIGS: Record<FunctionType, ModelConfig> = {
   outfit: {
     model: "black-forest-labs/flux-kontext-pro",
     buildInput: (base64: string, customPrompt?: string) => ({
-      prompt: customPrompt || "change only the clothing and outfit, keep the exact same face, facial features, hair, pose, body position, and background unchanged, professional business attire",
+      prompt: "change only the clothing and outfit, keep the exact same face, facial features, hair, pose, body position, and background unchanged, professional business attire",
       input_image: `data:image/jpeg;base64,${base64}`,
       output_format: "png",
       aspect_ratio: "match_input_image",
@@ -73,7 +73,7 @@ export const MODEL_CONFIGS: Record<FunctionType, ModelConfig> = {
   background: {
     model: "black-forest-labs/flux-kontext-pro",
     buildInput: (base64: string, customPrompt?: string) => ({
-      prompt: customPrompt || "replace only the background with professional studio setting, keep the exact same person, face, facial features, hair, clothing, pose, and body position unchanged",
+      prompt: "replace only the background with professional studio setting, keep the exact same person, face, facial features, hair, clothing, pose, and body position unchanged",
       input_image: `data:image/jpeg;base64,${base64}`,
       output_format: "png",
       aspect_ratio: "match_input_image",
@@ -84,7 +84,7 @@ export const MODEL_CONFIGS: Record<FunctionType, ModelConfig> = {
   enlighten: {
     model: "black-forest-labs/flux-kontext-pro",
     buildInput: (base64: string, customPrompt?: string) => ({
-      prompt: customPrompt || "fix lighting and exposure, enhance shadows and highlights, improve overall illumination",
+      prompt: "Increase the brightness of the image while keeping all original colors, tones, and saturation exactly as they are. Do not alter contrast, style, or composition. Preserve all facial features, fine details, background, and overall layout.",
       input_image: `data:image/jpeg;base64,${base64}`,
       output_format: "png",
       aspect_ratio: "match_input_image",

@@ -162,14 +162,14 @@ export function DeviceTwoRowCarousel({ functionType }: DeviceTwoRowCarouselProps
               const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
               if (!result.canceled && result.assets[0]) {
                 useQuickEditStore.getState().openWithImage({ 
-                  functionType: functionType as any, 
+                  functionType: 'repair' as any, 
                   imageUri: result.assets[0].uri 
                 });
               }
             }}
             style={{ marginTop: 12 }}
           >
-            <Text style={{ color: '#111827', textAlign: 'center', fontWeight: '700', textDecorationLine: 'underline' }}>Enhance from Device</Text>
+            <Text style={{ color: '#111827', textAlign: 'center', fontWeight: '700', textDecorationLine: 'underline' }}>Repair from Device</Text>
           </TouchableOpacity>
         </View>
       </View>

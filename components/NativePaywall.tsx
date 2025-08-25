@@ -1,8 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Alert, Platform } from 'react-native';
 import RevenueCatUI from 'react-native-purchases-ui';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
-import { checkSubscriptionStatus } from '@/services/revenuecat';
+import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import Constants from 'expo-constants';
 
 interface NativePaywallProps {
@@ -18,7 +17,7 @@ export function NativePaywall({
   onPurchaseCompleted,
   onRestoreCompleted 
 }: NativePaywallProps) {
-  const { setIsPro } = useSubscriptionStore();
+  const { refreshCustomerInfo, checkSubscriptionStatus } = useRevenueCat();
   const isExpoGo = Constants.appOwnership === 'expo';
 
   useEffect(() => {
@@ -39,7 +38,8 @@ export function NativePaywall({
   const handlePurchaseCompleted = async () => {
     console.log('✅ Purchase completed in native paywall');
     
-    // Update subscription status
+    // Refresh subscription status via context
+    await refreshCustomerInfo();
     const isProNow = await checkSubscriptionStatus();
     
     if (isProNow) {
@@ -81,7 +81,8 @@ export function NativePaywall({
   const handleRestoreCompleted = async () => {
     console.log('✅ Restore completed in native paywall');
     
-    // Update subscription status
+    // Refresh subscription status via context
+    await refreshCustomerInfo();
     const isProNow = await checkSubscriptionStatus();
     
     if (isProNow) {

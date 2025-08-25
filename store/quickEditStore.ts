@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 
 export type QuickStage = 'hidden' | 'select' | 'preview' | 'loading' | 'done' | 'error';
@@ -64,5 +65,12 @@ export const useQuickEditStore = create<QuickEditState>((set) => ({
   setResult: (id, restoredUri) => set({ restoredId: id, restoredImageUri: restoredUri, stage: 'done', progress: 100 }),
   setStyleKey: (key) => set({ styleKey: key }),
   setError: (message) => set({ errorMessage: message, stage: 'error', progress: 0 }),
-  close: () => set({ visible: false, stage: 'hidden', functionType: null, selectedImageUri: null, restoredId: null, restoredImageUri: null, progress: 0, styleKey: null, errorMessage: null }),
+  close: () => {
+    set({ visible: false, stage: 'hidden', functionType: null, selectedImageUri: null, restoredId: null, restoredImageUri: null, progress: 0, styleKey: null, errorMessage: null });
+    // Clear any active prediction ID to prevent stale recovery
+    AsyncStorage.removeItem('activePredictionId').catch(() => {});
+    if (__DEV__) {
+      console.log('🧹 [RECOVERY] Cleared prediction state on Quick Edit Sheet close');
+    }
+  },
 }));

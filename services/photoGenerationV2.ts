@@ -1,5 +1,6 @@
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { type FunctionType } from './modelConfigs';
 
 // Webhook-based photo generation service for v2 endpoints
@@ -316,6 +317,14 @@ export async function generatePhoto(
     userId?: string;
   } = {}
 ): Promise<GenerationResponse> {
+  // Clear any existing prediction state before starting new generation
+  // This prevents stale state from interfering with new generations
+  await AsyncStorage.removeItem('activePredictionId');
+  
+  if (__DEV__) {
+    console.log('🧹 [RECOVERY] Cleared any existing prediction state before new generation');
+  }
+  
   const { styleKey, customPrompt, userId } = options;
 
   switch (functionType) {
@@ -370,8 +379,12 @@ export async function generatePhotoWithPolling(
   const startResponse = await generatePhoto(imageUri, functionType, options);
   const predictionId = startResponse.prediction_id;
   
+  // Store the active prediction ID for recovery
+  await AsyncStorage.setItem('activePredictionId', predictionId);
+  
   if (__DEV__) {
     console.log(`✅ Generation started, prediction ID: ${predictionId}`);
+    console.log('💾 [RECOVERY] Stored prediction ID for recovery');
   }
 
   // Poll for completion with optimized timing

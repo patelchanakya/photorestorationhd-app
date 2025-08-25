@@ -6,7 +6,7 @@ import { restorationTrackingService } from '@/services/restorationTracking';
 import { photoStorage } from '@/services/storage';
 import { restorationService } from '@/services/supabase';
 import { useRestorationStore } from '@/store/restorationStore';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { InteractionManager } from 'react-native';
 
@@ -36,7 +36,7 @@ export function usePhotoRestoration() {
   const queryClient = useQueryClient();
   const incrementRestorationCount = useRestorationStore((state) => state.incrementRestorationCount);
   const incrementTotalRestorations = useRestorationStore((state) => state.incrementTotalRestorations);
-  const { isPro } = useSubscriptionStore();
+  const { isPro } = useRevenueCat();
   const invalidatePhotoUsage = useInvalidatePhotoUsage();
   
   // Get JobContext functions (we'll use this inside the mutation)

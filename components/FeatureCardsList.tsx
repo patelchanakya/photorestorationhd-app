@@ -21,11 +21,10 @@ type CardItem = {
 
 // Poster-style cards inspired by the provided reference
 const CARDS: CardItem[] = [
-  { id: 'fc_restore', title: 'Restore', subtitle: 'Fix damage, tears & fading', functionType: 'restoration', image: require('../assets/images/onboarding/before-3.jpg') },
-  { id: 'fc_descratch', title: 'Descratch', subtitle: 'Remove scratches & marks', functionType: 'descratch', image: require('../assets/images/onboarding/before-2.jpg') },
-  { id: 'fc_enhance', title: 'Enhance', subtitle: 'Remove blur, sharpen details', functionType: 'unblur', image: require('../assets/images/onboarding/before-2.jpg') },
-  { id: 'fc_colorize', title: 'Colorize', subtitle: 'Add colors to B&W photos', functionType: 'colorize', image: require('../assets/images/onboarding/after-4.png') },
-  { id: 'fc_enlighten', title: 'Enlighten', subtitle: 'Fix lighting & exposure', functionType: 'enlighten', image: require('../assets/images/onboarding/after-2.png') },
+  { id: 'fc_enhance', title: 'Clarify', subtitle: 'Remove blur, sharpen details', functionType: 'unblur', image: require('../assets/images/popular/enhance/pop-3.png') },
+  { id: 'fc_colorize', title: 'Colorize', subtitle: 'Add colors to B&W photos', functionType: 'colorize', image: require('../assets/images/popular/colorize/pop-1.png') },
+  { id: 'fc_descratch', title: 'Descratch', subtitle: 'Remove scratches & marks', functionType: 'descratch', image: require('../assets/images/popular/descratch/pop-2.png') },
+  { id: 'fc_enlighten', title: 'Brighten', subtitle: 'Fix lighting & exposure', functionType: 'enlighten', image: require('../assets/images/popular/brighten/pop-4.png') },
 ];
 
 type FeatureCardsListProps = {

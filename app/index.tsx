@@ -9,7 +9,7 @@ export default function Index() {
   
   useEffect(() => {
     router.replace('/explore');
-  }, []);
+  }, [router]);
   
   return <View style={{ flex: 1, backgroundColor: '#000' }} />;
 }

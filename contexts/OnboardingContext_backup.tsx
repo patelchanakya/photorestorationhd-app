@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { onboardingUtils } from '@/utils/onboarding';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import { analyticsService } from '@/services/analytics';
 
 interface OnboardingContextType {
@@ -12,7 +12,7 @@ const OnboardingContext = createContext<OnboardingContextType | undefined>(undef
 
 export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
-  const { isPro } = useSubscriptionStore();
+  const { isPro } = useRevenueCat();
 
   useEffect(() => {
     if (__DEV__) {

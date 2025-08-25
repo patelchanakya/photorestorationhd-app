@@ -3,13 +3,17 @@ import { FeatureCardsList } from '@/components/FeatureCardsList';
 import { QuickActionRail } from '@/components/QuickActionRail';
 import { QuickEditSheet } from '@/components/QuickEditSheet';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { presentPaywall, validatePremiumAccess, restorePurchasesSecure } from '@/services/revenuecat';
+import { AnimatedBackgrounds } from '@/components/AnimatedBackgrounds';
+import { AnimatedOutfits } from '@/components/AnimatedOutfits';
+import { PopularExamples } from '@/components/PopularExamples';
+import * as ImagePicker from 'expo-image-picker';
 import { useQuickEditStore } from '@/store/quickEditStore';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { presentPaywall, validatePremiumAccess, restorePurchasesSecure } from '@/services/revenuecat';
+import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import React, { useCallback } from 'react';
+import { Alert, Platform, ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -22,47 +26,22 @@ export default function HomeGalleryLikeScreen() {
   const isTabletLike = shortestSide >= 768;
   const isSmallPhone = longestSide <= 700;
   const railApproxHeight = isSmallPhone ? 58 : 86;
-  const basePadding = isTabletLike ? 220 : (isSmallPhone ? 64 : 160);
+  const basePadding = isTabletLike ? 154 : (isSmallPhone ? 45 : 112); // Reduced by ~30%
   const bottomPadding = Math.max(basePadding, (insets?.bottom || 0) + railApproxHeight);
   const openQuick = (functionType: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'background' | 'outfit' | 'custom', styleKey?: string | null) => {
     try {
       useQuickEditStore.getState().open({ functionType, styleKey: styleKey ?? null });
     } catch {}
   };
-  const isPro = useSubscriptionStore((state) => state.isPro);
+  const { isPro, forceRefresh } = useRevenueCat();
   const router = useRouter();
   
-  // Components should already be preloaded by splash screen, load immediately
-  const [componentsLoaded, setComponentsLoaded] = useState(false);
-  const [AnimatedBackgrounds, setAnimatedBackgrounds] = useState<any>(null);
-  const [AnimatedOutfits, setAnimatedOutfits] = useState<any>(null);
-  const [HeroBackToLifeExamples, setHeroBackToLifeExamples] = useState<any>(null);
-  
-  useEffect(() => {
-    // Components should be cached from splash screen preload, load immediately
-    Promise.all([
-      import('@/components/AnimatedBackgrounds'),
-      import('@/components/AnimatedOutfits'),
-      import('@/components/HeroBackToLifeExamples')
-    ]).then(([bgModule, outfitsModule, btlModule]) => {
-      setAnimatedBackgrounds(() => bgModule.AnimatedBackgrounds);
-      setAnimatedOutfits(() => outfitsModule.AnimatedOutfits);
-      setHeroBackToLifeExamples(() => btlModule.HeroBackToLifeExamples);
-      setComponentsLoaded(true);
-    }).catch(() => {
-      // Fallback: if preloading failed, components still load but might have brief delay
-      setComponentsLoaded(true);
-    });
-  }, []);
+  // Keep HeroBackToLifeExamples in code but don't load it
+  // const [HeroBackToLifeExamples, setHeroBackToLifeExamples] = useState<any>(null);
 
   // Subtle drop-back effect for screen when launching picker (Remini-like feedback)
   const dropProgress = useSharedValue(0);
-  const engageDropEffect = useCallback(() => {
-    dropProgress.value = withTiming(1, { duration: 180, easing: Easing.out(Easing.quad) });
-  }, [dropProgress]);
-  const releaseDropEffect = useCallback(() => {
-    dropProgress.value = withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) });
-  }, [dropProgress]);
+  // Removed engageDropEffect and releaseDropEffect since Back to Life is disabled
 
   const screenAnimationStyle = useAnimatedStyle(() => ({
     transform: [
@@ -87,52 +66,68 @@ export default function HomeGalleryLikeScreen() {
           <TouchableOpacity 
             onPress={async () => {
               if (isPro) {
-                // Pro users: trigger restore to refresh subscription status
-                console.log('🔒 [SECURITY] Pro icon tapped - triggering secure restore to refresh status...');
+                // Pro users: refresh subscription status with cache invalidation
+                console.log('🔒 [SECURITY] Pro icon tapped - refreshing subscription status...');
                 
                 try {
-                  const result = await restorePurchasesSecure();
+                  // Force refresh RevenueCat context first
+                  await forceRefresh();
                   
-                  if (result.success && result.hasActiveEntitlements) {
+                  // Then validate with fresh data 
+                  const hasValidAccess = await validatePremiumAccess(true);
+                  
+                  if (hasValidAccess) {
                     Alert.alert(
                       'Pro Member ✓',
                       'Your subscription is active! You have unlimited access to all features.',
                       [{ text: 'Great!' }]
                     );
-                  } else if (result.success && !result.hasActiveEntitlements) {
-                    Alert.alert(
-                      'Subscription Status',
-                      'No active subscription found. You\'ll have access to free features.',
-                      [{ text: 'OK' }]
-                    );
-                  } else if (result.error === 'cancelled' && result.errorMessage?.includes('Apple ID')) {
-                    Alert.alert(
-                      'Subscription Check',
-                      'No active subscription found on this Apple ID. Please sign in with the Apple ID used for purchase.',
-                      [
-                        { text: 'OK', style: 'default' },
-                        {
-                          text: 'How to Fix',
-                          style: 'default',
-                          onPress: () => {
-                            Alert.alert(
-                              'How to Fix Subscription',
-                              '1. Go to Settings → App Store\n2. Sign in with the Apple ID used for purchase\n3. Return to Clever and tap the PRO badge again',
-                              [{ text: 'Got it', style: 'default' }]
-                            );
-                          }
-                        }
-                      ]
-                    );
                   } else {
-                    Alert.alert(
-                      'Pro Status Check',
-                      'Unable to verify subscription status. Please try again or check your internet connection.',
-                      [{ text: 'OK' }]
-                    );
+                    // If validation fails, try restore as fallback
+                    console.log('🔄 Pro status validation failed, trying restore...');
+                    const result = await restorePurchasesSecure();
+                    
+                    if (result.success && result.hasActiveEntitlements) {
+                      Alert.alert(
+                        'Pro Member ✓',
+                        'Your subscription is active! You have unlimited access to all features.',
+                        [{ text: 'Great!' }]
+                      );
+                    } else if (result.success && !result.hasActiveEntitlements) {
+                      Alert.alert(
+                        'Subscription Status',
+                        'No active subscription found. You\'ll have access to free features.',
+                        [{ text: 'OK' }]
+                      );
+                    } else if (result.error === 'cancelled' && result.errorMessage?.includes('Apple ID')) {
+                      Alert.alert(
+                        'Subscription Check',
+                        'No active subscription found on this Apple ID. Please sign in with the Apple ID used for purchase.',
+                        [
+                          { text: 'OK', style: 'default' },
+                          {
+                            text: 'How to Fix',
+                            style: 'default',
+                            onPress: () => {
+                              Alert.alert(
+                                'How to Fix Subscription',
+                                '1. Go to Settings → App Store\n2. Sign in with the Apple ID used for purchase\n3. Return to Clever and tap the PRO badge again',
+                                [{ text: 'Got it', style: 'default' }]
+                              );
+                            }
+                          }
+                        ]
+                      );
+                    } else {
+                      Alert.alert(
+                        'Pro Status Check',
+                        'Unable to verify subscription status. Please try again or check your internet connection.',
+                        [{ text: 'OK' }]
+                      );
+                    }
                   }
                 } catch (error) {
-                  console.error('❌ [SECURITY] Pro icon restore failed:', error);
+                  console.error('❌ [SECURITY] Pro icon status check failed:', error);
                   Alert.alert(
                     'Pro Member',
                     'You have unlimited access to all features!',
@@ -193,12 +188,18 @@ export default function HomeGalleryLikeScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomPadding }}>
         
         
-        {/* Back to Life section title */}
+        {/* Popular section title */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '600', letterSpacing: -0.3 }}>Popular</Text>
+        </View>
+        
+        {/* Popular examples using outfit assets as placeholders */}
+        <PopularExamples />
+
+{/* DISABLED: Back to Life section - keeping code but removing from UI
         <View style={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '600', letterSpacing: -0.3 }}>Back to Life</Text>
         </View>
-        
-        {/* Two tall examples side-by-side for Back to life (video friendly) */}
         {componentsLoaded && HeroBackToLifeExamples ? (
           <HeroBackToLifeExamples onBeforePicker={engageDropEffect} onAfterPicker={releaseDropEffect} />
         ) : (
@@ -206,10 +207,11 @@ export default function HomeGalleryLikeScreen() {
             <ActivityIndicator color="#8B5CF6" />
           </View>
         )}
+        */}
 
-      {/* Repair section title */}
+      {/* Restore/Repair section title */}
       <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '600', letterSpacing: -0.3 }}>Repair</Text>
+        <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '600', letterSpacing: -0.3 }}>Restore/Repair</Text>
         <TouchableOpacity
           onPress={async () => {
             // Validate premium access before proceeding
@@ -218,12 +220,10 @@ export default function HomeGalleryLikeScreen() {
               console.log('📱 Premium access validation:', hasAccess);
             }
             
-            const ImagePicker = await import('expo-image-picker');
             const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (res.status !== 'granted') return;
             const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 1 });
             if (!result.canceled && result.assets[0]) {
-              const { useQuickEditStore } = await import('@/store/quickEditStore');
               useQuickEditStore.getState().openWithImage({ 
                 functionType: 'repair', 
                 imageUri: result.assets[0].uri 
@@ -248,25 +248,13 @@ export default function HomeGalleryLikeScreen() {
         <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '600', letterSpacing: -0.3 }}>Outfits</Text>
         </View>
-        {componentsLoaded && AnimatedOutfits ? (
-          <AnimatedOutfits />
-        ) : (
-          <View style={{ height: 200, justifyContent: 'center', alignItems: 'center' }}>
-            <ActivityIndicator color="#8B5CF6" />
-          </View>
-        )}
+        <AnimatedOutfits />
 
         {/* Backgrounds Section */}
         <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '600', letterSpacing: -0.3 }}>Backgrounds</Text>
         </View>
-        {componentsLoaded && AnimatedBackgrounds ? (
-          <AnimatedBackgrounds />
-        ) : (
-          <View style={{ height: 200, justifyContent: 'center', alignItems: 'center' }}>
-            <ActivityIndicator color="#8B5CF6" />
-          </View>
-        )}
+        <AnimatedBackgrounds />
 
         {/* Other AI Features - Enlighten, etc. */}
         <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>

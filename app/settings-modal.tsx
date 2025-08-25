@@ -1,15 +1,15 @@
-import { LanguageSelectionModal } from '@/components/LanguageSelectionModal';
+// Removed LanguageSelectionModal - translation system removed
 import { onboardingUtils } from '@/utils/onboarding';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { photoRestorationKeys } from '@/hooks/usePhotoRestoration';
-import { getSupportedLanguages, useTranslation } from '@/i18n';
-import { getAppUserId, restorePurchasesSecure, checkSubscriptionStatus } from '@/services/revenuecat';
+// Removed translation system
+import { getAppUserId, restorePurchasesSecure, checkSubscriptionStatus, presentPaywall } from '@/services/revenuecat';
 import { useCropModalStore } from '@/store/cropModalStore';
 import { photoStorage } from '@/services/storage';
 import { localStorageHelpers } from '@/services/supabase';
 import { useRestorationStore } from '@/store/restorationStore';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
-import { backToLifeService, type BackToLifeUsage } from '@/services/backToLifeService';
+import { useRevenueCat } from '@/contexts/RevenueCatContext';
+// import { backToLifeService, type BackToLifeUsage } from '@/services/backToLifeService'; // DISABLED
 import { usePhotoUsage, type PhotoUsage } from '@/services/photoUsageService';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
@@ -47,8 +47,8 @@ export default function SettingsModalScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { setRestorationCount } = useRestorationStore();
-  const { isPro } = useSubscriptionStore();
-  const [backToLifeUsage, setBackToLifeUsage] = useState<BackToLifeUsage | null>(null);
+  const { isPro } = useRevenueCat();
+  // Removed BackToLifeUsage - service disabled
   const [photoUsage, setPhotoUsage] = useState<PhotoUsage | null>(null);
   
   // Video processing state management
@@ -57,10 +57,9 @@ export default function SettingsModalScreen() {
   // Local loading states
   const [isRestoring, setIsRestoring] = useState(false);
   const [isResettingIdentity, setIsResettingIdentity] = useState(false);
-  const [showLanguageModal, setShowLanguageModal] = useState(false);
+  // Removed language modal state
   const [revenueCatUserId, setRevenueCatUserId] = useState<string | null>(null);
-  const { t, currentLanguage } = useTranslation();
-  const supportedLanguages = getSupportedLanguages();
+  // Removed translation system
   
   // Ref to track restore operation for cancellation
   const restoreOperationRef = useRef<{ cancelled: boolean }>({ cancelled: false });
@@ -72,13 +71,11 @@ export default function SettingsModalScreen() {
   const fetchVideoUsageData = useCallback(async () => {
     try {
       if (isPro) {
-        const videoUsageData = await backToLifeService.checkUsage();
-        setBackToLifeUsage(videoUsageData);
+        // const videoUsageData = await backToLifeService.checkUsage(); // DISABLED
+        // Video usage tracking disabled
         if (__DEV__) {
-          console.log('🎬 Settings: Updated video usage:', videoUsageData);
+          console.log('🎬 Settings: Video usage tracking disabled');
         }
-      } else {
-        setBackToLifeUsage(null);
       }
     } catch (error) {
       if (__DEV__) {
@@ -110,10 +107,7 @@ export default function SettingsModalScreen() {
     }, [refetchPhotoUsage, fetchVideoUsageData])
   );
   
-  // Get current language info
-  const getCurrentLanguageInfo = () => {
-    return supportedLanguages.find(lang => lang.code === currentLanguage) || supportedLanguages[0];
-  };
+  // Removed language functionality
 
   // Format time remaining with seconds for live countdown
   const formatTimeWithSeconds = (ms: number): string => {
@@ -337,7 +331,7 @@ export default function SettingsModalScreen() {
         Alert.alert(
           'Operation Interrupted',
           'The restore was interrupted. Please try again.',
-          [{ text: t('common.ok') }]
+          [{ text: 'OK' }]
         );
         return;
       }
@@ -347,15 +341,15 @@ export default function SettingsModalScreen() {
           console.log('✅ [SECURITY] Restore successful - subscription confirmed by Apple');
           Alert.alert(
             'Restored!',
-            t('alerts.purchasesRestored'),
+'Your purchases have been restored successfully!',
             [{ text: 'Great!' }]
           );
         } else {
           console.log('ℹ️ [SECURITY] Restore completed but no active subscriptions found');
           Alert.alert(
             'No Purchases Found',
-            t('alerts.noPurchasesFound'),
-            [{ text: t('common.ok') }]
+'No previous purchases found on this account.',
+            [{ text: 'OK' }]
           );
         }
       } else {
@@ -385,9 +379,9 @@ export default function SettingsModalScreen() {
           // Only show error alert for actual errors, not security blocks
           if (result.error !== 'cancelled') {
             Alert.alert(
-              t('alerts.restoreFailed'),
+              'Restore Failed',
               result.errorMessage || 'Unable to restore purchases. Please try again.',
-              [{ text: t('common.ok') }]
+              [{ text: 'OK' }]
             );
           }
         }
@@ -398,9 +392,9 @@ export default function SettingsModalScreen() {
         console.error('Error restoring purchases:', error);
       }
       Alert.alert(
-        t('common.error'),
+'Error',
         'Failed to restore purchases. Please try again.',
-        [{ text: t('common.ok') }]
+        [{ text: 'OK' }]
       );
     } finally {
       setIsRestoring(false);
@@ -625,11 +619,12 @@ export default function SettingsModalScreen() {
       
       // Fallback: copy URL to clipboard
       try {
+        const appStoreUrl = 'https://apps.apple.com/app/photo-restoration-hd/id6748838784';
         await Clipboard.setStringAsync(appStoreUrl);
         Alert.alert(
           'Link Copied',
           'The app link has been copied to your clipboard!',
-          [{ text: t('common.ok'), style: 'default' }]
+          [{ text: 'OK', style: 'default' }]
         );
       } catch (clipboardError) {
         if (__DEV__) {
@@ -684,7 +679,7 @@ Best regards`;
         Alert.alert(
           'Email Copied',
           'Support email address has been copied to your clipboard!\n\nphotorestorationhd@gmail.com',
-          [{ text: t('common.ok'), style: 'default' }]
+          [{ text: 'OK', style: 'default' }]
         );
       }
       
@@ -701,7 +696,7 @@ Best regards`;
         Alert.alert(
           'Email Copied',
           'Support email address has been copied to your clipboard!\n\nphotorestorationhd@gmail.com',
-          [{ text: t('common.ok'), style: 'default' }]
+          [{ text: 'OK', style: 'default' }]
         );
       } catch (clipboardError) {
         if (__DEV__) {
@@ -710,7 +705,7 @@ Best regards`;
         Alert.alert(
           'Contact Support',
           'Please contact us at: photorestorationhd@gmail.com',
-          [{ text: t('common.ok'), style: 'default' }]
+          [{ text: 'OK', style: 'default' }]
         );
       }
     }
@@ -741,7 +736,7 @@ Best regards`;
           Alert.alert(
             'Rate Us',
             'Thank you for using Clever! Please rate us on the App Store.',
-            [{ text: t('common.ok'), style: 'default' }]
+            [{ text: 'OK', style: 'default' }]
           );
         }
       }
@@ -798,7 +793,7 @@ Best regards`;
         <View className="flex-row items-center justify-between px-4 py-3 border-b border-white/10">
           <View style={{ width: 32 }} />
           <Text className="text-white text-lg font-semibold">
-            {t('settings.title')}
+            Settings
           </Text>
           <TouchableOpacity
             onPress={handleClose}
@@ -821,7 +816,7 @@ Best regards`;
             {/* Subscription Section */}
             <View className="mb-8">
               <Text className="text-amber-500 text-base font-semibold mb-4">
-                {t('settings.subscription')}
+                Subscription
               </Text>
               
               <View className="bg-white/5 rounded-xl overflow-hidden">
@@ -835,7 +830,7 @@ Best regards`;
                     </View>
                     <View className="flex-1">
                       <Text className="text-white text-base font-medium">
-                        {t('settings.proSubscription')}
+                        Pro Subscription
                       </Text>
                     </View>
                   </View>
@@ -891,7 +886,7 @@ Best regards`;
                 )}
 
                 {/* Video Usage - Only show for Pro users */}
-                {isPro && backToLifeUsage && (
+                {isPro && false && (
                   <TouchableOpacity 
                     className="flex-row items-center p-4 border-b border-white/10"
                     onPress={async () => {
@@ -938,10 +933,10 @@ Best regards`;
                   </View>
                   <View className="flex-1">
                     <Text className="text-white text-base font-medium">
-                      {isRestoring ? 'Checking with App Store...' : t('settings.restorePurchases')}
+                      {isRestoring ? 'Checking with App Store...' : 'Restore Purchases'}
                     </Text>
                     <Text className="text-white/60 text-sm">
-                      {isRestoring ? 'Verifying your subscription' : t('settings.restorePurchasesDescription')}
+                      {isRestoring ? 'Verifying your subscription' : 'Sync your purchases with this device'}
                     </Text>
                   </View>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
@@ -954,7 +949,7 @@ Best regards`;
             {/* Connect & Support Section */}
             <View className="mb-8">
               <Text className="text-amber-500 text-base font-semibold mb-4">
-                {t('settings.connectSupport')}
+                Connect & Support
               </Text>
               
               <View className="bg-white/5 rounded-xl overflow-hidden">
@@ -965,7 +960,7 @@ Best regards`;
                     <Ionicons name="people" size={18} color="#f97316" />
                   </View>
                   <Text className="text-white text-base font-medium flex-1">
-                    {t('settings.followUs')}
+                    Follow Us
                   </Text>
                   <View style={{ flexDirection: 'row', gap: 12 }}>
                     <AnimatedTouchableOpacity
@@ -1024,7 +1019,7 @@ Best regards`;
                     <Ionicons name="mail" size={18} color="#f97316" />
                   </View>
                   <Text className="text-white text-base font-medium flex-1">
-                    {t('settings.emailSupport')}
+                    Email Support
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </AnimatedTouchableOpacity>
@@ -1042,7 +1037,7 @@ Best regards`;
                     <Ionicons name="star" size={18} color="#f97316" />
                   </View>
                   <Text className="text-white text-base font-medium flex-1">
-                    {t('settings.rateUs')}
+                    Rate Us
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </AnimatedTouchableOpacity>
@@ -1060,7 +1055,7 @@ Best regards`;
                     <Ionicons name="share-social" size={18} color="#f97316" />
                   </View>
                   <Text className="text-white text-base font-medium flex-1">
-                    {t('settings.shareApp')}
+                    Share App
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </AnimatedTouchableOpacity>
@@ -1070,7 +1065,7 @@ Best regards`;
             {/* Preferences Section */}
             <View className="mb-8">
               <Text className="text-amber-500 text-base font-semibold mb-4">
-                {t('settings.preferences')}
+                Preferences
               </Text>
               
               <View className="bg-white/5 rounded-xl overflow-hidden">
@@ -1141,17 +1136,17 @@ Best regards`;
                 {/* Language */}
                 <TouchableOpacity 
                   className="flex-row items-center p-4"
-                  onPress={() => setShowLanguageModal(true)}
+                  onPress={() => Alert.alert('Language', 'Language selection coming soon')}
                 >
                   <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
                     <Ionicons name="globe" size={18} color="#f97316" />
                   </View>
                   <Text className="text-white text-base font-medium flex-1">
-                    {t('settings.language')}
+                    Language
                   </Text>
                   <View className="flex-row items-center">
-                    <Text className="text-xl mr-1">{getCurrentLanguageInfo().flag}</Text>
-                    <Text className="text-white/60 text-sm">{getCurrentLanguageInfo().nativeName}</Text>
+                    <Text className="text-xl mr-1">🇺🇸</Text>
+                    <Text className="text-white/60 text-sm">English</Text>
                   </View>
                   <View className="ml-2">
                     <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
@@ -1168,7 +1163,7 @@ Best regards`;
             {/* Storage Section */}
             <View className="mb-8">
               <Text className="text-amber-500 text-base font-semibold mb-4">
-                {t('settings.storage')}
+                Storage
               </Text>
               
               <View className="bg-white/5 rounded-xl overflow-hidden">
@@ -1183,10 +1178,10 @@ Best regards`;
                   </View>
                   <View className="flex-1">
                     <Text className="text-white text-base font-medium">
-                      {t('settings.deleteAllPhotos')}
+                      Delete All Photos
                     </Text>
                     <Text className="text-white/60 text-sm">
-                      {t('settings.deleteAllPhotosDescription')}
+                      Permanently remove all photos from gallery
                     </Text>
                   </View>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
@@ -1198,7 +1193,7 @@ Best regards`;
             {/* Account & Legal Section */}
             <View className="mb-8">
               <Text className="text-amber-500 text-base font-semibold mb-4">
-                {t('settings.accountLegal')}
+                Account & Legal
               </Text>
               
               <View className="bg-white/5 rounded-xl overflow-hidden">
@@ -1212,7 +1207,7 @@ Best regards`;
                     <Ionicons name="lock-closed" size={18} color="#f97316" />
                   </View>
                   <Text className="text-white text-base font-medium flex-1">
-                    {t('settings.privacyPolicy')}
+                    Privacy Policy
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </TouchableOpacity>
@@ -1226,7 +1221,7 @@ Best regards`;
                     <Ionicons name="document-text" size={18} color="#f97316" />
                   </View>
                   <Text className="text-white text-base font-medium flex-1">
-                    {t('settings.termsOfUse')}
+                    Terms of Use
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </TouchableOpacity>
@@ -1277,7 +1272,7 @@ Best regards`;
             {/* About Section */}
             <View className="mb-0">
               <Text className="text-amber-500 text-base font-semibold mb-4">
-                {t('settings.about')}
+                About
               </Text>
               
               <View className="bg-white/5 rounded-xl overflow-hidden">
@@ -1289,7 +1284,7 @@ Best regards`;
                   </View>
                   <View className="flex-1">
                     <Text className="text-white text-base font-medium">
-                      {t('settings.version')}
+                      Version
                     </Text>
                     <Text className="text-white/60 text-sm">
                       1.0.5
@@ -1302,11 +1297,7 @@ Best regards`;
 
           </View>
           
-          {/* Language Selection Modal */}
-          <LanguageSelectionModal 
-            visible={showLanguageModal}
-            onClose={() => setShowLanguageModal(false)}
-          />
+          {/* Removed Language Selection Modal - translation system removed */}
           
           
         </ScrollView>
