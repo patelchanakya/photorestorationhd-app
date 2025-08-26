@@ -2,12 +2,13 @@ import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useQuickEditStore } from '@/store/quickEditStore';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Alert, Text, TouchableOpacity, View, Animated } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { IconSymbol } from './ui/IconSymbol';
+import { featureRequestService } from '@/services/featureRequestService';
+import { useRevenueCat } from '@/contexts/RevenueCatContext';
 
 type CardItem = {
   id: string;
@@ -105,41 +106,6 @@ const FeatureCardBase = ({
 const Card = React.memo(FeatureCardBase);
 Card.displayName = 'FeatureCard';
 
-// Handle request idea email
-async function handleRequestIdea() {
-  try {
-    const subject = 'Clever - Feature Request';
-    const body = `Hi Clever team!
-
-I'd love to see this feature added to the app:
-
-[Describe your feature idea here - e.g., "Remove background", "Change hair color", "Age progression", etc.]
-
-Why I want this:
-[Tell us why this would be useful]
-
-Thanks!`;
-
-    const mailUrl = `mailto:photorestorationhd@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    
-    const canOpen = await Linking.canOpenURL(mailUrl);
-    if (canOpen) {
-      await Linking.openURL(mailUrl);
-    } else {
-      Alert.alert(
-        'Contact Us',
-        'Please email us at: photorestorationhd@gmail.com',
-        [{ text: 'OK' }]
-      );
-    }
-  } catch (error) {
-    Alert.alert(
-      'Contact Us',
-      'Please email us at: photorestorationhd@gmail.com',
-      [{ text: 'OK' }]
-    );
-  }
-}
 
 // Memoize the entire component - export as default function
 export function FeatureCardsList({ 
@@ -147,6 +113,44 @@ export function FeatureCardsList({
   onOpenClothes 
 }: FeatureCardsListProps) {
   const router = useRouter();
+  const { isPro } = useRevenueCat();
+
+  // Handle request idea submission
+  const handleRequestIdea = React.useCallback(async () => {
+    Alert.prompt(
+      'Request a Feature',
+      'What feature would you like to see in Clever?',
+      async (text) => {
+        if (text && text.trim()) {
+          try {
+            const result = await featureRequestService.submitRequest(text, undefined, isPro);
+            if (result.success) {
+              Alert.alert(
+                'Thank You!',
+                'Your feature request has been submitted. We appreciate your feedback!',
+                [{ text: 'Great!' }]
+              );
+            } else {
+              Alert.alert(
+                'Submission Failed',
+                result.error || 'Unable to submit your request. Please try again.',
+                [{ text: 'OK' }]
+              );
+            }
+          } catch (error) {
+            Alert.alert(
+              'Error',
+              'Something went wrong. Please try again.',
+              [{ text: 'OK' }]
+            );
+          }
+        }
+      },
+      'plain-text',
+      '',
+      'Describe your feature idea here...'
+    );
+  }, [isPro]);
 
   // Memoize handlePress to prevent re-creation
   const handlePress = React.useCallback(async (item: CardItem) => {

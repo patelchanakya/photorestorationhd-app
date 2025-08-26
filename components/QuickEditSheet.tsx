@@ -48,6 +48,7 @@ export function QuickEditSheet() {
   const [isCropping, setIsCropping] = React.useState(false);
   const hasAppliedCropRef = React.useRef(false);
   const [mediaLoading, setMediaLoading] = React.useState(false);
+  const [isLimitError, setIsLimitError] = React.useState(false);
   // Progress-based loading copy (no cycling back)
   const getLoadingMessage = (p: number) => {
     if (p < 10) return 'Uploading photo…';
@@ -196,10 +197,16 @@ export function QuickEditSheet() {
       let errorMsg = e?.message || 'Something went wrong. Please try again.';
       
       // Override technical error messages with user-friendly ones
-      if (errorMsg.includes('Unable to verify photo limits') || 
+      if (errorMsg.includes('PHOTO_LIMIT_EXCEEDED') || e?.code === 'PHOTO_LIMIT_EXCEEDED') {
+        errorMsg = 'You\'ve reached your daily photo limit. Tap here to upgrade to Pro for unlimited edits!';
+        setIsLimitError(true);
+      } else if (errorMsg.includes('Unable to verify photo limits') || 
           errorMsg.includes('Servers are loaded') ||
           errorMsg.includes('Unable to process photo')) {
         errorMsg = 'Servers are loaded, please try again later.';
+        setIsLimitError(false);
+      } else {
+        setIsLimitError(false);
       }
       
       if (__DEV__) {
@@ -368,7 +375,20 @@ export function QuickEditSheet() {
 
               {/* Error Message */}
               {stage === 'error' && (
-                <View style={{ marginTop: 12, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, backgroundColor: 'rgba(239,68,68,0.1)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)' }}>
+                <TouchableOpacity 
+                  onPress={isLimitError ? () => {
+                    presentPaywall().then((success) => {
+                      if (success) {
+                        // Reset error state and retry
+                        setIsLimitError(false);
+                        setStage('preview');
+                        setTimeout(() => handleUpload(), 100);
+                      }
+                    });
+                  } : undefined}
+                  activeOpacity={isLimitError ? 0.8 : 1}
+                  style={{ marginTop: 12, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, backgroundColor: 'rgba(239,68,68,0.1)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)' }}
+                >
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                     <IconSymbol name="exclamationmark.triangle.fill" size={16} color="#EF4444" />
                     <Text style={{ color: '#EF4444', fontWeight: '600', fontSize: 14 }}>Error</Text>
@@ -376,7 +396,7 @@ export function QuickEditSheet() {
                   <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, lineHeight: 18 }}>
                     {errorMessage}
                   </Text>
-                </View>
+                </TouchableOpacity>
               )}
 
               {/* Actions */}

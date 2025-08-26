@@ -194,6 +194,28 @@ export interface Database {
           updated_at?: string;
         };
       };
+      feature_requests: {
+        Row: {
+          id: string;
+          request_text: string;
+          user_email: string | null;
+          device_id: string | null;
+          status: string;
+          created_at: string;
+        };
+        Insert: {
+          request_text: string;
+          user_email?: string | null;
+          device_id?: string | null;
+          status?: string;
+        };
+        Update: {
+          request_text?: string;
+          user_email?: string | null;
+          device_id?: string | null;
+          status?: string;
+        };
+      };
     };
   };
 }

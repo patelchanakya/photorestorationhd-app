@@ -1,11 +1,7 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 import { presentPaywall, validatePremiumAccess } from '@/services/revenuecat';
-// useSubscriptionStore removed - now using RevenueCat Context
 import { BlurView } from 'expo-blur';
-import * as Haptics from 'expo-haptics';
-import { Image as ExpoImage } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -13,6 +9,12 @@ import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, Tou
 import { BottomSheet } from '@/components/sheets/BottomSheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Animated, { FadeInDown, FadeInUp, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+
+// New components
+import { ImageSelector } from '@/components/PhotoMagic/ImageSelector';
+import { CategoryTabs } from '@/components/PhotoMagic/CategoryTabs';
+import { PresetCard } from '@/components/PhotoMagic/PresetCard';
 
 export default function TextEditsScreen() {
   const router = useRouter();
@@ -21,17 +23,17 @@ export default function TextEditsScreen() {
   // Note: isPro is not used directly here; using store getters inside processing flow
   
   // Get parameters from navigation
-  const { imageUri, prompt: initialPrompt, mode } = params;
+  const { imageUri, prompt: initialPrompt, mode, fromUpload } = params;
   
   const [customPrompt, setCustomPrompt] = useState('');
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [hasProcessed, setHasProcessed] = useState(false);
   const [category, setCategory] = useState<'All' | 'Memorial' | 'Creative' | 'Cleanup' | 'Style' | 'Looks'>('All');
-  const [preserveIdentity, setPreserveIdentity] = useState(true);
-  const [preserveComposition, setPreserveComposition] = useState(true);
+  const [preserveIdentity] = useState(true);
+  const [preserveComposition] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const applyLockRef = useRef(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [editMode, setEditMode] = useState<'presets' | 'custom'>('presets');
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -40,14 +42,27 @@ export default function TextEditsScreen() {
   const [infoTitle, setInfoTitle] = useState<string>('');
   const [infoText, setInfoText] = useState<string>('');
   
+  // Animation for loading spinner
+  const spinValue = useSharedValue(0);
+  
+  const spinStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${spinValue.value}deg` }],
+  }));
+  
 useEffect(() => {
+  // If we have an image from upload, set it as selected
+  if (imageUri && fromUpload && !selectedImage) {
+    setSelectedImage(imageUri as string);
+  }
+  
   // If we have an image and prompt from navigation, process it ONCE
   if (imageUri && initialPrompt && !hasProcessed) {
     setHasProcessed(true);
     processWithPrompt(imageUri as string, initialPrompt as string, mode as string);
   }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [imageUri, initialPrompt, mode, hasProcessed]);
+}, [imageUri, initialPrompt, mode, hasProcessed, fromUpload, selectedImage]);
+
 
   const processWithPrompt = useCallback(async (uri: string, prompt: string, editMode?: string) => {
     // CRITICAL: Gate Pro-only features before processing
@@ -103,6 +118,9 @@ useEffect(() => {
     // Local loading UI with progress simulation
     setIsLoading(true);
     setProgress(0);
+    
+    // Start spinner animation
+    spinValue.value = withRepeat(withTiming(360, { duration: 1000 }), -1, false);
     const start = Date.now();
     const estMs = 10000;
     const timer = setInterval(() => {
@@ -137,21 +155,23 @@ useEffect(() => {
         console.log('📝 [TEXT-EDIT] Cleared context after error');
       }
       
-      Alert.alert('Processing Failed', err?.message || 'Something went wrong. Please try again.');
+      // Handle photo limit exceeded error with user-friendly message
+      let errorTitle = 'Processing Failed';
+      let errorMessage = 'Something went wrong. Please try again.';
+      
+      if (err?.message?.includes('PHOTO_LIMIT_EXCEEDED') || err?.code === 'PHOTO_LIMIT_EXCEEDED') {
+        errorTitle = 'Daily Limit Reached';
+        errorMessage = 'You\'ve reached your daily photo editing limit. Please try again tomorrow or upgrade to Pro for unlimited edits.';
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+      
+      Alert.alert(errorTitle, errorMessage);
     }
-  }, [router, photoRestoration]);
+  }, [router, photoRestoration, spinValue]);
 
-  const openPicker = async () => {
-    const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (res.status !== 'granted') return;
-    const result = await ImagePicker.launchImageLibraryAsync({ 
-      mediaTypes: ['images'], 
-      allowsEditing: false, 
-      quality: 1 
-    });
-    if (!result.canceled && result.assets[0]) {
-      setSelectedImage(result.assets[0].uri);
-    }
+  const handleImageSelected = (uri: string) => {
+    setSelectedImage(uri);
   };
 
   // Curated prompt templates aligned with FLUX Kontext best practices
@@ -164,19 +184,9 @@ useEffect(() => {
     prefill?: string; // default text to prefill editor
   };
   const SUGGESTIONS: Suggestion[] = [
-    // Most Popular Requests (ordered by demand)
-    { label: 'Clear skin', icon: 'bandage', category: 'Looks', template: 'Remove acne and blemishes while keeping natural skin texture.' },
-    { label: 'Slimmer', icon: 'person', category: 'Looks', template: 'Make the subject look slightly slimmer in a natural, realistic way.' },
-    { label: 'Younger', icon: 'clock', category: 'Looks', template: 'Make the subject appear a bit younger while keeping their identity the same.' },
-    { label: 'Older', icon: 'clock', category: 'Looks', template: 'Make the subject appear a bit older while keeping their identity the same.' },
-    { label: 'Add angel wings', icon: 'bird', category: 'Memorial', template: 'Add soft, white angel wings behind the subject to create a gentle memorial look.' },
-    { label: 'Add halo', icon: 'circle.dashed', category: 'Memorial', template: 'Add a subtle glowing halo above the subject\'s head.' },
-    { label: 'Vintage look', icon: 'camera.filters', category: 'Style', template: 'Apply a subtle vintage film look with soft contrast and warm tones.' },
-    { label: 'Add smile', icon: 'face.smiling', category: 'Looks', template: 'Add a gentle, natural smile to the subject.' },
+    // Unique requests not in main screen Popular section
     { label: 'Remove watermark/logo', icon: 'square', category: 'Cleanup', template: 'Remove a watermark or logo cleanly while preserving surrounding details.' },
-    { label: 'Fix flyaway hair', icon: 'wand.and.stars', category: 'Looks', template: 'Clean up flyaway hairs while keeping hair texture natural.' },
-
-    // Other Popular Requests
+    { label: 'Vintage look', icon: 'camera.filters', category: 'Style', template: 'Apply a subtle vintage film look with soft contrast and warm tones.' },
     { label: 'Smooth skin', icon: 'sparkles', category: 'Looks', template: 'Gently smooth skin while preserving pores and details.' },
     { label: 'Subtle makeup', icon: 'face.smiling', category: 'Looks', template: 'Apply very subtle, natural-looking makeup enhancement.' },
     { label: 'Whiten teeth', icon: 'mouth', category: 'Looks', template: 'Whiten teeth naturally without over-brightening.' },
@@ -189,7 +199,7 @@ useEffect(() => {
 
     // Creative
     { label: 'Golden hour rays', icon: 'sun.max', category: 'Creative', template: 'Add gentle golden hour light rays from the side, keeping the subject natural.' },
-    { label: 'Portrait bokeh', icon: 'circle.dashed', category: 'Creative', template: 'Add a subtle portrait bokeh effect to the background, keeping the subject crisp.' },
+    { label: 'Blur background', icon: 'circle.dashed', category: 'Creative', template: 'Add a subtle background blur effect, keeping the subject crisp.' },
     { label: 'Butterflies', icon: 'leaf', category: 'Creative', template: 'Add a few colorful butterflies around the subject, keeping them subtle and tasteful.' },
     { label: 'Sparkles', icon: 'sparkles', category: 'Creative', template: 'Add a few soft sparkles around the subject without overpowering the scene.' },
 
@@ -197,31 +207,27 @@ useEffect(() => {
     { label: 'Remove date stamp', icon: 'pencil.tip', category: 'Cleanup', template: 'Remove any date stamp or overlay text cleanly from the image.' },
 
     // Style
-    { label: 'Vintage look', icon: 'camera.filters', category: 'Style', template: 'Apply a subtle vintage film look with soft contrast and warm tones.' },
     { label: 'Oil painting, rich texture', icon: 'paintpalette', category: 'Style', template: 'Transform to oil painting with visible brushstrokes, thick paint texture, and rich color depth while preserving the original composition and object placement.' },
     { label: 'Pencil sketch, detailed', icon: 'pencil.tip', category: 'Style', template: 'Convert to pencil sketch with natural graphite lines, cross-hatching, and visible paper texture.' },
-    { label: 'Bauhaus style (preserve layout)', icon: 'square.grid.2x2', category: 'Style', template: 'Change to Bauhaus art style while maintaining the original composition and object placement.' },
   ];
 
   const compositionClause = ' Keep the exact camera angle, subject position, scale, and framing. Only replace the environment.';
   const identityClause = ' Maintain the same facial features, hairstyle, and expression.';
 
   const handleSuggestionPress = (label: string) => {
-    try { Haptics.selectionAsync(); } catch {}
     const s = SUGGESTIONS.find(x => x.label === label);
     setSelectedLabels((prev) => {
       const already = prev.includes(label);
       const next = already ? prev.filter(l => l !== label) : [...prev, label];
-      if (!already && s?.opensEditor) {
-        // Selecting a text-based preset: open editor and prefill
-        setShowAdvanced(true);
-        if (s.prefill) {
-          setCustomPrompt(s.prefill);
+      if (!already) {
+        if (s?.opensEditor) {
+          // Selecting a text-based preset: prefill custom prompt and switch to custom mode
+          setCustomPrompt(s.prefill || '');
+          setEditMode('custom');
         }
       } else if (already && s?.opensEditor) {
-        // Deselecting a text-based preset: clear and collapse
+        // Deselecting a text-based preset: clear custom prompt
         setCustomPrompt('');
-        setShowAdvanced(false);
       }
       if (__DEV__) {
         console.log('🪄 Photo Magic - toggle preset:', label, '→ selected:', next);
@@ -238,32 +244,123 @@ useEffect(() => {
   };
 
   const buildPromptFromSelections = (): string => {
-    // Only include custom text if a text-based preset is selected
-    const textPresetSelected = selectedLabels.some(l => {
-      const s = SUGGESTIONS.find(x => x.label === l);
-      return !!s?.opensEditor;
-    });
-    if (textPresetSelected && showAdvanced && customPrompt.trim()) {
+    // If in custom mode, just return the custom prompt
+    if (editMode === 'custom') {
       return customPrompt.trim();
     }
-    const chosen = (category === 'All' ? SUGGESTIONS : SUGGESTIONS).filter(s => selectedLabels.includes(s.label));
+    
+    // Preset mode - build from selected presets
+    const chosen = SUGGESTIONS.filter(s => selectedLabels.includes(s.label));
     if (chosen.length === 0) return '';
-    let merged = chosen.map(s => s.template).join(' ');
-    if (preserveComposition && !/camera angle|framing|position|scale/i.test(merged)) {
+    
+    // Group presets by category for better organization
+    const groupedPresets = chosen.reduce((groups, preset) => {
+      if (!groups[preset.category]) groups[preset.category] = [];
+      groups[preset.category].push(preset);
+      return groups;
+    }, {} as Record<string, typeof chosen>);
+    
+    // Build prompt sections in priority order
+    const sections: string[] = [];
+    
+    // 1. Cleanup operations first (they should be applied before enhancements)
+    if (groupedPresets['Cleanup']) {
+      const cleanupTasks = groupedPresets['Cleanup'].map(p => p.template).join(', then ');
+      sections.push(cleanupTasks);
+    }
+    
+    // 2. Style transformations (major changes to image style)
+    if (groupedPresets['Style']) {
+      // For style changes, combine similar requests intelligently
+      const stylePresets = groupedPresets['Style'];
+      if (stylePresets.length === 1) {
+        sections.push(stylePresets[0].template);
+      } else {
+        // Multiple styles - create a hybrid approach
+        const styleDescriptions = stylePresets.map(p => {
+          // Extract key style elements from templates
+          if (p.label.includes('Oil painting')) return 'oil painting texture with visible brushstrokes';
+          if (p.label.includes('Pencil sketch')) return 'pencil sketch with cross-hatching';
+          if (p.label.includes('Vintage')) return 'vintage film aesthetic';
+          return p.template;
+        });
+        sections.push(`Apply a artistic style combining: ${styleDescriptions.join(' and ')}`);
+      }
+    }
+    
+    // 3. Looks enhancements (facial/beauty improvements)
+    if (groupedPresets['Looks']) {
+      const looksTasks = groupedPresets['Looks'].map(p => {
+        // Simplify repetitive "naturally" and "gently" language
+        return p.template.replace(/gently |naturally |very |subtle |slightly /gi, '');
+      });
+      sections.push(`Enhance appearance: ${looksTasks.join(', ')}`);
+    }
+    
+    // 4. Creative additions (effects, objects, lighting)
+    if (groupedPresets['Creative']) {
+      const creativeEffects = groupedPresets['Creative'];
+      const lightingEffects = creativeEffects.filter(p => p.label.includes('rays') || p.label.includes('glow'));
+      const objectAdditions = creativeEffects.filter(p => !lightingEffects.includes(p));
+      
+      if (lightingEffects.length > 0) {
+        sections.push(lightingEffects.map(p => p.template).join(' and '));
+      }
+      if (objectAdditions.length > 0) {
+        sections.push(`Add decorative elements: ${objectAdditions.map(p => p.template).join(', ')}`);
+      }
+    }
+    
+    // 5. Memorial elements (handled specially for sensitivity)
+    if (groupedPresets['Memorial']) {
+      const memorialElements = groupedPresets['Memorial'].map(p => p.template);
+      sections.push(`Apply memorial styling: ${memorialElements.join(', ')}`);
+    }
+    
+    // Combine sections with proper flow
+    let merged = sections.join('. ');
+    
+    // Add composition and identity preservation clauses intelligently
+    const needsCompositionClause = !/(keep|maintain|preserve).*(?:framing|composition|angle|position)/i.test(merged) && 
+                                  (groupedPresets['Style'] || groupedPresets['Creative']) && 
+                                  preserveComposition;
+                                  
+    const needsIdentityClause = !/(maintain|preserve).*(?:face|identity|features|expression)/i.test(merged) && 
+                               (groupedPresets['Style'] || groupedPresets['Looks']) && 
+                               preserveIdentity;
+    
+    if (needsCompositionClause) {
       merged += compositionClause;
     }
-    if (preserveIdentity && !/facial features|identity|hairstyle|expression/i.test(merged)) {
+    if (needsIdentityClause) {
       merged += identityClause;
     }
+    
+    // Optimize prompt length if too long (keep under 400 characters for better AI processing)
+    if (merged.length > 400) {
+      // Remove redundant words and phrases
+      merged = merged
+        .replace(/\b(very|quite|somewhat|rather|fairly)\s+/gi, '')
+        .replace(/\b(the|a|an)\s+/gi, '')
+        .replace(/\s+(while|and|but)\s+/gi, ', ')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+    }
+    
     if (__DEV__) {
-      console.log('🧠 Photo Magic - built prompt:', {
-        presets: selectedLabels,
+      console.log('🧠 Photo Magic - built prompt (enhanced):', {
+        mode: editMode,
+        selectedPresets: selectedLabels,
+        groupedCategories: Object.keys(groupedPresets),
+        sections: sections.length,
         preserveIdentity,
         preserveComposition,
-        length: merged.length,
-        preview: merged.slice(0, 160) + (merged.length > 160 ? '…' : ''),
+        originalLength: chosen.map(s => s.template).join(' ').length,
+        optimizedLength: merged.length,
+        preview: merged.slice(0, 200) + (merged.length > 200 ? '…' : ''),
       });
     }
+    
     return merged.trim();
   };
   
@@ -315,254 +412,469 @@ useEffect(() => {
       style={{ flex: 1, backgroundColor: '#0B0B0F' }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={{ paddingHorizontal: 16, paddingTop: insets.top + 8, paddingBottom: 6, alignItems: 'center', justifyContent: 'space-between', flexDirection: 'row' }}>
+      {/* Header */}
+      <Animated.View 
+        entering={FadeInDown.delay(100).duration(600)}
+        style={{ paddingHorizontal: 16, paddingTop: insets.top + 8, paddingBottom: 6, alignItems: 'center', justifyContent: 'space-between', flexDirection: 'row' }}
+      >
         <TouchableOpacity onPress={async () => {
-          // Clear text-edit context when modal is closed
           await AsyncStorage.removeItem('activeTextEditContext');
           if (__DEV__) {
             console.log('📝 [TEXT-EDIT] Cleared context on modal close');
           }
           router.back();
         }}>
-          <Text style={{ color: '#EAEAEA', fontSize: 28 }}>✕</Text>
+          <View style={{
+            width: 32,
+            height: 32,
+            borderRadius: 16,
+            backgroundColor: 'rgba(255,255,255,0.1)',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <Text style={{ color: '#EAEAEA', fontSize: 18 }}>✕</Text>
+          </View>
         </TouchableOpacity>
-        <Text style={{ color: '#EAEAEA', fontSize: 20, fontWeight: '800' }}>Photo Magic</Text>
-        <View style={{ width: 28 }} />
-      </View>
-      <View style={{ paddingHorizontal: 16 }}>
-        <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: -2, marginBottom: 8, textAlign: 'center' }}>
-          Write your own edit or use the presets.
-        </Text>
-      </View>
-      
+        
+        <View style={{ alignItems: 'center' }}>
+          <Text style={{ color: '#EAEAEA', fontSize: 22, fontWeight: '800' }}>Photo Magic</Text>
+          <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 2 }}>
+            AI-powered photo editing
+          </Text>
+        </View>
+        
+        <View style={{ width: 32 }} />
+      </Animated.View>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+        {/* Image Selector */}
+        <Animated.View entering={FadeInUp.delay(150).duration(800).springify().damping(15)} style={{ paddingHorizontal: 16, marginTop: 16 }}>
+          <ImageSelector 
+            selectedImage={selectedImage} 
+            onImageSelected={handleImageSelected}
+            disabled={isLoading || isSubmitting}
+            showReadyIndicator={fromUpload === 'true'}
+          />
+        </Animated.View>
 
-      <ScrollView style={{ flex: 1, paddingHorizontal: 16 }}>
-        <View style={{ marginTop: 20 }}>
-          {selectedImage ? (
-            <TouchableOpacity onPress={openPicker} style={{ borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', height: 160, backgroundColor: 'rgba(255,255,255,0.04)' }}>
-              <ExpoImage source={{ uri: selectedImage }} style={{ width: '100%', height: '100%' }} contentFit="contain" />
-              <View style={{ position: 'absolute', bottom: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 14, paddingHorizontal: 10, paddingVertical: 6 }}>
-                <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Tap to change</Text>
-              </View>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity 
-              onPress={openPicker} 
-              style={{ 
-                borderRadius: 20, 
-                borderWidth: 1, 
-                borderColor: 'rgba(255,255,255,0.12)', 
+        {/* Edit Mode Selector */}
+        <Animated.View 
+          entering={FadeInUp.delay(250).duration(800).springify().damping(12)}
+          style={{ paddingHorizontal: 16, marginBottom: 20 }}
+        >
+          <Text style={{ color: '#EAEAEA', fontSize: 16, fontWeight: '600', marginBottom: 12 }}>
+            Choose Edit Method
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <TouchableOpacity
+              onPress={() => {
+                setEditMode('presets');
+                setCustomPrompt('');
+              }}
+              style={{
+                flex: 1,
+                paddingVertical: 14,
+                borderRadius: 16,
+                backgroundColor: editMode === 'presets' ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.08)',
+                borderWidth: 1,
+                borderColor: editMode === 'presets' ? '#F59E0B' : 'rgba(255,255,255,0.12)',
                 alignItems: 'center',
+                flexDirection: 'row',
                 justifyContent: 'center',
-                backgroundColor: 'rgba(255,255,255,0.04)',
-                height: 140
+                gap: 8
               }}
             >
-              <IconSymbol name="photo.on.rectangle" size={32} color="rgba(255,255,255,0.5)" />
-              <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, marginTop: 8 }}>Select Photo</Text>
+              <IconSymbol name="square.grid.2x2" size={18} color={editMode === 'presets' ? '#F59E0B' : 'rgba(255,255,255,0.7)'} />
+              <Text style={{ 
+                color: editMode === 'presets' ? '#F59E0B' : 'rgba(255,255,255,0.8)', 
+                fontSize: 14, 
+                fontWeight: '600' 
+              }}>
+                Use Presets
+              </Text>
             </TouchableOpacity>
-          )}
-        </View>
-
-        <View style={{ marginTop: 16, marginBottom: 8 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <Text style={{ color: '#EAEAEA', fontSize: 16, fontWeight: '600' }}>Quick presets</Text>
-            <TouchableOpacity onPress={() => setShowAdvanced(!showAdvanced)} accessibilityLabel="Write your own" style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              {!showAdvanced && <IconSymbol name="pencil" size={14} color="rgba(255,255,255,0.6)" />}
-              <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, fontWeight: '600' }}>
-                {showAdvanced ? 'Done' : 'Write your own'}
+            
+            <TouchableOpacity
+              onPress={() => {
+                setEditMode('custom');
+                setSelectedLabels([]);
+              }}
+              style={{
+                flex: 1,
+                paddingVertical: 14,
+                borderRadius: 16,
+                backgroundColor: editMode === 'custom' ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.08)',
+                borderWidth: 1,
+                borderColor: editMode === 'custom' ? '#F59E0B' : 'rgba(255,255,255,0.12)',
+                alignItems: 'center',
+                flexDirection: 'row',
+                justifyContent: 'center',
+                gap: 8
+              }}
+            >
+              <IconSymbol name="pencil" size={18} color={editMode === 'custom' ? '#F59E0B' : 'rgba(255,255,255,0.7)'} />
+              <Text style={{ 
+                color: editMode === 'custom' ? '#F59E0B' : 'rgba(255,255,255,0.8)', 
+                fontSize: 14, 
+                fontWeight: '600' 
+              }}>
+                Write Custom
               </Text>
             </TouchableOpacity>
           </View>
-          {/* Selected tags summary */}
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
-            {selectedLabels.length === 0 ? (
-              <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13 }}>Pick presets below or write custom edits.</Text>
-            ) : (
-              selectedLabels.map((label) => (
-                <TouchableOpacity key={label} onPress={() => handleSuggestionPress(label)} style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, backgroundColor: 'rgba(245,158,11,0.12)', borderWidth: 1, borderColor: '#F59E0B' }}>
-                  <Text style={{ color: '#F59E0B', fontSize: 12, fontWeight: '700' }}>{label} ✕</Text>
-                </TouchableOpacity>
-              ))
-            )}
-          </View>
+        </Animated.View>
 
-          {/* Custom prompt (hidden by default) */}
-          {showAdvanced && (
-            <BlurView intensity={20} tint="dark" style={{ borderRadius: 16, overflow: 'hidden' }}>
+        {/* Show either presets or custom edit based on mode */}
+        {editMode === 'presets' ? (
+          <>
+            {/* Category Tabs */}
+            <Animated.View entering={FadeInUp.delay(350).duration(800).springify().damping(12)}>
+              <CategoryTabs 
+                selectedCategory={category}
+                onCategoryChange={setCategory}
+              />
+            </Animated.View>
+
+
+
+
+        {/* Presets grid */}
+        <Animated.View 
+          entering={FadeInUp.delay(450).duration(800).springify().damping(10)}
+          style={{ paddingHorizontal: 16, marginBottom: 120 }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <Text style={{ color: '#EAEAEA', fontSize: 16, fontWeight: '600' }}>
+              {category === 'All' ? 'All Presets' : `${category} Presets`}
+            </Text>
+            <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>
+              Tap to select • Long‑press for details
+            </Text>
+          </View>
+          
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+            {(category === 'All' ? SUGGESTIONS : SUGGESTIONS.filter(s => s.category === category)).map((suggestion) => (
+              <View key={suggestion.label} style={{ minWidth: '48%', maxWidth: '48%' }}>
+                <PresetCard
+                  label={suggestion.label}
+                  icon={suggestion.icon}
+                  isSelected={selectedLabels.includes(suggestion.label)}
+                  onPress={() => handleSuggestionPress(suggestion.label)}
+                  onLongPress={() => handleSuggestionLongPress(suggestion.label)}
+                />
+              </View>
+            ))}
+          </View>
+        </Animated.View>
+          </>
+        ) : (
+          /* Custom Edit Mode */
+          <Animated.View 
+            entering={FadeInUp.delay(350).duration(800).springify().damping(12)}
+            style={{ paddingHorizontal: 16, marginBottom: 120 }}
+          >
+            <Text style={{ color: '#EAEAEA', fontSize: 16, fontWeight: '600', marginBottom: 12 }}>
+              Describe Your Edit
+            </Text>
+            <BlurView intensity={20} tint="dark" style={{ borderRadius: 20, overflow: 'hidden' }}>
               <View style={{ 
-                borderRadius: 16, 
+                borderRadius: 20, 
                 borderWidth: 1, 
                 borderColor: 'rgba(255,255,255,0.12)',
-                backgroundColor: 'rgba(255,255,255,0.06)',
-                padding: 16
+                backgroundColor: 'rgba(255,255,255,0.08)',
+                padding: 20
               }}>
                 <TextInput
                   style={{ 
                     color: '#EAEAEA', 
-                    fontSize: 16,
-                    minHeight: 100,
-                    textAlignVertical: 'top'
+                    fontSize: 15,
+                    minHeight: 120,
+                    textAlignVertical: 'top',
+                    lineHeight: 22
                   }}
-                  placeholder="Describe what you want to change..."
-                  placeholderTextColor="rgba(255,255,255,0.3)"
+                  placeholder="Describe exactly what you want to change or enhance in your photo..."
+                  placeholderTextColor="rgba(255,255,255,0.4)"
                   value={customPrompt}
-                  onChangeText={setCustomPrompt}
+                  onChangeText={(text) => setCustomPrompt(text.slice(0, 150))}
+                  maxLength={150}
                   multiline
                   autoCorrect={false}
                 />
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-                  <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>{customPrompt.length}/512</Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
+                  <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>{customPrompt.length}/150</Text>
                   {customPrompt.length > 0 && (
                     <TouchableOpacity onPress={() => setCustomPrompt('')}>
-                      <Text style={{ color: '#F59E0B', fontSize: 12, fontWeight: '700' }}>Clear</Text>
+                      <View style={{
+                        backgroundColor: 'rgba(245,158,11,0.15)',
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 12,
+                        borderWidth: 1,
+                        borderColor: 'rgba(245,158,11,0.3)'
+                      }}>
+                        <Text style={{ color: '#F59E0B', fontSize: 12, fontWeight: '600' }}>Clear</Text>
+                      </View>
                     </TouchableOpacity>
                   )}
                 </View>
               </View>
             </BlurView>
-          )}
-        </View>
-
-        {/* Editing helpers */}
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
-          {[
-            { key: 'identity', label: 'Preserve identity', value: preserveIdentity, setter: setPreserveIdentity },
-            { key: 'composition', label: 'Keep composition', value: preserveComposition, setter: setPreserveComposition },
-          ].map(({ key, label, value, setter }) => (
-            <TouchableOpacity
-              key={key}
-              onPress={() => { try { Haptics.selectionAsync(); } catch {} setter(!value); }}
-              style={{
-                paddingHorizontal: 12,
-                paddingVertical: 8,
-                borderRadius: 18,
-                backgroundColor: value ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.08)',
-                borderWidth: 1,
-                borderColor: value ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.12)',
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 6
-              }}
-            >
-              <IconSymbol name={value ? 'checkmark.circle' : 'circle'} size={14} color={value ? '#F59E0B' : 'rgba(255,255,255,0.8)'} />
-              <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13 }}>{label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Category filter */}
-        <View style={{ marginBottom: 10 }}>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-            {(['All','Memorial','Creative','Cleanup','Style','Looks'] as const).map((c) => (
-              <TouchableOpacity
-                key={c}
-                onPress={() => { try { Haptics.selectionAsync(); } catch {} setCategory(c); }}
-                style={{
-                  paddingHorizontal: 12,
-                  paddingVertical: 8,
-                  borderRadius: 18,
-                  backgroundColor: category === c ? 'rgba(245,158,11,0.12)' : 'rgba(255,255,255,0.08)',
-                  borderWidth: 1,
-                  borderColor: category === c ? '#F59E0B' : 'rgba(255,255,255,0.12)'
-                }}
-              >
-                <Text style={{ color: category === c ? '#F59E0B' : 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: category === c ? '700' : '500' }}>{c}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Suggestions grid */}
-        <View style={{ marginBottom: 100 }}>
-          <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14, marginBottom: 6 }}>Try these:</Text>
-          {selectedLabels.length > 0 && (
-            <Text style={{ color: 'rgba(255,255,255,0.65)', fontSize: 12, marginBottom: 6 }}>Selected: {selectedLabels.length}</Text>
-          )}
-          <Text style={{ color: 'rgba(255,255,255,0.55)', fontSize: 12, marginBottom: 12 }}>Tap to select • Long‑press for info</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-            {(category === 'All' ? SUGGESTIONS : SUGGESTIONS.filter(s => s.category === category)).map(({ label, icon }) => (
-              <TouchableOpacity
-                key={label}
-                onPress={() => handleSuggestionPress(label)}
-                onLongPress={() => handleSuggestionLongPress(label)}
-                style={{
-                  paddingHorizontal: 14,
-                  paddingVertical: 10,
-                  borderRadius: 20,
-                  backgroundColor: selectedLabels.includes(label) ? 'rgba(245,158,11,0.12)' : 'rgba(255,255,255,0.08)',
-                  borderWidth: 1,
-                  borderColor: selectedLabels.includes(label) ? '#F59E0B' : 'rgba(255,255,255,0.12)',
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 8
-                }}
-              >
-                <IconSymbol name={icon as any} size={16} color={selectedLabels.includes(label) ? '#F59E0B' : 'rgba(255,255,255,0.9)'} />
-                <Text style={{ color: selectedLabels.includes(label) ? '#F59E0B' : 'rgba(255,255,255,0.9)', fontSize: 14, fontWeight: '600' }}>{label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
+            
+            {/* Tips for custom editing */}
+            <View style={{ marginTop: 16, padding: 16, backgroundColor: 'rgba(34,197,94,0.1)', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(34,197,94,0.2)' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                <IconSymbol name="lightbulb" size={16} color="#22c55e" />
+                <Text style={{ color: '#22c55e', fontSize: 14, fontWeight: '600', marginLeft: 8 }}>
+                  Tips for better results
+                </Text>
+              </View>
+              <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, lineHeight: 18 }}>
+                • Be specific about what you want to change{'\n'}
+                • Mention colors, lighting, or specific features{'\n'}
+                • Describe the desired outcome clearly{'\n'}
+                • Use plain language
+              </Text>
+            </View>
+          </Animated.View>
+        )}
       </ScrollView>
 
-      {/* Local loading overlay */}
+      {/* Enhanced loading overlay */}
       {isLoading && (
-        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center' }}>
-          <View style={{ paddingHorizontal: 16, paddingVertical: 12, borderRadius: 16, backgroundColor: 'rgba(12,12,14,0.9)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', minWidth: 220, alignItems: 'center' }}>
-            <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>Enhancing your photo…</Text>
-            <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, marginTop: 6 }}>This usually takes 5–10 seconds</Text>
-            <View style={{ height: 8, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden', marginTop: 12, alignSelf: 'stretch' }}>
-              <View style={{ width: `${progress}%`, height: '100%', backgroundColor: '#F59E0B' }} />
+        <Animated.View 
+          entering={FadeInUp.duration(300)}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <BlurView intensity={40} tint="dark" style={{ borderRadius: 24, overflow: 'hidden', minWidth: 280 }}>
+            <View style={{ 
+              paddingHorizontal: 32, 
+              paddingVertical: 24, 
+              backgroundColor: 'rgba(11,11,15,0.95)', 
+              borderWidth: 1, 
+              borderColor: 'rgba(245,158,11,0.3)', 
+              alignItems: 'center',
+              shadowColor: '#F59E0B',
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.3,
+              shadowRadius: 16,
+            }}>
+              {/* Animated icon */}
+              <Animated.View style={[{ marginBottom: 16 }, spinStyle]}>
+                <View style={{ 
+                  width: 64, 
+                  height: 64, 
+                  borderRadius: 32, 
+                  backgroundColor: 'rgba(245,158,11,0.2)',
+                  borderWidth: 2,
+                  borderColor: '#F59E0B',
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                }}>
+                  <IconSymbol name="wand.and.stars" size={28} color="#F59E0B" />
+                </View>
+              </Animated.View>
+              
+              <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '800', marginBottom: 8, textAlign: 'center' }}>
+                Applying Magic
+              </Text>
+              <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14, marginBottom: 20, textAlign: 'center', lineHeight: 20 }}>
+                Our AI is enhancing your photo with the selected edits
+              </Text>
+              
+              {/* Enhanced progress bar */}
+              <View style={{ alignSelf: 'stretch', marginBottom: 12 }}>
+                <View style={{ 
+                  height: 6, 
+                  borderRadius: 3, 
+                  backgroundColor: 'rgba(255,255,255,0.1)', 
+                  overflow: 'hidden' 
+                }}>
+                  <Animated.View style={{ 
+                    width: `${progress}%`, 
+                    height: '100%', 
+                    borderRadius: 3,
+                  }}>
+                    <LinearGradient
+                      colors={['#F59E0B', '#FBBF24', '#F59E0B']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={{ flex: 1 }}
+                    />
+                  </Animated.View>
+                </View>
+                <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 8, textAlign: 'center' }}>
+                  {progress}% complete • Usually takes 5-10 seconds
+                </Text>
+              </View>
             </View>
-          </View>
-        </View>
+          </BlurView>
+        </Animated.View>
       )}
 
-      {/* Bottom action button */}
-      <View style={{ 
-        position: 'absolute', 
-        left: 16, 
-        right: 16, 
-        bottom: (insets?.bottom || 0) + 10,
-        borderRadius: 22,
-        backgroundColor: 'rgba(255,255,255,0.06)',
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.12)',
-        padding: 6
-      }}>
+      {/* Enhanced bottom action button */}
+      <Animated.View 
+        entering={FadeInUp.delay(500).duration(800).springify().damping(15)}
+        style={{ 
+          position: 'absolute', 
+          left: 16, 
+          right: 16, 
+          bottom: (insets?.bottom || 0) + 12,
+        }}
+      >
         {(() => {
-          const canApply = !!selectedImage && !isSubmitting && !isLoading && selectedLabels.length > 0;
+          const canApply = !!selectedImage && !isSubmitting && !isLoading && (
+            (editMode === 'presets' && selectedLabels.length > 0) || 
+            (editMode === 'custom' && customPrompt.trim())
+          );
+          const hasImage = !!selectedImage;
+          const hasEdits = (editMode === 'presets' && selectedLabels.length > 0) || 
+                          (editMode === 'custom' && customPrompt.trim());
+          
           return (
             <TouchableOpacity 
               onPress={handleProcessImage}
-              activeOpacity={canApply ? 0.95 : 1} 
+              activeOpacity={canApply ? 0.8 : 1} 
               disabled={!canApply}
-              style={{ height: 50, borderRadius: 16, overflow: 'hidden', opacity: canApply ? 1 : 0.5 }}
+              style={{ 
+                height: 64, 
+                borderRadius: 24, 
+                overflow: 'hidden',
+                transform: [{ scale: canApply ? 1 : 0.98 }],
+                shadowColor: canApply ? '#F59E0B' : 'transparent',
+                shadowOffset: { width: 0, height: canApply ? 8 : 0 },
+                shadowOpacity: canApply ? 0.4 : 0,
+                shadowRadius: canApply ? 20 : 0,
+                elevation: canApply ? 12 : 0,
+              }}
               accessibilityState={{ disabled: !canApply }}
             >
-              {selectedImage ? (
-                <LinearGradient 
-                  colors={['#F59E0B', '#FBBF24']} 
-                  start={{ x: 0, y: 0 }} 
-                  end={{ x: 1, y: 1 }} 
-                  style={{ flex: 1, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' }}
-                >
-                  <IconSymbol name='wand.and.stars' size={18} color='#0B0B0F' />
-                  <Text style={{ color: '#0B0B0F', fontSize: 16, fontWeight: '900', marginLeft: 8 }}>
-                    {isSubmitting || isLoading ? 'Processing…' : 'Apply Edits'}
-                  </Text>
-                </LinearGradient>
-              ) : (
-                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.08)' }}>
-                  <IconSymbol name='photo' size={18} color='rgba(255,255,255,0.7)' />
-                  <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 15, fontWeight: '700', marginLeft: 8 }}>Select Photo Above</Text>
+              {canApply ? (
+                <View style={{ position: 'relative', flex: 1 }}>
+                  {/* Animated background glow */}
+                  <View style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    borderRadius: 24,
+                    backgroundColor: '#F59E0B',
+                    opacity: 0.2,
+                    transform: [{ scale: 1.1 }]
+                  }} />
+                  
+                  <LinearGradient 
+                    colors={['#F59E0B', '#FBBF24', '#F59E0B']} 
+                    start={{ x: 0, y: 0.3 }} 
+                    end={{ x: 1, y: 0.7 }} 
+                    style={{ 
+                      flex: 1, 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      flexDirection: 'row',
+                      paddingHorizontal: 24,
+                      borderRadius: 24
+                    }}
+                  >
+                    {isSubmitting || isLoading ? (
+                      <>
+                        <Animated.View 
+                          style={[
+                            { 
+                              width: 24, 
+                              height: 24, 
+                              borderRadius: 12, 
+                              borderWidth: 3, 
+                              borderColor: '#0B0B0F', 
+                              borderTopColor: 'transparent',
+                              marginRight: 16
+                            },
+                            spinStyle
+                          ]} 
+                        />
+                        <Text style={{ color: '#0B0B0F', fontSize: 18, fontWeight: '800', letterSpacing: 0.5 }}>
+                          Processing Magic…
+                        </Text>
+                      </>
+                    ) : (
+                      <>
+                        <View style={{
+                          backgroundColor: 'rgba(11,11,15,0.1)',
+                          borderRadius: 14,
+                          padding: 6,
+                          marginRight: 12
+                        }}>
+                          <IconSymbol name='wand.and.stars' size={24} color='#0B0B0F' />
+                        </View>
+                        <Text style={{ color: '#0B0B0F', fontSize: 19, fontWeight: '800', letterSpacing: 0.5, flex: 1 }}>
+                          Apply Magic
+                        </Text>
+                        <View style={{ 
+                          backgroundColor: 'rgba(11,11,15,0.2)',
+                          paddingHorizontal: 10,
+                          paddingVertical: 6,
+                          borderRadius: 16,
+                          minWidth: 32,
+                          alignItems: 'center',
+                          borderWidth: 1,
+                          borderColor: 'rgba(11,11,15,0.1)'
+                        }}>
+                          <Text style={{ color: '#0B0B0F', fontSize: 14, fontWeight: '800' }}>
+                            {selectedLabels.length || 1}
+                          </Text>
+                        </View>
+                      </>
+                    )}
+                  </LinearGradient>
                 </View>
+              ) : (
+                <BlurView intensity={10} tint="dark" style={{ flex: 1, borderRadius: 24 }}>
+                  <View style={{ 
+                    flex: 1, 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    flexDirection: 'row', 
+                    backgroundColor: 'rgba(255,255,255,0.06)',
+                    borderWidth: 1.5,
+                    borderColor: 'rgba(255,255,255,0.15)',
+                    borderRadius: 24,
+                    paddingHorizontal: 20
+                  }}>
+                    {!hasImage ? (
+                      <>
+                        <View style={{
+                          backgroundColor: 'rgba(255,255,255,0.1)',
+                          borderRadius: 12,
+                          padding: 6,
+                          marginRight: 12
+                        }}>
+                          <IconSymbol name='photo' size={22} color='rgba(255,255,255,0.6)' />
+                        </View>
+                        <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 17, fontWeight: '600', letterSpacing: 0.3 }}>
+                          Select a Photo First
+                        </Text>
+                      </>
+                    ) : !hasEdits ? (
+                      <>
+                        <View style={{
+                          backgroundColor: 'rgba(255,255,255,0.1)',
+                          borderRadius: 12,
+                          padding: 6,
+                          marginRight: 12
+                        }}>
+                          <IconSymbol name='wand.and.stars' size={22} color='rgba(255,255,255,0.6)' />
+                        </View>
+                        <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 17, fontWeight: '600', letterSpacing: 0.3 }}>
+                          Choose Edits to Apply
+                        </Text>
+                      </>
+                    ) : null}
+                  </View>
+                </BlurView>
               )}
             </TouchableOpacity>
           );
         })()}
-      </View>
+      </Animated.View>
 
       {/* Long-press info sheet */}
       <BottomSheet visible={infoVisible} onDismiss={() => setInfoVisible(false)} maxHeightPercent={0.65}>

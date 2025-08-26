@@ -3,17 +3,57 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, withRepeat, withTiming, interpolate } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconSymbol } from './ui/IconSymbol';
 
 const ACTIONS: { route: string; label: string; icon: string }[] = [
-  { route: '/text-edits', label: 'Photo Magic', icon: 'wand.and.stars' },
+  { route: '/photo-magic', label: 'Photo Magic', icon: 'wand.and.stars' },
 ];
 
 export function QuickActionRail() {
   const router = useRouter();
   const [busy, setBusy] = React.useState(false);
   const insets = useSafeAreaInsets();
+  
+  // Animation values
+  const buttonScale = useSharedValue(1);
+  const glowOpacity = useSharedValue(0);
+  const badgePulse = useSharedValue(0);
+  
+  React.useEffect(() => {
+    // Start pulsing animation for NEW badge
+    badgePulse.value = withRepeat(
+      withTiming(1, { duration: 2000 }),
+      -1,
+      true
+    );
+  }, []);
+  
+  const buttonAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: buttonScale.value }],
+  }));
+  
+  const glowAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: glowOpacity.value,
+  }));
+  
+  const badgeAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: interpolate(badgePulse.value, [0, 1], [1, 1.05]) }
+    ],
+    opacity: interpolate(badgePulse.value, [0, 1], [0.8, 1]),
+  }));
+
+  const handlePressIn = () => {
+    buttonScale.value = withSpring(0.95, { damping: 12, stiffness: 200 });
+    glowOpacity.value = withTiming(0.6, { duration: 150 });
+  };
+  
+  const handlePressOut = () => {
+    buttonScale.value = withSpring(1, { damping: 12, stiffness: 200 });
+    glowOpacity.value = withTiming(0, { duration: 300 });
+  };
 
   const go = async (route: string) => {
     if (busy) return;
@@ -83,22 +123,39 @@ export function QuickActionRail() {
           paddingVertical: 10,
         }}>
           {ACTIONS.map((a, index) => (
-            <TouchableOpacity
-              key={a.route}
-              onPress={() => go(a.route)}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              style={{
-                height: 54,
-                borderRadius: 14,
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexDirection: 'row',
-                backgroundColor: 'rgba(255,255,255,0.03)',
-                paddingHorizontal: 14,
-                marginTop: index === 0 ? 0 : 8,
-              }}
-            >
+            <Animated.View key={a.route} style={[buttonAnimatedStyle, { position: 'relative' }]}>
+              {/* Glow effect background */}
+              <Animated.View 
+                style={[
+                  glowAnimatedStyle,
+                  {
+                    position: 'absolute',
+                    inset: -4,
+                    borderRadius: 18,
+                    backgroundColor: '#F59E0B',
+                    opacity: 0.3,
+                  }
+                ]}
+              />
+              <TouchableOpacity
+                onPress={() => go(a.route)}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+                activeOpacity={0.9}
+                accessibilityRole="button"
+                style={{
+                  height: 54,
+                  borderRadius: 14,
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexDirection: 'row',
+                  backgroundColor: 'rgba(255,255,255,0.03)',
+                  paddingHorizontal: 14,
+                  marginTop: index === 0 ? 0 : 8,
+                  borderWidth: 1,
+                  borderColor: 'rgba(245,158,11,0.2)',
+                }}
+              >
               <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                 <View style={{ 
                   width: 38, 
@@ -114,12 +171,30 @@ export function QuickActionRail() {
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <Text style={{ color: '#FFFFFF', fontWeight: '600', fontSize: 15, letterSpacing: 0.2 }}>{a.label}</Text>
                     {a.label === 'Photo Magic' && (
-                      <View
-                        className="ml-2 px-2 py-0.5 rounded-full border border-amber-400/40 bg-amber-400/10"
+                      <Animated.View
+                        style={[
+                          badgeAnimatedStyle,
+                          {
+                            marginLeft: 8,
+                            paddingHorizontal: 8,
+                            paddingVertical: 2,
+                            borderRadius: 12,
+                            borderWidth: 1,
+                            borderColor: 'rgba(245,158,11,0.4)',
+                            backgroundColor: 'rgba(245,158,11,0.15)',
+                          }
+                        ]}
                         accessibilityLabel="New feature"
                       >
-                        <Text className="text-amber-300 text-[10px] font-extrabold tracking-wider">NEW</Text>
-                      </View>
+                        <Text style={{ 
+                          color: '#F59E0B', 
+                          fontSize: 10, 
+                          fontWeight: '800', 
+                          letterSpacing: 0.8 
+                        }}>
+                          NEW
+                        </Text>
+                      </Animated.View>
                     )}
                   </View>
                   <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: 1 }}>Custom text edits</Text>
@@ -135,7 +210,8 @@ export function QuickActionRail() {
               }}>
                 <IconSymbol name={'arrow.right'} size={14} color={'rgba(255,255,255,0.6)'} />
               </View>
-            </TouchableOpacity>
+              </TouchableOpacity>
+            </Animated.View>
           ))}
         </View>
       </View>

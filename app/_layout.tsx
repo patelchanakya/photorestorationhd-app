@@ -490,6 +490,7 @@ function MainNavigator() {
         }}
       />
       <Stack.Screen name="text-edits" options={{ headerShown: false }} />
+      <Stack.Screen name="photo-magic" options={{ headerShown: false }} />
       <Stack.Screen name="+not-found" />
     </Stack>
   );

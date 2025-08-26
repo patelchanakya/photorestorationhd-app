@@ -10,21 +10,16 @@ import { useRevenueCat } from '@/contexts/RevenueCatContext';
 // import { useVideoToastStore } from '@/store/videoToastStore';
 import { onboardingUtils } from '@/utils/onboarding';
 import Constants from 'expo-constants';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-// Removed video imports - using simple loading state
 import React, { useEffect, useRef, useState } from 'react';
-import { Dimensions, Platform, Text, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Platform, Text, View } from 'react-native';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import Animated, {
     useAnimatedStyle,
     useSharedValue,
-    withDelay,
-    withRepeat,
-    withSequence,
-    withSpring,
     withTiming
 } from 'react-native-reanimated';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Global initialization guards to prevent multiple initializations
@@ -100,197 +95,85 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
     throw lastError;
   };
 
-  // Animation values
-  const titleOpacity = useSharedValue(0); // Tagline opacity
-  const titleTranslateY = useSharedValue(16); // Tagline translate
-  const loadingOpacity = useSharedValue(0);
-  const dotsOpacity = useSharedValue(1);
-  const checkOpacity = useSharedValue(0);
-  const checkScale = useSharedValue(0.8);
-  // Removed video opacity - no longer needed
-  const dotScale1 = useSharedValue(1);
-  const dotScale2 = useSharedValue(1);
-  const dotScale3 = useSharedValue(1);
-  const dotTY1 = useSharedValue(0);
-  const dotTY2 = useSharedValue(0);
-  const dotTY3 = useSharedValue(0);
-  // Removed content and fade opacity - no longer needed
-  // Per-letter animation values (avoid hooks in loops)
-  const lOp1 = useSharedValue(0), lOp2 = useSharedValue(0), lOp3 = useSharedValue(0), lOp4 = useSharedValue(0), lOp5 = useSharedValue(0), lOp6 = useSharedValue(0);
-  const lTy1 = useSharedValue(36), lTy2 = useSharedValue(36), lTy3 = useSharedValue(36), lTy4 = useSharedValue(36), lTy5 = useSharedValue(36), lTy6 = useSharedValue(36);
-  const lSx1 = useSharedValue(1),  lSx2 = useSharedValue(1),  lSx3 = useSharedValue(1),  lSx4 = useSharedValue(1),  lSx5 = useSharedValue(1),  lSx6 = useSharedValue(1);
-  const lSy1 = useSharedValue(1),  lSy2 = useSharedValue(1),  lSy3 = useSharedValue(1),  lSy4 = useSharedValue(1),  lSy5 = useSharedValue(1),  lSy6 = useSharedValue(1);
-  const lSh1 = useSharedValue(0), lSh2 = useSharedValue(0), lSh3 = useSharedValue(0), lSh4 = useSharedValue(0), lSh5 = useSharedValue(0), lSh6 = useSharedValue(0);
   
   // State
-  // Sleek mode: no dynamic loading text
   const [isComplete, setIsComplete] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
-  const [minDotsElapsed, setMinDotsElapsed] = useState(false);
-  // Simplified loading - no video
+  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
+
+  // Video player setup - play once only
+  const videoPlayer = useVideoPlayer(require('../assets/videos/loading.mp4'), (player) => {
+    player.loop = false;  // Play once only
+    player.muted = true;
+    player.play(); // Auto-play immediately
+  });
   
   // Refs for cleanup
   const initializationRef = useRef<any>(null);
   const customerInfoListenerRemoverRef = useRef<null | (() => void)>(null);
   const completionStartedRef = useRef(false);
 
-  // Animation styles
-  const titleAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: titleOpacity.value,
-    transform: [{ translateY: titleTranslateY.value }],
-  }));
-
-  const loadingAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: loadingOpacity.value,
-  }));
-
-  // Removed fade overlay style - no longer needed
-
-  // Removed video animation styles
-
-
-  const dot1Style = useAnimatedStyle(() => ({
-    transform: [{ translateY: dotTY1.value }, { scale: dotScale1.value }],
-  }));
-
-  const dot2Style = useAnimatedStyle(() => ({
-    transform: [{ translateY: dotTY2.value }, { scale: dotScale2.value }],
-  }));
-
-  const dot3Style = useAnimatedStyle(() => ({
-    transform: [{ translateY: dotTY3.value }, { scale: dotScale3.value }],
-  }));
-
-  const dotRowStyle = useAnimatedStyle(() => ({
-    opacity: dotsOpacity.value,
-  }));
-
-  const checkAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: checkOpacity.value,
-    transform: [{ scale: checkScale.value }],
-  }));
-
-  // Letter animated styles
-  const letterStyle1 = useAnimatedStyle(() => ({
-    opacity: lOp1.value,
-    transform: [{ translateY: lTy1.value }, { scaleX: lSx1.value }, { scaleY: lSy1.value }],
-  }));
-
-  // Whole word bounce container
-  const wordScale = useSharedValue(1);
-  const wordTranslateY = useSharedValue(0);
-  const wordContainerStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: wordTranslateY.value }, { scale: wordScale.value }],
-  }));
-  const letterStyle2 = useAnimatedStyle(() => ({
-    opacity: lOp2.value,
-    transform: [{ translateY: lTy2.value }, { scaleX: lSx2.value }, { scaleY: lSy2.value }],
-  }));
-  const letterStyle3 = useAnimatedStyle(() => ({
-    opacity: lOp3.value,
-    transform: [{ translateY: lTy3.value }, { scaleX: lSx3.value }, { scaleY: lSy3.value }],
-  }));
-  const letterStyle4 = useAnimatedStyle(() => ({
-    opacity: lOp4.value,
-    transform: [{ translateY: lTy4.value }, { scaleX: lSx4.value }, { scaleY: lSy4.value }],
-  }));
-  const letterStyle5 = useAnimatedStyle(() => ({
-    opacity: lOp5.value,
-    transform: [{ translateY: lTy5.value }, { scaleX: lSx5.value }, { scaleY: lSy5.value }],
-  }));
-  const letterStyle6 = useAnimatedStyle(() => ({
-    opacity: lOp6.value,
-    transform: [{ translateY: lTy6.value }, { scaleX: lSx6.value }, { scaleY: lSy6.value }],
-  }));
-
-  // Start animations
+  // Simple minimum time timer - 5.8s (one full video play)
   useEffect(() => {
-    // Reduced minimum time for faster app startup
-    const dotsTimer = setTimeout(() => setMinDotsElapsed(true), 1500);
-    // Removed video checking - using simple time-based completion
-    // Letters sequential entrance + shine
-    const kick = (op: any, ty: any, sx: any, sy: any, sh: any, delay: number) => {
-      op.value = withDelay(delay, withTiming(1, { duration: 360 }));
-      // Drop in from below, overshoot above slightly, then settle at 0
-      ty.value = withDelay(
-        delay,
-        withSequence(
-          withTiming(-8, { duration: 180 }),
-          withSpring(0, { damping: 14, stiffness: 260 })
-        )
-      );
-      // Squash and stretch
-      sy.value = withDelay(delay + 220, withSequence(withTiming(0.88, { duration: 90 }), withSpring(1, { damping: 16, stiffness: 300 })));
-      sx.value = withDelay(delay + 220, withSequence(withTiming(1.12, { duration: 90 }), withSpring(1, { damping: 16, stiffness: 300 })));
-      // Cadence keeper (no visible effect)
-      sh.value = withDelay(delay + 160, withSequence(withTiming(1, { duration: 160 }), withTiming(0, { duration: 240 })));
-    };
-    kick(lOp1, lTy1, lSx1, lSy1, lSh1, 0);
-    kick(lOp2, lTy2, lSx2, lSy2, lSh2, 180);
-    kick(lOp3, lTy3, lSx3, lSy3, lSh3, 360);
-    kick(lOp4, lTy4, lSx4, lSy4, lSh4, 540);
-    kick(lOp5, lTy5, lSx5, lSy5, lSh5, 720);
-    kick(lOp6, lTy6, lSx6, lSy6, lSh6, 900);
-
-    // Tagline fade in
-    titleOpacity.value = withDelay(400, withTiming(1, { duration: 520 }));
-    titleTranslateY.value = withDelay(400, withSpring(0, { damping: 12 }));
+    const minTimeTimer = setTimeout(() => {
+      if (__DEV__) {
+        console.log('⏱️ Minimum display time elapsed (5.8s)');
+      }
+      setMinTimeElapsed(true);
+    }, 5800); // 5.8 seconds for one full video play
     
-    // Loading text animation
-    loadingOpacity.value = withDelay(900, withTiming(1, { duration: 420 }));
-    
-    // Loading dots animation - faster cadence, higher bounce, starts immediately
-    const dotScaleAnim = withRepeat(
-      withSequence(
-        withTiming(1.28, { duration: 260 }),
-        withTiming(1, { duration: 260 })
-      ),
-      -1,
-      false
-    );
-    const makeTy = () => withRepeat(
-      withSequence(
-        withTiming(-10, { duration: 260 }),
-        withTiming(0, { duration: 260 })
-      ),
-      -1,
-      false
-    );
-    dotScale1.value = withDelay(0, dotScaleAnim);
-    dotScale2.value = withDelay(120, dotScaleAnim);
-    dotScale3.value = withDelay(240, dotScaleAnim);
-    dotTY1.value = withDelay(0, makeTy());
-    dotTY2.value = withDelay(120, makeTy());
-    dotTY3.value = withDelay(240, makeTy());
-    // Fade-in content
-    // Removed content opacity animation
-    return () => { clearTimeout(dotsTimer); };
+    return () => clearTimeout(minTimeTimer);
   }, []);
 
-  // Proceed when initialization is complete
+  // Simple video ready check - just ensure it plays
   useEffect(() => {
-    if (!isComplete || completionStartedRef.current) return;
-    completionStartedRef.current = true;
-    // Small delay for smooth transition
-    const t = setTimeout(async () => {
-      try { await navigateToApp(); } catch {}
-      onLoadingComplete();
-    }, 300);
-    return () => clearTimeout(t);
-  }, [isComplete, onLoadingComplete]);
+    const subscription = videoPlayer.addListener('statusChange', ({ status }) => {
+      if (status === 'readyToPlay' && !videoPlayer.playing) {
+        if (__DEV__) {
+          console.log('📹 Video ready - starting playback');
+        }
+        videoPlayer.play();
+      }
+    });
+    
+    return () => {
+      subscription?.remove();
+    };
+  }, []);
 
-  // Simplified fallback: after 8s, complete loading if not already done
+  // Exit logic - when both conditions met
+  useEffect(() => {
+    if (minTimeElapsed && isComplete && !completionStartedRef.current) {
+      completionStartedRef.current = true;
+      if (__DEV__) {
+        console.log('✅ Exiting: minimum time elapsed AND initialization complete');
+      }
+      
+      // Small delay for smooth transition
+      setTimeout(async () => {
+        try { await navigateToApp(); } catch {}
+        onLoadingComplete();
+      }, 300);
+    }
+  }, [minTimeElapsed, isComplete]);
+
+
+  // Ultimate failsafe: after 10s, force completion
   useEffect(() => {
     const failSafe = setTimeout(() => {
       if (completionStartedRef.current) return;
+      if (__DEV__) {
+        console.log('⚠️ Ultimate failsafe triggered - forcing exit after 10s');
+      }
+      setMinTimeElapsed(true);
       setIsComplete(true);
-    }, 8000); // Reduced from 10s to 8s
+    }, 10000); // 10 second ultimate failsafe
     return () => clearTimeout(failSafe);
-  }, []);
+  }, []); // No dependencies - start timer immediately
 
   // No external sheen dependency
 
-  // Initialize app - robust to StrictMode double-invocation
+  // Initialize app - start immediately in parallel with video
   useEffect(() => {
     if (initializationPromise) {
       // Someone already started initialization; wait for it, then exit loading
@@ -299,7 +182,7 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
     }
 
     if (__DEV__) {
-      console.log('🚀 InitialLoadingScreen: Starting initialization...');
+      console.log('🚀 InitialLoadingScreen: Starting initialization immediately...');
     }
     hasInitializedGlobally = true;
     setHasStarted(true);
@@ -389,7 +272,7 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
         try { remove(); } catch {}
       }
     };
-  }, [onLoadingComplete]);
+  }, []); // Start immediately on mount, no dependencies
 
   // RevenueCat initialization is handled in _layout.tsx
   // This function is kept for compatibility but does nothing
@@ -565,26 +448,43 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
   };
 
   return (
-    <View className="flex-1">
-      <LinearGradient colors={["#0B0B0F", "#1a1a2e"]} style={{ flex: 1 }}>
-        <View className="flex-1 justify-center items-center px-6">
-          {/* App Title */}
-          <Animated.View style={titleAnimatedStyle} className="items-center mb-12">
-            <Text className="text-white text-4xl font-bold mb-2">Clever</Text>
-            <Text className="text-gray-400 text-lg">AI Photo Restoration</Text>
-          </Animated.View>
-
-          {/* Loading Animation */}
-          <Animated.View style={loadingAnimatedStyle} className="items-center">
-            <Animated.View style={dotRowStyle} className="flex-row items-center justify-center gap-2">
-              <Animated.View style={dot1Style} className="w-3 h-3 bg-blue-500 rounded-full" />
-              <Animated.View style={dot2Style} className="w-3 h-3 bg-blue-500 rounded-full" />
-              <Animated.View style={dot3Style} className="w-3 h-3 bg-blue-500 rounded-full" />
-            </Animated.View>
-            <Text className="text-gray-400 text-sm mt-4">Initializing...</Text>
-          </Animated.View>
+    <View style={{ flex: 1, backgroundColor: '#000000' }}>
+      {/* Full-screen video */}
+      <VideoView
+        player={videoPlayer}
+        style={{ 
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: '#000000',
+        }}
+        contentFit="contain"
+        nativeControls={false}
+        allowsFullscreen={false}
+      />
+      
+      {/* Loading indicator overlay - shows after video plays once if still loading */}
+      {minTimeElapsed && !isComplete && (
+        <View 
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: '#000000',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <ActivityIndicator size="large" color="#ffffff" style={{ transform: [{ scale: 2 }] }} />
+          <Text style={{ color: '#ffffff', marginTop: 24, fontSize: 18 }}>Loading...</Text>
         </View>
-      </LinearGradient>
+      )}
     </View>
   );
 }
