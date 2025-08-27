@@ -74,8 +74,7 @@ export function StyleCollections() {
   const TILE_HEIGHT = Math.round(TILE_WIDTH * 1.2);
 
   const openPicker = async (styleKey: string) => {
-    const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (res.status !== 'granted') return;
+    // No permission check needed on iOS 11+ - PHPickerViewController handles privacy
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 1 });
     if (!result.canceled && result.assets[0]) {
       const uri = result.assets[0].uri;

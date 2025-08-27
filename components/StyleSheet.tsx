@@ -98,9 +98,7 @@ const StyleSheetBase = ({ type, onClose }: StyleSheetProps) => {
 
   const selectOption = React.useCallback(async (styleKey: string) => {
     // Open image picker directly - no closing or weird animations
-    const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (res.status !== 'granted') return;
-    
+    // No permission check needed on iOS 11+ - PHPickerViewController handles privacy
     const result = await ImagePicker.launchImageLibraryAsync({ 
       mediaTypes: ['images'], 
       allowsEditing: false, 

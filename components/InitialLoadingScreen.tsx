@@ -59,6 +59,13 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
         onboardingUtils.getAlwaysShowOnboarding(),
       ]);
       
+      // TEMPORARY: Always show onboarding v3 during testing
+      if (__DEV__) {
+        console.log('🎯 [TESTING] Always showing onboarding v3 for testing');
+        router.replace('/onboarding-v3');
+        return;
+      }
+
       if (!alwaysShow && (hasSeenOnboarding || alwaysSkip)) {
         if (__DEV__) {
           console.log('🎯 User has seen onboarding - going to explore');
@@ -66,9 +73,9 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
         router.replace('/explore');
       } else {
         if (__DEV__) {
-          console.log('🎯 New user - showing onboarding');
+          console.log('🎯 New user - showing onboarding v3');
         }
-        router.replace('/onboarding-v2');
+        router.replace('/onboarding-v3');
       }
     } catch (error) {
       if (__DEV__) {
@@ -100,12 +107,21 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
   const [isComplete, setIsComplete] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
+  const [showOnloadingVideo, setShowOnloadingVideo] = useState(false);
+  const [onloadingComplete, setOnloadingComplete] = useState(false);
 
-  // Video player setup - play once only
+  // Main loading video player - play once only
   const videoPlayer = useVideoPlayer(require('../assets/videos/loading.mp4'), (player) => {
     player.loop = false;  // Play once only
     player.muted = true;
     player.play(); // Auto-play immediately
+  });
+
+  // Onboarding intro video player
+  const onloadingVideoPlayer = useVideoPlayer(require('../assets/videos/onloading.mp4'), (player) => {
+    player.loop = false;  // Play once only
+    player.muted = true;
+    // Don't auto-play - will be triggered after main video
   });
   
   // Refs for cleanup
@@ -141,12 +157,52 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
     };
   }, []);
 
-  // Exit logic - when both conditions met
+  // Handle transition to onboarding video
   useEffect(() => {
-    if (minTimeElapsed && isComplete && !completionStartedRef.current) {
+    if (minTimeElapsed && isComplete && !showOnloadingVideo && !completionStartedRef.current) {
+      if (__DEV__) {
+        console.log('🎬 Starting onboarding intro video');
+      }
+      setShowOnloadingVideo(true);
+      // Start the onboarding video
+      setTimeout(() => {
+        onloadingVideoPlayer.play();
+      }, 300);
+    }
+  }, [minTimeElapsed, isComplete, showOnloadingVideo]);
+
+  // Track onboarding video completion
+  useEffect(() => {
+    if (!showOnloadingVideo) return;
+    
+    const subscription = onloadingVideoPlayer.addListener('statusChange', ({ status }) => {
+      if (status === 'idle' && !onloadingComplete) {
+        if (__DEV__) {
+          console.log('🎬 Onboarding video completed');
+        }
+        setOnloadingComplete(true);
+      }
+    });
+    
+    // Fallback timer for onboarding video (12.5s)
+    const timer = setTimeout(() => {
+      if (!onloadingComplete) {
+        setOnloadingComplete(true);
+      }
+    }, 12500);
+    
+    return () => {
+      subscription?.remove();
+      clearTimeout(timer);
+    };
+  }, [showOnloadingVideo, onloadingComplete]);
+
+  // Final exit logic - after onboarding video completes
+  useEffect(() => {
+    if (onloadingComplete && !completionStartedRef.current) {
       completionStartedRef.current = true;
       if (__DEV__) {
-        console.log('✅ Exiting: minimum time elapsed AND initialization complete');
+        console.log('✅ All videos complete - navigating to onboarding');
       }
       
       // Small delay for smooth transition
@@ -155,7 +211,7 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
         onLoadingComplete();
       }, 300);
     }
-  }, [minTimeElapsed, isComplete]);
+  }, [onloadingComplete]);
 
 
   // Ultimate failsafe: after 10s, force completion
@@ -449,26 +505,48 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
 
   return (
     <View style={{ flex: 1, backgroundColor: '#000000' }}>
-      {/* Full-screen video */}
-      <VideoView
-        player={videoPlayer}
-        style={{ 
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          width: '100%',
-          height: '100%',
-          backgroundColor: '#000000',
-        }}
-        contentFit="contain"
-        nativeControls={false}
-        allowsFullscreen={false}
-      />
+      {/* Main loading video - shows initially */}
+      {!showOnloadingVideo && (
+        <VideoView
+          player={videoPlayer}
+          style={{ 
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: '#000000',
+          }}
+          contentFit="contain"
+          nativeControls={false}
+          allowsFullscreen={false}
+        />
+      )}
+
+      {/* Onboarding intro video - shows after main video and init complete */}
+      {showOnloadingVideo && (
+        <VideoView
+          player={onloadingVideoPlayer}
+          style={{ 
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: '#000000',
+          }}
+          contentFit="contain"
+          nativeControls={false}
+          allowsFullscreen={false}
+        />
+      )}
       
-      {/* Loading indicator overlay - shows after video plays once if still loading */}
-      {minTimeElapsed && !isComplete && (
+      {/* Loading indicator overlay - shows after main video if initialization not done yet */}
+      {minTimeElapsed && !isComplete && !showOnloadingVideo && (
         <View 
           style={{
             position: 'absolute',
@@ -481,8 +559,7 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
             alignItems: 'center',
           }}
         >
-          <ActivityIndicator size="large" color="#ffffff" style={{ transform: [{ scale: 2 }] }} />
-          <Text style={{ color: '#ffffff', marginTop: 24, fontSize: 18 }}>Loading...</Text>
+          <ActivityIndicator size="large" color="#ffffff" style={{ transform: [{ scale: 0.8 }] }} />
         </View>
       )}
     </View>

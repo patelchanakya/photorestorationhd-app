@@ -41,26 +41,27 @@ const PhotoPickerComponent = ({ onPhotoSelected, isProcessing = false, functionT
   };
 
   const pickImage = async (source: 'camera' | 'gallery') => {
-    const hasPermission = await requestPermissions(source);
-    
-    if (!hasPermission) {
-      Alert.alert(
-        'Permission Required',
-        `Please grant ${source} permission to use this feature.`,
-        [{ text: 'OK' }]
-      );
-      return;
-    }
-
     let result;
     
     if (source === 'camera') {
+      // Camera still needs explicit permission
+      const hasPermission = await requestPermissions(source);
+      if (!hasPermission) {
+        Alert.alert(
+          'Camera Permission Required',
+          'Please grant camera permission to use this feature.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+      
       result = await ImagePicker.launchCameraAsync({
         mediaTypes: 'images',
         allowsEditing: false,
         quality: 1,
       });
     } else {
+      // Gallery doesn't need permission check on iOS 11+ - PHPickerViewController handles it
       result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: 'images',
         allowsEditing: false,

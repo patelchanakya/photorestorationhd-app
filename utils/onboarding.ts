@@ -14,13 +14,95 @@ export interface OnboardingData {
   freeAttemptFeature?: string;
 }
 
-export const ONBOARDING_FEATURES = [
+export interface OnboardingFeature {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  mapsTo: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'outfit' | 'background' | 'enlighten' | 'custom' | 'skip';
+  gradient: [string, string];
+  styleKey?: string;
+  isCustomPrompt?: boolean;
+  isSkip?: boolean;
+}
+
+export const ONBOARDING_FEATURES: OnboardingFeature[] = [
+  // Custom Option (First)
+  {
+    id: 'custom_prompt',
+    name: 'Choose Your Own ✏️',
+    description: 'Describe what you want to do with your photo',
+    icon: 'text.cursor',
+    mapsTo: 'custom',
+    isCustomPrompt: true,
+    gradient: ['#8b5cf6', '#a78bfa']
+  },
+
+  // Popular Creative Features (High-Click)
+  {
+    id: 'clear_skin',
+    name: 'Clear Skin ✨',
+    description: 'Remove acne, blemishes & imperfections',
+    icon: 'sparkles',
+    mapsTo: 'custom',
+    gradient: ['#f472b6', '#fb7185']
+  },
+  {
+    id: 'add_smile',
+    name: 'Add Smile 😊',
+    description: 'Add a natural, authentic smile',
+    icon: 'face.smiling',
+    mapsTo: 'custom', 
+    gradient: ['#facc15', '#fbbf24']
+  },
+  {
+    id: 'fix_hair',
+    name: 'Fix Hair 💇',
+    description: 'Clean up messy or stray hairs',
+    icon: 'scissors',
+    mapsTo: 'custom',
+    gradient: ['#a855f7', '#c084fc']
+  },
+  {
+    id: 'make_younger',
+    name: 'Make Younger ⏰',
+    description: 'Subtle age reduction while keeping identity',
+    icon: 'clock.arrow.circlepath',
+    mapsTo: 'custom',
+    gradient: ['#06b6d4', '#38bdf8']
+  },
+  {
+    id: 'add_wings',
+    name: 'Add Angel Wings 👼',
+    description: 'Beautiful wings that match your photo',
+    icon: 'cloud',
+    mapsTo: 'custom',
+    gradient: ['#e879f9', '#f0abfc']
+  },
+  {
+    id: 'add_halo',
+    name: 'Add Halo ✨',
+    description: 'Subtle glowing halo above head',
+    icon: 'sun.max',
+    mapsTo: 'custom',
+    gradient: ['#fbbf24', '#f59e0b']
+  },
+  {
+    id: 'make_slimmer',
+    name: 'Make Slimmer 💪',
+    description: 'Natural body enhancement',
+    icon: 'figure.stand',
+    mapsTo: 'custom',
+    gradient: ['#10b981', '#34d399']
+  },
+
+  // Core Repair & Enhance
   {
     id: 'fix_old_damaged',
     name: 'Fix Old/Damaged Photos',
     description: 'Repair cracks, tears, and age damage',
     icon: 'wand.and.stars',
-    mapsTo: 'restoration' as const,
+    mapsTo: 'restoration',
     gradient: ['#f97316', '#fb923c']
   },
   {
@@ -28,58 +110,48 @@ export const ONBOARDING_FEATURES = [
     name: 'Add Color to Black & White',
     description: 'Bring old B&W photos to life with realistic color',
     icon: 'paintbrush',
-    mapsTo: 'colorize' as const,
+    mapsTo: 'colorize',
     gradient: ['#10b981', '#34d399']
   },
   {
-    id: 'create_videos',
-    name: 'Create Moving Videos',
-    description: 'Turn photos into magical videos (Pro feature)',
-    icon: 'video',
-    mapsTo: 'back_to_life' as const,
-    gradient: ['#dc2626', '#f87171']
+    id: 'unblur_sharpen',
+    name: 'Unblur & Sharpen',
+    description: 'Make blurry photos crystal clear',
+    icon: 'eye',
+    mapsTo: 'unblur',
+    gradient: ['#059669', '#10b981']
   },
   {
-    id: 'restore_old_memories',
-    name: 'Restore Old Family Photos',
-    description: 'Preserve precious memories from decades past',
-    icon: 'photo',
-    mapsTo: 'restoration' as const,
-    gradient: ['#8b5cf6', '#a78bfa']
+    id: 'brighten_photos',
+    name: 'Brighten Dark Photos',
+    description: 'Illuminate underexposed images',
+    icon: 'sun.max.fill',
+    mapsTo: 'enlighten',
+    gradient: ['#f59e0b', '#fbbf24']
   },
+
+  // Most Popular Templates
   {
-    id: 'change_outfits',
-    name: 'Change Outfits & Clothing',
-    description: 'Transform clothes, add formal wear, or change styles',
-    icon: 'tshirt',
-    mapsTo: 'custom' as const,
-    gradient: ['#6366f1', '#8b5cf6']
+    id: 'beach_background',
+    name: 'Beach Background 🏖️',
+    description: 'Beautiful ocean and sand scene',
+    icon: 'water.waves',
+    mapsTo: 'background',
+    styleKey: 'bg-6',
+    gradient: ['#0ea5e9', '#38bdf8']
   },
+  
+  // Skip Option (Last)
   {
-    id: 'remove_backgrounds',
-    name: 'Remove/Change Backgrounds',
-    description: 'Remove or replace photo backgrounds easily',
-    icon: 'scissors',
-    mapsTo: 'restoration' as const,
-    gradient: ['#06b6d4', '#67e8f9']
-  },
-  {
-    id: 'face_enhancement',
-    name: 'Enhance Faces & Skin',
-    description: 'Improve facial features and smooth skin texture',
-    icon: 'sparkles',
-    mapsTo: 'restoration' as const,
-    gradient: ['#ec4899', '#f472b6']
-  },
-  {
-    id: 'photo_upscaling',
-    name: 'Upscale Image Resolution',
-    description: 'Increase photo size while maintaining quality',
-    icon: 'magnifyingglass',
-    mapsTo: 'unblur' as const,
-    gradient: ['#10b981', '#34d399']
+    id: 'none_above',
+    name: 'None of the Above',
+    description: 'Skip and explore the app',
+    icon: 'arrow.right',
+    mapsTo: 'skip',
+    isSkip: true,
+    gradient: ['#6b7280', '#9ca3af']
   }
-] as const;
+];
 
 export const onboardingUtils = {
   // Check if user has seen onboarding

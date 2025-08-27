@@ -162,7 +162,7 @@ export function DeviceTwoRowCarousel({ functionType }: DeviceTwoRowCarouselProps
               const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
               if (!result.canceled && result.assets[0]) {
                 useQuickEditStore.getState().openWithImage({ 
-                  functionType: 'repair' as any, 
+                  functionType: functionType as any, 
                   imageUri: result.assets[0].uri 
                 });
               }

@@ -28,7 +28,7 @@ export default function HomeGalleryLikeScreen() {
   const railApproxHeight = isSmallPhone ? 58 : 86;
   const basePadding = isTabletLike ? 154 : (isSmallPhone ? 45 : 112); // Reduced by ~30%
   const bottomPadding = Math.max(basePadding, (insets?.bottom || 0) + railApproxHeight);
-  const openQuick = (functionType: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'background' | 'outfit' | 'custom', styleKey?: string | null) => {
+  const openQuick = (functionType: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'background' | 'outfit' | 'custom' | 'restore_repair', styleKey?: string | null) => {
     try {
       useQuickEditStore.getState().open({ functionType, styleKey: styleKey ?? null });
     } catch {}
@@ -220,12 +220,11 @@ export default function HomeGalleryLikeScreen() {
               console.log('📱 Premium access validation:', hasAccess);
             }
             
-            const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
-            if (res.status !== 'granted') return;
+            // Launch image picker - no permission check needed on iOS 11+
             const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 1 });
             if (!result.canceled && result.assets[0]) {
               useQuickEditStore.getState().openWithImage({ 
-                functionType: 'repair', 
+                functionType: 'restore_repair', 
                 imageUri: result.assets[0].uri 
               });
             }
@@ -240,7 +239,7 @@ export default function HomeGalleryLikeScreen() {
 
         {/* Two-row horizontally scrolling device photos (UNTOUCHED) */}
         <View style={{ paddingBottom: 10 }}>
-          <DeviceTwoRowCarousel functionType="repair" />
+          <DeviceTwoRowCarousel functionType="restore_repair" />
         </View>
 
 

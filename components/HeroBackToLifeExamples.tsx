@@ -194,11 +194,7 @@ async function pickVideoOLD(isPro: boolean, animationPrompt?: string) {
   await proceedWithImagePicker();
 
   async function proceedWithImagePicker() {
-    console.log('🎬 Back to Life: Requesting media permissions');
-    const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    console.log('🎬 Back to Life: Permission result:', res.status);
-    if (res.status !== 'granted') return;
-    
+    // No permission check needed on iOS 11+ - PHPickerViewController handles privacy
     // For now, we'll use image picker and apply animation prompts to still images
     // Future: Add video picker when video animation is supported
     console.log('🎬 Back to Life: Launching image picker');

@@ -4,7 +4,7 @@ export interface ModelConfig {
   isVideo?: boolean;
 }
 
-export type FunctionType = 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'outfit' | 'background' | 'enlighten' | 'custom';
+export type FunctionType = 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'outfit' | 'background' | 'enlighten' | 'custom' | 'restore_repair';
 
 export const MODEL_CONFIGS: Record<FunctionType, ModelConfig> = {
   restoration: {
@@ -96,6 +96,17 @@ export const MODEL_CONFIGS: Record<FunctionType, ModelConfig> = {
     model: "black-forest-labs/flux-kontext-pro",
     buildInput: (base64: string, customPrompt?: string) => ({
       prompt: customPrompt || "enhance this image",
+      input_image: `data:image/jpeg;base64,${base64}`,
+      output_format: "png",
+      aspect_ratio: "match_input_image",
+      safety_tolerance: 6,
+      prompt_upsampling: true
+    })
+  },
+  restore_repair: {
+    model: "black-forest-labs/flux-kontext-pro",
+    buildInput: (base64: string, customPrompt?: string) => ({
+      prompt: "Repair damage and restore the photograph to its original quality. Fill in dark or obscured areas naturally, while preserving facial features and overall authenticity.",
       input_image: `data:image/jpeg;base64,${base64}`,
       output_format: "png",
       aspect_ratio: "match_input_image",
