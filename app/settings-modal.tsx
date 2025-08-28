@@ -792,7 +792,7 @@ Best regards`;
         {/* Header */}
         <View className="flex-row items-center justify-between px-4 py-3 border-b border-white/10">
           <View style={{ width: 32 }} />
-          <Text className="text-white text-lg font-semibold">
+          <Text style={{ color: 'white', fontSize: 18, fontFamily: 'Lexend-SemiBold' }}>
             Settings
           </Text>
           <TouchableOpacity
@@ -815,7 +815,7 @@ Best regards`;
             
             {/* Subscription Section */}
             <View className="mb-8">
-              <Text className="text-amber-500 text-base font-semibold mb-4">
+              <Text style={{ color: '#f59e0b', fontSize: 16, fontFamily: 'Lexend-SemiBold', marginBottom: 16 }}>
                 Subscription
               </Text>
               
@@ -829,7 +829,7 @@ Best regards`;
                       <IconSymbol name="crown.fill" size={18} color="#22c55e" />
                     </View>
                     <View className="flex-1">
-                      <Text className="text-white text-base font-medium">
+                      <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium' }}>
                         Pro Subscription
                       </Text>
                     </View>
@@ -858,7 +858,7 @@ Best regards`;
                       <IconSymbol name="photo.fill" size={18} color="#3b82f6" />
                     </View>
                     <View className="flex-1">
-                      <Text className="text-white text-base font-medium">
+                      <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium' }}>
                         {photoUsage.limit === -1 ? 'Photo Restoration (Unlimited)' : 'Photo Restoration'}
                       </Text>
                       <Text className="text-white/60 text-sm">
@@ -907,7 +907,7 @@ Best regards`;
                       <IconSymbol name="video.fill" size={18} color="#a855f7" />
                     </View>
                     <View className="flex-1">
-                      <Text className="text-white text-base font-medium">Back to Life Videos</Text>
+                      <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium' }}>Back to Life Videos</Text>
                       <Text className="text-white/60 text-sm">Tap to refresh</Text>
                     </View>
                     <View className={`${!backToLifeUsage.canUse ? 'bg-red-500/20' : 'bg-green-500/20'} px-2 py-1 rounded-xl`}>
@@ -932,7 +932,7 @@ Best regards`;
                     )}
                   </View>
                   <View className="flex-1">
-                    <Text className="text-white text-base font-medium">
+                    <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium' }}>
                       {isRestoring ? 'Checking with App Store...' : 'Restore Purchases'}
                     </Text>
                     <Text className="text-white/60 text-sm">
@@ -948,7 +948,7 @@ Best regards`;
             
             {/* Connect & Support Section */}
             <View className="mb-8">
-              <Text className="text-amber-500 text-base font-semibold mb-4">
+              <Text style={{ color: '#f59e0b', fontSize: 16, fontFamily: 'Lexend-SemiBold', marginBottom: 16 }}>
                 Connect & Support
               </Text>
               
@@ -959,7 +959,7 @@ Best regards`;
                   <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
                     <Ionicons name="people" size={18} color="#f97316" />
                   </View>
-                  <Text className="text-white text-base font-medium flex-1">
+                  <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium', flex: 1 }}>
                     Follow Us
                   </Text>
                   <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -1018,7 +1018,7 @@ Best regards`;
                   <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
                     <Ionicons name="mail" size={18} color="#f97316" />
                   </View>
-                  <Text className="text-white text-base font-medium flex-1">
+                  <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium', flex: 1 }}>
                     Email Support
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
@@ -1036,7 +1036,7 @@ Best regards`;
                   <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
                     <Ionicons name="star" size={18} color="#f97316" />
                   </View>
-                  <Text className="text-white text-base font-medium flex-1">
+                  <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium', flex: 1 }}>
                     Rate Us
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
@@ -1054,7 +1054,7 @@ Best regards`;
                   <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
                     <Ionicons name="share-social" size={18} color="#f97316" />
                   </View>
-                  <Text className="text-white text-base font-medium flex-1">
+                  <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium', flex: 1 }}>
                     Share App
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
@@ -1064,7 +1064,7 @@ Best regards`;
             
             {/* Preferences Section */}
             <View className="mb-8">
-              <Text className="text-amber-500 text-base font-semibold mb-4">
+              <Text style={{ color: '#f59e0b', fontSize: 16, fontFamily: 'Lexend-SemiBold', marginBottom: 16 }}>
                 Preferences
               </Text>
               
@@ -1085,7 +1085,7 @@ Best regards`;
                     <IconSymbol name="arrow.counterclockwise" size={18} color="#3b82f6" />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-white text-base font-medium">Reset Onboarding</Text>
+                    <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium' }}>Reset Onboarding</Text>
                     <Text className="text-white/60 text-sm">Clear onboarding progress for testing</Text>
                   </View>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
@@ -1106,7 +1106,7 @@ Best regards`;
                     <IconSymbol name="eye.slash" size={18} color="#f59e0b" />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-white text-base font-medium">Toggle Always Skip Onboarding</Text>
+                    <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium' }}>Toggle Always Skip Onboarding</Text>
                     <Text className="text-white/60 text-sm">Skip onboarding on app launch</Text>
                   </View>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
@@ -1127,7 +1127,7 @@ Best regards`;
                     <IconSymbol name="eye" size={18} color="#3b82f6" />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-white text-base font-medium">Toggle Always Show Onboarding</Text>
+                    <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium' }}>Toggle Always Show Onboarding</Text>
                     <Text className="text-white/60 text-sm">Always show onboarding on app launch</Text>
                   </View>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
@@ -1141,7 +1141,7 @@ Best regards`;
                   <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
                     <Ionicons name="globe" size={18} color="#f97316" />
                   </View>
-                  <Text className="text-white text-base font-medium flex-1">
+                  <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium', flex: 1 }}>
                     Language
                   </Text>
                   <View className="flex-row items-center">
@@ -1162,7 +1162,7 @@ Best regards`;
 
             {/* Storage Section */}
             <View className="mb-8">
-              <Text className="text-amber-500 text-base font-semibold mb-4">
+              <Text style={{ color: '#f59e0b', fontSize: 16, fontFamily: 'Lexend-SemiBold', marginBottom: 16 }}>
                 Storage
               </Text>
               
@@ -1177,7 +1177,7 @@ Best regards`;
                     <Ionicons name="trash" size={18} color="#ef4444" />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-white text-base font-medium">
+                    <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium' }}>
                       Delete All Photos
                     </Text>
                     <Text className="text-white/60 text-sm">
@@ -1192,7 +1192,7 @@ Best regards`;
 
             {/* Account & Legal Section */}
             <View className="mb-8">
-              <Text className="text-amber-500 text-base font-semibold mb-4">
+              <Text style={{ color: '#f59e0b', fontSize: 16, fontFamily: 'Lexend-SemiBold', marginBottom: 16 }}>
                 Account & Legal
               </Text>
               
@@ -1206,7 +1206,7 @@ Best regards`;
                   <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
                     <Ionicons name="lock-closed" size={18} color="#f97316" />
                   </View>
-                  <Text className="text-white text-base font-medium flex-1">
+                  <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium', flex: 1 }}>
                     Privacy Policy
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
@@ -1220,7 +1220,7 @@ Best regards`;
                   <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
                     <Ionicons name="document-text" size={18} color="#f97316" />
                   </View>
-                  <Text className="text-white text-base font-medium flex-1">
+                  <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium', flex: 1 }}>
                     Terms of Use
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
@@ -1231,7 +1231,7 @@ Best regards`;
 {/* Troubleshooting Section - DEV ONLY */}
             {__DEV__ && (
               <View className="mb-8">
-                <Text className="text-amber-500 text-base font-semibold mb-4">
+                <Text style={{ color: '#f59e0b', fontSize: 16, fontFamily: 'Lexend-SemiBold', marginBottom: 16 }}>
                   Troubleshooting (Dev Only)
                 </Text>
                 
@@ -1252,7 +1252,7 @@ Best regards`;
                       />
                     </View>
                     <View className="flex-1">
-                      <Text className="text-white text-base font-medium">
+                      <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium' }}>
                         Clear Stuck Video
                       </Text>
                       <Text className="text-white/60 text-sm">
@@ -1271,7 +1271,7 @@ Best regards`;
 
             {/* About Section */}
             <View className="mb-0">
-              <Text className="text-amber-500 text-base font-semibold mb-4">
+              <Text style={{ color: '#f59e0b', fontSize: 16, fontFamily: 'Lexend-SemiBold', marginBottom: 16 }}>
                 About
               </Text>
               
@@ -1283,7 +1283,7 @@ Best regards`;
                     <IconSymbol name="info.circle" size={18} color="#f97316" />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-white text-base font-medium">
+                    <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium' }}>
                       Version
                     </Text>
                     <Text className="text-white/60 text-sm">

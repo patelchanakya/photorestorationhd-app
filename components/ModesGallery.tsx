@@ -65,7 +65,7 @@ export function ModesGallery() {
         {/* Stronger bottom gradient to avoid faint lines from image edges */}
         <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 56, backgroundColor: 'rgba(0,0,0,0.5)' }} />
         <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: 10 }}>
-          <Text style={{ color: '#EAEAEA', fontWeight: '800', fontSize: 14 }} numberOfLines={1}>{title}</Text>
+          <Text style={{ color: '#EAEAEA', fontFamily: 'Lexend-Black', fontSize: 14 }} numberOfLines={1}>{title}</Text>
           {!!subtitle && (
             <Text style={{ color: '#BFC3CF', fontSize: 11 }} numberOfLines={1}>{subtitle}</Text>
           )}

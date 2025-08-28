@@ -231,16 +231,13 @@ export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { bac
                     alignSelf: 'flex-start',
                     marginBottom: 4
                   }}>
-                    <Text style={{ color: '#f97316', fontSize: 9, fontWeight: '600', letterSpacing: 0.3 }}>PRO</Text>
+                    <Text style={{ color: '#f97316', fontSize: 9, fontFamily: 'Lexend-SemiBold', letterSpacing: 0.3 }}>PRO</Text>
                   </View>
                 )}
                 <Text style={{ 
                   color: '#FFFFFF', 
-                  fontWeight: '600', 
-                  fontSize: 14, 
-                  textShadowColor: 'rgba(0,0,0,0.8)', 
-                  textShadowOffset: { width: 0, height: 1 }, 
-                  textShadowRadius: 3 
+                  fontFamily: 'Lexend-SemiBold', 
+                  fontSize: 14 
                 }}>
                   {item.title}
                 </Text>

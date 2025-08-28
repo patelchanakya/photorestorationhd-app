@@ -297,7 +297,7 @@ export function QuickEditSheet() {
                 <TouchableOpacity onPress={handleClose} disabled={stage === 'loading'} hitSlop={{ top: 8, left: 8, bottom: 8, right: 8 }} style={{ padding: 4, opacity: stage === 'loading' ? 0.4 : 1 }}>
                   <IconSymbol name="xmark" size={20} color="#EAEAEA" />
                 </TouchableOpacity>
-                <Text style={{ color: '#EAEAEA', fontSize: 16, fontWeight: '700' }}>
+                <Text style={{ color: '#EAEAEA', fontSize: 16, fontFamily: 'Lexend-Bold' }}>
                   {modeTitle}
                 </Text>
                 <View style={{ width: 24, height: 24 }} />
@@ -326,7 +326,7 @@ export function QuickEditSheet() {
                   {mediaLoading && stage !== 'loading' && (
                     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.28)', alignItems: 'center', justifyContent: 'center' }}>
                       <View style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14, backgroundColor: 'rgba(0,0,0,0.4)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}>
-                        <Text style={{ color: '#F59E0B', fontSize: 14, fontWeight: '800', textAlign: 'center' }}>Loading photo…</Text>
+                        <Text style={{ color: '#F59E0B', fontSize: 14, fontFamily: 'Lexend-Black', textAlign: 'center' }}>Loading photo…</Text>
                       </View>
                     </View>
                   )}
@@ -334,7 +334,7 @@ export function QuickEditSheet() {
                     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.28)', alignItems: 'center', justifyContent: 'center' }}>
                       <View style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.4)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' }}>
                         <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, textAlign: 'center', marginBottom: 4 }}>Please wait a few seconds</Text>
-                        <Text style={{ color: '#F59E0B', fontSize: 16, fontWeight: '800', textAlign: 'center' }}>
+                        <Text style={{ color: '#F59E0B', fontSize: 16, fontFamily: 'Lexend-Black', textAlign: 'center' }}>
                           {getLoadingMessage(progress)}
                         </Text>
                       </View>
@@ -390,7 +390,7 @@ export function QuickEditSheet() {
                 >
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                     <IconSymbol name="exclamationmark.triangle.fill" size={16} color="#EF4444" />
-                    <Text style={{ color: '#EF4444', fontWeight: '600', fontSize: 14 }}>Error</Text>
+                    <Text style={{ color: '#EF4444', fontFamily: 'Lexend-SemiBold', fontSize: 14 }}>Error</Text>
                   </View>
                   <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, lineHeight: 18 }}>
                     {errorMessage}
@@ -402,7 +402,7 @@ export function QuickEditSheet() {
               <View style={{ marginTop: 16, marginBottom: 16, flexDirection: 'row', gap: 12, alignItems: 'center' }}>
                 {stage === 'select' && (
                   <TouchableOpacity onPress={handlePick} style={{ flex: 1, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ color: '#fff', fontWeight: '600' }}>Select Photo</Text>
+                    <Text style={{ color: '#fff', fontFamily: 'Lexend-SemiBold' }}>Select Photo</Text>
                   </TouchableOpacity>
                 )}
                 {stage === 'preview' && !isCropping && (
@@ -425,7 +425,7 @@ export function QuickEditSheet() {
                 {stage === 'preview' && isCropping && (
                   <>
                     <TouchableOpacity onPress={() => setIsCropping(false)} style={{ paddingHorizontal: 18, height: 46, borderRadius: 23, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={{ color: '#fff', fontWeight: '600' }}>Cancel</Text>
+                      <Text style={{ color: '#fff', fontFamily: 'Lexend-SemiBold' }}>Cancel</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => { /* Save already applied in onEditingComplete; just exit crop */ setIsCropping(false); }} style={{ flex: 1, height: 56, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' }}>
                       <LinearGradient colors={['#F59E0B', '#F59E0B']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
@@ -438,7 +438,7 @@ export function QuickEditSheet() {
                 {stage === 'error' && (
                   <>
                     <TouchableOpacity onPress={() => setStage('preview')} style={{ paddingHorizontal: 22, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={{ color: '#fff', fontWeight: '600' }}>Back</Text>
+                      <Text style={{ color: '#fff', fontFamily: 'Lexend-SemiBold' }}>Back</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={handleUpload} disabled={isUploading} style={{ flex: 1, height: 56, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', opacity: isUploading ? 0.7 : 1 }}>
                       <LinearGradient colors={['#F59E0B', '#F59E0B']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
@@ -473,10 +473,10 @@ export function QuickEditSheet() {
                         {savePhotoMutation.isPending ? (
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                             <ActivityIndicator size="small" color="#fff" />
-                            <Text style={{ color: '#fff', fontWeight: '600' }}>Saving...</Text>
+                            <Text style={{ color: '#fff', fontFamily: 'Lexend-SemiBold' }}>Saving...</Text>
                           </View>
                         ) : (
-                          <Text style={{ color: '#fff', fontWeight: '600' }}>Save</Text>
+                          <Text style={{ color: '#fff', fontFamily: 'Lexend-SemiBold' }}>Save</Text>
                         )}
                       </TouchableOpacity>
                     </Animated.View>
@@ -495,7 +495,7 @@ export function QuickEditSheet() {
                 <Animated.View style={[{ alignItems: 'center' }, savedFeedbackStyle]}>
                   <View style={{ marginTop: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: 'rgba(34,197,94,0.2)', borderWidth: 1, borderColor: 'rgba(34,197,94,0.35)', flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <IconSymbol name="checkmark" size={14} color="#22C55E" />
-                    <Text style={{ color: '#22C55E', fontWeight: '700', fontSize: 12 }}>Saved to Photos</Text>
+                    <Text style={{ color: '#22C55E', fontFamily: 'Lexend-Bold', fontSize: 12 }}>Saved to Photos</Text>
                   </View>
                 </Animated.View>
               )}

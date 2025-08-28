@@ -51,7 +51,7 @@ export function ModeChips() {
             style={{ flexDirection: 'row', alignItems: 'center', height: 40, paddingHorizontal: 14, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}
           >
             <IconSymbol name={m.icon as any} size={18} color="#fff" />
-            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14, marginLeft: 8 }}>{m.label}</Text>
+            <Text style={{ color: '#fff', fontFamily: 'Lexend-Bold', fontSize: 14, marginLeft: 8 }}>{m.label}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>

@@ -95,9 +95,9 @@ export function StyleCollections() {
       <ExpoImage source={item.image} style={{ width: '100%', height: '100%' }} contentFit="contain" transition={0} />
       <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 52, backgroundColor: 'rgba(0,0,0,0.5)' }} />
       <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 12, paddingVertical: 10 }}>
-        <Text style={{ color: '#EAEAEA', fontSize: 15, fontWeight: '800', letterSpacing: -0.2 }} numberOfLines={1}>{item.title}</Text>
+        <Text style={{ color: '#EAEAEA', fontSize: 15, fontFamily: 'Lexend-Black', letterSpacing: -0.2 }} numberOfLines={1}>{item.title}</Text>
         {!!item.subtitle && (
-          <Text style={{ color: '#BFC3CF', fontSize: 12, fontWeight: '500' }} numberOfLines={1}>{item.subtitle}</Text>
+          <Text style={{ color: '#BFC3CF', fontSize: 12, fontFamily: 'Lexend-Medium' }} numberOfLines={1}>{item.subtitle}</Text>
         )}
       </View>
     </TouchableOpacity>
@@ -107,7 +107,7 @@ export function StyleCollections() {
     <View style={{ paddingHorizontal: 12, paddingTop: 4, paddingBottom: 16 }}>
       {SECTIONS.map((section) => (
         <View key={section.id} style={{ marginBottom: 14 }}>
-          <Text style={{ color: '#EAEAEA', fontSize: 16, fontWeight: '800', marginBottom: 8 }}>{section.title}</Text>
+          <Text style={{ color: '#EAEAEA', fontSize: 16, fontFamily: 'Lexend-Black', marginBottom: 8 }}>{section.title}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 8 }}>
             {section.items.map((item) => (
               <PreviewTile key={item.id} item={item} />

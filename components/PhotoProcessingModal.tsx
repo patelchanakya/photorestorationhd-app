@@ -104,7 +104,7 @@ export function PhotoProcessingModal({
                 }}
                 activeOpacity={0.8}
               >
-                <Text style={{ color: 'rgba(255, 255, 255, 0.85)', fontSize: 18, fontWeight: '500' }}>×</Text>
+                <Text style={{ color: 'rgba(255, 255, 255, 0.85)', fontSize: 18, fontFamily: 'Lexend-Medium' }}>×</Text>
               </TouchableOpacity>
             </View>
           )}

@@ -23,6 +23,7 @@ interface FeatureSelectionScreenProps {
 export function FeatureSelectionScreen({ onContinue }: FeatureSelectionScreenProps) {
   const [selectedFeature, setSelectedFeature] = React.useState<string | null>(null);
   const [customPrompt, setCustomPrompt] = React.useState<string>('');
+  const customInputRef = React.useRef<any>(null);
   const insets = useSafeAreaInsets();
   
   const titleOpacity = useSharedValue(0);
@@ -77,6 +78,16 @@ export function FeatureSelectionScreen({ onContinue }: FeatureSelectionScreenPro
       Haptics.selectionAsync();
     } catch {}
     setSelectedFeature(featureId);
+    
+    // Auto-focus TextInput when custom_prompt is selected
+    if (featureId === 'custom_prompt') {
+      // Add a small delay to allow the expansion animation to start
+      setTimeout(() => {
+        if (customInputRef.current) {
+          customInputRef.current.focus();
+        }
+      }, 100);
+    }
   };
 
   const handleContinue = () => {
@@ -105,6 +116,7 @@ export function FeatureSelectionScreen({ onContinue }: FeatureSelectionScreenPro
               index={index}
               customPrompt={customPrompt}
               setCustomPrompt={setCustomPrompt}
+              customInputRef={item.isCustomPrompt ? customInputRef : undefined}
             />
           )}
           showsVerticalScrollIndicator={false}
@@ -133,11 +145,11 @@ export function FeatureSelectionScreen({ onContinue }: FeatureSelectionScreenPro
             }}>
               <Text style={{ 
                 fontSize: ONBOARDING_TYPOGRAPHY.huge, 
-                fontWeight: ONBOARDING_TYPOGRAPHY.bold, 
+                fontFamily: 'Lexend-Bold', 
                 color: ONBOARDING_COLORS.textPrimary,
                 textAlign: 'center',
               }}>
-                What would you like to do today?
+                What brings you here?
               </Text>
               <Text style={{ 
                 fontSize: ONBOARDING_TYPOGRAPHY.base, 
@@ -145,7 +157,7 @@ export function FeatureSelectionScreen({ onContinue }: FeatureSelectionScreenPro
                 textAlign: 'center',
                 marginTop: ONBOARDING_SPACING.xs,
               }}>
-                What brought you here today?
+                Select what you're ready to do
               </Text>
             </View>
           </BlurView>
@@ -196,9 +208,10 @@ interface FeatureCardProps {
   index: number;
   customPrompt: string;
   setCustomPrompt: (prompt: string) => void;
+  customInputRef?: React.RefObject<any>;
 }
 
-const FeatureCard = React.memo<FeatureCardProps>(({ feature, isSelected, onSelect, index, customPrompt, setCustomPrompt }) => {
+const FeatureCard = React.memo<FeatureCardProps>(({ feature, isSelected, onSelect, index, customPrompt, setCustomPrompt, customInputRef }) => {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(20);
@@ -308,7 +321,7 @@ const FeatureCard = React.memo<FeatureCardProps>(({ feature, isSelected, onSelec
           <View style={{ flex: 1 }}>
             <Text style={{ 
               fontSize: ONBOARDING_TYPOGRAPHY.base, 
-              fontWeight: ONBOARDING_TYPOGRAPHY.semibold, 
+              fontFamily: 'Lexend-SemiBold', 
               color: isSelected ? ONBOARDING_COLORS.textPrimary : ONBOARDING_COLORS.textSecondary,
               marginBottom: ONBOARDING_SPACING.xs,
             }}>
@@ -337,7 +350,7 @@ const FeatureCard = React.memo<FeatureCardProps>(({ feature, isSelected, onSelec
             transform: [{ scale: isSelected ? 1 : 0.8 }]
           }]}>
             {isSelected && (
-              <Text style={{ color: ONBOARDING_COLORS.background, fontSize: 14, fontWeight: 'bold' }}>
+              <Text style={{ color: ONBOARDING_COLORS.background, fontSize: 14, fontFamily: 'Lexend-Bold' }}>
                 ✓
               </Text>
             )}
@@ -361,6 +374,7 @@ const FeatureCard = React.memo<FeatureCardProps>(({ feature, isSelected, onSelec
               borderColor: 'rgba(250, 204, 21, 0.2)',
             }}>
               <TextInput
+                ref={customInputRef}
                 value={customPrompt}
                 onChangeText={setCustomPrompt}
                 placeholder="What would you like to do with your photo?"

@@ -98,7 +98,7 @@ export function OnboardingButton({
 
   const getTextStyle = (): TextStyle => {
     const baseStyle: TextStyle = {
-      fontWeight: ONBOARDING_TYPOGRAPHY.semibold,
+      fontFamily: 'Lexend-SemiBold',
       textAlign: 'center',
     };
 

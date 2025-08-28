@@ -169,7 +169,7 @@ export function QuickActionRail() {
                 </View>
                 <View style={{ marginLeft: 12, flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={{ color: '#FFFFFF', fontWeight: '600', fontSize: 15, letterSpacing: 0.2 }}>{a.label}</Text>
+                    <Text style={{ color: '#FFFFFF', fontFamily: 'Lexend-SemiBold', fontSize: 15, letterSpacing: 0.2 }}>{a.label}</Text>
                     {a.label === 'Photo Magic' && (
                       <Animated.View
                         style={[
@@ -189,7 +189,7 @@ export function QuickActionRail() {
                         <Text style={{ 
                           color: '#F59E0B', 
                           fontSize: 10, 
-                          fontWeight: '800', 
+                          fontFamily: 'Lexend-ExtraBold', 
                           letterSpacing: 0.8 
                         }}>
                           NEW

@@ -167,7 +167,7 @@ export function ImageSelector({ selectedImage, onImageSelected, disabled = false
                       gap: 6,
                     }}>
                       <IconSymbol name="arrow.2.squarepath" size={16} color="#FFFFFF" />
-                      <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '600' }}>
+                      <Text style={{ color: '#FFFFFF', fontSize: 13, fontFamily: 'Lexend-SemiBold' }}>
                         Change Photo
                       </Text>
                     </View>
@@ -215,10 +215,7 @@ export function ImageSelector({ selectedImage, onImageSelected, disabled = false
                     marginLeft: 6,
                     color: '#22c55e', 
                     fontSize: 10, 
-                    fontWeight: '700',
-                    textShadowColor: 'rgba(0,0,0,0.8)',
-                    textShadowOffset: {width: 1, height: 1},
-                    textShadowRadius: 2,
+                    fontFamily: 'Lexend-Bold'
                   }}>
                     Ready
                   </Text>
@@ -247,7 +244,7 @@ export function ImageSelector({ selectedImage, onImageSelected, disabled = false
                 <Text style={{ 
                   color: 'rgba(255,255,255,0.8)', 
                   fontSize: 16, 
-                  fontWeight: '600',
+                  fontFamily: 'Lexend-SemiBold',
                   textAlign: 'center',
                   marginBottom: 6,
                 }}>

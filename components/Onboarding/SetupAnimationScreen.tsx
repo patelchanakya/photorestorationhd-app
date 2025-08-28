@@ -8,6 +8,7 @@ import Animated, {
   withDelay,
   withTiming,
   withSequence,
+  withRepeat,
   runOnJS 
 } from 'react-native-reanimated';
 import { OnboardingContainer } from './shared/OnboardingContainer';
@@ -20,27 +21,23 @@ interface SetupStep {
   id: string;
   title: string;
   icon: string;
-  emoji: string;
 }
 
 const SETUP_STEPS: SetupStep[] = [
   {
     id: 'profile',
     title: 'Creating your profile',
-    icon: 'person.circle',
-    emoji: '✨'
+    icon: 'person.circle'
   },
   {
     id: 'models',
-    title: 'Preparing AI models',
-    icon: 'brain.head.profile',
-    emoji: '🎨'
+    title: 'Preparing systems',
+    icon: 'brain.head.profile'
   },
   {
     id: 'workspace',
-    title: 'Optimizing your workspace',
-    icon: 'slider.horizontal.3',
-    emoji: '📸'
+    title: 'Preparing your tools',
+    icon: 'slider.horizontal.3'
   }
 ];
 
@@ -81,8 +78,14 @@ export function SetupAnimationScreen({ onComplete }: SetupAnimationScreenProps) 
         stepIndex++;
         // Each step takes 1.5 seconds
         setTimeout(processNextStep, 1500);
+      } else if (stepIndex === SETUP_STEPS.length) {
+        // Mark all steps as completed by setting currentStep beyond the last index
+        setCurrentStep(SETUP_STEPS.length);
+        stepIndex++;
+        // Give time for the final checkmark animation to complete
+        setTimeout(processNextStep, 1000);
       } else {
-        // All steps complete, show celebration
+        // All animations complete, show celebration
         setAllComplete(true);
         showCelebration();
       }
@@ -99,10 +102,10 @@ export function SetupAnimationScreen({ onComplete }: SetupAnimationScreenProps) 
       withSpring(1, { damping: 15, stiffness: 250 })
     );
 
-    // Auto-advance after celebration
+    // Auto-advance after celebration - extended duration to let users see the success state
     setTimeout(() => {
       onComplete();
-    }, 2000);
+    }, 2500);
   };
 
   return (
@@ -117,7 +120,7 @@ export function SetupAnimationScreen({ onComplete }: SetupAnimationScreenProps) 
             ]}>
               <Text style={{ 
                 fontSize: 28, 
-                fontWeight: 'bold', 
+                fontFamily: 'Lexend-Bold', 
                 color: '#FFFFFF',
                 textAlign: 'center',
                 marginBottom: 8,
@@ -156,24 +159,29 @@ export function SetupAnimationScreen({ onComplete }: SetupAnimationScreenProps) 
               width: 120,
               height: 120,
               borderRadius: 60,
-              backgroundColor: 'rgba(16, 185, 129, 0.2)',
+              backgroundColor: 'rgba(16, 185, 129, 0.15)',
               alignItems: 'center',
               justifyContent: 'center',
               marginBottom: 32,
-              borderWidth: 3,
+              borderWidth: 2,
               borderColor: '#10B981',
+              shadowColor: '#10B981',
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.3,
+              shadowRadius: 16,
+              elevation: 8,
             }}>
               <IconSymbol name="checkmark.circle.fill" size={60} color="#10B981" />
             </View>
 
             <Text style={{ 
               fontSize: 36, 
-              fontWeight: 'bold', 
+              fontFamily: 'Lexend-Bold', 
               color: '#FFFFFF',
               textAlign: 'center',
               marginBottom: 16,
             }}>
-              You're all set! 🎉
+              You're all set!
             </Text>
             
             <Text style={{ 
@@ -208,19 +216,22 @@ function SetupStepItem({ step, isActive, isCompleted, isUpcoming }: SetupStepIte
   React.useEffect(() => {
     if (isActive) {
       containerOpacity.value = withTiming(1, { duration: 300 });
-      // Gentle loading rotation
-      loadingRotation.value = withSequence(
-        withTiming(360, { duration: 1000 }),
-        withTiming(720, { duration: 1000 }),
-        withTiming(1080, { duration: 1000 })
+      // Gentle pulse animation instead of rotation
+      iconScale.value = withRepeat(
+        withSequence(
+          withTiming(1.1, { duration: 800 }),
+          withTiming(1, { duration: 800 })
+        ),
+        -1,
+        true
       );
     } else if (isCompleted) {
-      containerOpacity.value = withTiming(1, { duration: 300 });
-      // Show checkmark
-      checkmarkOpacity.value = withTiming(1, { duration: 300 });
+      containerOpacity.value = withTiming(1, { duration: 150 });
+      // Show checkmark - faster animation
+      checkmarkOpacity.value = withTiming(1, { duration: 150 });
       checkmarkScale.value = withSequence(
-        withSpring(1.2, { damping: 10, stiffness: 300 }),
-        withSpring(1, { damping: 15, stiffness: 250 })
+        withSpring(1.2, { damping: 8, stiffness: 400 }),
+        withSpring(1, { damping: 12, stiffness: 300 })
       );
     } else if (isUpcoming) {
       containerOpacity.value = withTiming(0.4, { duration: 300 });
@@ -232,10 +243,7 @@ function SetupStepItem({ step, isActive, isCompleted, isUpcoming }: SetupStepIte
   }));
 
   const iconAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: iconScale.value },
-      { rotate: isActive ? `${loadingRotation.value}deg` : '0deg' }
-    ],
+    transform: [{ scale: iconScale.value }],
   }));
 
   const checkmarkAnimatedStyle = useAnimatedStyle(() => ({
@@ -254,9 +262,24 @@ function SetupStepItem({ step, isActive, isCompleted, isUpcoming }: SetupStepIte
         borderRadius: 16,
         backgroundColor: isActive 
           ? 'rgba(250, 204, 21, 0.1)' 
-          : 'rgba(255, 255, 255, 0.05)',
-        borderWidth: isActive ? 1 : 0,
-        borderColor: 'rgba(250, 204, 21, 0.3)',
+          : isCompleted
+            ? 'rgba(16, 185, 129, 0.05)'
+            : 'rgba(255, 255, 255, 0.03)',
+        borderWidth: (isActive || isCompleted) ? 1 : 0,
+        borderColor: isActive 
+          ? 'rgba(250, 204, 21, 0.3)'
+          : isCompleted 
+            ? 'rgba(16, 185, 129, 0.3)'
+            : 'transparent',
+        shadowColor: isActive 
+          ? '#FACC15'
+          : isCompleted 
+            ? '#10B981'
+            : 'transparent',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: (isActive || isCompleted) ? 0.2 : 0,
+        shadowRadius: 8,
+        elevation: (isActive || isCompleted) ? 3 : 0,
       },
       containerAnimatedStyle
     ]}>
@@ -275,11 +298,19 @@ function SetupStepItem({ step, isActive, isCompleted, isUpcoming }: SetupStepIte
         marginRight: 16,
         position: 'relative'
       }}>
-        {/* Loading/Emoji icon */}
+          {/* Icon with enhanced styling */}
         <Animated.View style={iconAnimatedStyle}>
-          <Text style={{ fontSize: 18 }}>
-            {step.emoji}
-          </Text>
+          <IconSymbol 
+            name={step.icon as any} 
+            size={22} 
+            color={
+              isCompleted 
+                ? '#FFFFFF' // White when completed (will be covered by checkmark)
+                : isActive 
+                  ? '#FACC15'
+                  : '#9CA3AF'
+            }
+          />
         </Animated.View>
 
         {/* Checkmark overlay */}
@@ -293,7 +324,7 @@ function SetupStepItem({ step, isActive, isCompleted, isUpcoming }: SetupStepIte
               bottom: 0,
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: 'rgba(16, 185, 129, 0.9)',
+              backgroundColor: '#10B981',
               borderRadius: 20,
             },
             checkmarkAnimatedStyle
@@ -307,7 +338,7 @@ function SetupStepItem({ step, isActive, isCompleted, isUpcoming }: SetupStepIte
       <View style={{ flex: 1 }}>
         <Text style={{ 
           fontSize: 16, 
-          fontWeight: '600', 
+          fontFamily: 'Lexend-SemiBold', 
           color: isCompleted 
             ? '#10B981' 
             : isActive 

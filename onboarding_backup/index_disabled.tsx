@@ -591,9 +591,6 @@ export default function OnboardingScreen() {
                   <Text 
                     className="text-white text-xl font-bold"
                     style={{
-                      textShadowColor: 'rgba(0, 0, 0, 0.5)',
-                      textShadowOffset: { width: 0, height: 1 },
-                      textShadowRadius: 2,
                     }}
                   >
                     Become Clever
@@ -640,9 +637,6 @@ export default function OnboardingScreen() {
                 <Text 
                   className="text-white text-xl font-bold"
                   style={{
-                    textShadowColor: 'rgba(0, 0, 0, 0.5)',
-                    textShadowOffset: { width: 0, height: 1 },
-                    textShadowRadius: 2,
                   }}
                 >
                   Start Restoring
@@ -684,9 +678,6 @@ export default function OnboardingScreen() {
                 <Text 
                   className="text-white text-base font-semibold mr-2"
                   style={{
-                    textShadowColor: 'rgba(0, 0, 0, 0.5)',
-                    textShadowOffset: { width: 0, height: 1 },
-                    textShadowRadius: 2,
                   }}
                 >
                   Next
@@ -907,9 +898,6 @@ function OnboardingPage({ page, index, scrollX, curtainRef, backgroundWave }: On
             <Text 
               className="text-white text-3xl font-bold text-center mb-4"
               style={{
-                textShadowColor: 'rgba(255, 255, 255, 0.3)',
-                textShadowOffset: { width: 0, height: 0 },
-                textShadowRadius: 10,
               }}
             >
               {page.title}
@@ -917,9 +905,6 @@ function OnboardingPage({ page, index, scrollX, curtainRef, backgroundWave }: On
             <Text 
               className="text-gray-200 text-lg text-center max-w-sm"
               style={{
-                textShadowColor: 'rgba(0, 0, 0, 0.8)',
-                textShadowOffset: { width: 0, height: 1 },
-                textShadowRadius: 3,
               }}
             >
               {page.subtitle}

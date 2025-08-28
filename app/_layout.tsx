@@ -327,6 +327,12 @@ export default function RootLayout() {
     'PlayfairDisplay-SemiBold': require('../assets/fonts/PlayfairDisplay-SemiBold.ttf'),
     'PlayfairDisplay-Bold': require('../assets/fonts/PlayfairDisplay-Bold.ttf'),
     'PlayfairDisplay-Italic': require('../assets/fonts/PlayfairDisplay-Italic.ttf'),
+    'Lexend-Regular': require('../assets/fonts/Lexend/static/Lexend-Regular.ttf'),
+    'Lexend-Medium': require('../assets/fonts/Lexend/static/Lexend-Medium.ttf'),
+    'Lexend-SemiBold': require('../assets/fonts/Lexend/static/Lexend-SemiBold.ttf'),
+    'Lexend-Bold': require('../assets/fonts/Lexend/static/Lexend-Bold.ttf'),
+    'Lexend-ExtraBold': require('../assets/fonts/Lexend/static/Lexend-ExtraBold.ttf'),
+    'Lexend-Black': require('../assets/fonts/Lexend/static/Lexend-Black.ttf'),
   });
   
   const [showInitialLoading, setShowInitialLoading] = React.useState(true);

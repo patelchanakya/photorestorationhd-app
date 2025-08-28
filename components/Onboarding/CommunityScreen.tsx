@@ -54,11 +54,19 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
   const stat2Value = useSharedValue(0);
   const stat3Value = useSharedValue(0);
   const counterGlow = useSharedValue(0);
+  const statsBgPulse = useSharedValue(0);
 
   React.useEffect(() => {
     // Background pulse animation - continuous subtle effect
     backgroundPulse.value = withRepeat(
       withTiming(1, { duration: 4000 }),
+      -1,
+      true
+    );
+
+    // Stats background pulse animation
+    statsBgPulse.value = withRepeat(
+      withTiming(1, { duration: 2000 }),
       -1,
       true
     );
@@ -119,6 +127,7 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
       cancelAnimation(stat3Value);
       cancelAnimation(backgroundPulse);
       cancelAnimation(counterGlow);
+      cancelAnimation(statsBgPulse);
     };
   }, []);
 
@@ -170,9 +179,16 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
   }));
 
   const counterGlowAnimatedStyle = useAnimatedStyle(() => ({
-    shadowOpacity: 0.4 + (counterGlow.value * 0.6),
-    shadowRadius: 8 + (counterGlow.value * 16),
-    elevation: 8,
+    shadowColor: '#FF8C5A',
+    shadowOpacity: 0.2 + (counterGlow.value * 0.4),
+    shadowRadius: 4 + (counterGlow.value * 6),
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 4,
+  }));
+
+  const statsBgAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: 0.1 + (statsBgPulse.value * 0.15),
+    transform: [{ scale: 1 + (statsBgPulse.value * 0.05) }],
   }));
 
   return (
@@ -223,14 +239,14 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
           ]}>
             <Text style={{ 
               fontSize: 34, 
-              fontWeight: '800', 
+              fontFamily: 'Lexend-Bold', 
               color: '#FFFFFF',
               textAlign: 'center',
               lineHeight: 40,
               letterSpacing: -1.0,
             }}>
-              It's like Photoshop.{'\n'}
-              <Text style={{ color: '#FF6B35' }}>But you don't have to learn Photoshop</Text>
+              What used to take hours in Photoshop{'\n'}
+              <Text style={{ color: '#FF6B35', fontFamily: 'Lexend-Bold' }}>now takes seconds</Text>
             </Text>
           </Animated.View>
 
@@ -244,10 +260,10 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
               color: 'rgba(255, 255, 255, 0.8)',
               textAlign: 'center',
               lineHeight: 26,
-              fontWeight: '500',
+              fontFamily: 'Lexend-Regular',
               letterSpacing: -0.3,
             }}>
-              Join photo lovers worldwide creating magic instantly
+              Become the photo miracle worker everyone needs
             </Text>
           </Animated.View>
 
@@ -268,6 +284,7 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
               isCounting
               isLarge
               glowStyle={counterGlowAnimatedStyle}
+              bgStyle={statsBgAnimatedStyle}
             />
           </Animated.View>
         </ScrollView>
@@ -302,9 +319,10 @@ interface StatItemProps {
   isCounting?: boolean;
   isLarge?: boolean;
   glowStyle?: any;
+  bgStyle?: any;
 }
 
-function StatItem({ value, suffix, label, isDecimal = false, isCounting = false, isLarge = false, glowStyle }: StatItemProps) {
+function StatItem({ value, suffix, label, isDecimal = false, isCounting = false, isLarge = false, glowStyle, bgStyle }: StatItemProps) {
   const [displayText, setDisplayText] = React.useState('0');
 
   // Use animated reaction to update the text when value changes
@@ -323,16 +341,17 @@ function StatItem({ value, suffix, label, isDecimal = false, isCounting = false,
   );
 
   return (
-    <View style={{ alignItems: 'center' }}>
+    <View style={{ alignItems: 'center', position: 'relative' }}>
+      
       <Animated.Text style={[
         { 
-          fontSize: isLarge ? 32 : 22, 
-          fontWeight: '800', 
+          fontSize: isLarge ? 56 : 38, 
+          fontFamily: isCounting ? 'Lexend-Black' : 'Lexend-ExtraBold',
           color: isCounting ? '#FF6B35' : '#FFFFFF',
           marginBottom: isLarge ? 8 : 6,
           letterSpacing: -0.8,
           textAlign: 'center',
-          shadowColor: isCounting ? '#FF6B35' : '#000',
+          shadowColor: isCounting ? '#FFB380' : '#000',
           shadowOffset: { width: 0, height: 2 },
           shadowRadius: 4,
         },
@@ -344,7 +363,7 @@ function StatItem({ value, suffix, label, isDecimal = false, isCounting = false,
         fontSize: isLarge ? 14 : 12, 
         color: 'rgba(255, 255, 255, 0.7)',
         textAlign: 'center',
-        fontWeight: '600',
+        fontFamily: 'Lexend-Medium',
         letterSpacing: 0.3,
         textTransform: 'uppercase',
       }}>

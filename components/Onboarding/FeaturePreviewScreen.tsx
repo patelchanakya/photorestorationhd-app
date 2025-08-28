@@ -149,7 +149,7 @@ export function FeaturePreviewScreen({
             <Text style={{ 
               fontSize: 16, 
               color: '#9CA3AF',
-              fontWeight: '500' 
+              fontFamily: 'Lexend-Medium' 
             }}>
               Skip
             </Text>
@@ -163,7 +163,7 @@ export function FeaturePreviewScreen({
         ]}>
           <Text style={{ 
             fontSize: 28, 
-            fontWeight: 'bold', 
+            fontFamily: 'Lexend-Bold', 
             color: '#FFFFFF',
             textAlign: 'center',
             marginBottom: 8,
@@ -259,7 +259,7 @@ export function FeaturePreviewScreen({
             textAlign: 'center',
             marginTop: 8,
           }}>
-            See it in action with your own photo
+            Try it with one of your photos
           </Text>
         </Animated.View>
       </View>

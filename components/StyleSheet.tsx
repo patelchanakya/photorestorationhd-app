@@ -172,7 +172,7 @@ const StyleSheetBase = ({ type, onClose }: StyleSheetProps) => {
           <Text style={{ 
             color: 'white', 
             fontSize: 18, 
-            fontWeight: 'bold',
+            fontFamily: 'Lexend-Bold',
             marginLeft: 16
           }}>
             {type === 'bg' ? 'Choose Background' : 'Choose Outfit'}
@@ -224,7 +224,7 @@ const StyleSheetBase = ({ type, onClose }: StyleSheetProps) => {
                     <Text style={{ 
                       color: 'white', 
                       fontSize: 16, 
-                      fontWeight: 'bold',
+                      fontFamily: 'Lexend-Bold',
                       marginBottom: 2
                     }}>
                       {item.title}

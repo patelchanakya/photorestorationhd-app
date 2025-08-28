@@ -368,16 +368,13 @@ Thanks!`;
               alignSelf: 'flex-start',
               marginBottom: 4
             }}>
-              <Text style={{ color: '#f97316', fontSize: 9, fontWeight: '600', letterSpacing: 0.3 }}>PRO</Text>
+              <Text style={{ color: '#f97316', fontSize: 9, fontFamily: 'Lexend-SemiBold', letterSpacing: 0.3 }}>PRO</Text>
             </View>
           )}
           <Text style={{ 
             color: '#FFFFFF', 
-            fontWeight: '700', 
+            fontFamily: 'Lexend-Bold', 
             fontSize: 15, 
-            textShadowColor: 'rgba(255,255,255,0.25)', 
-            textShadowOffset: { width: 0, height: 0 }, 
-            textShadowRadius: 4,
             letterSpacing: 0.3
           }}>
             {item.title}
@@ -387,7 +384,7 @@ Thanks!`;
             fontSize: 9, 
             marginTop: 1,
             letterSpacing: 0.8,
-            fontWeight: '500'
+            fontFamily: 'Lexend-Medium'
           }}>
             COMING SOON
           </Text>
@@ -482,7 +479,7 @@ export function HeroBackToLifeExamples({ examples = DEFAULT_EXAMPLES, onBeforePi
         }}>
           <IconSymbol name="plus" size={24} color="#F59E0B" />
         </View>
-        <Text style={{ color: '#F59E0B', fontWeight: '600', fontSize: 12, textAlign: 'center', paddingHorizontal: 10 }}>
+        <Text style={{ color: '#F59E0B', fontFamily: 'Lexend-SemiBold', fontSize: 12, textAlign: 'center', paddingHorizontal: 10 }}>
           Request
         </Text>
         <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 10, textAlign: 'center', paddingHorizontal: 10, marginTop: 2 }}>

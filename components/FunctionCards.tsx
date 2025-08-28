@@ -137,22 +137,12 @@ function FunctionCard({ card, isLast }: FunctionCardProps) {
         >
           <IconSymbol name={card.icon} size={36} color="#ffffff" />
           <Text 
-            className="text-white text-sm font-bold mt-2 text-center" 
-            style={{ 
-              textShadowColor: 'rgba(0, 0, 0, 0.75)',
-              textShadowOffset: { width: 0, height: 1 },
-              textShadowRadius: 3
-            }}
+            className="text-white text-sm font-bold mt-2 text-center"
           >
             {card.title}
           </Text>
           <Text 
-            className="text-white text-xs text-center mt-1" 
-            style={{ 
-              textShadowColor: 'rgba(0, 0, 0, 0.75)',
-              textShadowOffset: { width: 0, height: 1 },
-              textShadowRadius: 2
-            }}
+            className="text-white text-xs text-center mt-1"
           >
             {card.description}
           </Text>

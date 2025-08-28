@@ -94,7 +94,7 @@ export function PresetCard({
                 <Text style={{ 
                   color: '#0B0B0F', 
                   fontSize: 13, 
-                  fontWeight: '700',
+                  fontFamily: 'Lexend-Bold',
                   textAlign: 'center',
                   lineHeight: 16
                 }} numberOfLines={2} ellipsizeMode="tail">
@@ -128,7 +128,7 @@ export function PresetCard({
                 <Text style={{ 
                   color: 'rgba(255,255,255,0.9)', 
                   fontSize: 13, 
-                  fontWeight: '600',
+                  fontFamily: 'Lexend-SemiBold',
                   textAlign: 'center',
                   lineHeight: 16
                 }} numberOfLines={2} ellipsizeMode="tail">

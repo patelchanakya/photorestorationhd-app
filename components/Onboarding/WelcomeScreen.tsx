@@ -104,7 +104,7 @@ export function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
           <View>
             <Text style={{ 
               fontSize: ONBOARDING_TYPOGRAPHY.giant, 
-              fontWeight: ONBOARDING_TYPOGRAPHY.bold, 
+              fontFamily: 'Lexend-Bold', 
               color: ONBOARDING_COLORS.textPrimary,
               textAlign: 'left',
               lineHeight: 52,
@@ -114,7 +114,7 @@ export function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Text style={{ 
                 fontSize: ONBOARDING_TYPOGRAPHY.giant, 
-                fontWeight: ONBOARDING_TYPOGRAPHY.bold, 
+                fontFamily: 'Lexend-Bold', 
                 color: ONBOARDING_COLORS.textPrimary,
                 textAlign: 'left',
               }}>
@@ -122,9 +122,9 @@ export function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
               </Text>
               <IconSymbol 
                 name="wand.and.stars" 
-                size={32} 
+                size={34} 
                 color={ONBOARDING_COLORS.accent}
-                style={{ marginLeft: 4 }}
+                style={{ marginLeft: 8, opacity: 0.95 }}
               />
             </View>
           </View>
@@ -134,6 +134,7 @@ export function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
         <Animated.View style={[{ marginBottom: ONBOARDING_SPACING.lg }, legalAnimatedStyle]}>
           <Text style={{ 
             fontSize: ONBOARDING_TYPOGRAPHY.sm, 
+            fontFamily: 'Lexend-Regular',
             color: ONBOARDING_COLORS.textDisabled,
             textAlign: 'left',
             lineHeight: 20,

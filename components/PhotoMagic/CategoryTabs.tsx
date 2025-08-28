@@ -94,7 +94,7 @@ export function CategoryTabs({
                 <Text style={{ 
                   color: '#0B0B0F', 
                   fontSize: 13, 
-                  fontWeight: '800',
+                  fontFamily: 'Lexend-Black',
                   textAlign: 'center',
                   letterSpacing: 0.2
                 }}>
@@ -117,7 +117,7 @@ export function CategoryTabs({
               <Text style={{ 
                 color: 'rgba(255,255,255,0.75)', 
                 fontSize: 13, 
-                fontWeight: '600',
+                fontFamily: 'Lexend-SemiBold',
                 textAlign: 'center',
                 letterSpacing: 0.1
               }}>
@@ -135,7 +135,7 @@ export function CategoryTabs({
       <Text style={{ 
         color: '#EAEAEA', 
         fontSize: 16, 
-        fontWeight: '600', 
+        fontFamily: 'Lexend-SemiBold', 
         marginBottom: 14,
         paddingHorizontal: 16,
       }}>
@@ -182,7 +182,7 @@ export function CategoryTabs({
           color: 'rgba(255,255,255,0.65)', 
           fontSize: 12, 
           lineHeight: 16,
-          fontWeight: '500'
+          fontFamily: 'Lexend-Medium'
         }}>
           {getCategoryDescription(selectedCategory)}
         </Text>

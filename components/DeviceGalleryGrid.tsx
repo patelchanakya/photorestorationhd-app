@@ -118,7 +118,7 @@ export function DeviceGalleryGrid({ functionType }: DeviceGalleryGridProps) {
         <View style={{ backgroundColor: '#151515', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
             <IconSymbol name="photo" size={20} color="#fff" />
-            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16, marginLeft: 10 }}>Allow access to Photos</Text>
+            <Text style={{ color: '#fff', fontFamily: 'Lexend-Bold', fontSize: 16, marginLeft: 10 }}>Allow access to Photos</Text>
           </View>
           <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14, lineHeight: 20, marginBottom: 12 }}>
             To get started, Clever needs access to your photos or you can select one from your device.
@@ -127,7 +127,7 @@ export function DeviceGalleryGrid({ functionType }: DeviceGalleryGridProps) {
             onPress={handlePermissionRequest}
             style={{ backgroundColor: '#ffffff', paddingVertical: 12, borderRadius: 12, alignItems: 'center' }}
           >
-            <Text style={{ color: '#111827', fontWeight: '700' }}>
+            <Text style={{ color: '#111827', fontFamily: 'Lexend-Bold' }}>
               Allow Photo Access
             </Text>
           </TouchableOpacity>
@@ -144,7 +144,7 @@ export function DeviceGalleryGrid({ functionType }: DeviceGalleryGridProps) {
             }}
             style={{ marginTop: 14 }}
           >
-            <Text style={{ color: '#93c5fd', fontWeight: '600', textAlign: 'center' }}>Enhance from Device</Text>
+            <Text style={{ color: '#93c5fd', fontFamily: 'Lexend-SemiBold', textAlign: 'center' }}>Enhance from Device</Text>
           </TouchableOpacity>
         </View>
       </View>

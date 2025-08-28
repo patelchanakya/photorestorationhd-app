@@ -217,9 +217,6 @@ export default function CustomSplashScreen({ onAnimationComplete }: CustomSplash
                     fontSize: 58,
                     fontFamily: 'PlayfairDisplay-SemiBold',
                     textAlign: 'center',
-                    textShadowColor: 'rgba(139, 92, 246, 0.6)',
-                    textShadowOffset: { width: 0, height: 2 },
-                    textShadowRadius: 25,
                     letterSpacing: -1,
                   }}
                 />
@@ -232,9 +229,6 @@ export default function CustomSplashScreen({ onAnimationComplete }: CustomSplash
                 color: 'rgba(255, 255, 255, 0.8)',
                 fontSize: 18,
                 textAlign: 'center',
-                textShadowColor: 'rgba(0, 0, 0, 0.2)',
-                textShadowOffset: { width: 0, height: 1 },
-                textShadowRadius: 4,
               }}>
                 The ultimate photo restoration & repair app
               </Text>
@@ -257,7 +251,7 @@ export default function CustomSplashScreen({ onAnimationComplete }: CustomSplash
                 <>
                   {/* Subtle header */}
                   <View style={{ alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                    <Text style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: 12, fontWeight: '500', marginBottom: 8 }}>
+                    <Text style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: 12, fontFamily: 'Lexend-Medium', marginBottom: 8 }}>
                       Real reviews
                     </Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -287,9 +281,6 @@ export default function CustomSplashScreen({ onAnimationComplete }: CustomSplash
                       fontStyle: 'italic',
                       lineHeight: 28,
                       fontWeight: '400',
-                      textShadowColor: 'rgba(0, 0, 0, 0.2)',
-                      textShadowOffset: { width: 0, height: 1 },
-                      textShadowRadius: 2,
                     }}
                   />
                   
@@ -299,7 +290,7 @@ export default function CustomSplashScreen({ onAnimationComplete }: CustomSplash
                     color: 'rgba(255, 255, 255, 0.4)', 
                     fontSize: 11, 
                     textAlign: 'center',
-                    fontWeight: '500'
+                    fontFamily: 'Lexend-Medium'
                   }}>
                     Restore. Revive. Remember.
                   </Text>

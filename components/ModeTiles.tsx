@@ -131,7 +131,6 @@ function Tile({ title, description, icon, imageSource, onPress, compact = false 
         </View>
 
         <View>
-          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 16, textShadowColor: 'rgba(0,0,0,0.6)', textShadowRadius: 4 }}>{title}</Text>
           <Text style={{ color: 'rgba(255,255,255,0.95)', fontSize: 12, marginTop: 2 }}>{description}</Text>
         </View>
       </View>

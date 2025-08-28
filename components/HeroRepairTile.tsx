@@ -78,12 +78,11 @@ export function HeroRepairTile({
             activeOpacity={0.9}
             style={{ paddingHorizontal: 12, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(0,0,0,0.45)' }}
           >
-            <Text style={{ color: '#EAEAEA', fontWeight: '700', fontSize: 13 }}>Video</Text>
+            <Text style={{ color: '#EAEAEA', fontFamily: 'Lexend-Bold', fontSize: 13 }}>Video</Text>
           </TouchableOpacity>
         </View>
 
         <View style={{ flex: 1, justifyContent: 'flex-end' }}>
-          <Text style={{ color: '#EAEAEA', fontWeight: '800', fontSize: 20, textShadowColor: 'rgba(0,0,0,0.6)', textShadowRadius: 4 }}>{title}</Text>
           <Text style={{ color: '#BFC3CF', fontSize: 13, marginTop: 2 }}>{subtitle}</Text>
         </View>
       </View>

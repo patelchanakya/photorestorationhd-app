@@ -30,10 +30,10 @@ const DEFAULT_POPULAR_ITEMS: PopularItem[] = [
   },
   { 
     id: 'popular-2', 
-    title: 'Add Halo', 
+    title: 'Angel Wings', 
     type: 'video', 
-    video: require('../assets/videos/popular/halo.mp4'), 
-    prompt: "Add a subtle glowing halo above the subject's head." 
+    video: require('../assets/videos/popular/angel.mp4'), 
+    prompt: "Add realistic wings that match pose, background, and lighting." 
   },
   { 
     id: 'popular-3', 
@@ -51,10 +51,10 @@ const DEFAULT_POPULAR_ITEMS: PopularItem[] = [
   },
   { 
     id: 'popular-5', 
-    title: 'Angel Wings', 
+    title: 'Add Halo', 
     type: 'video', 
-    video: require('../assets/videos/popular/angel.mp4'), 
-    prompt: "Add realistic wings that match pose, background, and lighting." 
+    video: require('../assets/videos/popular/halo.mp4'), 
+    prompt: "Add a subtle glowing halo above the subject's head." 
   },
   { 
     id: 'popular-6', 
@@ -264,16 +264,13 @@ export function PopularExamples({ items = DEFAULT_POPULAR_ITEMS }: { items?: Pop
                     alignSelf: 'flex-start',
                     marginBottom: 4
                   }}>
-                    <Text style={{ color: '#f97316', fontSize: 9, fontWeight: '600', letterSpacing: 0.3 }}>PRO</Text>
+                    <Text style={{ color: '#f97316', fontSize: 9, fontFamily: 'Lexend-SemiBold', letterSpacing: 0.3 }}>PRO</Text>
                   </View>
                 )}
                 <Text style={{ 
                   color: '#FFFFFF', 
-                  fontWeight: '600', 
-                  fontSize: 14, 
-                  textShadowColor: 'rgba(0,0,0,0.8)', 
-                  textShadowOffset: { width: 0, height: 1 }, 
-                  textShadowRadius: 3 
+                  fontFamily: 'Lexend-SemiBold', 
+                  fontSize: 14 
                 }}>
                   {item.title}
                 </Text>

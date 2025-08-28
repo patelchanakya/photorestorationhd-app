@@ -435,7 +435,7 @@ useEffect(() => {
         </TouchableOpacity>
         
         <View style={{ alignItems: 'center' }}>
-          <Text style={{ color: '#EAEAEA', fontSize: 22, fontWeight: '800' }}>Photo Magic</Text>
+          <Text style={{ color: '#EAEAEA', fontSize: 22, fontFamily: 'Lexend-Black' }}>Photo Magic</Text>
           <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 2 }}>
             AI-powered photo editing
           </Text>
@@ -462,7 +462,7 @@ useEffect(() => {
           entering={FadeInUp.delay(250).duration(800).springify().damping(12)}
                     style={{ paddingHorizontal: 16, marginBottom: 20 }}
         >
-          <Text style={{ color: '#EAEAEA', fontSize: 16, fontWeight: '600', marginBottom: 12 }}>
+          <Text style={{ color: '#EAEAEA', fontSize: 16, fontFamily: 'Lexend-SemiBold', marginBottom: 12 }}>
             Choose Edit Method
           </Text>
           <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -488,7 +488,7 @@ useEffect(() => {
               <Text style={{ 
                 color: editMode === 'presets' ? '#F59E0B' : 'rgba(255,255,255,0.8)', 
                 fontSize: 14, 
-                fontWeight: '600' 
+                fontFamily: 'Lexend-SemiBold' 
               }}>
                 Use Presets
               </Text>
@@ -516,7 +516,7 @@ useEffect(() => {
               <Text style={{ 
                 color: editMode === 'custom' ? '#F59E0B' : 'rgba(255,255,255,0.8)', 
                 fontSize: 14, 
-                fontWeight: '600' 
+                fontFamily: 'Lexend-SemiBold' 
               }}>
                 Write Custom
               </Text>
@@ -546,7 +546,7 @@ useEffect(() => {
                     style={{ paddingHorizontal: 16, marginBottom: 120 }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <Text style={{ color: '#EAEAEA', fontSize: 16, fontWeight: '600' }}>
+            <Text style={{ color: '#EAEAEA', fontSize: 16, fontFamily: 'Lexend-SemiBold' }}>
               {category === 'All' ? 'All Presets' : `${category} Presets`}
             </Text>
             <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>
@@ -575,7 +575,7 @@ useEffect(() => {
             entering={FadeInUp.delay(350).duration(800).springify().damping(12)}
                         style={{ paddingHorizontal: 16, marginBottom: 120 }}
           >
-            <Text style={{ color: '#EAEAEA', fontSize: 16, fontWeight: '600', marginBottom: 12 }}>
+            <Text style={{ color: '#EAEAEA', fontSize: 16, fontFamily: 'Lexend-SemiBold', marginBottom: 12 }}>
               Describe Your Edit
             </Text>
             <BlurView intensity={20} tint="dark" style={{ borderRadius: 20, overflow: 'hidden' }}>
@@ -614,7 +614,7 @@ useEffect(() => {
                         borderWidth: 1,
                         borderColor: 'rgba(245,158,11,0.3)'
                       }}>
-                        <Text style={{ color: '#F59E0B', fontSize: 12, fontWeight: '600' }}>Clear</Text>
+                        <Text style={{ color: '#F59E0B', fontSize: 12, fontFamily: 'Lexend-SemiBold' }}>Clear</Text>
                       </View>
                     </TouchableOpacity>
                   )}
@@ -626,7 +626,7 @@ useEffect(() => {
             <View style={{ marginTop: 16, padding: 16, backgroundColor: 'rgba(34,197,94,0.1)', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(34,197,94,0.2)' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                 <IconSymbol name="lightbulb" size={16} color="#22c55e" />
-                <Text style={{ color: '#22c55e', fontSize: 14, fontWeight: '600', marginLeft: 8 }}>
+                <Text style={{ color: '#22c55e', fontSize: 14, fontFamily: 'Lexend-SemiBold', marginLeft: 8 }}>
                   Tips for better results
                 </Text>
               </View>
@@ -676,7 +676,7 @@ useEffect(() => {
                 </View>
               </Animated.View>
               
-              <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '800', marginBottom: 8, textAlign: 'center' }}>
+              <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-Black', marginBottom: 8, textAlign: 'center' }}>
                 Applying Magic
               </Text>
               <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14, marginBottom: 20, textAlign: 'center', lineHeight: 20 }}>
@@ -794,7 +794,7 @@ useEffect(() => {
                             spinStyle
                           ]} 
                         />
-                        <Text style={{ color: '#0B0B0F', fontSize: 18, fontWeight: '800', letterSpacing: 0.5 }}>
+                        <Text style={{ color: '#0B0B0F', fontSize: 18, fontFamily: 'Lexend-Black', letterSpacing: 0.5 }}>
                           Processing Magic…
                         </Text>
                       </>
@@ -808,7 +808,7 @@ useEffect(() => {
                         }}>
                           <IconSymbol name='wand.and.stars' size={24} color='#0B0B0F' />
                         </View>
-                        <Text style={{ color: '#0B0B0F', fontSize: 19, fontWeight: '800', letterSpacing: 0.5, flex: 1 }}>
+                        <Text style={{ color: '#0B0B0F', fontSize: 19, fontFamily: 'Lexend-Black', letterSpacing: 0.5, flex: 1 }}>
                           Apply Magic
                         </Text>
                         <View style={{ 
@@ -821,7 +821,7 @@ useEffect(() => {
                           borderWidth: 1,
                           borderColor: 'rgba(11,11,15,0.1)'
                         }}>
-                          <Text style={{ color: '#0B0B0F', fontSize: 14, fontWeight: '800' }}>
+                          <Text style={{ color: '#0B0B0F', fontSize: 14, fontFamily: 'Lexend-Black' }}>
                             {selectedLabels.length || 1}
                           </Text>
                         </View>
@@ -852,7 +852,7 @@ useEffect(() => {
                         }}>
                           <IconSymbol name='photo' size={22} color='rgba(255,255,255,0.6)' />
                         </View>
-                        <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 17, fontWeight: '600', letterSpacing: 0.3 }}>
+                        <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 17, fontFamily: 'Lexend-SemiBold', letterSpacing: 0.3 }}>
                           Select a Photo First
                         </Text>
                       </>
@@ -866,7 +866,7 @@ useEffect(() => {
                         }}>
                           <IconSymbol name='wand.and.stars' size={22} color='rgba(255,255,255,0.6)' />
                         </View>
-                        <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 17, fontWeight: '600', letterSpacing: 0.3 }}>
+                        <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 17, fontFamily: 'Lexend-SemiBold', letterSpacing: 0.3 }}>
                           Choose Edits to Apply
                         </Text>
                       </>
@@ -882,7 +882,7 @@ useEffect(() => {
       {/* Long-press info sheet */}
       <BottomSheet visible={infoVisible} onDismiss={() => setInfoVisible(false)} maxHeightPercent={0.65}>
         <View style={{ padding: 16 }}>
-          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800', marginBottom: 6 }}>{infoTitle}</Text>
+          <Text style={{ color: '#fff', fontSize: 16, fontFamily: 'Lexend-Black', marginBottom: 6 }}>{infoTitle}</Text>
           <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 14, lineHeight: 20 }}>{infoText}</Text>
         </View>
       </BottomSheet>

@@ -61,7 +61,7 @@ export default function HomeGalleryLikeScreen() {
       <SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }} edges={['top', 'left', 'right']}>
       {/* Header */}
       <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text style={{ color: '#FFFFFF', fontSize: 26, fontWeight: '700', letterSpacing: -0.5 }}>Clever</Text>
+        <Text style={{ color: '#FFFFFF', fontSize: 26, fontFamily: 'Lexend-Bold', letterSpacing: -0.5 }}>Clever</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <TouchableOpacity 
             onPress={async () => {
@@ -167,7 +167,7 @@ export default function HomeGalleryLikeScreen() {
               gap: 4
             }}>
             {isPro && <IconSymbol name="checkmark.circle.fill" size={14} color="#f97316" />}
-            <Text style={{ color: isPro ? '#f97316' : '#fff', fontWeight: '600', fontSize: 12 }}>PRO</Text>
+            <Text style={{ color: isPro ? '#f97316' : '#fff', fontFamily: 'Lexend-SemiBold', fontSize: 12 }}>PRO</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={async () => {
@@ -190,7 +190,7 @@ export default function HomeGalleryLikeScreen() {
         
         {/* Popular section title */}
         <View style={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '600', letterSpacing: -0.3 }}>Popular</Text>
+          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>Popular</Text>
         </View>
         
         {/* Popular examples using outfit assets as placeholders */}
@@ -198,7 +198,7 @@ export default function HomeGalleryLikeScreen() {
 
 {/* DISABLED: Back to Life section - keeping code but removing from UI
         <View style={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '600', letterSpacing: -0.3 }}>Back to Life</Text>
+          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>Back to Life</Text>
         </View>
         {componentsLoaded && HeroBackToLifeExamples ? (
           <HeroBackToLifeExamples onBeforePicker={engageDropEffect} onAfterPicker={releaseDropEffect} />
@@ -211,7 +211,7 @@ export default function HomeGalleryLikeScreen() {
 
       {/* Restore/Repair section title */}
       <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '600', letterSpacing: -0.3 }}>Restore/Repair</Text>
+        <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>Restore/Repair</Text>
         <TouchableOpacity
           onPress={async () => {
             // Validate premium access before proceeding
@@ -245,19 +245,19 @@ export default function HomeGalleryLikeScreen() {
 
         {/* Outfits Section */}
         <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '600', letterSpacing: -0.3 }}>Outfits</Text>
+          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>Outfits</Text>
         </View>
         <AnimatedOutfits />
 
         {/* Backgrounds Section */}
         <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '600', letterSpacing: -0.3 }}>Backgrounds</Text>
+          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>Backgrounds</Text>
         </View>
         <AnimatedBackgrounds />
 
         {/* Other AI Features - Enlighten, etc. */}
         <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '600', letterSpacing: -0.3 }}>Magic</Text>
+          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>Magic</Text>
         </View>
         <FeatureCardsList onOpenBackgrounds={() => openQuick('background')} onOpenClothes={() => openQuick('outfit')} />
 

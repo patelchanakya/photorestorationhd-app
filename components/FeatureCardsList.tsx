@@ -90,7 +90,7 @@ const FeatureCardBase = ({
         style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '55%' }}
       />
       <View style={{ position: 'absolute', left: 16, right: 56, bottom: 14 }}>
-        <Text style={{ color: '#FFFFFF', fontSize: 24, fontWeight: '700', letterSpacing: -0.3 }} numberOfLines={1}>
+        <Text style={{ color: '#FFFFFF', fontSize: 24, fontFamily: 'Lexend-Bold', letterSpacing: -0.3 }} numberOfLines={1}>
           {item.title}
         </Text>
         <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14, marginTop: 4, lineHeight: 20 }} numberOfLines={2}>
@@ -224,7 +224,7 @@ export function FeatureCardsList({
             <Text style={{ 
               color: '#F59E0B', 
               fontSize: 20, 
-              fontWeight: '700', 
+              fontFamily: 'Lexend-Bold', 
               letterSpacing: -0.3,
               marginBottom: 6
             }}>
@@ -252,7 +252,7 @@ export function FeatureCardsList({
             borderColor: 'rgba(255,255,255,0.18)'
           }}>
             <IconSymbol name="envelope" size={14} color="#F59E0B" />
-            <Text style={{ color: '#F59E0B', fontSize: 13, fontWeight: '600' }}>
+            <Text style={{ color: '#F59E0B', fontSize: 13, fontFamily: 'Lexend-SemiBold' }}>
               Send Request
             </Text>
           </View>

@@ -117,7 +117,7 @@ export default function PhotoMagicUploadScreen() {
         </TouchableOpacity>
         
         <View style={{ alignItems: 'center' }}>
-          <Text style={{ color: '#FFFFFF', fontSize: 26, fontWeight: '700', letterSpacing: -0.5 }}>
+          <Text style={{ color: '#FFFFFF', fontSize: 26, fontFamily: 'Lexend-Bold', letterSpacing: -0.5 }}>
             Photo Magic
           </Text>
           <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, fontWeight: '400', marginTop: 2 }}>
@@ -212,14 +212,14 @@ export default function PhotoMagicUploadScreen() {
                       borderTopColor: 'transparent',
                       marginRight: 12
                     }} />
-                    <Text style={{ color: '#0B0B0F', fontSize: 18, fontWeight: '800' }}>
+                    <Text style={{ color: '#0B0B0F', fontSize: 18, fontFamily: 'Lexend-Black' }}>
                       Opening Library...
                     </Text>
                   </>
                 ) : (
                   <>
                     <IconSymbol name="photo.on.rectangle" size={24} color="#0B0B0F" />
-                    <Text style={{ color: '#0B0B0F', fontSize: 18, fontWeight: '800', marginLeft: 12 }}>
+                    <Text style={{ color: '#0B0B0F', fontSize: 18, fontFamily: 'Lexend-Black', marginLeft: 12 }}>
                       Choose from Library
                     </Text>
                   </>
@@ -259,7 +259,7 @@ export default function PhotoMagicUploadScreen() {
                   <Text style={{ 
                     color: 'rgba(255,255,255,0.95)', 
                     fontSize: 18, 
-                    fontWeight: '700', 
+                    fontFamily: 'Lexend-Bold', 
                     marginLeft: 12 
                   }}>
                     Take New Photo

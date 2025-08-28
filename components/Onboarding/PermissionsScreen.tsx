@@ -149,7 +149,7 @@ export function PermissionsScreen({ onContinue }: PermissionsScreenProps) {
         ]}>
           <Text style={{ 
             fontSize: ONBOARDING_TYPOGRAPHY.giant, 
-            fontWeight: ONBOARDING_TYPOGRAPHY.bold, 
+            fontFamily: 'Lexend-Bold', 
             color: ONBOARDING_COLORS.textPrimary,
             textAlign: 'left',
             lineHeight: 52,
