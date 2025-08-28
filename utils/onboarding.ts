@@ -30,7 +30,7 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
   // Custom Option (First)
   {
     id: 'custom_prompt',
-    name: 'Choose Your Own ✏️',
+    name: 'Choose Your Own',
     description: 'Describe what you want to do with your photo',
     icon: 'text.cursor',
     mapsTo: 'custom',
@@ -41,7 +41,7 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
   // Popular Creative Features (High-Click)
   {
     id: 'clear_skin',
-    name: 'Clear Skin ✨',
+    name: 'Clear Skin',
     description: 'Remove acne, blemishes & imperfections',
     icon: 'sparkles',
     mapsTo: 'custom',
@@ -49,7 +49,7 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
   },
   {
     id: 'add_smile',
-    name: 'Add Smile 😊',
+    name: 'Add Smile',
     description: 'Add a natural, authentic smile',
     icon: 'face.smiling',
     mapsTo: 'custom', 
@@ -57,7 +57,7 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
   },
   {
     id: 'fix_hair',
-    name: 'Fix Hair 💇',
+    name: 'Fix Hair',
     description: 'Clean up messy or stray hairs',
     icon: 'scissors',
     mapsTo: 'custom',
@@ -65,7 +65,7 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
   },
   {
     id: 'make_younger',
-    name: 'Make Younger ⏰',
+    name: 'Make Younger',
     description: 'Subtle age reduction while keeping identity',
     icon: 'clock.arrow.circlepath',
     mapsTo: 'custom',
@@ -73,15 +73,15 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
   },
   {
     id: 'add_wings',
-    name: 'Add Angel Wings 👼',
+    name: 'Add Angel Wings',
     description: 'Beautiful wings that match your photo',
-    icon: 'cloud',
+    icon: 'bird',
     mapsTo: 'custom',
     gradient: ['#e879f9', '#f0abfc']
   },
   {
     id: 'add_halo',
-    name: 'Add Halo ✨',
+    name: 'Add Halo',
     description: 'Subtle glowing halo above head',
     icon: 'sun.max',
     mapsTo: 'custom',
@@ -89,7 +89,7 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
   },
   {
     id: 'make_slimmer',
-    name: 'Make Slimmer 💪',
+    name: 'Make Slimmer',
     description: 'Natural body enhancement',
     icon: 'figure.stand',
     mapsTo: 'custom',
@@ -133,7 +133,7 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
   // Most Popular Templates
   {
     id: 'beach_background',
-    name: 'Beach Background 🏖️',
+    name: 'Beach Background',
     description: 'Beautiful ocean and sand scene',
     icon: 'water.waves',
     mapsTo: 'background',

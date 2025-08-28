@@ -9,7 +9,7 @@ import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, Tou
 import { BottomSheet } from '@/components/sheets/BottomSheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Animated, { FadeInDown, FadeInUp, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp, FadeOut, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 // New components
 import { ImageSelector } from '@/components/PhotoMagic/ImageSelector';
@@ -408,22 +408,20 @@ useEffect(() => {
   }
 
   return (
-    <KeyboardAvoidingView 
-      style={{ flex: 1, backgroundColor: '#0B0B0F' }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <Animated.View 
+      style={{ flex: 1 }}
+      exiting={FadeOut.duration(300)}
     >
+      <KeyboardAvoidingView 
+        style={{ flex: 1, backgroundColor: '#0B0B0F' }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
       {/* Header */}
       <Animated.View 
         entering={FadeInDown.delay(100).duration(600)}
-        style={{ paddingHorizontal: 16, paddingTop: insets.top + 8, paddingBottom: 6, alignItems: 'center', justifyContent: 'space-between', flexDirection: 'row' }}
+                style={{ paddingHorizontal: 16, paddingTop: insets.top + 8, paddingBottom: 6, alignItems: 'center', justifyContent: 'space-between', flexDirection: 'row' }}
       >
-        <TouchableOpacity onPress={async () => {
-          await AsyncStorage.removeItem('activeTextEditContext');
-          if (__DEV__) {
-            console.log('📝 [TEXT-EDIT] Cleared context on modal close');
-          }
-          router.back();
-        }}>
+        <TouchableOpacity onPress={() => router.back()}>
           <View style={{
             width: 32,
             height: 32,
@@ -447,7 +445,10 @@ useEffect(() => {
       </Animated.View>
       <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
         {/* Image Selector */}
-        <Animated.View entering={FadeInUp.delay(150).duration(800).springify().damping(15)} style={{ paddingHorizontal: 16, marginTop: 16 }}>
+        <Animated.View 
+          entering={FadeInUp.delay(150).duration(800).springify().damping(15)} 
+                    style={{ paddingHorizontal: 16, marginTop: 16 }}
+        >
           <ImageSelector 
             selectedImage={selectedImage} 
             onImageSelected={handleImageSelected}
@@ -459,7 +460,7 @@ useEffect(() => {
         {/* Edit Mode Selector */}
         <Animated.View 
           entering={FadeInUp.delay(250).duration(800).springify().damping(12)}
-          style={{ paddingHorizontal: 16, marginBottom: 20 }}
+                    style={{ paddingHorizontal: 16, marginBottom: 20 }}
         >
           <Text style={{ color: '#EAEAEA', fontSize: 16, fontWeight: '600', marginBottom: 12 }}>
             Choose Edit Method
@@ -527,7 +528,9 @@ useEffect(() => {
         {editMode === 'presets' ? (
           <>
             {/* Category Tabs */}
-            <Animated.View entering={FadeInUp.delay(350).duration(800).springify().damping(12)}>
+            <Animated.View 
+              entering={FadeInUp.delay(350).duration(800).springify().damping(12)}
+                          >
               <CategoryTabs 
                 selectedCategory={category}
                 onCategoryChange={setCategory}
@@ -540,7 +543,7 @@ useEffect(() => {
         {/* Presets grid */}
         <Animated.View 
           entering={FadeInUp.delay(450).duration(800).springify().damping(10)}
-          style={{ paddingHorizontal: 16, marginBottom: 120 }}
+                    style={{ paddingHorizontal: 16, marginBottom: 120 }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <Text style={{ color: '#EAEAEA', fontSize: 16, fontWeight: '600' }}>
@@ -570,7 +573,7 @@ useEffect(() => {
           /* Custom Edit Mode */
           <Animated.View 
             entering={FadeInUp.delay(350).duration(800).springify().damping(12)}
-            style={{ paddingHorizontal: 16, marginBottom: 120 }}
+                        style={{ paddingHorizontal: 16, marginBottom: 120 }}
           >
             <Text style={{ color: '#EAEAEA', fontSize: 16, fontWeight: '600', marginBottom: 12 }}>
               Describe Your Edit
@@ -713,7 +716,7 @@ useEffect(() => {
       {/* Enhanced bottom action button */}
       <Animated.View 
         entering={FadeInUp.delay(500).duration(800).springify().damping(15)}
-        style={{ 
+                style={{ 
           position: 'absolute', 
           left: 16, 
           right: 16, 
@@ -884,5 +887,6 @@ useEffect(() => {
         </View>
       </BottomSheet>
     </KeyboardAvoidingView>
+    </Animated.View>
   );
 }

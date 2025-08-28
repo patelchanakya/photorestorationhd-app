@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, Linking, Image, Dimensions } from 'react-native';
 import Animated, { 
   useAnimatedStyle, 
   useSharedValue, 
@@ -10,16 +10,19 @@ import Animated, {
 import { OnboardingContainer } from './shared/OnboardingContainer';
 import { OnboardingButton } from './shared/OnboardingButton';
 import { ONBOARDING_COLORS, ONBOARDING_SPACING, ONBOARDING_TYPOGRAPHY } from './shared/constants';
+import { IconSymbol } from '../ui/IconSymbol';
 
 interface WelcomeScreenProps {
   onContinue: () => void;
 }
 
 export function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+  const isTablet = screenWidth > 768;
+  const imageHeight = Math.min(screenHeight * 0.4, isTablet ? 400 : 300);
+  
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(20);
-  const subtitleOpacity = useSharedValue(0);
-  const subtitleTranslateY = useSharedValue(20);
   const legalOpacity = useSharedValue(0);
   const buttonOpacity = useSharedValue(0);
   const buttonScale = useSharedValue(0.8);
@@ -29,23 +32,15 @@ export function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
     titleOpacity.value = withDelay(200, withTiming(1, { duration: 600 }));
     titleTranslateY.value = withDelay(200, withSpring(0, { damping: 15, stiffness: 200 }));
     
-    subtitleOpacity.value = withDelay(400, withTiming(1, { duration: 500 }));
-    subtitleTranslateY.value = withDelay(400, withSpring(0, { damping: 15, stiffness: 200 }));
+    legalOpacity.value = withDelay(400, withTiming(1, { duration: 400 }));
     
-    legalOpacity.value = withDelay(600, withTiming(1, { duration: 400 }));
-    
-    buttonOpacity.value = withDelay(800, withTiming(1, { duration: 400 }));
-    buttonScale.value = withDelay(800, withSpring(1, { damping: 15, stiffness: 200 }));
+    buttonOpacity.value = withDelay(600, withTiming(1, { duration: 400 }));
+    buttonScale.value = withDelay(600, withSpring(1, { damping: 15, stiffness: 200 }));
   }, []);
 
   const titleAnimatedStyle = useAnimatedStyle(() => ({
     opacity: titleOpacity.value,
     transform: [{ translateY: titleTranslateY.value }],
-  }));
-
-  const subtitleAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: subtitleOpacity.value,
-    transform: [{ translateY: subtitleTranslateY.value }],
   }));
 
   const legalAnimatedStyle = useAnimatedStyle(() => ({
@@ -58,105 +53,112 @@ export function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
   }));
 
   const openTerms = () => {
-    // Replace with your actual terms URL
-    Linking.openURL('https://your-app.com/terms');
+    Linking.openURL('http://apple.com/legal/internet-services/itunes/dev/stdeula/');
   };
 
   const openPrivacy = () => {
-    // Replace with your actual privacy URL  
-    Linking.openURL('https://your-app.com/privacy');
+    Linking.openURL('https://cleverapp.lovable.app/privacy-policy');
   };
 
   return (
     <OnboardingContainer>
       <View style={{ 
-        flex: 1, 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        paddingHorizontal: ONBOARDING_SPACING.xxl 
+        flex: 1,
+        paddingHorizontal: ONBOARDING_SPACING.xxl,
+        paddingBottom: ONBOARDING_SPACING.huge,
       }}>
-        {/* Main Content */}
-        <View style={{ alignItems: 'center', marginBottom: ONBOARDING_SPACING.massive * 1.5 }}>
-          {/* App Title */}
-          <Animated.View style={[
-            { alignItems: 'center', marginBottom: ONBOARDING_SPACING.xl }, 
-            titleAnimatedStyle
-          ]}>
+        {/* Spacer to position content */}
+        <View style={{ flex: 0.3 }} />
+
+        {/* Hero Image - top half */}
+        <View style={{ 
+          height: imageHeight,
+          width: screenWidth,
+          marginLeft: -ONBOARDING_SPACING.xxl,
+          marginRight: -ONBOARDING_SPACING.xxl,
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginBottom: ONBOARDING_SPACING.xl
+        }}>
+          <Image 
+            source={require('../../assets/images/onboarding/welcomescreen.png')}
+            style={{
+              width: screenWidth,
+              height: imageHeight,
+              resizeMode: 'cover',
+            }}
+          />
+        </View>
+
+        {/* Spacer to push title to lower third */}
+        <View style={{ flex: 1.2 }} />
+
+        {/* Title - positioned in lower third */}
+        <Animated.View style={[
+          { 
+            alignItems: 'flex-start',
+            marginBottom: ONBOARDING_SPACING.massive * 0.8
+          }, 
+          titleAnimatedStyle
+        ]}>
+          <View>
             <Text style={{ 
               fontSize: ONBOARDING_TYPOGRAPHY.giant, 
               fontWeight: ONBOARDING_TYPOGRAPHY.bold, 
               color: ONBOARDING_COLORS.textPrimary,
-              textAlign: 'center',
-              marginBottom: ONBOARDING_SPACING.sm,
+              textAlign: 'left',
+              lineHeight: 52,
             }}>
-              Welcome to Clever! ✨
+              Welcome to
             </Text>
-          </Animated.View>
-
-          {/* Subtitle */}
-          <Animated.View style={[{ alignItems: 'center' }, subtitleAnimatedStyle]}>
-            <Text style={{ 
-              fontSize: ONBOARDING_TYPOGRAPHY.xl, 
-              color: ONBOARDING_COLORS.textSecondary,
-              textAlign: 'center',
-              lineHeight: 28,
-              paddingHorizontal: ONBOARDING_SPACING.md,
-            }}>
-              Transform your photos with AI magic
-            </Text>
-          </Animated.View>
-        </View>
-
-        {/* Legal Text - Fixed inline layout */}
-        <Animated.View style={[{ marginBottom: ONBOARDING_SPACING.xxxl }, legalAnimatedStyle]}>
-          <View style={{ 
-            flexDirection: 'row', 
-            flexWrap: 'wrap', 
-            justifyContent: 'center',
-            paddingHorizontal: ONBOARDING_SPACING.xxxl,
-          }}>
-            <Text style={{ 
-              fontSize: ONBOARDING_TYPOGRAPHY.sm, 
-              color: ONBOARDING_COLORS.textDisabled,
-              textAlign: 'center',
-              lineHeight: 20,
-            }}>
-              By continuing, you agree to our{' '}
-            </Text>
-            <TouchableOpacity onPress={openTerms}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Text style={{ 
-                fontSize: ONBOARDING_TYPOGRAPHY.sm,
-                color: ONBOARDING_COLORS.accent, 
-                textDecorationLine: 'underline',
-                lineHeight: 20,
+                fontSize: ONBOARDING_TYPOGRAPHY.giant, 
+                fontWeight: ONBOARDING_TYPOGRAPHY.bold, 
+                color: ONBOARDING_COLORS.textPrimary,
+                textAlign: 'left',
               }}>
-                Terms of Service
+                Clever! 
               </Text>
-            </TouchableOpacity>
-            <Text style={{ 
-              fontSize: ONBOARDING_TYPOGRAPHY.sm, 
-              color: ONBOARDING_COLORS.textDisabled,
-              lineHeight: 20,
-            }}>
-              {' '}and{' '}
-            </Text>
-            <TouchableOpacity onPress={openPrivacy}>
-              <Text style={{ 
-                fontSize: ONBOARDING_TYPOGRAPHY.sm,
-                color: ONBOARDING_COLORS.accent, 
-                textDecorationLine: 'underline',
-                lineHeight: 20,
-              }}>
-                Privacy Policy
-              </Text>
-            </TouchableOpacity>
+              <IconSymbol 
+                name="wand.and.stars" 
+                size={32} 
+                color={ONBOARDING_COLORS.accent}
+                style={{ marginLeft: 4 }}
+              />
+            </View>
           </View>
         </Animated.View>
 
-        {/* Get Started Button */}
-        <Animated.View style={[{ width: '100%', maxWidth: 280 }, buttonAnimatedStyle]}>
+        {/* Legal Text - positioned above button */}
+        <Animated.View style={[{ marginBottom: ONBOARDING_SPACING.lg }, legalAnimatedStyle]}>
+          <Text style={{ 
+            fontSize: ONBOARDING_TYPOGRAPHY.sm, 
+            color: ONBOARDING_COLORS.textDisabled,
+            textAlign: 'left',
+            lineHeight: 20,
+          }}>
+            By continuing, you accept our{' '}
+            <Text 
+              style={{ color: ONBOARDING_COLORS.accent, textDecorationLine: 'underline' }}
+              onPress={openTerms}
+            >
+              Terms of Service
+            </Text>
+            {' '}and{' '}
+            <Text 
+              style={{ color: ONBOARDING_COLORS.accent, textDecorationLine: 'underline' }}
+              onPress={openPrivacy}
+            >
+              Privacy Policy
+            </Text>
+          </Text>
+        </Animated.View>
+
+        {/* Get Started Button - positioned at bottom */}
+        <Animated.View style={[{ width: '100%' }, buttonAnimatedStyle]}>
           <OnboardingButton
-            title="Get Started"
+            title="Get Started >"
             onPress={onContinue}
             variant="primary"
             size="large"

@@ -168,7 +168,7 @@ export function FeaturePreviewScreen({
             textAlign: 'center',
             marginBottom: 8,
           }}>
-            {selectedFeature.name}
+            {selectedFeatureId === 'custom_prompt' ? 'Photo Magic' : selectedFeature.name}
           </Text>
           <Text style={{ 
             fontSize: 16, 
@@ -176,7 +176,7 @@ export function FeaturePreviewScreen({
             textAlign: 'center',
             lineHeight: 22,
           }}>
-            {selectedFeature.description}
+            {selectedFeatureId === 'custom_prompt' ? 'Type what you want to edit and watch it happen' : selectedFeature.description}
           </Text>
         </Animated.View>
 
@@ -191,8 +191,8 @@ export function FeaturePreviewScreen({
           previewAnimatedStyle
         ]}>
           <View style={{
-            width: screenWidth - 48,
-            height: (screenWidth - 48) * 0.75,
+            width: selectedFeatureId === 'custom_prompt' ? screenWidth * 0.7 : screenWidth - 48,
+            aspectRatio: selectedFeatureId === 'custom_prompt' ? 9/16 : 4/3,
             borderRadius: 20,
             overflow: 'hidden',
             backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -202,35 +202,37 @@ export function FeaturePreviewScreen({
             <VideoView
               player={videoPlayer}
               style={{ flex: 1 }}
-              contentFit="cover"
+              contentFit={selectedFeatureId === 'custom_prompt' ? 'contain' : 'cover'}
               nativeControls={false}
               allowsFullscreen={false}
             />
             
-            {/* Play indicator overlay */}
-            <View style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: 'rgba(0, 0, 0, 0.3)',
-            }}>
+            {/* Play indicator overlay - only show for non-custom features */}
+            {selectedFeatureId !== 'custom_prompt' && (
               <View style={{
-                width: 60,
-                height: 60,
-                borderRadius: 30,
-                backgroundColor: 'rgba(250, 204, 21, 0.2)',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
                 alignItems: 'center',
                 justifyContent: 'center',
-                borderWidth: 2,
-                borderColor: '#FACC15',
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
               }}>
-                <IconSymbol name="play.fill" size={24} color="#FACC15" />
+                <View style={{
+                  width: 60,
+                  height: 60,
+                  borderRadius: 30,
+                  backgroundColor: 'rgba(250, 204, 21, 0.2)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderWidth: 2,
+                  borderColor: '#FACC15',
+                }}>
+                  <IconSymbol name="play.fill" size={24} color="#FACC15" />
+                </View>
               </View>
-            </View>
+            )}
           </View>
         </Animated.View>
 
@@ -268,6 +270,7 @@ export function FeaturePreviewScreen({
 // Map features to their preview videos
 function getPreviewVideo(featureId: string) {
   const videoMap: Record<string, any> = {
+    'custom_prompt': require('../../assets/videos/text-edit.mp4'),
     'fix_old_damaged': require('../../assets/videos/popular/clear-skin.mp4'),
     'add_color_bw': require('../../assets/videos/popular/smile.mp4'),
     'create_videos': require('../../assets/videos/magic/backtolife/thumbnail/btl-0.mp4'),

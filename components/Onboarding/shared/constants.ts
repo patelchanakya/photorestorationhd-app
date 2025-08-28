@@ -1,20 +1,20 @@
 // Onboarding Design System Constants
 
 export const ONBOARDING_COLORS = {
-  // Backgrounds
-  background: '#0F0F1A',
-  backgroundGradientStart: '#0F0F1A', 
-  backgroundGradientEnd: '#1A1B2E',
+  // Backgrounds  
+  background: '#000000',
+  backgroundGradientStart: '#000000', 
+  backgroundGradientEnd: '#000000',
   cardBackground: '#1A1B2E',
   cardBackgroundHover: '#252640',
   overlay: 'rgba(15, 15, 26, 0.95)',
 
   // Accents
-  accent: '#FACC15',
-  accentLight: '#FDE047', 
-  accentDark: '#EAB308',
-  accentBackground: 'rgba(250, 204, 21, 0.1)',
-  accentBackgroundSelected: 'rgba(250, 204, 21, 0.15)',
+  accent: '#F97316',
+  accentLight: '#FB923C', 
+  accentDark: '#EA580C',
+  accentBackground: 'rgba(249, 115, 22, 0.08)',
+  accentBackgroundSelected: 'rgba(249, 115, 22, 0.12)',
 
   // Text
   textPrimary: '#FFFFFF',
@@ -30,8 +30,8 @@ export const ONBOARDING_COLORS = {
 
   // Borders
   border: 'rgba(255, 255, 255, 0.1)',
-  borderActive: 'rgba(250, 204, 21, 0.3)',
-  borderSelected: 'rgba(250, 204, 21, 0.6)',
+  borderActive: 'rgba(249, 115, 22, 0.25)',
+  borderSelected: 'rgba(249, 115, 22, 0.5)',
 } as const;
 
 export const ONBOARDING_SPACING = {
@@ -97,9 +97,9 @@ export const ONBOARDING_SHADOWS = {
     elevation: 4,
   },
   accent: {
-    shadowColor: '#FACC15',
+    shadowColor: '#F97316',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 12,
     elevation: 6,
   },

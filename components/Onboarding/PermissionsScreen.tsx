@@ -117,74 +117,72 @@ export function PermissionsScreen({ onContinue }: PermissionsScreenProps) {
   return (
     <OnboardingContainer>
       <View style={{ 
-        flex: 1, 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        paddingHorizontal: ONBOARDING_SPACING.xxl 
+        flex: 1,
+        paddingHorizontal: ONBOARDING_SPACING.xxl,
+        paddingBottom: ONBOARDING_SPACING.huge,
       }}>
-        {/* Camera Icon */}
+        {/* Spacer to position content */}
+        <View style={{ flex: 0.3 }} />
+
+        {/* Hero Icon - top section */}
+        <View style={{ 
+          flex: 1.8,
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginBottom: ONBOARDING_SPACING.xl
+        }}>
+          <Animated.View style={iconAnimatedStyle}>
+            <Text style={{ fontSize: 140 }}>📸</Text>
+          </Animated.View>
+        </View>
+
+        {/* Spacer to push title to lower portion */}
+        <View style={{ flex: 0.4 }} />
+
+        {/* Title - positioned in lower portion */}
         <Animated.View style={[
           { 
-            width: 120, 
-            height: 120, 
-            borderRadius: 60, 
-            backgroundColor: ONBOARDING_COLORS.accentBackground,
-            alignItems: 'center', 
-            justifyContent: 'center',
-            marginBottom: ONBOARDING_SPACING.huge,
-            borderWidth: 2,
-            borderColor: ONBOARDING_COLORS.borderActive,
-            ...ONBOARDING_SHADOWS.accent,
+            alignItems: 'flex-start',
+            marginBottom: ONBOARDING_SPACING.lg
           }, 
-          iconAnimatedStyle
-        ]}>
-          <IconSymbol name="camera" size={60} color={ONBOARDING_COLORS.accent} />
-        </Animated.View>
-
-        {/* Title */}
-        <Animated.View style={[
-          { alignItems: 'center', marginBottom: ONBOARDING_SPACING.xl }, 
           titleAnimatedStyle
         ]}>
           <Text style={{ 
-            fontSize: ONBOARDING_TYPOGRAPHY.xxxl, 
+            fontSize: ONBOARDING_TYPOGRAPHY.giant, 
             fontWeight: ONBOARDING_TYPOGRAPHY.bold, 
             color: ONBOARDING_COLORS.textPrimary,
-            textAlign: 'center',
-            marginBottom: ONBOARDING_SPACING.sm,
+            textAlign: 'left',
+            lineHeight: 52,
           }}>
-            Let's get you started! 📸
+            Let's get you{'\n'}started!
           </Text>
         </Animated.View>
 
         {/* Body Text */}
         <Animated.View style={[
-          { alignItems: 'center', marginBottom: ONBOARDING_SPACING.lg }, 
+          { marginBottom: ONBOARDING_SPACING.lg }, 
           bodyAnimatedStyle
         ]}>
           <Text style={{ 
             fontSize: ONBOARDING_TYPOGRAPHY.lg, 
-            color: ONBOARDING_COLORS.textSecondary,
-            textAlign: 'center',
+            color: ONBOARDING_COLORS.textMuted,
+            textAlign: 'left',
             lineHeight: 26,
-            paddingHorizontal: ONBOARDING_SPACING.xl,
-            marginBottom: ONBOARDING_SPACING.md,
           }}>
-            To work our magic, Clever needs access to your photo library
+            Allow photo access to get the most out of Clever.
           </Text>
         </Animated.View>
 
         {/* Helper Note */}
         <Animated.View style={[
-          { alignItems: 'center', marginBottom: ONBOARDING_SPACING.massive * 1.25 }, 
+          { marginBottom: ONBOARDING_SPACING.lg }, 
           noteAnimatedStyle
         ]}>
           <Text style={{ 
             fontSize: ONBOARDING_TYPOGRAPHY.sm, 
             color: ONBOARDING_COLORS.textDisabled,
-            textAlign: 'center',
+            textAlign: 'left',
             lineHeight: 20,
-            paddingHorizontal: ONBOARDING_SPACING.xxxl,
             fontStyle: 'italic',
           }}>
             You can always change this in your device settings
@@ -192,7 +190,7 @@ export function PermissionsScreen({ onContinue }: PermissionsScreenProps) {
         </Animated.View>
 
         {/* Continue Button */}
-        <Animated.View style={[{ width: '100%', maxWidth: 280 }, buttonAnimatedStyle]}>
+        <Animated.View style={[{ width: '100%' }, buttonAnimatedStyle]}>
           <OnboardingButton
             title={isRequesting ? 'Requesting Access...' : 'Continue'}
             onPress={handleContinue}
