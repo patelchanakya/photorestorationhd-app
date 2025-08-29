@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Linking, Image, Dimensions } from 'react-native';
+import { View, Text, Linking, Image, Dimensions } from 'react-native';
 import Animated, { 
   useAnimatedStyle, 
   useSharedValue, 
@@ -11,6 +11,9 @@ import { OnboardingContainer } from './shared/OnboardingContainer';
 import { OnboardingButton } from './shared/OnboardingButton';
 import { ONBOARDING_COLORS, ONBOARDING_SPACING, ONBOARDING_TYPOGRAPHY } from './shared/constants';
 import { IconSymbol } from '../ui/IconSymbol';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { NetworkErrorModal } from '@/components/NetworkErrorModal';
+import * as ImagePicker from 'expo-image-picker';
 
 interface WelcomeScreenProps {
   onContinue: () => void;
@@ -20,6 +23,9 @@ export function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
   const isTablet = screenWidth > 768;
   const imageHeight = Math.min(screenHeight * 0.4, isTablet ? 400 : 300);
+  
+  const { hasReliableConnection, refreshNetworkStatus } = useNetworkStatus();
+  const [showNetworkModal, setShowNetworkModal] = React.useState(false);
   
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(20);
@@ -58,6 +64,75 @@ export function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
 
   const openPrivacy = () => {
     Linking.openURL('https://cleverapp.lovable.app/privacy-policy');
+  };
+
+  const handleGetStarted = async () => {
+    if (__DEV__) {
+      console.log('🚀 [WelcomeScreen] Get Started pressed - checking network and photo access...');
+    }
+    
+    // Check network connectivity before proceeding
+    const isConnected = hasReliableConnection();
+    
+    if (!isConnected) {
+      if (__DEV__) {
+        console.log('❌ [WelcomeScreen] No network connection - showing modal');
+      }
+      setShowNetworkModal(true);
+      return;
+    }
+    
+    // Request photo library permissions only
+    try {
+      if (__DEV__) {
+        console.log('📱 [WelcomeScreen] Requesting photo library permission...');
+      }
+      
+      const mediaPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (__DEV__) {
+        console.log('📱 [WelcomeScreen] Photo library permission result:', mediaPermission.status);
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.warn('⚠️ [WelcomeScreen] Photo permission request failed:', error);
+      }
+    }
+    
+    if (__DEV__) {
+      console.log('✅ [WelcomeScreen] Network and photo access OK - proceeding with onboarding');
+    }
+    
+    // Proceed with onboarding
+    onContinue();
+  };
+  
+  const handleNetworkRetry = async () => {
+    if (__DEV__) {
+      console.log('🔄 [WelcomeScreen] Retrying network check...');
+    }
+    
+    const isConnected = await refreshNetworkStatus();
+    
+    if (isConnected) {
+      if (__DEV__) {
+        console.log('✅ [WelcomeScreen] Network restored - closing modal and continuing');
+      }
+      setShowNetworkModal(false);
+      onContinue();
+    } else {
+      if (__DEV__) {
+        console.log('❌ [WelcomeScreen] Still no network connection');
+      }
+      // Modal stays open, user can try again or cancel
+    }
+  };
+  
+  const handleNetworkModalClose = () => {
+    if (__DEV__) {
+      console.log('✋ [WelcomeScreen] Network modal closed by user');
+    }
+    setShowNetworkModal(false);
   };
 
   return (
@@ -160,12 +235,20 @@ export function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
         <Animated.View style={[{ width: '100%' }, buttonAnimatedStyle]}>
           <OnboardingButton
             title="Get Started >"
-            onPress={onContinue}
+            onPress={handleGetStarted}
             variant="primary"
             size="large"
             style={{ width: '100%' }}
           />
         </Animated.View>
+        
+        {/* Network Error Modal */}
+        <NetworkErrorModal
+          visible={showNetworkModal}
+          onClose={handleNetworkModalClose}
+          onRetry={handleNetworkRetry}
+          message="You need an internet connection to continue. Please check your Wi-Fi or cellular data."
+        />
       </View>
     </OnboardingContainer>
   );

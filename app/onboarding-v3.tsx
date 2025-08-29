@@ -5,6 +5,8 @@ import { useQuickEditStore } from '@/store/quickEditStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { OnboardingProvider, useOnboardingContext } from '@/contexts/OnboardingContext';
 import { ONBOARDING_FEATURES } from '@/utils/onboarding';
+import { onboardingTrackingService } from '@/services/onboardingTracking';
+import { useOnboardingTracking } from '@/hooks/useOnboardingTracking';
 import { WelcomeScreen } from '@/components/Onboarding/WelcomeScreen';
 import { PermissionsScreen } from '@/components/Onboarding/PermissionsScreen';
 import { FeatureSelectionScreen } from '@/components/Onboarding/FeatureSelectionScreen';
@@ -56,7 +58,23 @@ const FEATURE_PROMPTS: Record<string, string> = {
 // Inner component that uses the context
 function OnboardingFlow() {
   const router = useRouter();
-  const { currentScreen, navigateToScreen, onboardingState, selectFeature, pickPhoto, setCustomPrompt } = useOnboardingContext();
+  const { 
+    currentScreen, 
+    navigateToScreen, 
+    onboardingState, 
+    selectFeature, 
+    pickPhoto, 
+    setCustomPrompt,
+    completeOnboarding
+  } = useOnboardingContext();
+  
+  const {
+    trackFeatureSelection,
+    trackCustomPromptUsage,
+    trackPhotoSelection,
+    trackStepSkip,
+    trackStepBack
+  } = useOnboardingTracking();
 
   // Screen handlers - now much simpler using context
   const handleWelcomeContinue = () => {
@@ -67,28 +85,48 @@ function OnboardingFlow() {
     navigateToScreen('features');
   };
 
-  const handleFeatureSelection = (featureId: string, customPrompt?: string) => {
+  const handleFeatureSelection = async (featureId: string, customPrompt?: string) => {
     // Store custom prompt in context if provided, or use predefined prompt for popular features
     const finalPrompt = customPrompt || FEATURE_PROMPTS[featureId];
     if (finalPrompt) {
       setCustomPrompt(finalPrompt);
+      
+      // Track custom prompt usage
+      if (customPrompt) {
+        await trackCustomPromptUsage(customPrompt);
+      }
     }
     
+    // Track feature selection
+    await trackFeatureSelection(featureId, {
+      hasCustomPrompt: !!customPrompt,
+      promptSource: customPrompt ? 'user_input' : 'predefined'
+    });
+    
     // Context handles both state update and navigation
-    selectFeature(featureId);
+    await selectFeature(featureId);
   };
 
-  const handlePreviewBack = () => {
-    navigateToScreen('features');
+  const handlePreviewBack = async () => {
+    await trackStepBack('preview', 'features');
+    await navigateToScreen('features');
   };
 
-  const handlePreviewSkip = () => {
-    navigateToScreen('community');
+  const handlePreviewSkip = async () => {
+    await trackStepSkip('preview', 'user_chose_to_skip_photo');
+    await navigateToScreen('community');
   };
 
-  const handlePickPhoto = (photo: { uri: string; width: number; height: number }) => {
+  const handlePickPhoto = async (photo: { uri: string; width: number; height: number }) => {
+    // Track photo selection
+    await trackPhotoSelection({
+      width: photo.width,
+      height: photo.height,
+      source: 'image_picker'
+    });
+    
     // Context handles both state update and navigation
-    pickPhoto(photo);
+    await pickPhoto(photo);
   };
 
   const handleCommunityContinue = () => {
@@ -101,8 +139,15 @@ function OnboardingFlow() {
         console.log('🎯 Onboarding setup complete, presenting paywall...');
       }
 
-      // Present paywall
+      // Present paywall and track conversion
       const purchased = await presentPaywall();
+      
+      if (purchased) {
+        await onboardingTrackingService.trackConversionEvent({
+          conversionType: 'subscription',
+          triggerFeature: onboardingState.selectedFeature || 'setup_complete'
+        });
+      }
 
       if (__DEV__) {
         console.log('💰 Paywall result:', purchased ? 'purchased' : 'dismissed');
@@ -124,8 +169,8 @@ function OnboardingFlow() {
       // Clear any old predictions to prevent recovery system from opening them
       await AsyncStorage.removeItem('activePredictionId');
       
-      // Mark onboarding as completed (you can add this later with backend integration)
-      // await onboardingUtils.completeOnboarding();
+      // Mark onboarding as completed with tracking
+      await completeOnboarding();
 
       if (__DEV__) {
         console.log('🚀 Navigating to explore screen...');
@@ -139,8 +184,13 @@ function OnboardingFlow() {
       // Navigate to explore
       router.replace('/explore');
 
-      // If user picked a photo, open Quick Edit Sheet with their photo and selected mode
+      // If user picked a photo, track first_edit conversion and open Quick Edit Sheet
       if (onboardingState.hasPickedPhoto && onboardingState.selectedPhoto && onboardingState.selectedFeature) {
+        // Track first edit conversion
+        await onboardingTrackingService.trackConversionEvent({
+          conversionType: 'first_edit',
+          triggerFeature: onboardingState.selectedFeature
+        });
         const mode = FEATURE_MODE_MAP[onboardingState.selectedFeature] || 'restoration';
         
         if (__DEV__) {

@@ -121,7 +121,7 @@ export default function PhotoMagicUploadScreen() {
             Photo Magic
           </Text>
           <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, fontWeight: '400', marginTop: 2 }}>
-            Just tell us what to change
+            Just tell it what to change
           </Text>
         </View>
         
