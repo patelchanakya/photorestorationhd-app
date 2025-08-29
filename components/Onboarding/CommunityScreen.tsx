@@ -345,8 +345,8 @@ function StatItem({ value, suffix, label, isDecimal = false, isCounting = false,
       
       <Animated.Text style={[
         { 
-          fontSize: isLarge ? 56 : 38, 
-          fontFamily: isCounting ? 'Lexend-Black' : 'Lexend-ExtraBold',
+          fontSize: isLarge ? 64 : 44, 
+          fontFamily: isCounting ? 'Lexend-SemiBold' : 'Lexend-SemiBold',
           color: isCounting ? '#FF6B35' : '#FFFFFF',
           marginBottom: isLarge ? 8 : 6,
           letterSpacing: -0.8,

@@ -31,7 +31,7 @@ const SETUP_STEPS: SetupStep[] = [
   },
   {
     id: 'models',
-    title: 'Preparing systems',
+    title: 'Loading systems',
     icon: 'brain.head.profile'
   },
   {
@@ -71,13 +71,15 @@ export function SetupAnimationScreen({ onComplete }: SetupAnimationScreenProps) 
 
   const startSetupSequence = () => {
     let stepIndex = 0;
+    const stepDurations = [2000, 1800, 2200]; // Varied times: 2s, 1.8s, 2.2s
     
     const processNextStep = () => {
       if (stepIndex < SETUP_STEPS.length) {
         setCurrentStep(stepIndex);
+        const duration = stepDurations[stepIndex] || 2000;
         stepIndex++;
-        // Each step takes 1.5 seconds
-        setTimeout(processNextStep, 1500);
+        // Each step takes varied time
+        setTimeout(processNextStep, duration);
       } else if (stepIndex === SETUP_STEPS.length) {
         // Mark all steps as completed by setting currentStep beyond the last index
         setCurrentStep(SETUP_STEPS.length);
@@ -119,20 +121,20 @@ export function SetupAnimationScreen({ onComplete }: SetupAnimationScreenProps) 
               titleAnimatedStyle
             ]}>
               <Text style={{ 
-                fontSize: 28, 
+                fontSize: 34, 
                 fontFamily: 'Lexend-Bold', 
                 color: '#FFFFFF',
                 textAlign: 'center',
                 marginBottom: 8,
               }}>
-                Setting up your creative studio...
+                Setting things up for you...
               </Text>
               <Text style={{ 
-                fontSize: 16, 
+                fontSize: 18, 
                 color: '#9CA3AF',
                 textAlign: 'center',
               }}>
-                This will only take a moment
+                This won't take long
               </Text>
             </Animated.View>
 
@@ -212,6 +214,8 @@ function SetupStepItem({ step, isActive, isCompleted, isUpcoming }: SetupStepIte
   const checkmarkOpacity = useSharedValue(0);
   const checkmarkScale = useSharedValue(0.5);
   const loadingRotation = useSharedValue(0);
+  const dotScale = useSharedValue(1);
+  const dotOpacity = useSharedValue(1);
 
   React.useEffect(() => {
     if (isActive) {
@@ -221,6 +225,23 @@ function SetupStepItem({ step, isActive, isCompleted, isUpcoming }: SetupStepIte
         withSequence(
           withTiming(1.1, { duration: 800 }),
           withTiming(1, { duration: 800 })
+        ),
+        -1,
+        true
+      );
+      // Pulsing dot animation
+      dotScale.value = withRepeat(
+        withSequence(
+          withTiming(1.5, { duration: 600 }),
+          withTiming(1, { duration: 600 })
+        ),
+        -1,
+        true
+      );
+      dotOpacity.value = withRepeat(
+        withSequence(
+          withTiming(0.6, { duration: 600 }),
+          withTiming(1, { duration: 600 })
         ),
         -1,
         true
@@ -249,6 +270,11 @@ function SetupStepItem({ step, isActive, isCompleted, isUpcoming }: SetupStepIte
   const checkmarkAnimatedStyle = useAnimatedStyle(() => ({
     opacity: checkmarkOpacity.value,
     transform: [{ scale: checkmarkScale.value }],
+  }));
+
+  const dotAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: dotOpacity.value,
+    transform: [{ scale: dotScale.value }],
   }));
 
   return (
@@ -352,12 +378,15 @@ function SetupStepItem({ step, isActive, isCompleted, isUpcoming }: SetupStepIte
       {/* Status indicator */}
       <View style={{ marginLeft: 8 }}>
         {isActive && (
-          <View style={{
-            width: 8,
-            height: 8,
-            borderRadius: 4,
-            backgroundColor: '#FACC15',
-          }} />
+          <Animated.View style={[
+            {
+              width: 8,
+              height: 8,
+              borderRadius: 4,
+              backgroundColor: '#FACC15',
+            },
+            dotAnimatedStyle
+          ]} />
         )}
         {isCompleted && (
           <IconSymbol name="checkmark.circle.fill" size={16} color="#10B981" />

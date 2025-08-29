@@ -5,8 +5,8 @@ export const ONBOARDING_COLORS = {
   background: '#000000',
   backgroundGradientStart: '#000000', 
   backgroundGradientEnd: '#000000',
-  cardBackground: '#1A1B2E',
-  cardBackgroundHover: '#252640',
+  cardBackground: '#000000',
+  cardBackgroundHover: '#111111',
   overlay: 'rgba(15, 15, 26, 0.95)',
 
   // Accents

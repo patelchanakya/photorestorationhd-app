@@ -352,6 +352,9 @@ export async function generatePhoto(
     case 'repair':
       return generateRepair(imageUri, customPrompt, userId);
     
+    case 'restore_repair':
+      return generateRestoration(imageUri, customPrompt, userId);
+    
     default:
       throw new Error(`Unsupported function type: ${functionType}`);
   }

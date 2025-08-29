@@ -22,7 +22,7 @@ type CardItem = {
 
 // Poster-style cards inspired by the provided reference
 const CARDS: CardItem[] = [
-  { id: 'fc_recreate', title: 'Recreate', subtitle: 'Let Clever recreate your image', functionType: 'repair', image: require('../assets/images/popular/enhance/pop-3.png') },
+  { id: 'fc_recreate', title: 'Recreate', subtitle: 'Let Clever recreate your image', functionType: 'repair', image: require('../assets/images/popular/recreate/pop-5.png') },
   { id: 'fc_enhance', title: 'Clarify', subtitle: 'Remove blur, sharpen details', functionType: 'unblur', image: require('../assets/images/popular/enhance/pop-3.png') },
   { id: 'fc_colorize', title: 'Colorize', subtitle: 'Add colors to B&W photos', functionType: 'colorize', image: require('../assets/images/popular/colorize/pop-1.png') },
   { id: 'fc_descratch', title: 'Descratch', subtitle: 'Remove scratches & marks', functionType: 'descratch', image: require('../assets/images/popular/descratch/pop-2.png') },
@@ -173,7 +173,7 @@ export function FeatureCardsList({
     });
     if (!result.canceled && result.assets[0]) {
       try {
-        useQuickEditStore.getState().openWithImage({ functionType, imageUri: result.assets[0].uri, styleKey: item.styleKey });
+        useQuickEditStore.getState().openWithImage({ functionType, imageUri: result.assets[0].uri, styleKey: item.styleKey, styleName: item.title });
       } catch {}
     }
   }, [onOpenBackgrounds, onOpenClothes, router]);

@@ -123,7 +123,6 @@ export function FeatureSelectionScreen({ onContinue }: FeatureSelectionScreenPro
           contentContainerStyle={{ 
             paddingTop: insets.top + 120, // Safe area + header height
             paddingBottom: 120, 
-            paddingHorizontal: ONBOARDING_SPACING.lg 
           }}
         />
 
@@ -141,7 +140,7 @@ export function FeatureSelectionScreen({ onContinue }: FeatureSelectionScreenPro
               paddingTop: insets.top + ONBOARDING_SPACING.xxxl, // Safe area + content padding
               paddingBottom: ONBOARDING_SPACING.lg,
               paddingHorizontal: ONBOARDING_SPACING.lg,
-              backgroundColor: 'rgba(0, 0, 0, 0.8)', // Black background
+              backgroundColor: 'rgba(0, 0, 0, 0.75)', // More opacity for text visibility
             }}>
               <Text style={{ 
                 fontSize: ONBOARDING_TYPOGRAPHY.huge, 
@@ -250,9 +249,7 @@ const FeatureCard = React.memo<FeatureCardProps>(({ feature, isSelected, onSelec
     return {
       opacity: opacity.value,
       transform: [{ translateY: translateY.value }, { scale: scale.value }],
-      backgroundColor: isSelected 
-        ? ONBOARDING_COLORS.accentBackground
-        : ONBOARDING_COLORS.cardBackground,
+      backgroundColor: ONBOARDING_COLORS.cardBackground,
     };
   });
 
@@ -278,20 +275,19 @@ const FeatureCard = React.memo<FeatureCardProps>(({ feature, isSelected, onSelec
       onPress={onSelect}
       activeOpacity={1}
       style={{ 
-        marginBottom: ONBOARDING_SPACING.xs, 
-        marginHorizontal: ONBOARDING_SPACING.xs,
-        shadowColor: isSelected ? ONBOARDING_COLORS.accent : '#000',
-        shadowOffset: { width: 0, height: isSelected ? 3 : 1 },
-        shadowOpacity: isSelected ? 0.2 : 0.05,
-        shadowRadius: isSelected ? 6 : 2,
-        elevation: isSelected ? 4 : 1,
+        marginBottom: 1, 
+        marginHorizontal: ONBOARDING_SPACING.lg,
       }}
     >
       <Animated.View 
         style={[
           {
             padding: ONBOARDING_SPACING.lg,
-            borderRadius: ONBOARDING_BORDER_RADIUS.xl,
+            borderBottomWidth: 1,
+            borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+            borderLeftWidth: isSelected ? 3 : 0,
+            borderLeftColor: isSelected ? ONBOARDING_COLORS.accent : 'transparent',
+            paddingLeft: isSelected ? ONBOARDING_SPACING.lg - 3 : ONBOARDING_SPACING.lg,
           },
           animatedStyle
         ]}
@@ -299,23 +295,17 @@ const FeatureCard = React.memo<FeatureCardProps>(({ feature, isSelected, onSelec
         {/* Main Content Row */}
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           {/* Icon */}
-          <Animated.View style={[{ 
-            width: 50, 
-            height: 50, 
-            borderRadius: 25,
-            backgroundColor: isSelected ? ONBOARDING_COLORS.accent : ONBOARDING_COLORS.cardBackgroundHover,
-            alignItems: 'center', 
-            justifyContent: 'center',
+          <View style={{
+            width: 40,
+            alignItems: 'center',
             marginRight: ONBOARDING_SPACING.lg
-          }, {
-            transform: [{ scale: isSelected ? 1.1 : 1 }]
-          }]}>
+          }}>
             <IconSymbol 
               name={feature.icon as any} 
               size={24} 
-              color={isSelected ? ONBOARDING_COLORS.background : ONBOARDING_COLORS.textMuted}
+              color={isSelected ? ONBOARDING_COLORS.accent : ONBOARDING_COLORS.textMuted}
             />
-          </Animated.View>
+          </View>
           
           {/* Text Content */}
           <View style={{ flex: 1 }}>
@@ -336,25 +326,20 @@ const FeatureCard = React.memo<FeatureCardProps>(({ feature, isSelected, onSelec
             </Text>
           </View>
           
-          {/* Selection Indicator - All cards */}
-          <Animated.View style={[{ 
-            width: 24, 
-            height: 24, 
-            borderRadius: 12,
-            backgroundColor: isSelected ? ONBOARDING_COLORS.accent : 'transparent',
-            borderWidth: 2,
-            borderColor: isSelected ? ONBOARDING_COLORS.accent : ONBOARDING_COLORS.border,
-            alignItems: 'center',
-            justifyContent: 'center',
+          {/* Selection Indicator - Always reserve space */}
+          <View style={{
             marginLeft: ONBOARDING_SPACING.sm,
-            transform: [{ scale: isSelected ? 1 : 0.8 }]
-          }]}>
+            width: 20,
+            alignItems: 'center'
+          }}>
             {isSelected && (
-              <Text style={{ color: ONBOARDING_COLORS.background, fontSize: 14, fontFamily: 'Lexend-Bold' }}>
-                ✓
-              </Text>
+              <IconSymbol 
+                name="checkmark" 
+                size={20} 
+                color={ONBOARDING_COLORS.accent}
+              />
             )}
-          </Animated.View>
+          </View>
         </View>
         
         {/* Expandable Custom Prompt Input */}
@@ -380,7 +365,7 @@ const FeatureCard = React.memo<FeatureCardProps>(({ feature, isSelected, onSelec
                 placeholder="What would you like to do with your photo?"
                 placeholderTextColor={ONBOARDING_COLORS.textMuted}
                 multiline
-                maxLength={200}
+                maxLength={150}
                 style={{
                   color: ONBOARDING_COLORS.textPrimary,
                   fontSize: ONBOARDING_TYPOGRAPHY.sm,
@@ -396,7 +381,7 @@ const FeatureCard = React.memo<FeatureCardProps>(({ feature, isSelected, onSelec
                 textAlign: 'right',
                 marginTop: ONBOARDING_SPACING.xs,
               }}>
-                {customPrompt.length}/200
+                {customPrompt.length}/150
               </Text>
             </View>
           </Animated.View>

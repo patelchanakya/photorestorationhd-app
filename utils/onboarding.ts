@@ -38,7 +38,17 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
     gradient: ['#8b5cf6', '#a78bfa']
   },
 
-  // Popular Creative Features (High-Click)
+  // Recreate Photos (Position 2)
+  {
+    id: 'recreate',
+    name: 'Recreate Photos',
+    description: 'Recreation while staying consistent with features',
+    icon: 'arrow.clockwise',
+    mapsTo: 'restoration',
+    gradient: ['#f97316', '#fb923c']
+  },
+
+  // Most Popular Features (Positions 3-6)
   {
     id: 'clear_skin',
     name: 'Clear Skin',
@@ -79,6 +89,34 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
     mapsTo: 'custom',
     gradient: ['#e879f9', '#f0abfc']
   },
+
+  // Magic Sections
+  {
+    id: 'restore_repair',
+    name: 'Repair Damaged Photos',
+    description: 'Fix tears, scratches, and damage in old photos',
+    icon: 'bandage',
+    mapsTo: 'restoration',
+    gradient: ['#10b981', '#34d399']
+  },
+  {
+    id: 'professional_outfit',
+    name: 'Professional Outfit',
+    description: 'Change to professional business attire',
+    icon: 'person.crop.square',
+    mapsTo: 'outfit',
+    gradient: ['#8b5cf6', '#a78bfa']
+  },
+  {
+    id: 'blur_background',
+    name: 'Blur Background',
+    description: 'Create professional blurred background effect',
+    icon: 'camera.aperture',
+    mapsTo: 'background',
+    gradient: ['#0ea5e9', '#38bdf8']
+  },
+
+  // Other Popular Creative Features
   {
     id: 'add_halo',
     name: 'Add Halo',
@@ -97,14 +135,6 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
   },
 
   // Core Repair & Enhance
-  {
-    id: 'fix_old_damaged',
-    name: 'Fix Old/Damaged Photos',
-    description: 'Repair cracks, tears, and age damage',
-    icon: 'wand.and.stars',
-    mapsTo: 'restoration',
-    gradient: ['#f97316', '#fb923c']
-  },
   {
     id: 'add_color_bw',
     name: 'Add Color to Black & White',

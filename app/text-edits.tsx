@@ -5,7 +5,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { BottomSheet } from '@/components/sheets/BottomSheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -44,9 +44,14 @@ export default function TextEditsScreen() {
   
   // Animation for loading spinner
   const spinValue = useSharedValue(0);
+  const buttonScale = useSharedValue(1);
   
   const spinStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${spinValue.value}deg` }],
+  }));
+
+  const buttonAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: buttonScale.value }],
   }));
   
 useEffect(() => {
@@ -115,19 +120,9 @@ useEffect(() => {
       });
     }
 
-    // Local loading UI with progress simulation
+    // Show loading UI
     setIsLoading(true);
-    setProgress(0);
     
-    // Start spinner animation
-    spinValue.value = withRepeat(withTiming(360, { duration: 1000 }), -1, false);
-    const start = Date.now();
-    const estMs = 10000;
-    const timer = setInterval(() => {
-      const elapsed = Date.now() - start;
-      const p = Math.min(95, Math.floor((elapsed / estMs) * 95));
-      setProgress(p);
-    }, 500);
     try {
       const result = await photoRestoration.mutateAsync({ imageUri: uri, functionType, imageSource: 'gallery', customPrompt: prompt });
       
@@ -138,14 +133,9 @@ useEffect(() => {
         console.log('📝 [TEXT-EDIT] Cleared context after successful completion');
       }
       
-      clearInterval(timer);
-      setProgress(100);
-      setTimeout(() => {
-        setIsLoading(false);
-        router.replace(`/restoration/${result.id}`);
-      }, 300);
+      setIsLoading(false);
+      router.replace(`/restoration/${result.id}`);
     } catch (err: any) {
-      clearInterval(timer);
       setIsLoading(false);
       
       // Clear text-edit context on error - recovery will handle this if needed
@@ -184,29 +174,33 @@ useEffect(() => {
     prefill?: string; // default text to prefill editor
   };
   const SUGGESTIONS: Suggestion[] = [
-    // Unique requests not in main screen Popular section
+    // Cleanup - Essential fixes for social media sharing
     { label: 'Remove watermark/logo', icon: 'square', category: 'Cleanup', template: 'Remove a watermark or logo cleanly while preserving surrounding details.' },
-    { label: 'Vintage look', icon: 'camera.filters', category: 'Style', template: 'Apply a subtle vintage film look with soft contrast and warm tones.' },
+    { label: 'Remove date stamp', icon: 'pencil.tip', category: 'Cleanup', template: 'Remove any date stamp or overlay text cleanly from the image.' },
+    { label: 'Fix red eyes', icon: 'eye.fill', category: 'Cleanup', template: 'Fix red-eye effect from camera flash, restoring natural eye color.' },
+    { label: 'Sharpen photo', icon: 'viewfinder', category: 'Cleanup', template: 'Enhance image sharpness and clarity, especially for blurry or soft photos.' },
+
+    // Looks - Portrait enhancements for social media
+    { label: 'Perfect selfie', icon: 'person.crop.circle.fill', category: 'Looks', template: 'Overall face enhancement for social media: smooth skin, brighten face, enhance features naturally.' },
     { label: 'Smooth skin', icon: 'sparkles', category: 'Looks', template: 'Gently smooth skin while preserving pores and details.' },
-    { label: 'Subtle makeup', icon: 'face.smiling', category: 'Looks', template: 'Apply very subtle, natural-looking makeup enhancement.' },
     { label: 'Whiten teeth', icon: 'mouth', category: 'Looks', template: 'Whiten teeth naturally without over-brightening.' },
-    { label: 'Brighten eyes', icon: 'eye', category: 'Looks', template: 'Slightly brighten the eyes and enhance clarity.' },
+    { label: 'Brighten smile', icon: 'face.smiling', category: 'Looks', template: 'Enhance smile and teeth brightness for a more confident look.' },
 
-    // Memorial
-    { label: 'Gentle memorial glow', icon: 'sun.max', category: 'Memorial', template: 'Add a soft, warm glow around the subject with light bloom for a memorial feel.' },
-    { label: 'Add doves', icon: 'bird', category: 'Memorial', template: 'Add a few soft white doves near the subject for a peaceful memorial touch.' },
-    { label: 'Memorial text ribbon', icon: 'bookmark', category: 'Memorial', template: 'Add a small memorial ribbon and tasteful memorial text in the corner.', opensEditor: true, prefill: 'In Loving Memory' },
-
-    // Creative
+    // Creative - Popular social media effects
     { label: 'Golden hour rays', icon: 'sun.max', category: 'Creative', template: 'Add gentle golden hour light rays from the side, keeping the subject natural.' },
+    { label: 'Add warm glow', icon: 'sun.min', category: 'Creative', template: 'Add a soft, warm Instagram-style glow around the subject for social media appeal.' },
     { label: 'Blur background', icon: 'circle.dashed', category: 'Creative', template: 'Add a subtle background blur effect, keeping the subject crisp.' },
+    { label: 'Add sunset colors', icon: 'sunset', category: 'Creative', template: 'Apply warm sunset color grading with golden and orange tones.' },
     { label: 'Butterflies', icon: 'leaf', category: 'Creative', template: 'Add a few colorful butterflies around the subject, keeping them subtle and tasteful.' },
     { label: 'Sparkles', icon: 'sparkles', category: 'Creative', template: 'Add a few soft sparkles around the subject without overpowering the scene.' },
+    { label: 'White background', icon: 'square.fill', category: 'Creative', template: 'Replace background with clean white background, perfect for professional photos and social media.' },
+    { label: 'Add soft focus', icon: 'camera.filters', category: 'Creative', template: 'Apply dreamy soft focus effect around the edges while keeping the subject sharp.' },
 
-    // Cleanup
-    { label: 'Remove date stamp', icon: 'pencil.tip', category: 'Cleanup', template: 'Remove any date stamp or overlay text cleanly from the image.' },
+    // Memorial - Respectful memorial enhancements
+    { label: 'Gentle memorial glow', icon: 'sun.max', category: 'Memorial', template: 'Add a soft, warm glow around the subject with light bloom for a memorial feel.' },
 
-    // Style
+    // Style - Artistic transformations
+    { label: 'Vintage look', icon: 'camera.filters', category: 'Style', template: 'Apply a subtle vintage film look with soft contrast and warm tones.' },
     { label: 'Oil painting, rich texture', icon: 'paintpalette', category: 'Style', template: 'Transform to oil painting with visible brushstrokes, thick paint texture, and rich color depth while preserving the original composition and object placement.' },
     { label: 'Pencil sketch, detailed', icon: 'pencil.tip', category: 'Style', template: 'Convert to pencil sketch with natural graphite lines, cross-hatching, and visible paper texture.' },
   ];
@@ -425,8 +419,6 @@ useEffect(() => {
           <View style={{
             width: 32,
             height: 32,
-            borderRadius: 16,
-            backgroundColor: 'rgba(255,255,255,0.1)',
             alignItems: 'center',
             justifyContent: 'center'
           }}>
@@ -437,7 +429,7 @@ useEffect(() => {
         <View style={{ alignItems: 'center' }}>
           <Text style={{ color: '#EAEAEA', fontSize: 22, fontFamily: 'Lexend-Black' }}>Photo Magic</Text>
           <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 2 }}>
-            AI-powered photo editing
+            Instant photo editing
           </Text>
         </View>
         
@@ -623,10 +615,10 @@ useEffect(() => {
             </BlurView>
             
             {/* Tips for custom editing */}
-            <View style={{ marginTop: 16, padding: 16, backgroundColor: 'rgba(34,197,94,0.1)', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(34,197,94,0.2)' }}>
+            <View style={{ marginTop: 16, padding: 16, backgroundColor: 'rgba(245,158,11,0.08)', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(245,158,11,0.15)' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                <IconSymbol name="lightbulb" size={16} color="#22c55e" />
-                <Text style={{ color: '#22c55e', fontSize: 14, fontFamily: 'Lexend-SemiBold', marginLeft: 8 }}>
+                <IconSymbol name="lightbulb" size={16} color="#F59E0B" />
+                <Text style={{ color: '#F59E0B', fontSize: 14, fontFamily: 'Lexend-SemiBold', marginLeft: 8 }}>
                   Tips for better results
                 </Text>
               </View>
@@ -647,69 +639,24 @@ useEffect(() => {
           entering={FadeInUp.duration(300)}
           style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', alignItems: 'center', justifyContent: 'center' }}
         >
-          <BlurView intensity={40} tint="dark" style={{ borderRadius: 24, overflow: 'hidden', minWidth: 280 }}>
-            <View style={{ 
-              paddingHorizontal: 32, 
-              paddingVertical: 24, 
-              backgroundColor: 'rgba(11,11,15,0.95)', 
-              borderWidth: 1, 
-              borderColor: 'rgba(245,158,11,0.3)', 
-              alignItems: 'center',
-              shadowColor: '#F59E0B',
-              shadowOffset: { width: 0, height: 8 },
-              shadowOpacity: 0.3,
-              shadowRadius: 16,
-            }}>
-              {/* Animated icon */}
-              <Animated.View style={[{ marginBottom: 16 }, spinStyle]}>
-                <View style={{ 
-                  width: 64, 
-                  height: 64, 
-                  borderRadius: 32, 
-                  backgroundColor: 'rgba(245,158,11,0.2)',
-                  borderWidth: 2,
-                  borderColor: '#F59E0B',
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                }}>
-                  <IconSymbol name="wand.and.stars" size={28} color="#F59E0B" />
-                </View>
-              </Animated.View>
-              
-              <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-Black', marginBottom: 8, textAlign: 'center' }}>
-                Applying Magic
-              </Text>
-              <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14, marginBottom: 20, textAlign: 'center', lineHeight: 20 }}>
-                Our AI is enhancing your photo with the selected edits
-              </Text>
-              
-              {/* Enhanced progress bar */}
-              <View style={{ alignSelf: 'stretch', marginBottom: 12 }}>
-                <View style={{ 
-                  height: 6, 
-                  borderRadius: 3, 
-                  backgroundColor: 'rgba(255,255,255,0.1)', 
-                  overflow: 'hidden' 
-                }}>
-                  <Animated.View style={{ 
-                    width: `${progress}%`, 
-                    height: '100%', 
-                    borderRadius: 3,
-                  }}>
-                    <LinearGradient
-                      colors={['#F59E0B', '#FBBF24', '#F59E0B']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      style={{ flex: 1 }}
-                    />
-                  </Animated.View>
-                </View>
-                <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 8, textAlign: 'center' }}>
-                  {progress}% complete • Usually takes 5-10 seconds
-                </Text>
-              </View>
-            </View>
-          </BlurView>
+          <View style={{ 
+            paddingHorizontal: 32, 
+            paddingVertical: 24, 
+            backgroundColor: 'rgba(11,11,15,0.95)', 
+            borderRadius: 24,
+            alignItems: 'center',
+            minWidth: 280,
+          }}>
+            {/* Simple loading indicator */}
+            <ActivityIndicator size="large" color="#F59E0B" style={{ marginBottom: 16 }} />
+            
+            <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-Black', marginBottom: 8, textAlign: 'center' }}>
+              Applying Magic
+            </Text>
+            <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14, textAlign: 'center', lineHeight: 20 }}>
+              Our AI is enhancing your photo with the selected edits
+            </Text>
+          </View>
         </Animated.View>
       )}
 
@@ -733,15 +680,26 @@ useEffect(() => {
                           (editMode === 'custom' && customPrompt.trim());
           
           return (
-            <TouchableOpacity 
-              onPress={handleProcessImage}
-              activeOpacity={canApply ? 0.8 : 1} 
-              disabled={!canApply}
-              style={{ 
-                height: 64, 
-                borderRadius: 24, 
-                overflow: 'hidden',
-                transform: [{ scale: canApply ? 1 : 0.98 }],
+            <Animated.View style={buttonAnimatedStyle}>
+              <TouchableOpacity 
+                onPress={handleProcessImage}
+                activeOpacity={1}
+                onPressIn={() => {
+                  if (canApply) {
+                    buttonScale.value = withTiming(0.95, { duration: 100 });
+                  }
+                }}
+                onPressOut={() => {
+                  if (canApply) {
+                    buttonScale.value = withTiming(1, { duration: 150 });
+                  }
+                }}
+                disabled={!canApply}
+                style={{ 
+                  height: 64, 
+                  borderRadius: 24, 
+                  overflow: 'hidden',
+                  transform: [{ scale: canApply ? 1 : 0.98 }],
                 shadowColor: canApply ? '#F59E0B' : 'transparent',
                 shadowOffset: { width: 0, height: canApply ? 8 : 0 },
                 shadowOpacity: canApply ? 0.4 : 0,
@@ -874,7 +832,8 @@ useEffect(() => {
                   </View>
                 </BlurView>
               )}
-            </TouchableOpacity>
+              </TouchableOpacity>
+            </Animated.View>
           );
         })()}
       </Animated.View>

@@ -29,6 +29,7 @@ export function QuickEditSheet() {
     stage,
     functionType,
     styleKey,
+    styleName,
     selectedImageUri,
     restoredId,
     restoredImageUri,
@@ -58,11 +59,18 @@ export function QuickEditSheet() {
     return 'Almost done…';
   };
   const modeTitle = React.useMemo(() => {
+    // Use styleName if available, otherwise fall back to functionType-based title
+    if (styleName) {
+      return styleName;
+    }
+    
     switch (functionType) {
       case 'restoration':
         return 'Restore';
       case 'repair':
         return 'Repair';
+      case 'restore_repair':
+        return 'Restore & Repair';
       case 'descratch':
         return 'Descratch';
       case 'unblur':
@@ -80,7 +88,7 @@ export function QuickEditSheet() {
       default:
         return 'Edit Photo';
     }
-  }, [functionType]);
+  }, [styleName, functionType]);
 
   const translateY = useSharedValue(0);
   const overlayOpacity = useSharedValue(0);
@@ -291,7 +299,7 @@ export function QuickEditSheet() {
         </Pressable>
         <Animated.View style={[{ paddingBottom: 0 }, sheetStyle]}>
           <View style={{ borderTopLeftRadius: 20, borderTopRightRadius: 20, overflow: 'hidden', backgroundColor: 'rgba(12,12,14,0.96)', borderTopWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}>
-            <View style={{ padding: 16, paddingBottom: Math.max(16, insets.bottom + 12) }}>
+            <View style={{ padding: 16, paddingBottom: Math.max(12, insets.bottom + 8) }}>
               {/* Header */}
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <TouchableOpacity onPress={handleClose} disabled={stage === 'loading'} hitSlop={{ top: 8, left: 8, bottom: 8, right: 8 }} style={{ padding: 4, opacity: stage === 'loading' ? 0.4 : 1 }}>
@@ -416,7 +424,7 @@ export function QuickEditSheet() {
                         {isUploading ? (
                           <ActivityIndicator color="#0B0B0F" />
                         ) : (
-                          <Text style={{ color: '#0B0B0F', fontWeight: '900', fontSize: 16 }}>Upload</Text>
+                          <Text style={{ color: '#0B0B0F', fontWeight: '900', fontSize: 16 }}>Create</Text>
                         )}
                       </View>
                     </TouchableOpacity>

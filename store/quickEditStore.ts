@@ -6,8 +6,9 @@ export type QuickStage = 'hidden' | 'select' | 'preview' | 'loading' | 'done' | 
 export interface QuickEditState {
   visible: boolean;
   stage: QuickStage;
-  functionType: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'background' | 'outfit' | 'custom' | null;
+  functionType: 'restoration' | 'repair' | 'restore_repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'background' | 'outfit' | 'custom' | null;
   styleKey?: string | null;
+  styleName?: string | null;
   selectedImageUri?: string | null;
   restoredId?: string | null;
   restoredImageUri?: string | null;
@@ -15,8 +16,8 @@ export interface QuickEditState {
   customPrompt?: string | null;
   errorMessage?: string | null;
   // Actions
-  open: (opts: { functionType: QuickEditState['functionType']; styleKey?: string | null; customPrompt?: string | null }) => void;
-  openWithImage: (opts: { functionType: QuickEditState['functionType']; imageUri: string; styleKey?: string | null; customPrompt?: string | null }) => void;
+  open: (opts: { functionType: QuickEditState['functionType']; styleKey?: string | null; styleName?: string | null; customPrompt?: string | null }) => void;
+  openWithImage: (opts: { functionType: QuickEditState['functionType']; imageUri: string; styleKey?: string | null; styleName?: string | null; customPrompt?: string | null }) => void;
   setSelectedImage: (uri: string | null) => void;
   setStage: (stage: QuickStage) => void;
   setProgress: (p: number) => void;
@@ -31,28 +32,31 @@ export const useQuickEditStore = create<QuickEditState>((set) => ({
   stage: 'hidden',
   functionType: null,
   styleKey: null,
+  styleName: null,
   selectedImageUri: null,
   restoredId: null,
   restoredImageUri: null,
   progress: 0,
   customPrompt: null,
   errorMessage: null,
-  open: ({ functionType, styleKey = null, customPrompt = null }) => set({
+  open: ({ functionType, styleKey = null, styleName = null, customPrompt = null }) => set({
     visible: true,
     stage: 'select',
     functionType,
     styleKey,
+    styleName,
     selectedImageUri: null,
     restoredId: null,
     restoredImageUri: null,
     progress: 0,
     customPrompt,
   }),
-  openWithImage: ({ functionType, imageUri, styleKey = null, customPrompt = null }) => set({
+  openWithImage: ({ functionType, imageUri, styleKey = null, styleName = null, customPrompt = null }) => set({
     visible: true,
     stage: 'preview',
     functionType,
     styleKey,
+    styleName,
     selectedImageUri: imageUri,
     restoredId: null,
     restoredImageUri: null,
@@ -66,7 +70,7 @@ export const useQuickEditStore = create<QuickEditState>((set) => ({
   setStyleKey: (key) => set({ styleKey: key }),
   setError: (message) => set({ errorMessage: message, stage: 'error', progress: 0 }),
   close: () => {
-    set({ visible: false, stage: 'hidden', functionType: null, selectedImageUri: null, restoredId: null, restoredImageUri: null, progress: 0, styleKey: null, errorMessage: null });
+    set({ visible: false, stage: 'hidden', functionType: null, selectedImageUri: null, restoredId: null, restoredImageUri: null, progress: 0, styleKey: null, styleName: null, errorMessage: null });
     // Clear any active prediction ID to prevent stale recovery
     AsyncStorage.removeItem('activePredictionId').catch(() => {});
     if (__DEV__) {

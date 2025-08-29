@@ -1,5 +1,4 @@
-import { checkSubscriptionStatus, presentPaywall, validatePremiumAccess } from '@/services/revenuecat';
-import { useRevenueCat } from '@/contexts/RevenueCatContext';
+// Removed Pro gating - all backgrounds are now free
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -143,27 +142,15 @@ const VideoViewWithPlayer = ({ video, isVisible = true }: { video: any; isVisibl
 
 export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { backgrounds?: BackgroundItem[] }) {
   const router = useRouter();
-  const { isPro } = useRevenueCat();
-
   const handleBackgroundSelect = async (background: BackgroundItem) => {
-    // Check current PRO status with fresh RevenueCat validation
-    const currentIsPro = await validatePremiumAccess();
-    
-    // If not PRO, show paywall
-    if (!currentIsPro) {
-      const success = await presentPaywall();
-      if (!success) return;
-      // Verify purchase with fresh RevenueCat validation
-      const updatedIsPro = await validatePremiumAccess();
-      if (!updatedIsPro) return;
-    }
+    // No Pro gating - all backgrounds are now free
     
     // Launch image picker then open Quick Edit sheet in background mode
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 1 });
     if (!result.canceled && result.assets[0]) {
       try {
         const { useQuickEditStore } = await import('@/store/quickEditStore');
-        useQuickEditStore.getState().openWithImage({ functionType: 'background' as any, imageUri: result.assets[0].uri, customPrompt: background.backgroundPrompt || background.title });
+        useQuickEditStore.getState().openWithImage({ functionType: 'background' as any, imageUri: result.assets[0].uri, styleName: background.title, customPrompt: background.backgroundPrompt || background.title });
       } catch {
         // fallback: existing flow
         router.push({ pathname: '/text-edits', params: { imageUri: result.assets[0].uri, prompt: background.backgroundPrompt || background.title, mode: 'background' } });
@@ -177,7 +164,7 @@ export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { bac
         horizontal 
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 16 }}
-        extraData={isPro}
+        // Removed extraData as Pro gating is removed
       >
         {backgrounds.map((item, index) => (
           <Animated.View
@@ -218,22 +205,8 @@ export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { bac
                 style={{ position: 'absolute', inset: 0 as any }}
               />
               
-              {/* Bottom label + PRO for non-pro users */}
+              {/* Bottom label - removed PRO badge */}
               <View style={{ position: 'absolute', left: 10, bottom: 10 }}>
-                {!isPro && (
-                  <View style={{ 
-                    backgroundColor: 'rgba(0,0,0,0.7)',
-                    borderRadius: 10,
-                    paddingHorizontal: 6,
-                    paddingVertical: 3,
-                    borderWidth: 0.5,
-                    borderColor: 'rgba(249,115,22,0.5)',
-                    alignSelf: 'flex-start',
-                    marginBottom: 4
-                  }}>
-                    <Text style={{ color: '#f97316', fontSize: 9, fontFamily: 'Lexend-SemiBold', letterSpacing: 0.3 }}>PRO</Text>
-                  </View>
-                )}
                 <Text style={{ 
                   color: '#FFFFFF', 
                   fontFamily: 'Lexend-SemiBold', 

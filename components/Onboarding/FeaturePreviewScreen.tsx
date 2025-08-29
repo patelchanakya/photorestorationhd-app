@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Alert, Dimensions } from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { Image as ExpoImage } from 'expo-image';
 import { ONBOARDING_FEATURES } from '@/utils/onboarding';
 import * as ImagePicker from 'expo-image-picker';
 import { VideoView, useVideoPlayer } from 'expo-video';
@@ -14,7 +15,7 @@ import Animated, {
 import { OnboardingContainer } from './shared/OnboardingContainer';
 import { OnboardingButton } from './shared/OnboardingButton';
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 interface FeaturePreviewScreenProps {
   selectedFeatureId: string;
@@ -38,13 +39,13 @@ export function FeaturePreviewScreen({
   const previewScale = useSharedValue(0.9);
   const buttonsOpacity = useSharedValue(0);
 
-  // Get preview video for the selected feature
-  const previewVideo = getPreviewVideo(selectedFeatureId);
-  const videoPlayer = useVideoPlayer(previewVideo, (player) => {
+  // Get preview media for the selected feature
+  const previewMedia = getPreviewMedia(selectedFeatureId);
+  const videoPlayer = previewMedia.type === 'video' ? useVideoPlayer(previewMedia.source, (player) => {
     player.loop = true;
     player.muted = true;
     player.play();
-  });
+  }) : null;
 
   React.useEffect(() => {
     // If "none_above" is selected, automatically skip to community screen
@@ -68,7 +69,7 @@ export function FeaturePreviewScreen({
     previewScale.value = withDelay(400, withSpring(1, { damping: 15, stiffness: 200 }));
     
     // Buttons animation
-    buttonsOpacity.value = withDelay(1000, withTiming(1, { duration: 400 }));
+    buttonsOpacity.value = withDelay(500, withTiming(1, { duration: 400 }));
   }, [selectedFeatureId, onSkip]);
 
   const headerAnimatedStyle = useAnimatedStyle(() => ({
@@ -135,8 +136,6 @@ export function FeaturePreviewScreen({
             onPress={onBack}
             style={{ 
               padding: 8, 
-              borderRadius: 20,
-              backgroundColor: 'rgba(255, 255, 255, 0.1)' 
             }}
           >
             <IconSymbol name="chevron.left" size={24} color="#FFFFFF" />
@@ -187,51 +186,34 @@ export function FeaturePreviewScreen({
             alignItems: 'center',
             justifyContent: 'center',
             paddingHorizontal: 24,
+            paddingVertical: 16,
           },
           previewAnimatedStyle
         ]}>
           <View style={{
-            width: selectedFeatureId === 'custom_prompt' ? screenWidth * 0.7 : screenWidth - 48,
-            aspectRatio: selectedFeatureId === 'custom_prompt' ? 9/16 : 4/3,
+            width: screenWidth * 0.6,
+            aspectRatio: 9/16,
+            maxWidth: 280,
             borderRadius: 20,
             overflow: 'hidden',
             backgroundColor: 'rgba(255, 255, 255, 0.05)',
             borderWidth: 1,
             borderColor: 'rgba(255, 255, 255, 0.1)',
           }}>
-            <VideoView
-              player={videoPlayer}
-              style={{ flex: 1 }}
-              contentFit={selectedFeatureId === 'custom_prompt' ? 'contain' : 'cover'}
-              nativeControls={false}
-              allowsFullscreen={false}
-            />
-            
-            {/* Play indicator overlay - only show for non-custom features */}
-            {selectedFeatureId !== 'custom_prompt' && (
-              <View style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: 'rgba(0, 0, 0, 0.3)',
-              }}>
-                <View style={{
-                  width: 60,
-                  height: 60,
-                  borderRadius: 30,
-                  backgroundColor: 'rgba(250, 204, 21, 0.2)',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderWidth: 2,
-                  borderColor: '#FACC15',
-                }}>
-                  <IconSymbol name="play.fill" size={24} color="#FACC15" />
-                </View>
-              </View>
+            {previewMedia.type === 'video' && videoPlayer ? (
+              <VideoView
+                player={videoPlayer}
+                style={{ flex: 1 }}
+                contentFit='cover'
+                nativeControls={false}
+                allowsFullscreen={false}
+              />
+            ) : (
+              <ExpoImage
+                source={previewMedia.source}
+                style={{ flex: 1 }}
+                contentFit='cover'
+              />
             )}
           </View>
         </Animated.View>
@@ -267,20 +249,39 @@ export function FeaturePreviewScreen({
   );
 }
 
-// Map features to their preview videos
-function getPreviewVideo(featureId: string) {
-  const videoMap: Record<string, any> = {
-    'custom_prompt': require('../../assets/videos/text-edit.mp4'),
-    'fix_old_damaged': require('../../assets/videos/popular/clear-skin.mp4'),
-    'add_color_bw': require('../../assets/videos/popular/smile.mp4'),
-    'create_videos': require('../../assets/videos/magic/backtolife/thumbnail/btl-0.mp4'),
-    'restore_old_memories': require('../../assets/videos/popular/angel.mp4'),
-    'change_outfits': require('../../assets/videos/magic/outfits/thumbnail/fix-clothes/niceclothes.mp4'),
-    'remove_backgrounds': require('../../assets/videos/magic/outfits/thumbnail/change-color/colorchange.mp4'),
-    'face_enhancement': require('../../assets/videos/popular/halo.mp4'),
-    'photo_upscaling': require('../../assets/videos/popular/slimmer.mp4'),
+// Map features to their preview media (video or image)
+interface PreviewMedia {
+  type: 'video' | 'image';
+  source: any;
+}
+
+function getPreviewMedia(featureId: string): PreviewMedia {
+  const mediaMap: Record<string, PreviewMedia> = {
+    // Custom prompt
+    'custom_prompt': { type: 'video', source: require('../../assets/videos/text-edit.mp4') },
+    
+    // Magic sections (top priority)
+    'recreate': { type: 'video', source: require('../../assets/videos/recreate.mp4') },
+    'restore_repair': { type: 'image', source: require('../../assets/images/popular/descratch/pop-2.png') },
+    'professional_outfit': { type: 'video', source: require('../../assets/videos/magic/outfits/thumbnail/formal-wear/professional.mp4') },
+    'blur_background': { type: 'image', source: require('../../assets/images/backgrounds/thumbnail/blur/blurred.jpeg') },
+    
+    // Popular creative features
+    'clear_skin': { type: 'video', source: require('../../assets/videos/popular/clear-skin.mp4') },
+    'add_smile': { type: 'video', source: require('../../assets/videos/popular/smile.mp4') },
+    'fix_hair': { type: 'video', source: require('../../assets/videos/popular/fix-hair.mp4') },
+    'make_younger': { type: 'video', source: require('../../assets/videos/popular/younger.mp4') },
+    'add_wings': { type: 'video', source: require('../../assets/videos/popular/angel.mp4') },
+    'add_halo': { type: 'video', source: require('../../assets/videos/popular/halo.mp4') },
+    'make_slimmer': { type: 'video', source: require('../../assets/videos/popular/slimmer.mp4') },
+    
+    // Core repair features
+    'add_color_bw': { type: 'image', source: require('../../assets/images/popular/colorize/pop-1.png') },
+    'unblur_sharpen': { type: 'image', source: require('../../assets/images/popular/enhance/pop-3.png') },
+    'brighten_photos': { type: 'image', source: require('../../assets/images/popular/brighten/pop-4.png') },
+    'beach_background': { type: 'image', source: require('../../assets/images/backgrounds/thumbnail/beach/beach.jpeg') },
   };
 
-  // Fallback to a default video if specific one doesn't exist
-  return videoMap[featureId] || require('../../assets/videos/magic/backtolife/thumbnail/btl-0.mp4');
+  // Fallback to default video
+  return mediaMap[featureId] || { type: 'video', source: require('../../assets/videos/magic/backtolife/thumbnail/btl-0.mp4') };
 }
