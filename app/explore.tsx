@@ -12,6 +12,7 @@ import { presentPaywall, validatePremiumAccess, restorePurchasesSecure } from '@
 import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
+import { analyticsService } from '@/services/analytics';
 import React, { useCallback } from 'react';
 import { Alert, Platform, ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -55,6 +56,14 @@ export default function HomeGalleryLikeScreen() {
   const overlayAnimationStyle = useAnimatedStyle(() => ({
     opacity: Platform.OS === 'ios' ? 0.08 * dropProgress.value : 0,
   }));
+
+  // Track screen view on mount
+  React.useEffect(() => {
+    analyticsService.trackScreenView('explore', {
+      is_tablet: isTabletLike ? 'true' : 'false',
+      is_pro: isPro ? 'true' : 'false'
+    });
+  }, [isTabletLike, isPro]);
 
   return (
     <Animated.View style={[{ flex: 1 }, screenAnimationStyle]}>

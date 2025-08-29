@@ -27,6 +27,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuickEditStore } from '@/store/quickEditStore';
+import * as Clarity from '@microsoft/react-native-clarity';
+import { clarityService } from '@/services/clarityService';
+import { analyticsService } from '@/services/analytics';
+import { Dimensions } from 'react-native';
 
 // Configure LogBox for production
 if (!__DEV__) {
@@ -341,9 +345,48 @@ export default function RootLayout() {
   useOnlineManager();
   useAppState(onAppStateChange);
 
-  // Configure RevenueCat immediately on app start - following official SDK docs pattern
+  // Configure RevenueCat and Clarity immediately on app start - following official SDK docs pattern
   useEffect(() => {
-    const initializeRevenueCat = async () => {
+    const initializeServices = async () => {
+      // Initialize Microsoft Clarity
+      try {
+        const isExpoGo = Constants.appOwnership === 'expo';
+        
+        if (!isExpoGo) {
+          await Clarity.initialize('t2eqsax833', {
+            logLevel: __DEV__ ? Clarity.LogLevel.Verbose : Clarity.LogLevel.None,
+          });
+          
+          if (__DEV__) {
+            console.log('✅ Microsoft Clarity initialized');
+          }
+        } else if (__DEV__) {
+          console.log('⚠️ Microsoft Clarity is not available in Expo Go');
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.error('❌ Microsoft Clarity initialization failed:', error);
+        }
+      }
+      
+      // Set initial app context for Clarity
+      try {
+        const { width } = Dimensions.get('window');
+        const version = Constants.expoConfig?.version || '1.0.0';
+        const deviceType = width > 768 ? 'tablet' : 'phone';
+        
+        clarityService.setAppContext(version, deviceType);
+        
+        if (__DEV__) {
+          console.log('✅ Clarity app context set:', { version, deviceType });
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.error('❌ Failed to set Clarity app context:', error);
+        }
+      }
+      
+      // Initialize RevenueCat
       try {
         const isExpoGo = Constants.appOwnership === 'expo';
         
@@ -410,7 +453,7 @@ export default function RootLayout() {
       }
     };
 
-    initializeRevenueCat();
+    initializeServices();
   }, []);
 
   // Check for active predictions on app launch

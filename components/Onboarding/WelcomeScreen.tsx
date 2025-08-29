@@ -14,6 +14,7 @@ import { IconSymbol } from '../ui/IconSymbol';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { NetworkErrorModal } from '@/components/NetworkErrorModal';
 import * as ImagePicker from 'expo-image-picker';
+import { analyticsService } from '@/services/analytics';
 
 interface WelcomeScreenProps {
   onContinue: () => void;
@@ -34,6 +35,12 @@ export function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
   const buttonScale = useSharedValue(0.8);
 
   React.useEffect(() => {
+    // Track screen view
+    analyticsService.trackScreenView('onboarding_welcome', {
+      onboarding_version: 'v3',
+      is_tablet: isTablet ? 'true' : 'false'
+    });
+    
     // Stagger the animations for a smooth entrance
     titleOpacity.value = withDelay(200, withTiming(1, { duration: 600 }));
     titleTranslateY.value = withDelay(200, withSpring(0, { damping: 15, stiffness: 200 }));
@@ -42,7 +49,7 @@ export function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
     
     buttonOpacity.value = withDelay(600, withTiming(1, { duration: 400 }));
     buttonScale.value = withDelay(600, withSpring(1, { damping: 15, stiffness: 200 }));
-  }, []);
+  }, [isTablet]);
 
   const titleAnimatedStyle = useAnimatedStyle(() => ({
     opacity: titleOpacity.value,
@@ -82,22 +89,6 @@ export function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
       return;
     }
     
-    // Request photo library permissions only
-    try {
-      if (__DEV__) {
-        console.log('📱 [WelcomeScreen] Requesting photo library permission...');
-      }
-      
-      const mediaPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
-      if (__DEV__) {
-        console.log('📱 [WelcomeScreen] Photo library permission result:', mediaPermission.status);
-      }
-    } catch (error) {
-      if (__DEV__) {
-        console.warn('⚠️ [WelcomeScreen] Photo permission request failed:', error);
-      }
-    }
     
     if (__DEV__) {
       console.log('✅ [WelcomeScreen] Network and photo access OK - proceeding with onboarding');

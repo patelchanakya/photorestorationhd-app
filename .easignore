@@ -1,0 +1,83 @@
+# Documentation and specs
+*.md
+ARCHITECTURE.md
+BILLING_CYCLE_TESTING.md
+CLAUDE.md
+GALLERY_BUTTON_ADDED.md
+IMPLEMENTATION_COMPLETE.md
+IMPLEMENTATION_SPEC.md
+IMPROVED_POLLING_FLOW.md
+IMPROVEMENTS.md
+MANUAL_RECOVERY_TESTING.md
+ONBOARDING_SPEC.md
+PERFORMANCE_TESTING_GUIDE.md
+PHOTO_VIDEO_LIMITS_SPEC.md
+PROJECT_WRITEUP.md
+REFACTORING_SPEC.md
+REVENUECAT_MIGRATION.md
+REVISED_STRATEGY.md
+SECURITY_IMPLEMENTATION.md
+SUBSCRIPTION_MIGRATION_ANALYSIS.md
+TANSTACK-REFACTOR-SUMMARY.md
+TEST-FLOW.md
+TEST_RESULTS.md
+VERIFICATION_SWEEP_RESULTS.md
+VIDEO_FEATURE_SPEC.md
+VIDEO_GALLERY_FIX.md
+VIDEO_GENERATION_ANALYSIS.md
+VIDEO_GENERATION_FIX.md
+VIDEO_IMPLEMENTATION_CHECKLIST.md
+VIDEO_IMPLEMENTATION_PLAN.md
+VIDEO_TESTING_GUIDE.md
+
+# Test files and directories
+__tests__/
+*.test.*
+*.spec.*
+
+# Build artifacts
+build-*.ipa
+dist/
+coverage/
+
+# Documentation directories
+docs/
+
+# Scripts and utilities
+scripts/
+*.sh
+*.js.map
+
+# Text files
+*.txt
+translations.md
+
+# Backup files
+*_backup.*
+onboarding_backup/
+
+# Development helper files
+commands.md
+helpful_details.txt
+apple_reply.txt
+apple_review_reply.txt
+nomination_description.txt
+subscription_localizations.txt
+test-*.md
+*.sql
+
+# Large video files (keep only essential ones)
+# Uncomment if you want to exclude some videos
+# assets/videos/magic/
+# assets/videos/popular/
+
+# Supabase local files (not needed for builds)
+supabase/config.toml
+
+# Cache and temp files
+.expo/
+.vscode/
+.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

@@ -15,6 +15,7 @@ import Animated, {
 import { OnboardingContainer } from './shared/OnboardingContainer';
 import { OnboardingButton } from './shared/OnboardingButton';
 import { ONBOARDING_COLORS, ONBOARDING_SPACING, ONBOARDING_TYPOGRAPHY, ONBOARDING_SHADOWS } from './shared/constants';
+import { analyticsService } from '@/services/analytics';
 
 interface PermissionsScreenProps {
   onContinue: () => void;
@@ -33,6 +34,11 @@ export function PermissionsScreen({ onContinue }: PermissionsScreenProps) {
   const buttonOpacity = useSharedValue(0);
 
   React.useEffect(() => {
+    // Track screen view
+    analyticsService.trackScreenView('onboarding_permissions', {
+      onboarding_version: 'v3'
+    });
+    
     // Icon bounce animation
     iconOpacity.value = withDelay(100, withTiming(1, { duration: 300 }));
     iconScale.value = withDelay(100, withSequence(

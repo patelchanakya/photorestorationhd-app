@@ -66,9 +66,8 @@ class PermissionsService {
           this.permissions.mediaLibrary = 'granted';
           if (__DEV__) console.log('📱 Media library already granted');
         } else {
-          const request = await ImagePicker.requestMediaLibraryPermissionsAsync();
-          this.permissions.mediaLibrary = request.status as PermissionStatus;
-          if (__DEV__) console.log('📱 Media library permission requested:', request.status);
+          this.permissions.mediaLibrary = existing.status as PermissionStatus;
+          if (__DEV__) console.log('📱 Media library permission checked (not requested):', existing.status);
         }
       } catch (error) {
         if (__DEV__) {

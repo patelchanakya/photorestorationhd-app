@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import Constants from 'expo-constants';
 import Purchases, { CustomerInfo } from 'react-native-purchases';
 import { analyticsService } from '@/services/analytics';
+import { getOrCreateCustomUserId } from '@/services/trackingIds';
 
 interface RevenueCatContextValue {
   customerInfo: CustomerInfo | null;
@@ -62,6 +63,29 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
       const info = await Purchases.getCustomerInfo();
       setCustomerInfo(info);
+
+      // Set user context for analytics
+      try {
+        const deviceId = await getOrCreateCustomUserId();
+        const subscriptionStatus = Object.keys(info.entitlements.active).length > 0 ? 'pro' : 'free';
+        
+        analyticsService.setUserContext(
+          info.originalAppUserId || deviceId,
+          subscriptionStatus,
+          false // We'll determine if it's a new user elsewhere
+        );
+        
+        if (__DEV__) {
+          console.log('✅ User context set for analytics:', {
+            userId: info.originalAppUserId || deviceId,
+            subscriptionStatus
+          });
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.error('❌ Failed to set user context:', error);
+        }
+      }
 
       if (__DEV__) {
         console.log('📊 Customer info refreshed:', {

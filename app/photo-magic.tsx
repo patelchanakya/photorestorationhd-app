@@ -5,6 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import React, { useState } from 'react';
+import { analyticsService } from '@/services/analytics';
 import { Alert, ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -19,6 +20,13 @@ export default function PhotoMagicUploadScreen() {
     player.muted = true;
     player.play();
   });
+
+  // Track screen view on mount
+  React.useEffect(() => {
+    analyticsService.trackScreenView('photo_magic', {
+      is_tablet: width > 768 ? 'true' : 'false'
+    });
+  }, [width]);
 
   const pickImage = async () => {
     if (isSelecting) return;
