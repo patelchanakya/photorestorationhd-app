@@ -134,17 +134,11 @@ serve(async (req) => {
 
     console.log('🔧 Starting photo restoration with webhooks...')
 
-    // Build prompt for restoration
-    const prompt = custom_prompt || "repair and restore this damaged photo, fix tears, scratches, stains, and imperfections while preserving all original details and facial features"
-
-    // Build input for photo restoration using kontext-pro model
+    // Build input for photo restoration using restore-image model (no prompts)
     const input = {
-      prompt,
       input_image: `data:image/jpeg;base64,${image_data}`,
       output_format: "png",
-      aspect_ratio: "match_input_image",
-      safety_tolerance: 0,
-      prompt_upsampling: true
+      safety_tolerance: 0
     }
 
     // Construct webhook URL
@@ -154,7 +148,7 @@ serve(async (req) => {
 
     // Create prediction with webhook - EXACT same format as client-side code
     const prediction = await replicate.predictions.create({
-      model: "black-forest-labs/flux-kontext-pro",
+      model: "flux-kontext-apps/restore-image",
       input,
       webhook: webhookUrl,
       webhook_events_filter: ["completed"] // Only notify when done
@@ -168,11 +162,10 @@ serve(async (req) => {
       .insert({
         id: prediction.id,
         user_id: user_id || null,
-        mode: 'repair',
+        mode: 'restoration',
         status: prediction.status || 'starting',
         input: {
-          prompt,
-          has_custom_prompt: !!custom_prompt
+          // Restoration uses restore-image model (no prompts)
         }
       })
 

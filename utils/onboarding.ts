@@ -92,6 +92,14 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
 
   // Magic Sections
   {
+    id: 'water_stain_damage',
+    name: 'Water/Stain Damage',
+    description: 'Remove water damage, stains, and discoloration',
+    icon: 'drop',
+    mapsTo: 'restoration',
+    gradient: ['#0ea5e9', '#3b82f6']
+  },
+  {
     id: 'restore_repair',
     name: 'Restore & Repair',
     description: 'Fix tears, scratches, and damage in old photos',

@@ -8,14 +8,11 @@ export type FunctionType = 'restoration' | 'repair' | 'unblur' | 'colorize' | 'd
 
 export const MODEL_CONFIGS: Record<FunctionType, ModelConfig> = {
   restoration: {
-    model: "black-forest-labs/flux-kontext-pro",
-    buildInput: (base64: string, customPrompt?: string) => ({
-      prompt: "repair and restore this damaged photo, fix tears, scratches, stains, and imperfections while preserving all facial features",
+    model: "flux-kontext-apps/restore-image",
+    buildInput: (base64: string) => ({
       input_image: `data:image/jpeg;base64,${base64}`,
       output_format: "png",
-      aspect_ratio: "match_input_image",
-      safety_tolerance: 0,
-      prompt_upsampling: true
+      safety_tolerance: 0
     })
   },
   repair: {
@@ -104,14 +101,11 @@ export const MODEL_CONFIGS: Record<FunctionType, ModelConfig> = {
     })
   },
   restore_repair: {
-    model: "black-forest-labs/flux-kontext-pro",
-    buildInput: (base64: string, customPrompt?: string) => ({
-      prompt: "Repair damage and restore the photograph to its original quality. Fill in dark or obscured areas naturally, while preserving facial features and overall authenticity.",
+    model: "flux-kontext-apps/restore-image",
+    buildInput: (base64: string) => ({
       input_image: `data:image/jpeg;base64,${base64}`,
       output_format: "png",
-      aspect_ratio: "match_input_image",
-      safety_tolerance: 6,
-      prompt_upsampling: true
+      safety_tolerance: 0
     })
   }
 };

@@ -30,6 +30,7 @@ const FEATURE_MODE_MAP: Record<string, string> = {
   
   // Main Features
   'recreate': 'restoration',
+  'water_stain_damage': 'restoration',
   'restore_repair': 'restore_repair',
   'professional_outfit': 'outfit',
   'blur_background': 'background',

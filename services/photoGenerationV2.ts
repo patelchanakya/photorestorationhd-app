@@ -244,7 +244,7 @@ export async function generateEnhance(
   });
 }
 
-// Restoration generation (uses kontext-pro model)
+// Restoration generation (uses restore-image model)
 export async function generateRestoration(
   imageUri: string,
   customPrompt?: string,

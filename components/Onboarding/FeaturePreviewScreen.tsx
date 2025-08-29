@@ -262,6 +262,7 @@ function getPreviewMedia(featureId: string): PreviewMedia {
     
     // Magic sections (top priority)
     'recreate': { type: 'video', source: require('../../assets/videos/recreate.mp4') },
+    'water_stain_damage': { type: 'image', source: require('../../assets/images/popular/descratch/pop-2.png') },
     'restore_repair': { type: 'image', source: require('../../assets/images/popular/descratch/pop-2.png') },
     'professional_outfit': { type: 'video', source: require('../../assets/videos/magic/outfits/thumbnail/formal-wear/professional.mp4') },
     'blur_background': { type: 'image', source: require('../../assets/images/backgrounds/thumbnail/blur/blurred.jpeg') },
