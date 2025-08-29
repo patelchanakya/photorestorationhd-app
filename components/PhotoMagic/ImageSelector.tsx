@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import React from 'react';
 import { Alert, Text, TouchableOpacity, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, withRepeat, interpolate } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 
 interface ImageSelectorProps {
   selectedImage?: string;
@@ -17,25 +17,6 @@ interface ImageSelectorProps {
 export function ImageSelector({ selectedImage, onImageSelected, disabled = false, showReadyIndicator = false }: ImageSelectorProps) {
   const scale = useSharedValue(1);
   const borderOpacity = useSharedValue(0.12);
-  const pulseScale = useSharedValue(1);
-
-  React.useEffect(() => {
-    if (selectedImage) {
-      pulseScale.value = withRepeat(
-        withTiming(1.3, { duration: 1000 }),
-        -1,
-        true
-      );
-    } else {
-      // Reset when no image
-      pulseScale.value = 1;
-    }
-    
-    return () => {
-      // Cleanup animation on unmount
-      pulseScale.value = 1;
-    };
-  }, [selectedImage, pulseScale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -43,11 +24,6 @@ export function ImageSelector({ selectedImage, onImageSelected, disabled = false
 
   const borderAnimatedStyle = useAnimatedStyle(() => ({
     borderColor: `rgba(255,255,255,${borderOpacity.value})`,
-  }));
-
-  const pulseAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pulseScale.value }],
-    opacity: interpolate(pulseScale.value, [1, 1.3], [0.6, 0.1]),
   }));
 
   const handlePressIn = () => {
@@ -174,52 +150,6 @@ export function ImageSelector({ selectedImage, onImageSelected, disabled = false
                   </BlurView>
                 </View>
 
-                {/* Pulsing Ready indicator */}
-                <View style={{ 
-                  position: 'absolute', 
-                  top: 12, 
-                  left: 12,
-                  zIndex: 10,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  width: 80,
-                }}>
-                  {/* Dot container */}
-                  <View style={{ width: 16, height: 16, position: 'relative' }}>
-                    {/* Pulsing outer ring */}
-                    <Animated.View style={[
-                      pulseAnimatedStyle,
-                      {
-                        position: 'absolute',
-                        width: 16,
-                        height: 16,
-                        borderRadius: 8,
-                        backgroundColor: '#22c55e',
-                      }
-                    ]} />
-                    
-                    {/* Main dot */}
-                    <View style={{ 
-                      position: 'absolute',
-                      width: 8, 
-                      height: 8, 
-                      borderRadius: 4, 
-                      backgroundColor: '#22c55e',
-                      top: 4,
-                      left: 4,
-                    }} />
-                  </View>
-                  
-                  {/* Text label */}
-                  <Text style={{ 
-                    marginLeft: 6,
-                    color: '#22c55e', 
-                    fontSize: 10, 
-                    fontFamily: 'Lexend-Bold'
-                  }}>
-                    Ready
-                  </Text>
-                </View>
               </View>
             ) : (
               // Empty state with drag-drop styling

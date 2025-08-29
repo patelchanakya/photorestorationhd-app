@@ -41,7 +41,7 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
   // Recreate Photos (Position 2)
   {
     id: 'recreate',
-    name: 'Recreate Photos',
+    name: 'Recreate',
     description: 'Recreation while staying consistent with features',
     icon: 'arrow.clockwise',
     mapsTo: 'restoration',
@@ -93,7 +93,7 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
   // Magic Sections
   {
     id: 'restore_repair',
-    name: 'Repair Damaged Photos',
+    name: 'Restore & Repair',
     description: 'Fix tears, scratches, and damage in old photos',
     icon: 'bandage',
     mapsTo: 'restoration',
@@ -137,7 +137,7 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
   // Core Repair & Enhance
   {
     id: 'add_color_bw',
-    name: 'Add Color to Black & White',
+    name: 'Colorize',
     description: 'Bring old B&W photos to life with realistic color',
     icon: 'paintbrush',
     mapsTo: 'colorize',
@@ -145,7 +145,7 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
   },
   {
     id: 'unblur_sharpen',
-    name: 'Unblur & Sharpen',
+    name: 'Clarify',
     description: 'Make blurry photos crystal clear',
     icon: 'eye',
     mapsTo: 'unblur',
@@ -153,7 +153,7 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
   },
   {
     id: 'brighten_photos',
-    name: 'Brighten Dark Photos',
+    name: 'Brighten',
     description: 'Illuminate underexposed images',
     icon: 'sun.max.fill',
     mapsTo: 'enlighten',

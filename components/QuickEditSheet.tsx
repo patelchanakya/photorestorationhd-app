@@ -409,7 +409,7 @@ export function QuickEditSheet() {
               {/* Actions */}
               <View style={{ marginTop: 16, marginBottom: 16, flexDirection: 'row', gap: 12, alignItems: 'center' }}>
                 {stage === 'select' && (
-                  <TouchableOpacity onPress={handlePick} style={{ flex: 1, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
+                  <TouchableOpacity onPress={handlePick} style={{ flex: 1, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
                     <Text style={{ color: '#fff', fontFamily: 'Lexend-SemiBold' }}>Select Photo</Text>
                   </TouchableOpacity>
                 )}
@@ -418,7 +418,7 @@ export function QuickEditSheet() {
                     <TouchableOpacity onPress={handleCrop} style={{ paddingHorizontal: 22, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' }}>
                       <Text style={{ color: '#fff', fontWeight: '900', fontSize: 16 }}>Crop</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={handleUpload} disabled={isUploading} style={{ flex: 1, height: 56, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', opacity: isUploading ? 0.7 : 1 }}>
+                    <TouchableOpacity onPress={handleUpload} disabled={isUploading} style={{ flex: 1, height: 56, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', opacity: isUploading ? 0.7 : 1, minWidth: 120, marginLeft: 0 }}>
                       <LinearGradient colors={['#F59E0B', '#F59E0B']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
                       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                         {isUploading ? (
@@ -435,7 +435,7 @@ export function QuickEditSheet() {
                     <TouchableOpacity onPress={() => setIsCropping(false)} style={{ paddingHorizontal: 18, height: 46, borderRadius: 23, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' }}>
                       <Text style={{ color: '#fff', fontFamily: 'Lexend-SemiBold' }}>Cancel</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => { /* Save already applied in onEditingComplete; just exit crop */ setIsCropping(false); }} style={{ flex: 1, height: 56, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' }}>
+                    <TouchableOpacity onPress={() => { /* Save already applied in onEditingComplete; just exit crop */ setIsCropping(false); }} style={{ flex: 1, height: 56, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', minWidth: 120 }}>
                       <LinearGradient colors={['#F59E0B', '#F59E0B']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
                       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                         <Text style={{ color: '#0B0B0F', fontWeight: '900', fontSize: 16 }}>Done</Text>
@@ -448,7 +448,7 @@ export function QuickEditSheet() {
                     <TouchableOpacity onPress={() => setStage('preview')} style={{ paddingHorizontal: 22, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' }}>
                       <Text style={{ color: '#fff', fontFamily: 'Lexend-SemiBold' }}>Back</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={handleUpload} disabled={isUploading} style={{ flex: 1, height: 56, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', opacity: isUploading ? 0.7 : 1 }}>
+                    <TouchableOpacity onPress={handleUpload} disabled={isUploading} style={{ flex: 1, height: 56, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', opacity: isUploading ? 0.7 : 1, minWidth: 120 }}>
                       <LinearGradient colors={['#F59E0B', '#F59E0B']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
                       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                         {isUploading ? (
@@ -488,7 +488,7 @@ export function QuickEditSheet() {
                         )}
                       </TouchableOpacity>
                     </Animated.View>
-                    <TouchableOpacity onPress={handleView} style={{ flex: 1, height: 56, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' }}>
+                    <TouchableOpacity onPress={handleView} style={{ flex: 1, height: 56, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', minWidth: 120 }}>
                       <LinearGradient colors={['#F59E0B', '#F59E0B']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
                       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                         <Text style={{ color: '#0B0B0F', fontWeight: '900', fontSize: 16 }}>View</Text>

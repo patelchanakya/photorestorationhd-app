@@ -2,6 +2,7 @@ import React from 'react';
 import { useRouter } from 'expo-router';
 import { presentPaywall } from '@/services/revenuecat';
 import { useQuickEditStore } from '@/store/quickEditStore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { OnboardingProvider, useOnboardingContext } from '@/contexts/OnboardingContext';
 import { ONBOARDING_FEATURES } from '@/utils/onboarding';
 import { WelcomeScreen } from '@/components/Onboarding/WelcomeScreen';
@@ -24,6 +25,12 @@ const FEATURE_MODE_MAP: Record<string, string> = {
   'add_wings': 'custom',
   'add_halo': 'custom',
   'make_slimmer': 'custom',
+  
+  // Main Features
+  'recreate': 'restoration',
+  'restore_repair': 'restore_repair',
+  'professional_outfit': 'outfit',
+  'blur_background': 'background',
   
   // Core Repair & Enhance
   'fix_old_damaged': 'restoration',
@@ -114,6 +121,9 @@ function OnboardingFlow() {
 
   const navigateToExplore = async () => {
     try {
+      // Clear any old predictions to prevent recovery system from opening them
+      await AsyncStorage.removeItem('activePredictionId');
+      
       // Mark onboarding as completed (you can add this later with backend integration)
       // await onboardingUtils.completeOnboarding();
 
@@ -150,6 +160,7 @@ function OnboardingFlow() {
             functionType: mode as any,
             imageUri: onboardingState.selectedPhoto!.uri,
             styleKey,
+            styleName: onboardingState.selectedFeature === 'custom_prompt' ? 'Photo Magic' : feature?.name,
             customPrompt: onboardingState.customPrompt || undefined
           });
         }, 500);

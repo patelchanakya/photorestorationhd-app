@@ -29,10 +29,10 @@ const DEFAULT_POPULAR_ITEMS: PopularItem[] = [
   },
   { 
     id: 'popular-2', 
-    title: 'Angel Wings', 
+    title: 'Add Halo', 
     type: 'video', 
-    video: require('../assets/videos/popular/angel.mp4'), 
-    prompt: "Add realistic wings that match pose, background, and lighting." 
+    video: require('../assets/videos/popular/halo.mp4'), 
+    prompt: "Add a subtle glowing halo above the subject's head." 
   },
   { 
     id: 'popular-3', 
@@ -50,10 +50,10 @@ const DEFAULT_POPULAR_ITEMS: PopularItem[] = [
   },
   { 
     id: 'popular-5', 
-    title: 'Add Halo', 
+    title: 'Angel Wings', 
     type: 'video', 
-    video: require('../assets/videos/popular/halo.mp4'), 
-    prompt: "Add a subtle glowing halo above the subject's head." 
+    video: require('../assets/videos/popular/angel.mp4'), 
+    prompt: "Add realistic wings that match pose, background, and lighting." 
   },
   { 
     id: 'popular-6', 

@@ -403,17 +403,13 @@ useEffect(() => {
 
   return (
     <Animated.View 
-      style={{ flex: 1 }}
+      style={{ flex: 1, backgroundColor: '#0B0B0F' }}
       exiting={FadeOut.duration(300)}
     >
-      <KeyboardAvoidingView 
-        style={{ flex: 1, backgroundColor: '#0B0B0F' }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-      {/* Header */}
+      {/* Header - Fixed outside KeyboardAvoidingView */}
       <Animated.View 
         entering={FadeInDown.delay(100).duration(600)}
-                style={{ paddingHorizontal: 16, paddingTop: insets.top + 8, paddingBottom: 6, alignItems: 'center', justifyContent: 'space-between', flexDirection: 'row' }}
+        style={{ paddingHorizontal: 16, paddingTop: insets.top + 8, paddingBottom: 6, alignItems: 'center', justifyContent: 'space-between', flexDirection: 'row' }}
       >
         <TouchableOpacity onPress={() => router.back()}>
           <View style={{
@@ -435,7 +431,13 @@ useEffect(() => {
         
         <View style={{ width: 32 }} />
       </Animated.View>
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+
+      <ScrollView 
+        style={{ flex: 1 }} 
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ flexGrow: 1 }}
+      >
         {/* Image Selector */}
         <Animated.View 
           entering={FadeInUp.delay(150).duration(800).springify().damping(15)} 
@@ -445,7 +447,6 @@ useEffect(() => {
             selectedImage={selectedImage} 
             onImageSelected={handleImageSelected}
             disabled={isLoading || isSubmitting}
-            showReadyIndicator={fromUpload === 'true'}
           />
         </Animated.View>
 
@@ -845,7 +846,6 @@ useEffect(() => {
           <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 14, lineHeight: 20 }}>{infoText}</Text>
         </View>
       </BottomSheet>
-    </KeyboardAvoidingView>
     </Animated.View>
   );
 }
