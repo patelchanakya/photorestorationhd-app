@@ -18,6 +18,7 @@ import Animated, { Easing, useAnimatedStyle, useSharedValue, withSpring, withTim
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { ProUpgradeModal } from '@/components/ProUpgradeModal';
+import { SavingModal, SavingModalRef } from '@/components/SavingModal';
 
 const { height } = Dimensions.get('window');
 
@@ -50,6 +51,8 @@ export function QuickEditSheet() {
   const hasAppliedCropRef = React.useRef(false);
   const [mediaLoading, setMediaLoading] = React.useState(false);
   const [isLimitError, setIsLimitError] = React.useState(false);
+  const [showSavingModal, setShowSavingModal] = React.useState(false);
+  const savingModalRef = React.useRef<SavingModalRef>(null);
   // Progress-based loading copy (no cycling back)
   const getLoadingMessage = (p: number) => {
     if (p < 10) return 'Uploading photo…';
@@ -94,7 +97,6 @@ export function QuickEditSheet() {
   const overlayOpacity = useSharedValue(0);
   const MEDIA_HEIGHT = 240;
   const saveButtonScale = useSharedValue(1);
-  const savedFeedback = useSharedValue(0);
   const handleClose = React.useCallback(async () => {
     // Prevent dismissal while processing
     if (stage === 'loading') {
@@ -142,10 +144,6 @@ export function QuickEditSheet() {
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
   const dimStyle = useAnimatedStyle(() => ({ opacity: overlayOpacity.value }));
   const saveBtnStyle = useAnimatedStyle(() => ({ transform: [{ scale: saveButtonScale.value }] }));
-  const savedFeedbackStyle = useAnimatedStyle(() => ({
-    opacity: savedFeedback.value,
-    transform: [{ translateY: withTiming(savedFeedback.value > 0 ? 0 : 6, { duration: 200 }) }],
-  }));
 
   const handlePick = async () => {
     try { Haptics.selectionAsync(); } catch {}
@@ -240,6 +238,9 @@ export function QuickEditSheet() {
       saveButtonScale.value = withTiming(1, { duration: 120 });
     });
     
+    // Show saving modal
+    setShowSavingModal(true);
+    
     savePhotoMutation.mutate({ imageUri: restoredImageUri }, {
       onSuccess: async () => {
         // Clear active prediction state since user has saved the result
@@ -249,15 +250,18 @@ export function QuickEditSheet() {
           console.log('💾 [RECOVERY] Cleared prediction state after save');
         }
         
-        // Show success, then close
-        savedFeedback.value = 1;
+        // Trigger success state in modal
+        savingModalRef.current?.showSuccess();
+        
+        // Close sheet after modal completes
         setTimeout(() => {
-          savedFeedback.value = withTiming(0, { duration: 220 });
           handleClose();
-        }, 800);
+        }, 1000);
       },
       onError: (error) => {
         console.error('Save failed:', error);
+        // Hide saving modal on error
+        setShowSavingModal(false);
         // Reset button animation on error
         saveButtonScale.value = withTiming(1, { duration: 120 });
       }
@@ -498,16 +502,6 @@ export function QuickEditSheet() {
                 )}
               </View>
 
-              {/* Save success mini-toast */}
-              {stage === 'done' && (
-                <Animated.View style={[{ alignItems: 'center' }, savedFeedbackStyle]}>
-                  <View style={{ marginTop: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: 'rgba(34,197,94,0.2)', borderWidth: 1, borderColor: 'rgba(34,197,94,0.35)', flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <IconSymbol name="checkmark" size={14} color="#22C55E" />
-                    <Text style={{ color: '#22C55E', fontFamily: 'Lexend-Bold', fontSize: 12 }}>Saved to Photos</Text>
-                  </View>
-                </Animated.View>
-              )}
-
               {/* No footer close; header X handles dismissal */}
             </View>
           </View>
@@ -527,6 +521,13 @@ export function QuickEditSheet() {
             handleUpload();
           }, 0);
         }}
+      />
+      
+      {/* Saving Modal */}
+      <SavingModal 
+        ref={savingModalRef}
+        visible={showSavingModal} 
+        onComplete={() => setShowSavingModal(false)}
       />
     </Modal>
   );

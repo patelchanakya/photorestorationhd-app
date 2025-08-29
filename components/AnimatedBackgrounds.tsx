@@ -25,7 +25,7 @@ const DEFAULT_BACKGROUNDS: BackgroundItem[] = [
     type: 'image',
     image: require('../assets/images/backgrounds/thumbnail/garden/garden.jpeg'),
     backgroundPrompt:
-      "Replace only the background with a clear garden scene: visible greenery and foliage with natural daylight. Keep the background mostly in focus (minimal blur) so leaves and shapes are recognizable; avoid heavy bokeh. Maintain balanced exposure and natural colors. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No insects, flowers touching the subject, or added props."
+      "Replace the background with a clear garden scene of greenery and foliage in natural daylight. Keep leaves and shapes recognizable without heavy blur. Maintain balanced exposure and natural colors. Keep the subject exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No insects, flowers touching the subject, or props."
   },
   {
     id: 'bg-2',
@@ -33,7 +33,7 @@ const DEFAULT_BACKGROUNDS: BackgroundItem[] = [
     type: 'image',
     image: require('../assets/images/backgrounds/thumbnail/heavenly/heavenly.jpg'),
     backgroundPrompt:
-      "Replace only the background with a bright, heavenly sky of soft white clouds and gentle sunbeams. Keep the cloud forms clearly visible (minimal blur) so the sky reads cleanly; avoid heavy bokeh. Use an airy pastel blue‑to‑white gradient with a subtle, tasteful glow—no halos. Maintain balanced exposure and natural color. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No wings, text, or added objects; do not retouch or brighten the subject."
+      "Replace the background with a bright heavenly sky of soft white clouds and gentle sunbeams. Keep clouds clear and recognizable, using a soft pastel blue-to-white gradient with a subtle glow. Maintain balanced exposure and natural colors. Keep the subject unchanged—face, skin tone, hair, clothing, pose, lighting, and shadows. No halos, wings, text, or added objects."
   },
   {
     id: 'bg-3',
@@ -41,7 +41,7 @@ const DEFAULT_BACKGROUNDS: BackgroundItem[] = [
     type: 'image',
     image: require('../assets/images/backgrounds/thumbnail/passport/passport.jpg'),
     backgroundPrompt:
-      "Replace only the background with a perfectly uniform pure white background (#FFFFFF), evenly lit. Absolutely no texture, edges, gradients, color casts, or shadows in the background. Keep the person exactly the same—face, skin tone, hair, clothing, pose, and lighting unchanged. Do not retouch the subject or add anything."
+      "Replace the background with a perfectly uniform pure white (#FFFFFF), evenly lit and seamless. No texture, gradients, shadows, or color cast. Keep the subject unchanged—face, skin tone, hair, clothing, pose, and lighting. No retouching or added elements."
   },
   {
     id: 'bg-4',
@@ -49,7 +49,7 @@ const DEFAULT_BACKGROUNDS: BackgroundItem[] = [
     type: 'image',
     image: require('../assets/images/backgrounds/thumbnail/studio/studio.jpeg'),
     backgroundPrompt:
-      "Replace only the background with a seamless studio backdrop in white or light gray, evenly lit and perfectly smooth with no texture or banding. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. Do not retouch or brighten the subject."
+      "Replace the background with a seamless studio backdrop in white or light gray, evenly lit and smooth. No texture, gradients, or banding. Keep the subject unchanged—face, skin tone, hair, clothing, pose, lighting, and shadows. No retouching."
   },
   {
     id: 'bg-5',
@@ -57,7 +57,7 @@ const DEFAULT_BACKGROUNDS: BackgroundItem[] = [
     type: 'image',
     image: require('../assets/images/backgrounds/thumbnail/blur/blurred.jpeg'),
     backgroundPrompt:
-      "Do not change the location. Keep the same background but apply a soft, natural blur and brighten the background slightly (~25%) while preserving its original color balance. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No added glow or light spill on the subject."
+      "Keep the original background but apply a soft natural blur and brighten it slightly (~25%) while preserving color balance. Keep the subject unchanged—face, skin tone, hair, clothing, pose, lighting, and shadows. No added glow or light spill."
   },
   {
     id: 'bg-6',
@@ -65,7 +65,7 @@ const DEFAULT_BACKGROUNDS: BackgroundItem[] = [
     type: 'image',
     image: require('../assets/images/backgrounds/thumbnail/beach/beach.jpeg'),
     backgroundPrompt:
-      "Replace only the background with a clear, bright beach scene: visible ocean horizon, soft blue sky, and light sand. Keep the background mostly in focus (minimal blur) so details are recognizable; avoid heavy bokeh. Maintain balanced daylight exposure and natural colors. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No umbrellas, text, or added props."
+      "Replace the background with a clear beach scene: visible ocean horizon, soft blue sky, and light sand. Keep details recognizable without heavy blur. Maintain daylight exposure and natural colors. Keep the subject unchanged—face, skin tone, hair, clothing, pose, lighting, and shadows. No umbrellas, props, or text."
   },
   {
     id: 'bg-7',
@@ -73,7 +73,7 @@ const DEFAULT_BACKGROUNDS: BackgroundItem[] = [
     type: 'image',
     image: require('../assets/images/backgrounds/thumbnail/city/city.jpeg'),
     backgroundPrompt:
-      "Replace only the background with a clear modern city scene in daylight—street or skyline—with recognizable buildings and structure. Keep the background mostly in focus (minimal blur); avoid heavy bokeh. Maintain balanced exposure and natural colors. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No text, logos, or legible signage; no added props."
+      "Replace the background with a modern city scene in daylight—street or skyline—with recognizable buildings. Keep details clear without heavy blur. Maintain balanced exposure and natural colors. Keep the subject unchanged—face, skin tone, hair, clothing, pose, lighting, and shadows. No text, logos, or props."
   },
   {
     id: 'bg-8',
@@ -81,7 +81,7 @@ const DEFAULT_BACKGROUNDS: BackgroundItem[] = [
     type: 'image',
     image: require('../assets/images/backgrounds/thumbnail/wedding/wedding.jpeg'),
     backgroundPrompt:
-      "Replace only the background with a clearly visible, elegant wedding venue interior (aisle or reception hall) with warm ambient lighting. Show tasteful decor—soft florals, candles, or string lights—in a refined setting. Keep the background mostly in focus (minimal blur) so details are recognizable; avoid heavy bokeh. Maintain balanced exposure and natural warm tones. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. Do not add veils, bouquets, or accessories to the subject; no text or logos."
+      "Replace the background with an elegant wedding venue interior (aisle or reception hall) lit warmly. Include tasteful decor such as soft florals, candles, or string lights. Keep details recognizable without heavy blur. Maintain warm balanced tones. Keep the subject unchanged—face, skin tone, hair, clothing, pose, lighting, and shadows. No veils, bouquets, text, or props on the subject."
   },
   {
     id: 'bg-10',
@@ -89,7 +89,7 @@ const DEFAULT_BACKGROUNDS: BackgroundItem[] = [
     type: 'image',
     image: require('../assets/images/backgrounds/thumbnail/soft-lights/softer.jpg'),
     backgroundPrompt:
-      "Replace only the background with a premium, cinematic bokeh of soft lights. Use neutral‑to‑warm white/golden highlights, large soft discs, and shallow depth‑of‑field. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No light spill on the subject, no text, shapes, or props. Background should feel elegant and luminous without overexposure or harsh edges."
+      "Replace the background with a cinematic bokeh of soft neutral-to-warm lights. Use large, smooth discs with shallow depth-of-field. Keep the subject unchanged—face, skin tone, hair, clothing, pose, lighting, and shadows. No light spill, text, or props."
   },
   {
     id: 'bg-11',
@@ -97,7 +97,7 @@ const DEFAULT_BACKGROUNDS: BackgroundItem[] = [
     type: 'image',
     image: require('../assets/images/backgrounds/thumbnail/christmas/christmas.jpg'),
     backgroundPrompt:
-      "Replace only the background with a clearly visible, elegant Christmas interior scene. Show a decorated Christmas tree, warm ambient string lights, and tasteful holiday decor in a living‑room setting. Keep the background mostly in focus (minimal blur) so details are recognizable; avoid heavy bokeh. Maintain balanced exposure, natural colors, and realistic depth‑of‑field behind the subject. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. Do not place any objects on the subject; no text, logos, snow overlays, or lens effects."
+      "Replace the background with an elegant Christmas interior scene: decorated tree, warm string lights, and tasteful holiday decor in a living-room setting. Keep details recognizable without heavy blur. Maintain balanced exposure, natural colors, and realistic depth-of-field. Keep the subject unchanged—face, skin tone, hair, clothing, pose, lighting, and shadows. No objects on the subject, no text, logos, snow overlays, or effects."
   },
 ];
 

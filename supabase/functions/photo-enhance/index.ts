@@ -19,7 +19,7 @@ interface EnhanceRequest {
 // Predefined prompts for each mode
 const MODE_PROMPTS: Record<EnhanceMode, string> = {
   unblur: "enhance and restore this image, sharpen and unblur, improve clarity and focus without losing any facial features or adding anything extra",
-  colorize: "apply photo restoration and repair, enhance and improve colors throughout the image, and upscale the final image without losing any specific facial feature or adding anything extra",
+  colorize: "add color and upscale image without losing any specific facial feature or adding anything extra",
   descratch: "remove scratches, dust, stains, and damage from this image while preserving all facial features and original details without adding anything extra",
   enlighten: "fix lighting and exposure, enhance shadows and highlights, improve overall illumination"
 }

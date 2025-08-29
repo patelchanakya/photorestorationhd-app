@@ -18,43 +18,43 @@ interface BackgroundRequest {
 const BACKGROUND_STYLES: Record<string, { title: string; prompt: string }> = {
   'bg-1': {
     title: 'Garden',
-    prompt: "Replace only the background with a clear garden scene: visible greenery and foliage with natural daylight. Keep the background mostly in focus (minimal blur) so leaves and shapes are recognizable; avoid heavy bokeh. Maintain balanced exposure and natural colors. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No insects, flowers touching the subject, or added props."
+    prompt: "Replace the background with a clear garden scene of greenery and foliage in natural daylight. Keep leaves and shapes recognizable without heavy blur. Maintain balanced exposure and natural colors. Keep the subject exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No insects, flowers touching the subject, or props."
   },
   'bg-2': {
     title: 'Heavenly',
-    prompt: "Replace only the background with a bright, heavenly sky of soft white clouds and gentle sunbeams. Keep the cloud forms clearly visible (minimal blur) so the sky reads cleanly; avoid heavy bokeh. Use an airy pastel blue‑to‑white gradient with a subtle, tasteful glow—no halos. Maintain balanced exposure and natural color. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No wings, text, or added objects; do not retouch or brighten the subject."
+    prompt: "Replace the background with a bright heavenly sky of soft white clouds and gentle sunbeams. Keep clouds clear and recognizable, using a soft pastel blue-to-white gradient with a subtle glow. Maintain balanced exposure and natural colors. Keep the subject unchanged—face, skin tone, hair, clothing, pose, lighting, and shadows. No halos, wings, text, or added objects."
   },
   'bg-3': {
     title: 'Passport',
-    prompt: "Replace only the background with a perfectly uniform pure white background (#FFFFFF), evenly lit. Absolutely no texture, edges, gradients, color casts, or shadows in the background. Keep the person exactly the same—face, skin tone, hair, clothing, pose, and lighting unchanged. Do not retouch the subject or add anything."
+    prompt: "Replace the background with a perfectly uniform pure white (#FFFFFF), evenly lit and seamless. No texture, gradients, shadows, or color cast. Keep the subject unchanged—face, skin tone, hair, clothing, pose, and lighting. No retouching or added elements."
   },
   'bg-4': {
     title: 'Studio',
-    prompt: "Replace only the background with a seamless studio backdrop in white or light gray, evenly lit and perfectly smooth with no texture or banding. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. Do not retouch or brighten the subject."
+    prompt: "Replace the background with a seamless studio backdrop in white or light gray, evenly lit and smooth. No texture, gradients, or banding. Keep the subject unchanged—face, skin tone, hair, clothing, pose, lighting, and shadows. No retouching."
   },
   'bg-5': {
     title: 'Blur',
-    prompt: "Do not change the location. Keep the same background but apply a soft, natural blur and brighten the background slightly (~25%) while preserving its original color balance. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No added glow or light spill on the subject."
+    prompt: "Keep the original background but apply a soft natural blur and brighten it slightly (~25%) while preserving color balance. Keep the subject unchanged—face, skin tone, hair, clothing, pose, lighting, and shadows. No added glow or light spill."
   },
   'bg-6': {
     title: 'Beach',
-    prompt: "Replace only the background with a clear, bright beach scene: visible ocean horizon, soft blue sky, and light sand. Keep the background mostly in focus (minimal blur) so details are recognizable; avoid heavy bokeh. Maintain balanced daylight exposure and natural colors. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No umbrellas, text, or added props."
+    prompt: "Replace the background with a clear beach scene: visible ocean horizon, soft blue sky, and light sand. Keep details recognizable without heavy blur. Maintain daylight exposure and natural colors. Keep the subject unchanged—face, skin tone, hair, clothing, pose, lighting, and shadows. No umbrellas, props, or text."
   },
   'bg-7': {
     title: 'City',
-    prompt: "Replace only the background with a clear modern city scene in daylight—street or skyline—with recognizable buildings and structure. Keep the background mostly in focus (minimal blur); avoid heavy bokeh. Maintain balanced exposure and natural colors. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No text, logos, or legible signage; no added props."
+    prompt: "Replace the background with a modern city scene in daylight—street or skyline—with recognizable buildings. Keep details clear without heavy blur. Maintain balanced exposure and natural colors. Keep the subject unchanged—face, skin tone, hair, clothing, pose, lighting, and shadows. No text, logos, or props."
   },
   'bg-8': {
     title: 'Wedding',
-    prompt: "Replace only the background with a clearly visible, elegant wedding venue interior (aisle or reception hall) with warm ambient lighting. Show tasteful decor—soft florals, candles, or string lights—in a refined setting. Keep the background mostly in focus (minimal blur) so details are recognizable; avoid heavy bokeh. Maintain balanced exposure and natural warm tones. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. Do not add veils, bouquets, or accessories to the subject; no text or logos."
+    prompt: "Replace the background with an elegant wedding venue interior (aisle or reception hall) lit warmly. Include tasteful decor such as soft florals, candles, or string lights. Keep details recognizable without heavy blur. Maintain warm balanced tones. Keep the subject unchanged—face, skin tone, hair, clothing, pose, lighting, and shadows. No veils, bouquets, text, or props on the subject."
   },
   'bg-10': {
     title: 'Soft Lights',
-    prompt: "Replace only the background with a premium, cinematic bokeh of soft lights. Use neutral‑to‑warm white/golden highlights, large soft discs, and shallow depth‑of‑field. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No light spill on the subject, no text, shapes, or props. Background should feel elegant and luminous without overexposure or harsh edges."
+    prompt: "Replace the background with a cinematic bokeh of soft neutral-to-warm lights. Use large, smooth discs with shallow depth-of-field. Keep the subject unchanged—face, skin tone, hair, clothing, pose, lighting, and shadows. No light spill, text, or props."
   },
   'bg-11': {
     title: 'Christmas',
-    prompt: "Replace only the background with a clearly visible, elegant Christmas interior scene. Show a decorated Christmas tree, warm ambient string lights, and tasteful holiday decor in a living‑room setting. Keep the background mostly in focus (minimal blur) so details are recognizable; avoid heavy bokeh. Maintain balanced exposure, natural colors, and realistic depth‑of‑field behind the subject. Keep the person exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. Do not place any objects on the subject; no text, logos, snow overlays, or lens effects."
+    prompt: "Replace the background with an elegant Christmas interior scene: decorated tree, warm string lights, and tasteful holiday decor in a living-room setting. Keep details recognizable without heavy blur. Maintain balanced exposure, natural colors, and realistic depth-of-field. Keep the subject unchanged—face, skin tone, hair, clothing, pose, lighting, and shadows. No objects on the subject, no text, logos, snow overlays, or effects."
   }
 }
 

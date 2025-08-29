@@ -23,8 +23,7 @@ export interface SavingModalRef {
 }
 
 export const SavingModal = React.forwardRef<SavingModalRef, SavingModalProps>(function SavingModal({ visible, onComplete }, ref) {
-  const rotation = useSharedValue(0);
-  const checkmarkScale = useSharedValue(0);
+  const iconScale = useSharedValue(1);
   const modalOpacity = useSharedValue(0);
 
   React.useEffect(() => {
@@ -32,37 +31,31 @@ export const SavingModal = React.forwardRef<SavingModalRef, SavingModalProps>(fu
       // Show modal
       modalOpacity.value = withTiming(1, { duration: 200 });
       
-      // Start loading animation
-      rotation.value = withRepeat(
-        withTiming(360, { duration: 1000, easing: Easing.linear }),
+      // Start pulse animation
+      iconScale.value = withRepeat(
+        withSequence(
+          withTiming(1.15, { duration: 600 }),
+          withTiming(1, { duration: 600 })
+        ),
         -1
       );
     } else {
       // Hide modal
       modalOpacity.value = withTiming(0, { duration: 200 });
-      rotation.value = 0;
-      checkmarkScale.value = 0;
+      iconScale.value = 1;
     }
     
     // Cleanup animations on unmount
     return () => {
-      cancelAnimation(rotation);
-      cancelAnimation(checkmarkScale);
+      cancelAnimation(iconScale);
       cancelAnimation(modalOpacity);
     };
   }, [visible]);
 
   const showSuccess = () => {
-    // Stop loading animation and show checkmark
-    rotation.value = withTiming(0, { duration: 200 });
-    checkmarkScale.value = withSequence(
-      withTiming(1.2, { duration: 150 }),
-      withTiming(1, { duration: 100 })
-    );
-    
-    // Hide modal after showing success
+    // Hide modal after 300ms
     modalOpacity.value = withDelay(
-      800,
+      300,
       withTiming(0, { duration: 200 }, () => {
         runOnJS(onComplete)();
       })
@@ -74,17 +67,12 @@ export const SavingModal = React.forwardRef<SavingModalRef, SavingModalProps>(fu
     showSuccess,
   }));
 
-  const rotationStyle = useAnimatedStyle(() => {
+  const pulseStyle = useAnimatedStyle(() => {
     return {
-      transform: [{ rotate: `${rotation.value}deg` }],
+      transform: [{ scale: iconScale.value }],
     };
   });
 
-  const checkmarkStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: checkmarkScale.value }],
-    };
-  });
 
   const modalStyle = useAnimatedStyle(() => {
     return {
@@ -101,17 +89,11 @@ export const SavingModal = React.forwardRef<SavingModalRef, SavingModalProps>(fu
           style={modalStyle}
           className="bg-gray-900/80 px-6 py-4 rounded-lg flex-row items-center"
         >
-          {checkmarkScale.value > 0 ? (
-            <Animated.View style={checkmarkStyle}>
-              <IconSymbol name="checkmark.circle.fill" size={20} color="#10b981" />
-            </Animated.View>
-          ) : (
-            <Animated.View style={rotationStyle}>
-              <IconSymbol name="arrow.clockwise" size={20} color="#f97316" />
-            </Animated.View>
-          )}
+          <Animated.View style={pulseStyle}>
+            <IconSymbol name="square.and.arrow.down" size={20} color="#f97316" />
+          </Animated.View>
           <Text className="text-white text-sm font-medium ml-3">
-            {checkmarkScale.value > 0 ? 'Saved' : 'Saving'}
+            Saving
           </Text>
         </Animated.View>
       </View>
