@@ -4,7 +4,6 @@ import { networkStateService } from '@/services/networkState';
 import { notificationService } from '@/services/notificationService';
 import { permissionsService } from '@/services/permissions';
 import { checkSubscriptionStatus, getCurrentSubscriptionTransactionInfo } from '@/services/revenuecat';
-import { refreshProStatus } from '@/services/simpleSubscriptionService';
 // Removed: No longer using stable IDs - RevenueCat handles anonymous IDs automatically
 import { useRevenueCat } from '@/contexts/RevenueCatContext';
 // import { useVideoToastStore } from '@/store/videoToastStore';
@@ -280,7 +279,6 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
           try {
             // Preload heavy components that are likely to be needed next
             await Promise.all([
-              import('@/app/onboarding-v2'),
               import('@/app/explore'),
               import('@/components/BeforeAfterSlider'),
               // import('@/components/ProcessingScreen'), // Skip if not available

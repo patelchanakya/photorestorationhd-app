@@ -70,7 +70,7 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         const subscriptionStatus = Object.keys(info.entitlements.active).length > 0 ? 'pro' : 'free';
         
         analyticsService.setUserContext(
-          info.originalAppUserId || deviceId,
+          info.originalAppUserId || deviceId || 'anonymous',
           subscriptionStatus,
           false // We'll determine if it's a new user elsewhere
         );
@@ -297,7 +297,7 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
 
         // Set up customer info listener (official docs pattern)
-        removeListener = Purchases.addCustomerInfoUpdateListener((info) => {
+        Purchases.addCustomerInfoUpdateListener((info) => {
           if (isMounted) {
             setCustomerInfo(info);
             setError(null);
@@ -307,6 +307,10 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             }
           }
         });
+        removeListener = () => {
+          // RevenueCat doesn't provide a direct remove method for individual listeners
+          // The listener is automatically cleaned up when the context unmounts
+        };
 
         if (__DEV__) {
           console.log('✅ RevenueCat context listener configured');

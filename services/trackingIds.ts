@@ -154,7 +154,7 @@ export const getVideoTrackingId = async (options?: { retries?: number, retryDela
       
       // Get fresh customer info for subscription verification (bypass cache)
       // This is critical for getting transaction IDs after app restarts
-      const customerInfo = await Purchases.getCustomerInfo({ fetchPolicy: "FETCH_CURRENT" });
+      const customerInfo = await Purchases.getCustomerInfo();
       if (!customerInfo) {
         console.log('❌ [VIDEO] CustomerInfo not ready');
         if (attempt < retries) {

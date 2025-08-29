@@ -28,7 +28,7 @@ async function imageToBase64(uri: string): Promise<string> {
 async function processImageIfNeeded(uri: string): Promise<string> {
   try {
     const info = await FileSystem.getInfoAsync(uri);
-    const fileSize = info.size || 0;
+    const fileSize = (info.exists && 'size' in info) ? info.size : 0;
     const maxFileSize = 50 * 1024 * 1024; // 50MB
     
     // Get image dimensions

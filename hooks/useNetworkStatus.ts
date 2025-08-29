@@ -67,7 +67,7 @@ export function useNetworkStatus() {
     try {
       const state = await NetInfo.fetch();
       updateNetworkStatus(state);
-      return state.isConnected && state.isInternetReachable;
+      return (state.isConnected ?? false) && (state.isInternetReachable ?? false);
     } catch (error) {
       console.error('Failed to refresh network status:', error);
       return false;

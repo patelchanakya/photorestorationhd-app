@@ -82,7 +82,7 @@ export function useAutoRollbackRecovery() {
 
   useEffect(() => {
     // Set up periodic rollback processing when network becomes available
-    let intervalId: NodeJS.Timeout | null = null;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
 
     const setupPeriodicRecovery = () => {
       // Check for pending rollbacks every 5 minutes when app is active

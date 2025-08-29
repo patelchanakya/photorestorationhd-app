@@ -9,7 +9,6 @@ import { photoStorage } from '@/services/storage';
 import { localStorageHelpers } from '@/services/supabase';
 import { useRestorationStore } from '@/store/restorationStore';
 import { useRevenueCat } from '@/contexts/RevenueCatContext';
-// import { backToLifeService, type BackToLifeUsage } from '@/services/backToLifeService'; // DISABLED
 import { usePhotoUsage, type PhotoUsage } from '@/services/photoUsageService';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
@@ -48,7 +47,6 @@ export default function SettingsModalScreen() {
   const queryClient = useQueryClient();
   const { setRestorationCount } = useRestorationStore();
   const { isPro } = useRevenueCat();
-  // Removed BackToLifeUsage - service disabled
   const [photoUsage, setPhotoUsage] = useState<PhotoUsage | null>(null);
   
   // Video processing state management
@@ -71,7 +69,6 @@ export default function SettingsModalScreen() {
   const fetchVideoUsageData = useCallback(async () => {
     try {
       if (isPro) {
-        // const videoUsageData = await backToLifeService.checkUsage(); // DISABLED
         // Video usage tracking disabled
         if (__DEV__) {
           console.log('🎬 Settings: Video usage tracking disabled');
@@ -751,7 +748,7 @@ Best regards`;
       Alert.alert(
         'Rate Us',
         'Thank you for using Clever! Please rate us on the App Store.',
-        [{ text: t('common.ok'), style: 'default' }]
+        [{ text: 'OK', style: 'default' }]
       );
     }
   };
@@ -885,38 +882,7 @@ Best regards`;
                   </TouchableOpacity>
                 )}
 
-                {/* Video Usage - Only show for Pro users */}
-                {isPro && false && (
-                  <TouchableOpacity 
-                    className="flex-row items-center p-4 border-b border-white/10"
-                    onPress={async () => {
-                      try {
-                        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        if (__DEV__) {
-                          console.log('🔄 Refreshing Back to Life usage from Supabase...');
-                        }
-                        await fetchVideoUsageData();
-                      } catch (error) {
-                        if (__DEV__) {
-                          console.error('❌ Failed to refresh video usage data:', error);
-                        }
-                      }
-                    }}
-                  >
-                    <View className="w-9 h-9 bg-purple-500/20 rounded-full items-center justify-center mr-3">
-                      <IconSymbol name="video.fill" size={18} color="#a855f7" />
-                    </View>
-                    <View className="flex-1">
-                      <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium' }}>Back to Life Videos</Text>
-                      <Text className="text-white/60 text-sm">Tap to refresh</Text>
-                    </View>
-                    <View className={`${!backToLifeUsage.canUse ? 'bg-red-500/20' : 'bg-green-500/20'} px-2 py-1 rounded-xl`}>
-                      <Text className={`${!backToLifeUsage.canUse ? 'text-red-500' : 'text-green-500'} text-xs font-semibold`}>
-                        {backToLifeUsage.used}/{backToLifeUsage.limit}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                )}
+                {/* BackToLife feature removed */}
 
                 {/* Restore Purchases */}
                 <TouchableOpacity 

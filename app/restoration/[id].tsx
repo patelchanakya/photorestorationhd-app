@@ -193,19 +193,9 @@ export default function RestorationScreen() {
         console.log('🎥 Back to Life video completed - usage already tracked server-side');
       }
       
-      // Navigate to appropriate result screen
-      if (isVideoResult) {
-        // For videos, navigate to video result screen
-        if (__DEV__) {
-          console.log('🎬 Navigating to video result screen');
-        }
-        router.replace(`/video-result/${restorationData.id}`);
-      } else {
-        // For images, navigate to restoration view
-        if (__DEV__) {
-          console.log('🖼️ Navigating to image restoration screen');
-        }
-        router.replace(`/restoration/${restorationData.id}`);
+      // Stay on current restoration page - results are shown inline
+      if (__DEV__) {
+        console.log('✅ Restoration completed, results shown inline');
       }
       
       // Check if we should show rating prompt (after 3rd restoration)

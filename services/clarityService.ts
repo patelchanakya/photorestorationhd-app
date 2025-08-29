@@ -151,7 +151,7 @@ class ClarityService {
       if (__DEV__) {
         console.log('📊 Clarity: Current session URL -', url);
       }
-      return url;
+      return url || null;
     } catch (error) {
       if (__DEV__) {
         console.error('❌ Clarity current session URL failed:', error);
@@ -187,7 +187,7 @@ class ClarityService {
     if (!this.isInitialized) return;
     
     try {
-      Clarity.startNewSession(callback);
+      Clarity.startNewSession(callback || (() => {}));
       
       if (__DEV__) {
         console.log('📊 Clarity: New session started');

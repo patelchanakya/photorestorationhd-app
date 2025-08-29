@@ -26,8 +26,8 @@ interface CommunityScreenProps {
 
 export function CommunityScreen({ onContinue }: CommunityScreenProps) {
   const insets = useSafeAreaInsets();
-  const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
-  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Background animation values
   const backgroundPulse = useSharedValue(0);

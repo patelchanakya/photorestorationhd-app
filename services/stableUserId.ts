@@ -12,7 +12,7 @@ async function generateUUID(): Promise<string> {
   const randomBytes = await Crypto.getRandomBytesAsync(16);
   
   // Convert to hex string and format as UUID v4
-  const hex = randomBytes.map(b => b.toString(16).padStart(2, '0')).join('');
+  const hex = Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('');
   
   // Format as UUID v4: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
   const uuid = [

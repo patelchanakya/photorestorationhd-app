@@ -33,7 +33,7 @@ async function imageToBase64(uri: string): Promise<string> {
 // Helper function to get image info
 async function getImageInfo(uri: string): Promise<{width: number, height: number, size: number}> {
   const info = await FileSystem.getInfoAsync(uri);
-  const fileSize = info.size || 0;
+  const fileSize = (info.exists && 'size' in info) ? info.size : 0;
   
   // Get image dimensions using ImageManipulator without modifying the image
   const result = await ImageManipulator.manipulateAsync(uri, [], {});

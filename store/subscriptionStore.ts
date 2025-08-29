@@ -56,7 +56,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         hasSeenUpgradePrompt: state.hasSeenUpgradePrompt,
         planType: state.planType,
         // isPro is not persisted - must be refreshed from RevenueCat on app start
-      }),
+      }) as any,
     }
   )
 );

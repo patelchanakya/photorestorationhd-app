@@ -98,7 +98,7 @@ const FeatureCardBase = ({
         </Text>
       </View>
       <View style={{ position: 'absolute', right: 12, bottom: 12, width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.12)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }}>
-        <IconSymbol name={getFunctionIcon(item.functionType)} size={16} color={'#FFFFFF'} />
+        <IconSymbol name={getFunctionIcon(item.functionType) as any} size={16} color={'#FFFFFF'} />
       </View>
     </Animated.View>
   </TouchableOpacity>

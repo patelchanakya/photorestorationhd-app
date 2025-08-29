@@ -58,6 +58,9 @@ android/gradle.properties.local
 
 # Build and cache directories
 build*/
+build-*.ipa
+build-*.apk
+build-*.aab
 .gradle/
 *.log
 

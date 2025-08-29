@@ -37,8 +37,6 @@ export default function HomeGalleryLikeScreen() {
   const { isPro, forceRefresh } = useRevenueCat();
   const router = useRouter();
   
-  // Keep HeroBackToLifeExamples in code but don't load it
-  // const [HeroBackToLifeExamples, setHeroBackToLifeExamples] = useState<any>(null);
 
   // Subtle drop-back effect for screen when launching picker (Remini-like feedback)
   const dropProgress = useSharedValue(0);
@@ -205,18 +203,7 @@ export default function HomeGalleryLikeScreen() {
         {/* Popular examples using outfit assets as placeholders */}
         <PopularExamples />
 
-{/* DISABLED: Back to Life section - keeping code but removing from UI
-        <View style={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>Back to Life</Text>
-        </View>
-        {componentsLoaded && HeroBackToLifeExamples ? (
-          <HeroBackToLifeExamples onBeforePicker={engageDropEffect} onAfterPicker={releaseDropEffect} />
-        ) : (
-          <View style={{ height: 200, justifyContent: 'center', alignItems: 'center' }}>
-            <ActivityIndicator color="#8B5CF6" />
-          </View>
-        )}
-        */}
+{/* BackToLife feature removed */}
 
       {/* Restore/Repair section title */}
       <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>

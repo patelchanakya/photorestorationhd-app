@@ -161,8 +161,8 @@ export const getCurrentSubscriptionTransactionInfo = async (): Promise<{
     const subscription = productId ? customerInfo.subscriptionsByProductIdentifier?.[productId] : null;
     const latestTransactionId = subscription?.storeTransactionId || null;
     // Try to get original transaction ID from multiple sources
-    const originalTransactionId = proEntitlement.originalTransactionId || 
-                                 subscription?.originalTransactionId || 
+    const originalTransactionId = (proEntitlement as any).originalTransactionId || 
+                                 (subscription as any)?.originalTransactionId || 
                                  (subscription?.originalPurchaseDate ? 'original-purchase' : null);
 
     const result = {
@@ -181,7 +181,7 @@ export const getCurrentSubscriptionTransactionInfo = async (): Promise<{
           purchaseDate: subscription.purchaseDate,
           expiresDate: subscription.expiresDate,
           periodType: subscription.periodType,
-          price: subscription.price
+          price: (subscription as any).price
         } : null
       });
     }

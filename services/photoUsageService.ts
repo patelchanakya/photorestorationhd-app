@@ -59,13 +59,13 @@ export const photoUsageService = {
       console.log('📊 [TEST] Plan details:', planDetails);
       
       // Pro users: unlimited photos
-      if (planDetails && planDetails.planType !== 'free') {
+      if (planDetails) {
         console.log('✅ [TEST] Pro user detected - unlimited photos');
-        const result = {
+        const result: PhotoUsage = {
           canUse: true,
           used: 0,
           limit: -1, // Unlimited
-          planType: planDetails.planType
+          planType: planDetails.planType as 'weekly' | 'monthly'
         };
         console.log('📸 [TEST] Returning Pro photo usage:', result);
         return result;
@@ -106,21 +106,21 @@ export const photoUsageService = {
       if (!usage) {
         console.log('✨ [TEST] No usage record found - new user');
         // No record exists, user hasn't used any photos yet
-        const result = {
+        const result: PhotoUsage = {
           canUse: true,
           used: 0,
           limit: freeLimit,
-          planType: 'free'
+          planType: 'free' as const
         };
         console.log('📸 [TEST] Returning new user photo usage:', result);
         return result;
       }
       
-      const result = {
+      const result: PhotoUsage = {
         canUse: usage.can_use,
         used: usage.photo_count,
         limit: usage.usage_limit,
-        planType: 'free'
+        planType: 'free' as const
       };
       console.log('📸 [TEST] Returning existing user photo usage:', result);
       return result;
@@ -129,11 +129,11 @@ export const photoUsageService = {
       
       // Return safe defaults on error
       const freeLimit = getFreePhotoLimit();
-      const result = {
+      const result: PhotoUsage = {
         canUse: false,
         used: 0,
         limit: freeLimit,
-        planType: 'free'
+        planType: 'free' as const
       };
       console.log('⚠️ [TEST] Returning error fallback photo usage:', result);
       return result;
@@ -150,7 +150,7 @@ export const photoUsageService = {
       const planDetails = await getSubscriptionPlanDetails();
       
       // Pro users: unlimited (no increment needed)
-      if (planDetails && planDetails.planType !== 'free') {
+      if (planDetails) {
         return true;
       }
       
