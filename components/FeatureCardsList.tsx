@@ -14,7 +14,7 @@ type CardItem = {
   id: string;
   title: string;
   subtitle: string;
-  functionType?: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten';
+  functionType?: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'restore_repair';
   styleKey?: string;
   route?: string;
   image: any; // require('...')
@@ -22,8 +22,9 @@ type CardItem = {
 
 // Poster-style cards inspired by the provided reference
 const CARDS: CardItem[] = [
-  { id: 'fc_recreate', title: 'Recreate', subtitle: 'Let Clever recreate your image', functionType: 'repair', image: require('../assets/images/popular/recreate/pop-5.png') },
+  { id: 'fc_water_stain', title: 'Water Damage', subtitle: 'Remove water damage and stains', functionType: 'restore_repair', image: require('../assets/images/popular/stain/pop-7.png') },
   { id: 'fc_enhance', title: 'Clarify', subtitle: 'Remove blur, sharpen details', functionType: 'unblur', image: require('../assets/images/popular/enhance/pop-3.png') },
+  { id: 'fc_recreate', title: 'Recreate', subtitle: 'Let Clever recreate your image', functionType: 'repair', image: require('../assets/images/popular/recreate/pop-5.png') },
   { id: 'fc_colorize', title: 'Colorize', subtitle: 'Add colors to B&W photos', functionType: 'colorize', image: require('../assets/images/popular/colorize/pop-1.png') },
   { id: 'fc_descratch', title: 'Descratch', subtitle: 'Remove scratches & marks', functionType: 'descratch', image: require('../assets/images/popular/descratch/pop-2.png') },
   { id: 'fc_enlighten', title: 'Brighten', subtitle: 'Fix lighting & exposure', functionType: 'enlighten', image: require('../assets/images/popular/brighten/pop-4.png') },
@@ -164,6 +165,15 @@ export function FeatureCardsList({
       return;
     }
     const functionType = item.functionType ?? 'restoration';
+    
+    // PROMPT LOGGING: Track which feature card is selected
+    console.log('🎯 FEATURE CARD SELECTED:', {
+      id: item.id,
+      title: item.title,
+      subtitle: item.subtitle,
+      functionType: functionType,
+      styleKey: item.styleKey
+    });
     // Open native picker first, then open Quick Edit sheet prefilled
     // No permission check needed on iOS 11+ - PHPickerViewController handles privacy
     const result = await ImagePicker.launchImageLibraryAsync({ 

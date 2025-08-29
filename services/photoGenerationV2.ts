@@ -1,7 +1,8 @@
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { type FunctionType } from './modelConfigs';
+
+export type FunctionType = 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'outfit' | 'background' | 'enlighten' | 'custom' | 'restore_repair';
 
 // Webhook-based photo generation service for v2 endpoints
 // This replaces the client-side polling approach with secure server-side generation
@@ -179,6 +180,13 @@ export async function generateOutfit(
 ): Promise<GenerationResponse> {
   if (__DEV__) {
     console.log('🎨 Starting outfit generation via webhook system');
+    console.log('🎨 OUTFIT GENERATION PARAMS:', {
+      styleKey: styleKey,
+      hasCustomPrompt: !!customPrompt,
+      customPrompt: customPrompt,
+      willUseCustomPrompt: !!customPrompt,
+      willUseStyleKey: !customPrompt && !!styleKey
+    });
   }
 
   return callGenerationEndpoint('outfit-generation-v2', imageUri, {
@@ -197,6 +205,13 @@ export async function generateBackground(
 ): Promise<GenerationResponse> {
   if (__DEV__) {
     console.log('🌅 Starting background generation via webhook system');
+    console.log('🌅 BACKGROUND GENERATION PARAMS:', {
+      styleKey: styleKey,
+      hasCustomPrompt: !!customPrompt,
+      customPrompt: customPrompt,
+      willUseCustomPrompt: !!customPrompt,
+      willUseStyleKey: !customPrompt && !!styleKey
+    });
   }
 
   return callGenerationEndpoint('background-generation-v2', imageUri, {
@@ -235,6 +250,13 @@ export async function generateEnhance(
 ): Promise<GenerationResponse> {
   if (__DEV__) {
     console.log(`🔧 Starting ${mode} enhancement via webhook system`);
+    console.log('🔧 ENHANCE GENERATION PARAMS:', {
+      mode: mode,
+      hasCustomPrompt: !!customPrompt,
+      customPrompt: customPrompt,
+      willUseCustomPrompt: !!customPrompt,
+      willUsePresetPrompt: !customPrompt
+    });
   }
 
   return callGenerationEndpoint('photo-enhance-v2', imageUri, {
@@ -252,6 +274,12 @@ export async function generateRestoration(
 ): Promise<GenerationResponse> {
   if (__DEV__) {
     console.log('🔧 Starting photo restoration via webhook system');
+    console.log('🔧 RESTORATION GENERATION PARAMS:', {
+      hasCustomPrompt: !!customPrompt,
+      customPrompt: customPrompt,
+      willUseCustomPrompt: !!customPrompt,
+      willUseDefaultPrompt: !customPrompt
+    });
   }
 
   return callGenerationEndpoint('photo-restoration-v2', imageUri, {
@@ -326,6 +354,16 @@ export async function generatePhoto(
   }
   
   const { styleKey, customPrompt, userId } = options;
+
+  // PROMPT LOGGING: Track which generation function is called
+  if (__DEV__) {
+    console.log('📡 SERVICE LAYER GENERATION:', {
+      functionType: functionType,
+      styleKey: styleKey,
+      customPrompt: customPrompt,
+      userId: userId
+    });
+  }
 
   switch (functionType) {
     case 'outfit':

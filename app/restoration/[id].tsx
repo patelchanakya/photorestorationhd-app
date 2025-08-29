@@ -2,7 +2,7 @@ import { BeforeAfterSlider } from '@/components/BeforeAfterSlider';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { SavingModal, type SavingModalRef } from '@/components/SavingModal';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
-import { type FunctionType } from '@/services/modelConfigs';
+import { type FunctionType } from '@/services/photoGenerationV2';
 import { photoStorage } from '@/services/storage';
 import { restorationService } from '@/services/supabase';
 import { useCropModalStore } from '@/store/cropModalStore';

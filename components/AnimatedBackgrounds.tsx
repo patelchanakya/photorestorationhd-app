@@ -145,6 +145,13 @@ export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { bac
   const handleBackgroundSelect = async (background: BackgroundItem) => {
     // No Pro gating - all backgrounds are now free
     
+    // PROMPT LOGGING: Track which background style is selected
+    console.log('🌅 BACKGROUND STYLE SELECTED:', {
+      id: background.id,
+      title: background.title,
+      prompt: background.backgroundPrompt
+    });
+    
     // Launch image picker then open Quick Edit sheet in background mode
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 1 });
     if (!result.canceled && result.assets[0]) {

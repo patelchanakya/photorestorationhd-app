@@ -167,6 +167,13 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
   const handleOutfitSelect = async (outfit: OutfitItem) => {
     // No Pro gating - all outfits are now free
     
+    // PROMPT LOGGING: Track which outfit style is selected
+    console.log('🎨 OUTFIT STYLE SELECTED:', {
+      id: outfit.id,
+      title: outfit.title,
+      prompt: outfit.outfitPrompt
+    });
+    
     // Launch image picker then open Quick Edit sheet in outfit mode
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 1 });
     if (!result.canceled && result.assets[0]) {

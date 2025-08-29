@@ -1,5 +1,5 @@
 import { analyticsService } from '@/services/analytics';
-import { type FunctionType, getModelConfig } from '@/services/modelConfigs';
+import { type FunctionType } from '@/services/photoGenerationV2';
 import { useInvalidatePhotoUsage } from '@/services/photoUsageService';
 import { generatePhotoWithPolling } from '@/services/photoGenerationV2';
 import { restorationTrackingService } from '@/services/restorationTracking';
@@ -132,6 +132,16 @@ export function usePhotoRestoration() {
         // Get styleKey from QuickEditStore if available (passed via global context)
         const styleKey = (global as any).__quickEditStyleKey || undefined;
         
+        // PROMPT LOGGING: Detailed client-side generation tracking
+        console.log('🎯 HOOK GENERATION DETAILS:', {
+          functionType,
+          styleKey,
+          customPrompt,
+          userId: userId || 'fallback-anonymous',
+          hasCustomPrompt: !!customPrompt,
+          hasStyleKey: !!styleKey
+        });
+        
         const restoredUrl = await generatePhotoWithPolling(imageUri, functionType, {
           styleKey,
           customPrompt,
@@ -151,16 +161,10 @@ export function usePhotoRestoration() {
           console.log(`🎉 [TIMING] API completed in ${apiEndTime - apiStartTime}ms, URL:`, restoredUrl);
         }
 
-        // Check if this is a video result (Back to Life returns MP4 videos)
-        const modelConfig = getModelConfig(functionType);
-        const USE_BTL_TEST_IMAGE_MODEL = process.env.EXPO_PUBLIC_BTL_TEST_IMAGE_MODEL === '1';
-        // Treat Back to Life as image when test-image flag is on
-        const isVideoResult = (modelConfig.isVideo && !USE_BTL_TEST_IMAGE_MODEL) || restoredUrl.includes('.mp4');
-        
         // Phase 1: Return URL immediately for instant display
         const intermediateUpdate = {
-          replicate_url: isVideoResult ? undefined : restoredUrl,
-          video_replicate_url: isVideoResult ? restoredUrl : undefined,
+          replicate_url: restoredUrl,
+          video_replicate_url: undefined,
           local_files_ready: false,
           status: 'completed' as const,
           processing_time_ms: Date.now() - startTime,
@@ -214,7 +218,7 @@ export function usePhotoRestoration() {
             let restoredFilename: string;
             let restoredUri: string;
             
-            if (isVideoResult) {
+            if (false) {
               // Save as video with .mp4 extension
               const videoDownloadStart = Date.now();
               restoredFilename = await photoStorage.saveVideo(restoredUrl, originalFilename);
@@ -237,7 +241,7 @@ export function usePhotoRestoration() {
             // Create thumbnails (skip for video generations)
             let thumbnailFilename: string | undefined;
             
-            if (!isVideoResult) {
+            if (true) {
               // Only create thumbnails for image restorations
               const thumbnailStart = Date.now();
               thumbnailFilename = await photoStorage.createThumbnail(
@@ -258,7 +262,7 @@ export function usePhotoRestoration() {
             await restorationService.update(restoration.id, {
               restored_filename: restoredFilename,
               thumbnail_filename: thumbnailFilename,
-              video_filename: isVideoResult ? restoredFilename : undefined,
+              video_filename: undefined,
               local_files_ready: true,
             });
             
@@ -286,7 +290,7 @@ export function usePhotoRestoration() {
         }
         
         // For video results, store the result ID for navigation
-        if (isVideoResult) {
+        if (false) {
           // Videos are saved with a different naming pattern
           // Store the video filename for later retrieval
           (immediateResult as any).videoFilename = `${originalFilename}_restored.mp4`;

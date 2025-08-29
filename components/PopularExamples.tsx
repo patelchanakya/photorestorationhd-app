@@ -181,10 +181,28 @@ export function PopularExamples({ items = DEFAULT_POPULAR_ITEMS }: { items?: Pop
   const handlePopularSelect = async (item: PopularItem) => {
     // No Pro gating - all popular examples are now free
     
-    // Launch image picker then open text-edits with custom prompt
+    // PROMPT LOGGING: Track which popular example is selected
+    console.log('⭐ POPULAR EXAMPLE SELECTED:', {
+      id: item.id,
+      title: item.title,
+      prompt: item.prompt
+    });
+    
+    // Launch image picker then open Quick Edit sheet in custom mode
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 1 });
     if (!result.canceled && result.assets[0]) {
-      router.push({ pathname: '/text-edits', params: { imageUri: result.assets[0].uri, prompt: item.prompt || item.title, mode: 'custom' } });
+      try {
+        const { useQuickEditStore } = await import('@/store/quickEditStore');
+        useQuickEditStore.getState().openWithImage({ 
+          functionType: 'custom' as any, 
+          imageUri: result.assets[0].uri, 
+          styleName: item.title, 
+          customPrompt: item.prompt || item.title 
+        });
+      } catch {
+        // fallback: existing flow
+        router.push({ pathname: '/text-edits', params: { imageUri: result.assets[0].uri, prompt: item.prompt || item.title, mode: 'custom' } });
+      }
     }
   };
 

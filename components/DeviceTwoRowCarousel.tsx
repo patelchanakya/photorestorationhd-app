@@ -1,4 +1,4 @@
-import { type FunctionType } from '@/services/modelConfigs';
+import { type FunctionType } from '@/services/photoGenerationV2';
 import { permissionsService } from '@/services/permissions';
 import { useQuickEditStore } from '@/store/quickEditStore';
 import { validatePremiumAccess } from '@/services/revenuecat';

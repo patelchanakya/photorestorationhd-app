@@ -168,6 +168,15 @@ export function QuickEditSheet() {
     setIsUploading(true);
     try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch {}
 
+    // PROMPT LOGGING: Track generation start
+    console.log('🚀 QUICK EDIT GENERATION START:', {
+      functionType: functionType,
+      styleKey: styleKey,
+      styleName: styleName,
+      customPrompt: customPrompt,
+      hasCustomPrompt: !!customPrompt
+    });
+
     // Pass styleKey through global context for webhook system
     (global as any).__quickEditStyleKey = styleKey;
 

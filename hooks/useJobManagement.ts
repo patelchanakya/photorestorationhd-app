@@ -4,7 +4,7 @@ import { notificationService } from '@/services/notificationService';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { Alert } from 'react-native';
-import { type FunctionType } from '@/services/modelConfigs';
+import { type FunctionType } from '@/services/photoGenerationV2';
 
 export function useJobManagement() {
   const { 
