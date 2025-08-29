@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { onboardingTrackingService } from '@/services/onboardingTracking';
+import { onboardingUtils } from '@/utils/onboarding';
 import { Platform } from 'react-native';
 import * as Device from 'expo-device';
 
@@ -199,8 +200,11 @@ export function OnboardingProvider({ children, initialScreen = 'welcome' }: Onbo
         timeSpentSeconds: timeSpent
       });
       
-      // Mark onboarding as completed
+      // Mark onboarding as completed in tracking service
       await onboardingTrackingService.completeOnboarding('completed');
+      
+      // IMPORTANT: Also mark as completed in local storage for hasSeenOnboarding check
+      await onboardingUtils.completeOnboarding();
       
       if (__DEV__) {
         console.log('🎆 [Context] Onboarding completed successfully');

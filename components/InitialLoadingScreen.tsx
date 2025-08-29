@@ -40,7 +40,7 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
   // Helper function to navigate based on onboarding status
   const navigateToApp = async () => {
     try {
-      // Pro users skip onboarding
+      // Pro users skip onboarding completely
       if (isPro) {
         if (__DEV__) {
           console.log('🎯 Pro user detected - skipping onboarding');
@@ -62,6 +62,12 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
       if (__DEV__) {
         console.log('🎯 [TESTING] Always showing onboarding v3 for testing');
         router.replace('/onboarding-v3');
+        // Show paywall for free users after onboarding completion (longer delay for new users)
+        setTimeout(() => {
+          import('@/services/revenuecat').then(({ presentPaywall }) => {
+            presentPaywall().catch(() => {});
+          });
+        }, 1800); // Allow time for "System's all set" message to sink in
         return;
       }
 
@@ -70,17 +76,37 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
           console.log('🎯 User has seen onboarding - going to explore');
         }
         router.replace('/explore');
+        // Show paywall for free users who completed onboarding
+        setTimeout(() => {
+          import('@/services/revenuecat').then(({ presentPaywall }) => {
+            presentPaywall().catch(() => {});
+          });
+        }, 300);
       } else {
         if (__DEV__) {
           console.log('🎯 New user - showing onboarding v3');
         }
         router.replace('/onboarding-v3');
+        // Show paywall for free users after onboarding completion (longer delay for new users)
+        setTimeout(() => {
+          import('@/services/revenuecat').then(({ presentPaywall }) => {
+            presentPaywall().catch(() => {});
+          });
+        }, 1800); // Allow time for "System's all set" message to sink in
       }
     } catch (error) {
       if (__DEV__) {
         console.error('❌ Navigation error, defaulting to explore:', error);
       }
       router.replace('/explore');
+      // Show paywall even on error for free users
+      if (!isPro) {
+        setTimeout(() => {
+          import('@/services/revenuecat').then(({ presentPaywall }) => {
+            presentPaywall().catch(() => {});
+          });
+        }, 300);
+      }
     }
   };
   
@@ -159,16 +185,41 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
   // Handle transition to onboarding video
   useEffect(() => {
     if (minTimeElapsed && isComplete && !showOnloadingVideo && !completionStartedRef.current) {
-      if (__DEV__) {
-        console.log('🎬 Starting onboarding intro video');
+      completionStartedRef.current = true;
+      
+      // Pro users skip onboarding intro video
+      if (isPro) {
+        if (__DEV__) {
+          console.log('🎯 Pro user - skipping onboarding intro video, going directly to app');
+        }
+        navigateToApp();
+        onLoadingComplete();
+        return;
       }
-      setShowOnloadingVideo(true);
-      // Start the onboarding video
-      setTimeout(() => {
-        onloadingVideoPlayer.play();
-      }, 300);
+      
+      // Check if free user has already completed onboarding
+      onboardingUtils.hasSeenOnboarding().then(hasSeenOnboarding => {
+        if (hasSeenOnboarding && !__DEV__) {
+          if (__DEV__) {
+            console.log('🎯 Free user completed onboarding - skipping intro video, going to app with paywall');
+          }
+          navigateToApp();
+          onLoadingComplete();
+          return;
+        }
+        
+        // Show onboarding intro video for new users or dev mode
+        if (__DEV__) {
+          console.log('🎬 Starting onboarding intro video');
+        }
+        setShowOnloadingVideo(true);
+        // Start the onboarding video
+        setTimeout(() => {
+          onloadingVideoPlayer.play();
+        }, 300);
+      });
     }
-  }, [minTimeElapsed, isComplete, showOnloadingVideo]);
+  }, [minTimeElapsed, isComplete, showOnloadingVideo, isPro]);
 
   // Track onboarding video completion
   useEffect(() => {
