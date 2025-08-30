@@ -48,6 +48,15 @@ export default function PhotoMagicUploadScreen() {
       });
 
       if (!result.canceled && result.assets?.[0]) {
+        // Track magic tile selection for library pick
+        analyticsService.trackTileUsage({
+          category: 'popular',
+          tileName: 'Photo Magic Library',
+          tileId: 'magic-library',
+          functionType: 'custom',
+          stage: 'selected'
+        });
+        
         router.replace({
           pathname: '/text-edits',
           params: { 
@@ -82,6 +91,15 @@ export default function PhotoMagicUploadScreen() {
       });
 
       if (!result.canceled && result.assets?.[0]) {
+        // Track magic tile selection for camera
+        analyticsService.trackTileUsage({
+          category: 'popular',
+          tileName: 'Photo Magic Camera',
+          tileId: 'magic-camera',
+          functionType: 'custom',
+          stage: 'selected'
+        });
+        
         router.replace({
           pathname: '/text-edits',
           params: { 

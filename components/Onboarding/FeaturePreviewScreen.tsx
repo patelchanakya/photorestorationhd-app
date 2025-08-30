@@ -276,6 +276,10 @@ function getPreviewMedia(featureId: string): PreviewMedia {
     'add_halo': { type: 'video', source: require('../../assets/videos/popular/halo.mp4') },
     'make_slimmer': { type: 'video', source: require('../../assets/videos/popular/slimmer.mp4') },
     
+    // Memorial features
+    'light_rays': { type: 'video', source: require('../../assets/videos/memorial/light.mp4') },
+    'memorial_flowers': { type: 'video', source: require('../../assets/videos/memorial/flowers.mp4') },
+    
     // Core repair features
     'add_color_bw': { type: 'image', source: require('../../assets/images/popular/colorize/pop-1.png') },
     'unblur_sharpen': { type: 'image', source: require('../../assets/images/popular/enhance/pop-3.png') },

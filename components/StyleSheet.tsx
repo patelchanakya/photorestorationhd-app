@@ -6,6 +6,7 @@ import { useQuickEditStore } from '@/store/quickEditStore';
 import React from 'react';
 import { Dimensions, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS } from 'react-native-reanimated';
+import { analyticsService } from '@/services/analytics';
 
 const BACKGROUNDS = [
   { 
@@ -97,6 +98,22 @@ const StyleSheetBase = ({ type, onClose }: StyleSheetProps) => {
   }, [onClose]);
 
   const selectOption = React.useCallback(async (styleKey: string) => {
+    // Find the style item for tracking
+    const items = type === 'bg' ? BACKGROUNDS : CLOTHES;
+    const selectedItem = items.find(item => item.styleKey === styleKey);
+    
+    // Track style tile selection
+    if (selectedItem) {
+      analyticsService.trackTileUsage({
+        category: 'style',
+        tileName: selectedItem.title,
+        tileId: selectedItem.id,
+        functionType: type === 'bg' ? 'background' : 'outfit',
+        styleKey: styleKey,
+        stage: 'selected'
+      });
+    }
+    
     // Open image picker directly - no closing or weird animations
     // No permission check needed on iOS 11+ - PHPickerViewController handles privacy
     const result = await ImagePicker.launchImageLibraryAsync({ 
@@ -108,11 +125,16 @@ const StyleSheetBase = ({ type, onClose }: StyleSheetProps) => {
     if (!result.canceled && result.assets[0]) {
       // Open Quick Edit sheet prefilled, then close the style sheet
       try {
-        useQuickEditStore.getState().openWithImage({ functionType: 'restoration', imageUri: result.assets[0].uri, styleKey });
+        useQuickEditStore.getState().openWithImage({ 
+          functionType: type === 'bg' ? 'background' : 'outfit', 
+          imageUri: result.assets[0].uri, 
+          styleKey,
+          styleName: selectedItem?.title 
+        });
       } catch {}
       onClose();
     }
-  }, [onClose, router]);
+  }, [onClose, router, type]);
 
   const sheetStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],

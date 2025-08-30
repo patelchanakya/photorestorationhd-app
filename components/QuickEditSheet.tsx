@@ -19,6 +19,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { ProUpgradeModal } from '@/components/ProUpgradeModal';
 import { SavingModal, SavingModalRef } from '@/components/SavingModal';
+import { analyticsService } from '@/services/analytics';
+
+// Helper to determine tile category
+const determineTileCategory = (functionType: string, styleKey?: string | null): 'outfit' | 'background' | 'memorial' | 'popular' | 'feature' | 'style' => {
+  if (functionType === 'outfit') return 'outfit';
+  if (functionType === 'background') return 'background';  
+  if (functionType === 'memorial') return 'memorial';
+  if (functionType === 'custom') return 'popular';
+  if (styleKey) return 'style';
+  return 'feature';
+};
 
 const { height } = Dimensions.get('window');
 
@@ -86,6 +97,8 @@ export function QuickEditSheet() {
         return 'Change Background';
       case 'outfit':
         return 'Change Outfit';
+      case 'memorial':
+        return 'Memorial Edit';
       case 'custom':
         return 'Custom Edit';
       default:
@@ -177,8 +190,27 @@ export function QuickEditSheet() {
       hasCustomPrompt: !!customPrompt
     });
 
+    // Track tile usage started
+    const tileCategory = determineTileCategory(functionType, styleKey);
+    const tileName = styleName || functionType;
+    const tileId = styleKey || functionType;
+    
+    analyticsService.trackTileUsage({
+      category: tileCategory,
+      tileName: tileName,
+      tileId: tileId,
+      functionType: functionType,
+      styleKey: styleKey || undefined,
+      customPrompt: customPrompt || undefined,
+      stage: 'started'
+    });
+
     // Pass styleKey through global context for webhook system
     (global as any).__quickEditStyleKey = styleKey;
+    // Store tile metadata for success tracking
+    (global as any).__tileCategory = tileCategory;
+    (global as any).__tileName = tileName;
+    (global as any).__tileId = tileId;
 
     // Server-side webhook handles all usage checking and limits
 
@@ -197,6 +229,21 @@ export function QuickEditSheet() {
       const data = await photoRestoration.mutateAsync({ imageUri: selectedImageUri, functionType: effectiveFunctionType, imageSource: 'gallery', customPrompt: customPrompt || undefined });
       const id = data.id;
       const restoredUri = (data as any).restoredImageUri || '';
+      
+      // Track success
+      const processingTime = Date.now() - started;
+      analyticsService.trackTileUsage({
+        category: tileCategory,
+        tileName: tileName,
+        tileId: tileId,
+        functionType: functionType,
+        styleKey: styleKey || undefined,
+        customPrompt: customPrompt || undefined,
+        stage: 'completed',
+        success: true,
+        processingTime: processingTime
+      });
+      
       setResult(id, restoredUri);
     } catch (e: any) {
       if (__DEV__) {
@@ -222,6 +269,20 @@ export function QuickEditSheet() {
       } else {
         setIsLimitError(false);
       }
+      
+      // Track failure
+      const processingTime = Date.now() - started;
+      analyticsService.trackTileUsage({
+        category: tileCategory,
+        tileName: tileName,
+        tileId: tileId,
+        functionType: functionType,
+        styleKey: styleKey || undefined,
+        customPrompt: customPrompt || undefined,
+        stage: 'failed',
+        success: false,
+        processingTime: processingTime
+      });
       
       if (__DEV__) {
         console.log('🔴 Setting error message:', errorMsg);

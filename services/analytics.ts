@@ -181,6 +181,62 @@ class AnalyticsService {
     clarityService.setCurrentScreenName(screenName);
     this.track(`screen_${screenName}`, properties);
   }
+
+  // Tile usage tracking
+  trackTileUsage(params: {
+    category: 'outfit' | 'background' | 'memorial' | 'popular' | 'feature' | 'style';
+    tileName: string;
+    tileId: string;
+    functionType?: string;
+    styleKey?: string;
+    customPrompt?: string;
+    stage: 'selected' | 'started' | 'completed' | 'failed';
+    success?: boolean;
+    processingTime?: number;
+  }) {
+    const { category, tileName, tileId, functionType, styleKey, customPrompt, stage, success, processingTime } = params;
+    
+    // Track in Clarity based on stage
+    switch (stage) {
+      case 'selected':
+        clarityService.trackTileSelected(category, tileName, tileId, {
+          function_type: functionType || '',
+          style_key: styleKey || '',
+          has_custom_prompt: customPrompt ? 'true' : 'false'
+        });
+        break;
+      
+      case 'started':
+        clarityService.trackTileStarted(category, tileName, tileId);
+        break;
+      
+      case 'completed':
+      case 'failed':
+        clarityService.trackTileCompleted(
+          category, 
+          tileName, 
+          tileId, 
+          success ?? (stage === 'completed'),
+          processingTime
+        );
+        break;
+    }
+    
+    // Also track as general event
+    this.track(`tile_${stage}`, {
+      category,
+      tile_name: tileName,
+      tile_id: tileId,
+      function_type: functionType,
+      style_key: styleKey,
+      success: success,
+      processing_time: processingTime
+    });
+    
+    if (__DEV__) {
+      console.log(`📊 Tile Usage: ${tileName} (${category}) - ${stage}`);
+    }
+  }
 }
 
 // Export singleton instance

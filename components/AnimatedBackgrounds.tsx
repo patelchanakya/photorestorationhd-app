@@ -1,155 +1,176 @@
-// Removed Pro gating - all backgrounds are now free
+// Memorial-focused features for passed loved ones and remembrance photos
+import { useFocusEffect } from '@react-navigation/native';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import React from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { AppState, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { analyticsService } from '@/services/analytics';
 
-interface BackgroundItem {
+interface MemorialItem {
   id: string;
   video?: any; // require('...') for videos
   image?: any; // require('...') for images as fallback
   title: string;
   type?: 'video' | 'image';
-  backgroundPrompt?: string; // The prompt to apply this background
+  memorialPrompt?: string; // The prompt to apply this memorial effect
 }
 
-// Background presets aligned with user requests/research
-const DEFAULT_BACKGROUNDS: BackgroundItem[] = [
+// Memorial features specifically designed for passed loved ones and remembrance photos
+const DEFAULT_MEMORIAL_ITEMS: MemorialItem[] = [
   {
-    id: 'bg-1',
-    title: 'Garden',
-    type: 'image',
-    image: require('../assets/images/backgrounds/thumbnail/garden/garden.jpeg'),
-    backgroundPrompt:
-      "Replace the background with a clear garden scene of greenery and foliage in natural daylight. Keep leaves and shapes recognizable without heavy blur. Maintain balanced exposure and natural colors. Keep the subject exactly the same—face, skin tone, hair, clothing, pose, lighting, and shadows unchanged. No insects, flowers touching the subject, or props."
+    id: 'memorial-1',
+    title: 'Light Rays',
+    type: 'video',
+    video: require('../assets/videos/memorial/light.mp4'),
+    memorialPrompt:
+      "Add divine light rays shining down from above, creating a heavenly and spiritual atmosphere perfect for memorial photos. The rays should emanate from above and create a peaceful, uplifting effect."
   },
   {
-    id: 'bg-2',
-    title: 'Heavenly',
-    type: 'image',
-    image: require('../assets/images/backgrounds/thumbnail/heavenly/heavenly.jpg'),
-    backgroundPrompt:
-      "Replace the background with a bright heavenly sky of soft white clouds and gentle sunbeams. Keep clouds clear and recognizable, using a soft pastel blue-to-white gradient with a subtle glow. Maintain balanced exposure and natural colors. Keep the subject unchanged—face, skin tone, hair, clothing, pose, lighting, and shadows. No halos, wings, text, or added objects."
+    id: 'memorial-2',
+    title: 'Dove of Peace',
+    type: 'video',
+    video: require('../assets/videos/memorial/dove.mp4'),
+    memorialPrompt:
+      "Add a white dove symbolizing peace, hope, and the Holy Spirit. Position it gracefully in the background or near the subject, perfect for memorial and remembrance photos."
   },
   {
-    id: 'bg-3',
-    title: 'Passport',
-    type: 'image',
-    image: require('../assets/images/backgrounds/thumbnail/passport/passport.jpg'),
-    backgroundPrompt:
-      "Replace the background with a perfectly uniform pure white (#FFFFFF), evenly lit and seamless. No texture, gradients, shadows, or color cast. Keep the subject unchanged—face, skin tone, hair, clothing, pose, and lighting. No retouching or added elements."
+    id: 'memorial-3',
+    title: 'Ethereal Glow',
+    type: 'video',
+    video: require('../assets/videos/memorial/glow.mp4'),
+    memorialPrompt:
+      "Add a soft, ethereal glow around the subject creating a peaceful and spiritual memorial atmosphere. The glow should be gentle and respectful, not overwhelming."
   },
   {
-    id: 'bg-4',
-    title: 'Studio',
-    type: 'image',
-    image: require('../assets/images/backgrounds/thumbnail/studio/studio.jpeg'),
-    backgroundPrompt:
-      "Replace the background with a seamless studio backdrop in white or light gray, evenly lit and smooth. No texture, gradients, or banding. Keep the subject unchanged—face, skin tone, hair, clothing, pose, lighting, and shadows. No retouching."
+    id: 'memorial-4',
+    title: 'Heaven Gates',
+    type: 'video',
+    video: require('../assets/videos/memorial/gates.mp4'),
+    memorialPrompt:
+      "Add subtle heavenly gate elements in the background for a spiritual and comforting memorial effect. The gates should be elegant and not dominate the photo."
   },
   {
-    id: 'bg-5',
-    title: 'Blur',
-    type: 'image',
-    image: require('../assets/images/backgrounds/thumbnail/blur/blurred.jpeg'),
-    backgroundPrompt:
-      "Keep the original background but apply a soft natural blur and brighten it slightly (~25%) while preserving color balance. Keep the subject unchanged—face, skin tone, hair, clothing, pose, lighting, and shadows. No added glow or light spill."
+    id: 'memorial-5',
+    title: 'Memorial Flowers',
+    type: 'video',
+    video: require('../assets/videos/memorial/flowers.mp4'),
+    memorialPrompt:
+      "Add beautiful memorial flowers like lilies, roses, or white flowers around the photo border or background, symbolizing love, remembrance, and peace."
   },
   {
-    id: 'bg-6',
-    title: 'Beach',
-    type: 'image',
-    image: require('../assets/images/backgrounds/thumbnail/beach/beach.jpeg'),
-    backgroundPrompt:
-      "Replace the background with a clear beach scene: visible ocean horizon, soft blue sky, and light sand. Keep details recognizable without heavy blur. Maintain daylight exposure and natural colors. Keep the subject unchanged—face, skin tone, hair, clothing, pose, lighting, and shadows. No umbrellas, props, or text."
-  },
-  {
-    id: 'bg-7',
-    title: 'City',
-    type: 'image',
-    image: require('../assets/images/backgrounds/thumbnail/city/city.jpeg'),
-    backgroundPrompt:
-      "Replace the background with a modern city scene in daylight—street or skyline—with recognizable buildings. Keep details clear without heavy blur. Maintain balanced exposure and natural colors. Keep the subject unchanged—face, skin tone, hair, clothing, pose, lighting, and shadows. No text, logos, or props."
-  },
-  {
-    id: 'bg-8',
-    title: 'Wedding',
-    type: 'image',
-    image: require('../assets/images/backgrounds/thumbnail/wedding/wedding.jpeg'),
-    backgroundPrompt:
-      "Replace the background with an elegant wedding venue interior (aisle or reception hall) lit warmly. Include tasteful decor such as soft florals, candles, or string lights. Keep details recognizable without heavy blur. Maintain warm balanced tones. Keep the subject unchanged—face, skin tone, hair, clothing, pose, lighting, and shadows. No veils, bouquets, text, or props on the subject."
-  },
-  {
-    id: 'bg-10',
-    title: 'Soft Lights',
-    type: 'image',
-    image: require('../assets/images/backgrounds/thumbnail/soft-lights/softer.jpg'),
-    backgroundPrompt:
-      "Replace the background with a cinematic bokeh of soft neutral-to-warm lights. Use large, smooth discs with shallow depth-of-field. Keep the subject unchanged—face, skin tone, hair, clothing, pose, lighting, and shadows. No light spill, text, or props."
-  },
-  {
-    id: 'bg-11',
-    title: 'Christmas',
-    type: 'image',
-    image: require('../assets/images/backgrounds/thumbnail/christmas/christmas.jpg'),
-    backgroundPrompt:
-      "Replace the background with an elegant Christmas interior scene: decorated tree, warm string lights, and tasteful holiday decor in a living-room setting. Keep details recognizable without heavy blur. Maintain balanced exposure, natural colors, and realistic depth-of-field. Keep the subject unchanged—face, skin tone, hair, clothing, pose, lighting, and shadows. No objects on the subject, no text, logos, snow overlays, or effects."
-  },
+    id: 'memorial-6',
+    title: 'Clean Background',
+    type: 'video',
+    video: require('../assets/videos/memorial/remback.mp4'),
+    memorialPrompt:
+      "Remove or clean up the background for a clean, professional memorial display that focuses attention on your loved one. Perfect for memorial services and displays."
+  }
 ];
 
 // VideoView component with player hook - optimized for performance
-const VideoViewWithPlayer = ({ video, isVisible = true }: { video: any; isVisible?: boolean }) => {
+const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) => {
+  // Deterministic values based on index for visual variety
+  const videoIndex = index || 0;
+  const playbackRate = React.useMemo(() => {
+    // Normal playback speeds
+    const rates = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0];
+    return rates[videoIndex % rates.length];
+  }, [videoIndex]);
+  
+  const initialSeek = React.useMemo(() => {
+    // Start at different points in the video (0-2 seconds)
+    return (videoIndex * 0.3) % 2;
+  }, [videoIndex]);
+  
   const player = useVideoPlayer(video, (player) => {
     player.loop = true;
     player.muted = true;
-    // Don't auto-play, wait for visibility
+    player.playbackRate = playbackRate;
+    // Don't auto-play, wait for explicit play call
   });
 
+  // Start playback with staggered timing and seek to initial position
   React.useEffect(() => {
     if (!player) return;
     
     let playTimer: any;
     
-    if (isVisible) {
-      // Small delay to prevent all videos starting at once
-      playTimer = setTimeout(() => {
-        if (!player.playing) player.play();
-      }, Math.random() * 300);
-    } else {
-      // Pause when not visible
-      if (player.playing) player.pause();
-    }
+    // Seek to initial position then start playing
+    playTimer = setTimeout(() => {
+      player.currentTime = initialSeek;
+      player.play();
+    }, videoIndex * 150); // Staggered start for visual variety
     
-    return () => {
-      if (playTimer) clearTimeout(playTimer);
+    return () => clearTimeout(playTimer);
+  }, [player, videoIndex, initialSeek]);
+
+  // Handle app state changes (backgrounding/foregrounding)
+  React.useEffect(() => {
+    const handleAppStateChange = (nextAppState: string) => {
+      if (nextAppState === 'active') {
+        // Resume video playback when app returns to foreground
+        if (player && !player.playing) {
+          // Small delay to let the app settle
+          setTimeout(() => {
+            player.play();
+          }, 100 + videoIndex * 50); // Staggered resume
+        }
+      }
     };
-  }, [player, isVisible]);
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription?.remove();
+  }, [player, videoIndex]);
+
+  // Handle navigation focus (returning to screen)
+  useFocusEffect(
+    React.useCallback(() => {
+      // Resume playback when screen comes into focus
+      if (player && !player.playing) {
+        setTimeout(() => {
+          player.play();
+        }, 100 + videoIndex * 50);
+      }
+    }, [player, videoIndex])
+  );
 
   return (
-    <VideoView
-      player={player}
-      style={{ width: '100%', height: '100%' }}
-      contentFit="cover"
-      nativeControls={false}
-      allowsFullscreen={false}
-    />
+    <Animated.View entering={FadeIn.delay(videoIndex * 100).duration(600)} style={{ width: '100%', height: '100%' }}>
+      <VideoView
+        player={player}
+        style={{ width: '100%', height: '100%', opacity: 0.95 }}
+        contentFit="cover"
+        nativeControls={false}
+        allowsFullscreen={false}
+      />
+    </Animated.View>
   );
 };
 
-export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { backgrounds?: BackgroundItem[] }) {
+export function MemorialFeatures({ memorialItems = DEFAULT_MEMORIAL_ITEMS }: { memorialItems?: MemorialItem[] }) {
   const router = useRouter();
-  const handleBackgroundSelect = async (background: BackgroundItem) => {
-    // No Pro gating - all backgrounds are now free
+  const handleMemorialSelect = async (memorialItem: MemorialItem) => {
+    // No Pro gating - all memorial features are now free
     
-    // PROMPT LOGGING: Track which background style is selected
-    console.log('🌅 BACKGROUND STYLE SELECTED:', {
-      id: background.id,
-      title: background.title,
-      prompt: background.backgroundPrompt
+    // PROMPT LOGGING: Track which memorial feature is selected
+    console.log('🕊️ MEMORIAL FEATURE SELECTED:', {
+      id: memorialItem.id,
+      title: memorialItem.title,
+      prompt: memorialItem.memorialPrompt
+    });
+    
+    // Track memorial tile selection
+    analyticsService.trackTileUsage({
+      category: 'memorial',
+      tileName: memorialItem.title,
+      tileId: memorialItem.id,
+      functionType: 'memorial',
+      customPrompt: memorialItem.memorialPrompt,
+      stage: 'selected'
     });
     
     // Launch image picker then open Quick Edit sheet in background mode
@@ -157,10 +178,10 @@ export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { bac
     if (!result.canceled && result.assets[0]) {
       try {
         const { useQuickEditStore } = await import('@/store/quickEditStore');
-        useQuickEditStore.getState().openWithImage({ functionType: 'background' as any, imageUri: result.assets[0].uri, styleName: background.title, customPrompt: background.backgroundPrompt || background.title });
+        useQuickEditStore.getState().openWithImage({ functionType: 'memorial' as any, imageUri: result.assets[0].uri, styleKey: memorialItem.id, styleName: memorialItem.title, customPrompt: memorialItem.memorialPrompt || memorialItem.title });
       } catch {
         // fallback: existing flow
-        router.push({ pathname: '/text-edits', params: { imageUri: result.assets[0].uri, prompt: background.backgroundPrompt || background.title, mode: 'background' } });
+        router.push({ pathname: '/text-edits', params: { imageUri: result.assets[0].uri, prompt: memorialItem.memorialPrompt || memorialItem.title, mode: 'memorial' } });
       }
     }
   };
@@ -171,17 +192,16 @@ export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { bac
         horizontal 
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 16 }}
-        // Removed extraData as Pro gating is removed
       >
-        {backgrounds.map((item, index) => (
+        {memorialItems.map((item, index) => (
           <Animated.View
             key={item.id}
             entering={FadeIn.delay(index * 100).duration(800)}
-            style={{ width: 120, marginRight: index === backgrounds.length - 1 ? 0 : 10 }}
+            style={{ width: 120, marginRight: index === memorialItems.length - 1 ? 0 : 10 }}
           >
             <TouchableOpacity
               activeOpacity={0.9}
-              onPress={() => handleBackgroundSelect(item)}
+              onPress={() => handleMemorialSelect(item)}
               style={{ 
                 width: 120, 
                 aspectRatio: 9/16, 
@@ -189,19 +209,22 @@ export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { bac
                 overflow: 'hidden', 
                 borderWidth: 1, 
                 borderColor: 'rgba(255,255,255,0.08)', 
-                backgroundColor: '#0b0b0f' 
+                backgroundColor: '#000000' 
               }}
             >
               {/* Render video or image based on type */}
               {item.type === 'video' && item.video ? (
-                <VideoViewWithPlayer video={item.video} />
-              ) : (
+                <VideoViewWithPlayer video={item.video} index={index} />
+              ) : item.image ? (
                 <ExpoImage 
                   source={item.image} 
                   style={{ width: '100%', height: '100%' }} 
                   contentFit="cover" 
                   transition={0} 
                 />
+              ) : (
+                // Black background for items without images
+                <View style={{ width: '100%', height: '100%', backgroundColor: '#000000' }} />
               )}
               
               {/* Gradient overlay */}
@@ -212,7 +235,7 @@ export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { bac
                 style={{ position: 'absolute', inset: 0 as any }}
               />
               
-              {/* Bottom label - removed PRO badge */}
+              {/* Bottom label */}
               <View style={{ position: 'absolute', left: 10, bottom: 10 }}>
                 <Text style={{ 
                   color: '#FFFFFF', 

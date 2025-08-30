@@ -1,21 +1,21 @@
+import { MemorialFeatures } from '@/components/AnimatedBackgrounds';
+import { AnimatedOutfits } from '@/components/AnimatedOutfits';
 import { DeviceTwoRowCarousel } from '@/components/DeviceTwoRowCarousel';
 import { FeatureCardsList } from '@/components/FeatureCardsList';
+import { PopularExamples } from '@/components/PopularExamples';
 import { QuickActionRail } from '@/components/QuickActionRail';
 import { QuickEditSheet } from '@/components/QuickEditSheet';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { AnimatedBackgrounds } from '@/components/AnimatedBackgrounds';
-import { AnimatedOutfits } from '@/components/AnimatedOutfits';
-import { PopularExamples } from '@/components/PopularExamples';
-import * as ImagePicker from 'expo-image-picker';
-import { useQuickEditStore } from '@/store/quickEditStore';
-import { presentPaywall, validatePremiumAccess, restorePurchasesSecure } from '@/services/revenuecat';
 import { useRevenueCat } from '@/contexts/RevenueCatContext';
-import Constants from 'expo-constants';
-import { useRouter } from 'expo-router';
 import { analyticsService } from '@/services/analytics';
-import React, { useCallback } from 'react';
+import { presentPaywall, restorePurchasesSecure, validatePremiumAccess } from '@/services/revenuecat';
+import { useQuickEditStore } from '@/store/quickEditStore';
+import Constants from 'expo-constants';
+import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
+import React from 'react';
 import { Alert, Platform, ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function HomeGalleryLikeScreen() {
@@ -245,11 +245,11 @@ export default function HomeGalleryLikeScreen() {
         </View>
         <AnimatedOutfits />
 
-        {/* Backgrounds Section */}
+        {/* Memorial Section */}
         <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>Backgrounds</Text>
+          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>Memorial</Text>
         </View>
-        <AnimatedBackgrounds />
+        <MemorialFeatures />
 
         {/* Other AI Features - Enlighten, etc. */}
         <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>

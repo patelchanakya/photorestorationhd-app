@@ -15,6 +15,7 @@ import Animated, { FadeInDown, FadeInUp, FadeOut, useAnimatedStyle, useSharedVal
 import { ImageSelector } from '@/components/PhotoMagic/ImageSelector';
 import { CategoryTabs } from '@/components/PhotoMagic/CategoryTabs';
 import { PresetCard } from '@/components/PhotoMagic/PresetCard';
+import { analyticsService } from '@/services/analytics';
 
 export default function TextEditsScreen() {
   const router = useRouter();
@@ -103,6 +104,16 @@ useEffect(() => {
     let functionType: any = 'custom';
     if (editMode === 'outfit') functionType = 'outfit';
     else if (editMode === 'background') functionType = 'background';
+    
+    // Track text-edit tile usage
+    analyticsService.trackTileUsage({
+      category: 'popular',
+      tileName: `Text Edit - ${editMode || 'custom'}`,
+      tileId: `text-edit-${editMode || 'custom'}`,
+      functionType: functionType,
+      customPrompt: prompt.substring(0, 100), // Truncate for privacy
+      stage: 'started'
+    });
 
     // Store text-edit context for recovery
     await AsyncStorage.setItem('activeTextEditContext', JSON.stringify({
@@ -214,6 +225,16 @@ useEffect(() => {
       const already = prev.includes(label);
       const next = already ? prev.filter(l => l !== label) : [...prev, label];
       if (!already) {
+        // Track preset tile selection
+        analyticsService.trackTileUsage({
+          category: 'popular',
+          tileName: `Preset - ${label}`,
+          tileId: `preset-${label.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+          functionType: 'custom',
+          customPrompt: s?.template || s?.prefill,
+          stage: 'selected'
+        });
+        
         if (s?.opensEditor) {
           // Selecting a text-based preset: prefill custom prompt and switch to custom mode
           setCustomPrompt(s.prefill || '');

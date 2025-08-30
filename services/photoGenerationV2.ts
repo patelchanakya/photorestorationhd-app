@@ -2,7 +2,7 @@ import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export type FunctionType = 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'outfit' | 'background' | 'enlighten' | 'custom' | 'restore_repair';
+export type FunctionType = 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'outfit' | 'background' | 'enlighten' | 'custom' | 'restore_repair' | 'memorial';
 
 // Webhook-based photo generation service for v2 endpoints
 // This replaces the client-side polling approach with secure server-side generation
@@ -241,6 +241,31 @@ export async function generateCustom(
   });
 }
 
+// Memorial generation
+export async function generateMemorial(
+  imageUri: string,
+  styleKey?: string,
+  customPrompt?: string,
+  userId?: string
+): Promise<GenerationResponse> {
+  if (__DEV__) {
+    console.log('🕊️ Starting memorial generation via webhook system');
+    console.log('🕊️ MEMORIAL GENERATION PARAMS:', {
+      styleKey: styleKey,
+      hasCustomPrompt: !!customPrompt,
+      customPrompt: customPrompt,
+      willUseCustomPrompt: !!customPrompt,
+      willUseStyleKey: !customPrompt && !!styleKey
+    });
+  }
+
+  return callGenerationEndpoint('memorial-generation-v2', imageUri, {
+    style_key: styleKey,
+    custom_prompt: customPrompt,
+    user_id: userId
+  });
+}
+
 // Enhance generation
 export async function generateEnhance(
   imageUri: string,
@@ -371,6 +396,9 @@ export async function generatePhoto(
     
     case 'background':
       return generateBackground(imageUri, styleKey, customPrompt, userId);
+    
+    case 'memorial':
+      return generateMemorial(imageUri, styleKey, customPrompt, userId);
     
     case 'custom':
       if (!customPrompt) {

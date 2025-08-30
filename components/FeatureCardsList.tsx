@@ -9,6 +9,7 @@ import * as Haptics from 'expo-haptics';
 import { IconSymbol } from './ui/IconSymbol';
 import { featureRequestService } from '@/services/featureRequestService';
 import { useRevenueCat } from '@/contexts/RevenueCatContext';
+import { analyticsService } from '@/services/analytics';
 
 type CardItem = {
   id: string;
@@ -174,6 +175,17 @@ export function FeatureCardsList({
       functionType: functionType,
       styleKey: item.styleKey
     });
+    
+    // Track feature tile selection
+    analyticsService.trackTileUsage({
+      category: 'feature',
+      tileName: item.title,
+      tileId: item.id,
+      functionType: functionType,
+      styleKey: item.styleKey,
+      stage: 'selected'
+    });
+    
     // Open native picker first, then open Quick Edit sheet prefilled
     // No permission check needed on iOS 11+ - PHPickerViewController handles privacy
     const result = await ImagePicker.launchImageLibraryAsync({ 

@@ -8,6 +8,7 @@ import { VideoView, useVideoPlayer } from 'expo-video';
 import React from 'react';
 import { AppState, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { analyticsService } from '@/services/analytics';
 
 interface OutfitItem {
   id: string;
@@ -172,6 +173,16 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
       id: outfit.id,
       title: outfit.title,
       prompt: outfit.outfitPrompt
+    });
+    
+    // Track outfit tile selection
+    analyticsService.trackTileUsage({
+      category: 'outfit',
+      tileName: outfit.title,
+      tileId: outfit.id,
+      functionType: 'outfit',
+      customPrompt: outfit.outfitPrompt,
+      stage: 'selected'
     });
     
     // Launch image picker then open Quick Edit sheet in outfit mode

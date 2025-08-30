@@ -6,7 +6,7 @@ export type QuickStage = 'hidden' | 'select' | 'preview' | 'loading' | 'done' | 
 export interface QuickEditState {
   visible: boolean;
   stage: QuickStage;
-  functionType: 'restoration' | 'repair' | 'restore_repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'background' | 'outfit' | 'custom' | null;
+  functionType: 'restoration' | 'repair' | 'restore_repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'background' | 'outfit' | 'custom' | 'memorial' | null;
   styleKey?: string | null;
   styleName?: string | null;
   selectedImageUri?: string | null;

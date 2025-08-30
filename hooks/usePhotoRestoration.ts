@@ -205,6 +205,29 @@ export function usePhotoRestoration() {
             ? (functionType as 'restoration'|'repair'|'unblur'|'colorize'|'descratch')
             : 'restoration'
         );
+        
+        // Track tile success if tile metadata is available
+        const tileCategory = (global as any).__tileCategory;
+        const tileName = (global as any).__tileName;  
+        const tileId = (global as any).__tileId;
+        
+        if (tileCategory && tileName && tileId) {
+          analyticsService.trackTileUsage({
+            category: tileCategory,
+            tileName: tileName,
+            tileId: tileId,
+            functionType: functionType,
+            styleKey: (global as any).__quickEditStyleKey || undefined,
+            stage: 'completed',
+            success: true,
+            processingTime: immediateTime
+          });
+          
+          // Clean up global tile metadata
+          (global as any).__tileCategory = undefined;
+          (global as any).__tileName = undefined;
+          (global as any).__tileId = undefined;
+        }
 
         // Phase 2: Start background processing for local files (non-blocking)
         // This happens after the immediate return, so UI shows result instantly
@@ -354,6 +377,29 @@ export function usePhotoRestoration() {
             ? (functionType as 'restoration'|'repair'|'unblur'|'colorize'|'descratch')
             : 'restoration'
         );
+        
+        // Track tile failure if tile metadata is available
+        const tileCategory = (global as any).__tileCategory;
+        const tileName = (global as any).__tileName;  
+        const tileId = (global as any).__tileId;
+        
+        if (tileCategory && tileName && tileId) {
+          analyticsService.trackTileUsage({
+            category: tileCategory,
+            tileName: tileName,
+            tileId: tileId,
+            functionType: functionType,
+            styleKey: (global as any).__quickEditStyleKey || undefined,
+            stage: 'failed',
+            success: false,
+            processingTime: Date.now() - startTime
+          });
+          
+          // Clean up global tile metadata
+          (global as any).__tileCategory = undefined;
+          (global as any).__tileName = undefined;
+          (global as any).__tileId = undefined;
+        }
         
         // No client-side rollback needed - webhook functions handle server-side rollback
         if (__DEV__) {

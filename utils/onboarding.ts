@@ -19,7 +19,7 @@ export interface OnboardingFeature {
   name: string;
   description: string;
   icon: string;
-  mapsTo: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'outfit' | 'background' | 'enlighten' | 'custom' | 'skip';
+  mapsTo: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'outfit' | 'background' | 'enlighten' | 'custom' | 'memorial' | 'skip';
   gradient: [string, string];
   styleKey?: string;
   isCustomPrompt?: boolean;
@@ -121,6 +121,7 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
     description: 'Create professional blurred background effect',
     icon: 'camera.aperture',
     mapsTo: 'background',
+    styleKey: 'bg-5',
     gradient: ['#0ea5e9', '#38bdf8']
   },
 
@@ -132,6 +133,24 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
     icon: 'sun.max',
     mapsTo: 'custom',
     gradient: ['#fbbf24', '#f59e0b']
+  },
+  {
+    id: 'light_rays',
+    name: 'Light Rays',
+    description: 'Add peaceful memorial atmosphere with golden light',
+    icon: 'sun.max.fill',
+    mapsTo: 'memorial',
+    styleKey: 'memorial-1',
+    gradient: ['#fbbf24', '#f59e0b']
+  },
+  {
+    id: 'memorial_flowers',
+    name: 'Memorial Flowers',
+    description: 'Cover scene with memorial flowers and petals',
+    icon: 'leaf.fill',
+    mapsTo: 'memorial',
+    styleKey: 'memorial-5',
+    gradient: ['#f472b6', '#fb7185']
   },
   {
     id: 'make_slimmer',

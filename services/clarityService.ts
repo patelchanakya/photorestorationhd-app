@@ -254,6 +254,69 @@ class ClarityService {
       });
     }
   }
+
+  // Tile tracking methods
+  trackTileSelected(category: string, tileName: string, tileId: string, metadata?: Record<string, string>) {
+    // Set tags for filtering
+    this.setCustomTag('tile_category', category);
+    this.setCustomTag('tile_name', tileName);
+    this.setCustomTag('tile_id', tileId);
+    
+    if (metadata) {
+      Object.entries(metadata).forEach(([key, value]) => {
+        this.setCustomTag(`tile_${key}`, value);
+      });
+    }
+    
+    // Send the event
+    this.sendCustomEvent(`tile_selected_${category}`);
+    
+    if (__DEV__) {
+      console.log(`📊 Tile Selected: ${tileName} (${category})`);
+    }
+  }
+
+  trackTileStarted(category: string, tileName: string, tileId: string) {
+    this.setCustomTag('tile_category', category);
+    this.setCustomTag('tile_name', tileName);
+    this.setCustomTag('tile_id', tileId);
+    
+    this.sendCustomEvent(`tile_started_${category}`);
+    
+    if (__DEV__) {
+      console.log(`🚀 Tile Started: ${tileName} (${category})`);
+    }
+  }
+
+  trackTileCompleted(category: string, tileName: string, tileId: string, success: boolean, duration?: number) {
+    this.setCustomTag('tile_category', category);
+    this.setCustomTag('tile_name', tileName);
+    this.setCustomTag('tile_id', tileId);
+    this.setCustomTag('tile_success', success ? 'true' : 'false');
+    
+    if (duration) {
+      this.setCustomTag('tile_duration_ms', duration.toString());
+    }
+    
+    this.sendCustomEvent(success ? `tile_completed_${category}` : `tile_failed_${category}`);
+    
+    if (__DEV__) {
+      console.log(`${success ? '✅' : '❌'} Tile ${success ? 'Completed' : 'Failed'}: ${tileName} (${category})${duration ? ` in ${duration}ms` : ''}`);
+    }
+  }
+
+  trackTileError(category: string, tileName: string, tileId: string, error: string) {
+    this.setCustomTag('tile_category', category);
+    this.setCustomTag('tile_name', tileName);
+    this.setCustomTag('tile_id', tileId);
+    this.setCustomTag('tile_error', error.substring(0, 100)); // Truncate for privacy
+    
+    this.sendCustomEvent(`tile_error_${category}`);
+    
+    if (__DEV__) {
+      console.log(`⚠️ Tile Error: ${tileName} (${category}) - ${error}`);
+    }
+  }
 }
 
 // Export singleton instance

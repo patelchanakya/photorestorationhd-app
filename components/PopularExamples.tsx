@@ -8,6 +8,7 @@ import { VideoView, useVideoPlayer } from 'expo-video';
 import React from 'react';
 import { AppState, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { analyticsService } from '@/services/analytics';
 
 interface PopularItem {
   id: string;
@@ -75,6 +76,34 @@ const DEFAULT_POPULAR_ITEMS: PopularItem[] = [
     type: 'video', 
     video: require('../assets/videos/popular/smile.mp4'), 
     prompt: "Add a natural, authentic smile while preserving facial identity and features." 
+  },
+  { 
+    id: 'popular-9', 
+    title: 'Garden Background', 
+    type: 'image', 
+    image: require('../assets/images/backgrounds/thumbnail/garden/garden.jpeg'), 
+    prompt: "Replace background with a garden scene - greenery and foliage in natural daylight." 
+  },
+  { 
+    id: 'popular-10', 
+    title: 'Studio Background', 
+    type: 'image', 
+    image: require('../assets/images/backgrounds/thumbnail/studio/studio.jpeg'), 
+    prompt: "Replace background with a clean studio backdrop in white or light gray." 
+  },
+  { 
+    id: 'popular-11', 
+    title: 'Soft Lights Background', 
+    type: 'image', 
+    image: require('../assets/images/backgrounds/thumbnail/soft-lights/softer.jpg'), 
+    prompt: "Replace background with soft bokeh lights for a cinematic look." 
+  },
+  { 
+    id: 'popular-12', 
+    title: 'Heavenly Background', 
+    type: 'image', 
+    image: require('../assets/images/backgrounds/thumbnail/heavenly/heavenly.jpg'), 
+    prompt: "Replace background with a bright heavenly sky of soft white clouds and gentle sunbeams." 
   }
 ];
 
@@ -186,6 +215,16 @@ export function PopularExamples({ items = DEFAULT_POPULAR_ITEMS }: { items?: Pop
       id: item.id,
       title: item.title,
       prompt: item.prompt
+    });
+    
+    // Track popular tile selection
+    analyticsService.trackTileUsage({
+      category: 'popular',
+      tileName: item.title,
+      tileId: item.id,
+      functionType: 'custom',
+      customPrompt: item.prompt,
+      stage: 'selected'
     });
     
     // Launch image picker then open Quick Edit sheet in custom mode
