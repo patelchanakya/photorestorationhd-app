@@ -30,7 +30,10 @@ export function DeviceTwoRowCarousel({ functionType }: DeviceTwoRowCarouselProps
 
   useEffect(() => {
     // Check if we have media library permission from our centralized service
-    const checkPermission = () => {
+    const checkPermission = async () => {
+      // Force refresh permission state in case it was updated during onboarding
+      await permissionsService.refreshPermissionStates();
+      
       const granted = permissionsService.hasMediaLibraryPermission();
       setHasPermission(granted);
       if (granted && !didInitRef.current) {
@@ -39,12 +42,19 @@ export function DeviceTwoRowCarousel({ functionType }: DeviceTwoRowCarouselProps
       }
     };
 
-    // Check immediately
+    // Check immediately with async refresh
     checkPermission();
     
     // If no permission initially, check periodically in case user grants it later
     if (!permissionsService.hasMediaLibraryPermission()) {
-      const interval = setInterval(checkPermission, 1000);
+      const interval = setInterval(() => {
+        const granted = permissionsService.hasMediaLibraryPermission();
+        setHasPermission(granted);
+        if (granted && !didInitRef.current) {
+          didInitRef.current = true;
+          resetAndLoad();
+        }
+      }, 1000);
       return () => clearInterval(interval);
     }
   }, []);

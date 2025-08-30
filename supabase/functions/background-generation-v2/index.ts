@@ -200,6 +200,30 @@ serve(async (req) => {
 
     console.log(`✅ Prediction created: ${prediction.id}`)
 
+    // Upsert prediction into database for status tracking
+    const { error: insertError } = await supabase
+      .from('photo_predictions')
+      .upsert({
+        id: prediction.id,
+        user_id: user_id || 'anonymous',
+        mode: 'background',
+        status: 'starting',
+        style_key: style_key || null,
+        input: {
+          prompt: prompt,
+          style_title: selectedStyle?.title || null,
+          has_custom_prompt: !!custom_prompt
+        },
+        created_at: new Date().toISOString()
+      })
+
+    if (insertError) {
+      console.error('Failed to insert prediction into database:', insertError)
+      // Continue anyway - webhook will handle updates
+    } else {
+      console.log(`✅ Prediction ${prediction.id} inserted into database`)
+    }
+
     // Return prediction ID to client for polling
     return new Response(
       JSON.stringify({ 

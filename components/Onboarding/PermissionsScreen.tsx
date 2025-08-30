@@ -16,6 +16,7 @@ import { OnboardingContainer } from './shared/OnboardingContainer';
 import { OnboardingButton } from './shared/OnboardingButton';
 import { ONBOARDING_COLORS, ONBOARDING_SPACING, ONBOARDING_TYPOGRAPHY, ONBOARDING_SHADOWS } from './shared/constants';
 import { analyticsService } from '@/services/analytics';
+import { permissionsService } from '@/services/permissions';
 
 interface PermissionsScreenProps {
   onContinue: () => void;
@@ -107,6 +108,9 @@ export function PermissionsScreen({ onContinue }: PermissionsScreenProps) {
       if (__DEV__) {
         console.log('📸 [Permissions] Permission result:', permissionResult.status);
       }
+      
+      // Immediately update the permissions service state so it's available in explore screen
+      permissionsService.updatePermissionState('mediaLibrary', permissionResult.status as any);
       
     } catch (error) {
       if (__DEV__) {

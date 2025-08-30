@@ -126,6 +126,8 @@ export function QuickEditSheet() {
     }
     
     close();
+    // Reset processing state
+    isProcessingRef.current = false;
     // Give the exit animation time, then aggressively free image memory
     setTimeout(() => {
       try { (ExpoImage as any).clearMemoryCache?.(); } catch {}
@@ -134,6 +136,7 @@ export function QuickEditSheet() {
   const [rendered, setRendered] = React.useState(false);
   const [isUploading, setIsUploading] = React.useState(false);
   const [showUpgrade, setShowUpgrade] = React.useState(false);
+  const isProcessingRef = React.useRef(false);
   React.useEffect(() => {
     // Mount and animate in
     if (visible) {
@@ -178,8 +181,14 @@ export function QuickEditSheet() {
 
   const handleUpload = async () => {
     if (!selectedImageUri || !functionType) return;
-    if (isUploading) return;
+    if (isUploading || isProcessingRef.current) {
+      if (__DEV__) {
+        console.log('🚫 DUPLICATE CALL BLOCKED:', { isUploading, isProcessingRef: isProcessingRef.current });
+      }
+      return;
+    }
     setIsUploading(true);
+    isProcessingRef.current = true;
     try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch {}
 
     // PROMPT LOGGING: Track generation start
@@ -297,6 +306,7 @@ export function QuickEditSheet() {
     } finally {
       clearInterval(interval);
       setIsUploading(false);
+      isProcessingRef.current = false;
       // Clean up global styleKey
       (global as any).__quickEditStyleKey = undefined;
     }

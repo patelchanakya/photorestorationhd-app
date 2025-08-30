@@ -59,12 +59,15 @@ serve(async (req) => {
 
     console.log(`🔍 Checking status for prediction: ${prediction_id}`)
 
-    // Get prediction status from database
-    const { data: prediction, error: dbError } = await supabase
+    // Get prediction status from database (get latest if duplicates exist)
+    const { data: predictions, error: dbError } = await supabase
       .from('photo_predictions')
       .select('*')
       .eq('id', prediction_id)
-      .single()
+      .order('created_at', { ascending: false })
+      .limit(1)
+    
+    const prediction = predictions?.[0]
 
     if (dbError) {
       console.error('Database error:', dbError)

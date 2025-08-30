@@ -44,15 +44,23 @@ export function usePhotoRestoration() {
 
   return useMutation({
     mutationFn: async ({ imageUri, functionType, imageSource, customPrompt }: { imageUri: string; functionType: FunctionType; imageSource?: 'camera' | 'gallery'; customPrompt?: string }) => {
-      // Create deduplication key based on image URI and function type
-      const requestKey = `${imageUri}_${functionType}_${customPrompt || ''}`;
+      // Get styleKey from global context for more unique deduplication
+      const styleKey = (global as any).__quickEditStyleKey || undefined;
       
-      // Check if this request is already in progress
+      // Create simple, consistent deduplication key (NO timestamp!)
+      const requestKey = `${imageUri}_${functionType}_${styleKey || 'none'}_${customPrompt || 'none'}`;
+      
+      // Check if this exact request is already in progress
       if (activeRequests.has(requestKey)) {
         if (__DEV__) {
-          console.log('🔄 Request deduplication: Returning existing promise for', requestKey);
+          console.log('🔄 DUPLICATE BLOCKED: Returning existing promise for', requestKey);
         }
         return activeRequests.get(requestKey)!;
+      }
+      
+      if (__DEV__) {
+        console.log('🚀 NEW REQUEST: Creating new promise for', requestKey);
+        console.log('📊 Active requests before:', activeRequests.size);
       }
       
       // Create promise for the actual processing
@@ -129,8 +137,7 @@ export function usePhotoRestoration() {
           console.log('🚀 Using webhook system for generation');
         }
 
-        // Get styleKey from QuickEditStore if available (passed via global context)
-        const styleKey = (global as any).__quickEditStyleKey || undefined;
+        // Get styleKey from QuickEditStore if available (already retrieved above for deduplication)
         
         // PROMPT LOGGING: Detailed client-side generation tracking
         console.log('🎯 HOOK GENERATION DETAILS:', {

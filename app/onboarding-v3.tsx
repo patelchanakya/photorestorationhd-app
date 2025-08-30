@@ -13,6 +13,7 @@ import { FeatureSelectionScreen } from '@/components/Onboarding/FeatureSelection
 import { FeaturePreviewScreen } from '@/components/Onboarding/FeaturePreviewScreen';
 import { CommunityScreen } from '@/components/Onboarding/CommunityScreen';
 import { SetupAnimationScreen } from '@/components/Onboarding/SetupAnimationScreen';
+import { permissionsService } from '@/services/permissions';
 
 const FEATURE_MODE_MAP: Record<string, string> = {
   // Special Options
@@ -196,6 +197,9 @@ function OnboardingFlow() {
       // Mark onboarding as completed with tracking
       await completeOnboarding();
 
+      // Ensure permissions service has the latest state for explore screen
+      await permissionsService.refreshPermissionStates();
+
       if (__DEV__) {
         console.log('🚀 Navigating to explore screen...');
         console.log('📊 Onboarding state:', {
@@ -203,6 +207,7 @@ function OnboardingFlow() {
           hasPhoto: !!onboardingState.selectedPhoto,
           hasPickedPhoto: onboardingState.hasPickedPhoto,
         });
+        console.log('📱 Permission state at navigation:', permissionsService.getPermissionState());
       }
 
       // Navigate to explore

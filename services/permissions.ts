@@ -196,6 +196,27 @@ class PermissionsService {
       return 'denied';
     }
   }
+
+  /**
+   * Manually update a specific permission state (useful after granting during onboarding)
+   */
+  updatePermissionState(permission: keyof PermissionState, status: PermissionStatus): void {
+    this.permissions[permission] = status;
+    if (__DEV__) {
+      console.log(`🔄 Permission state updated: ${permission} = ${status}`);
+    }
+  }
+
+  /**
+   * Force refresh all permission states by checking current system status
+   */
+  async refreshPermissionStates(): Promise<PermissionState> {
+    await this.checkAllPermissions();
+    if (__DEV__) {
+      console.log('🔄 All permission states refreshed:', this.permissions);
+    }
+    return { ...this.permissions };
+  }
 }
 
 // Export singleton instance

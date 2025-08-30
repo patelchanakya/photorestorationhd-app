@@ -34,7 +34,7 @@ export default function TextEditsScreen() {
   const [preserveComposition] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const applyLockRef = useRef(false);
-  const [editMode, setEditMode] = useState<'presets' | 'custom'>('presets');
+  const [editMode, setEditMode] = useState<'presets' | 'custom'>('custom');
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -186,44 +186,56 @@ useEffect(() => {
   };
   const SUGGESTIONS: Suggestion[] = [
     // Cleanup - Essential fixes for social media sharing
-    { label: 'Remove watermark/logo', icon: 'square', category: 'Cleanup', template: 'Remove a watermark or logo cleanly while preserving surrounding details.' },
-    { label: 'Remove date stamp', icon: 'pencil.tip', category: 'Cleanup', template: 'Remove any date stamp or overlay text cleanly from the image.' },
-    { label: 'Fix red eyes', icon: 'eye.fill', category: 'Cleanup', template: 'Fix red-eye effect from camera flash, restoring natural eye color.' },
-    { label: 'Sharpen photo', icon: 'viewfinder', category: 'Cleanup', template: 'Enhance image sharpness and clarity, especially for blurry or soft photos.' },
+    { label: 'Remove watermark/logo', icon: 'square', category: 'Cleanup', template: 'Remove watermark or logo completely while preserving surrounding details.' },
+    { label: 'Remove date stamp', icon: 'pencil.tip', category: 'Cleanup', template: 'Remove all date stamps and overlay text from the image.' },
+    { label: 'Fix red eyes', icon: 'eye.fill', category: 'Cleanup', template: 'Fix red-eye effect from camera flash, restore natural eye color.' },
+    { label: 'Sharpen photo', icon: 'viewfinder', category: 'Cleanup', template: 'Dramatically enhance image sharpness and clarity for crystal clear details.' },
 
     // Looks - Portrait enhancements for social media
-    { label: 'Perfect selfie', icon: 'person.crop.circle.fill', category: 'Looks', template: 'Overall face enhancement for social media: smooth skin, brighten face, enhance features naturally.' },
-    { label: 'Smooth skin', icon: 'sparkles', category: 'Looks', template: 'Gently smooth skin while preserving pores and details.' },
-    { label: 'Whiten teeth', icon: 'mouth', category: 'Looks', template: 'Whiten teeth naturally without over-brightening.' },
-    { label: 'Brighten smile', icon: 'face.smiling', category: 'Looks', template: 'Enhance smile and teeth brightness for a more confident look.' },
+    { label: 'Perfect selfie', icon: 'person.crop.circle.fill', category: 'Looks', template: 'Complete face makeover: smooth flawless skin, brighten face, enhance all features dramatically.' },
+    { label: 'Smooth skin', icon: 'sparkles', category: 'Looks', template: 'Create perfectly smooth porcelain skin with professional retouching.' },
+    { label: 'Whiten teeth', icon: 'mouth', category: 'Looks', template: 'Make teeth bright white for a Hollywood smile.' },
+    { label: 'Brighten smile', icon: 'face.smiling', category: 'Looks', template: 'Dramatically enhance smile and teeth for maximum confidence.' },
 
     // Creative - Popular social media effects
-    { label: 'Golden hour rays', icon: 'sun.max', category: 'Creative', template: 'Add gentle golden hour light rays from the side, keeping the subject natural.' },
-    { label: 'Add warm glow', icon: 'sun.min', category: 'Creative', template: 'Add a soft, warm Instagram-style glow around the subject for social media appeal.' },
-    { label: 'Blur background', icon: 'circle.dashed', category: 'Creative', template: 'Add a subtle background blur effect, keeping the subject crisp.' },
-    { label: 'Add sunset colors', icon: 'sunset', category: 'Creative', template: 'Apply warm sunset color grading with golden and orange tones.' },
-    { label: 'Butterflies', icon: 'leaf', category: 'Creative', template: 'Add a few colorful butterflies around the subject, keeping them subtle and tasteful.' },
-    { label: 'Sparkles', icon: 'sparkles', category: 'Creative', template: 'Add a few soft sparkles around the subject without overpowering the scene.' },
-    { label: 'White background', icon: 'square.fill', category: 'Creative', template: 'Replace background with clean white background, perfect for professional photos and social media.' },
-    { label: 'Add soft focus', icon: 'camera.filters', category: 'Creative', template: 'Apply dreamy soft focus effect around the edges while keeping the subject sharp.' },
+    { label: 'Golden hour rays', icon: 'sun.max', category: 'Creative', template: 'Add dramatic golden hour sun rays streaming through the scene.' },
+    { label: 'Add warm glow', icon: 'sun.min', category: 'Creative', template: 'Add strong warm glowing aura around the subject for magical effect.' },
+    { label: 'Blur background', icon: 'circle.dashed', category: 'Creative', template: 'Create professional bokeh blur in background, keep subject razor sharp.' },
+    { label: 'Add sunset colors', icon: 'sunset', category: 'Creative', template: 'Transform scene with vibrant sunset colors - intense oranges, pinks and purples.' },
+    { label: 'Butterflies', icon: 'leaf', category: 'Creative', template: 'Add multiple vibrant colorful butterflies flying around the subject.' },
+    { label: 'Sparkles', icon: 'sparkles', category: 'Creative', template: 'Add bright magical sparkles and glitter effects throughout the image.' },
+    { label: 'White background', icon: 'square.fill', category: 'Creative', template: 'Replace entire background with pure white studio backdrop.' },
+    { label: 'Add soft focus', icon: 'camera.filters', category: 'Creative', template: 'Create dreamy soft focus blur around edges with sharp center subject.' },
 
     // Memorial - Respectful memorial enhancements
-    { label: 'Gentle memorial glow', icon: 'sun.max', category: 'Memorial', template: 'Add a soft, warm glow around the subject with light bloom for a memorial feel.' },
+    { label: 'Gentle memorial glow', icon: 'sun.max', category: 'Memorial', template: 'Add ethereal warm glow and light bloom around subject for memorial tribute.' },
 
     // Style - Artistic transformations
-    { label: 'Vintage look', icon: 'camera.filters', category: 'Style', template: 'Apply a subtle vintage film look with soft contrast and warm tones.' },
-    { label: 'Oil painting, rich texture', icon: 'paintpalette', category: 'Style', template: 'Transform to oil painting with visible brushstrokes, thick paint texture, and rich color depth while preserving the original composition and object placement.' },
-    { label: 'Pencil sketch, detailed', icon: 'pencil.tip', category: 'Style', template: 'Convert to pencil sketch with natural graphite lines, cross-hatching, and visible paper texture.' },
+    { label: 'Vintage look', icon: 'camera.filters', category: 'Style', template: 'Transform to authentic vintage film aesthetic with faded colors and grain.' },
+    { label: 'Oil painting, rich texture', icon: 'paintpalette', category: 'Style', template: 'Transform to dramatic oil painting with bold brushstrokes, thick impasto texture, and vibrant colors.' },
+    { label: 'Pencil sketch, detailed', icon: 'pencil.tip', category: 'Style', template: 'Convert to detailed pencil sketch with strong graphite strokes and dramatic shading.' },
   ];
 
-  const compositionClause = ' Keep the exact camera angle, subject position, scale, and framing. Only replace the environment.';
+  const compositionClause = ' Keep the exact camera angle, subject position, scale, and framing.';
   const identityClause = ' Maintain the same facial features, hairstyle, and expression.';
 
   const handleSuggestionPress = (label: string) => {
     const s = SUGGESTIONS.find(x => x.label === label);
     setSelectedLabels((prev) => {
       const already = prev.includes(label);
+      
+      // If trying to select and already at max (3), prevent it
+      if (!already && prev.length >= 3) {
+        Alert.alert(
+          'Maximum Effects Reached',
+          'You can select up to 3 effects at a time for best results. Please deselect one first.',
+          [{ text: 'OK' }]
+        );
+        return prev;
+      }
+      
       const next = already ? prev.filter(l => l !== label) : [...prev, label];
+      
       if (!already) {
         // Track preset tile selection
         analyticsService.trackTileUsage({
@@ -244,9 +256,11 @@ useEffect(() => {
         // Deselecting a text-based preset: clear custom prompt
         setCustomPrompt('');
       }
+      
       if (__DEV__) {
-        console.log('🪄 Photo Magic - toggle preset:', label, '→ selected:', next);
+        console.log('🪄 Photo Magic - toggle preset:', label, '→ selected:', next, `(${next.length}/3)`);
       }
+      
       return next;
     });
   };
@@ -275,121 +289,106 @@ useEffect(() => {
       return groups;
     }, {} as Record<string, typeof chosen>);
     
-    // Build prompt sections in priority order
-    const sections: string[] = [];
+    // Build clear instructions for each category
+    const instructions: string[] = [];
     
     // 1. Cleanup operations first (they should be applied before enhancements)
     if (groupedPresets['Cleanup']) {
-      const cleanupTasks = groupedPresets['Cleanup'].map(p => p.template).join(', then ');
-      sections.push(cleanupTasks);
+      groupedPresets['Cleanup'].forEach(preset => {
+        instructions.push(preset.template);
+      });
     }
     
     // 2. Style transformations (major changes to image style)
     if (groupedPresets['Style']) {
-      // For style changes, combine similar requests intelligently
-      const stylePresets = groupedPresets['Style'];
-      if (stylePresets.length === 1) {
-        sections.push(stylePresets[0].template);
-      } else {
-        // Multiple styles - create a hybrid approach
-        const styleDescriptions = stylePresets.map(p => {
-          // Extract key style elements from templates
-          if (p.label.includes('Oil painting')) return 'oil painting texture with visible brushstrokes';
-          if (p.label.includes('Pencil sketch')) return 'pencil sketch with cross-hatching';
-          if (p.label.includes('Vintage')) return 'vintage film aesthetic';
-          return p.template;
-        });
-        sections.push(`Apply a artistic style combining: ${styleDescriptions.join(' and ')}`);
-      }
+      groupedPresets['Style'].forEach(preset => {
+        instructions.push(preset.template);
+      });
     }
     
     // 3. Looks enhancements (facial/beauty improvements)
     if (groupedPresets['Looks']) {
-      const looksTasks = groupedPresets['Looks'].map(p => {
-        // Simplify repetitive "naturally" and "gently" language
-        return p.template.replace(/gently |naturally |very |subtle |slightly /gi, '');
+      groupedPresets['Looks'].forEach(preset => {
+        instructions.push(preset.template);
       });
-      sections.push(`Enhance appearance: ${looksTasks.join(', ')}`);
     }
     
     // 4. Creative additions (effects, objects, lighting)
     if (groupedPresets['Creative']) {
-      const creativeEffects = groupedPresets['Creative'];
-      const lightingEffects = creativeEffects.filter(p => p.label.includes('rays') || p.label.includes('glow'));
-      const objectAdditions = creativeEffects.filter(p => !lightingEffects.includes(p));
-      
-      if (lightingEffects.length > 0) {
-        sections.push(lightingEffects.map(p => p.template).join(' and '));
-      }
-      if (objectAdditions.length > 0) {
-        sections.push(`Add decorative elements: ${objectAdditions.map(p => p.template).join(', ')}`);
-      }
-    }
-    
-    // 5. Memorial elements (handled specially for sensitivity)
-    if (groupedPresets['Memorial']) {
-      const memorialElements = groupedPresets['Memorial'].map(p => p.template);
-      sections.push(`Apply memorial styling: ${memorialElements.join(', ')}`);
-    }
-    
-    // Combine sections with proper flow
-    let merged = sections.join('. ');
-    
-    // Add composition and identity preservation clauses intelligently
-    const needsCompositionClause = !/(keep|maintain|preserve).*(?:framing|composition|angle|position)/i.test(merged) && 
-                                  (groupedPresets['Style'] || groupedPresets['Creative']) && 
-                                  preserveComposition;
-                                  
-    const needsIdentityClause = !/(maintain|preserve).*(?:face|identity|features|expression)/i.test(merged) && 
-                               (groupedPresets['Style'] || groupedPresets['Looks']) && 
-                               preserveIdentity;
-    
-    if (needsCompositionClause) {
-      merged += compositionClause;
-    }
-    if (needsIdentityClause) {
-      merged += identityClause;
-    }
-    
-    // Optimize prompt length if too long (keep under 400 characters for better AI processing)
-    if (merged.length > 400) {
-      // Remove redundant words and phrases
-      merged = merged
-        .replace(/\b(very|quite|somewhat|rather|fairly)\s+/gi, '')
-        .replace(/\b(the|a|an)\s+/gi, '')
-        .replace(/\s+(while|and|but)\s+/gi, ', ')
-        .replace(/\s{2,}/g, ' ')
-        .trim();
-    }
-    
-    if (__DEV__) {
-      console.log('🧠 Photo Magic - built prompt (enhanced):', {
-        mode: editMode,
-        selectedPresets: selectedLabels,
-        groupedCategories: Object.keys(groupedPresets),
-        sections: sections.length,
-        preserveIdentity,
-        preserveComposition,
-        originalLength: chosen.map(s => s.template).join(' ').length,
-        optimizedLength: merged.length,
-        preview: merged.slice(0, 200) + (merged.length > 200 ? '…' : ''),
+      groupedPresets['Creative'].forEach(preset => {
+        instructions.push(preset.template);
       });
     }
     
-    return merged.trim();
+    // 5. Memorial elements
+    if (groupedPresets['Memorial']) {
+      groupedPresets['Memorial'].forEach(preset => {
+        instructions.push(preset.template);
+      });
+    }
+    
+    // Build the final prompt with clear separation
+    let prompt = instructions.join('. ');
+    
+    // Only add separation instruction if multiple creative effects are selected
+    const hasMultipleEffects = groupedPresets['Creative'] && groupedPresets['Creative'].length > 1;
+    if (hasMultipleEffects) {
+      prompt += '. Apply each effect as a separate distinct layer without blending them together';
+    }
+    
+    // Add composition and identity preservation clauses only when needed
+    const needsCompositionClause = (groupedPresets['Style'] || groupedPresets['Creative']) && preserveComposition;
+    const needsIdentityClause = (groupedPresets['Style'] || groupedPresets['Looks']) && preserveIdentity;
+    
+    if (needsCompositionClause) {
+      prompt += '.' + compositionClause;
+    }
+    if (needsIdentityClause) {
+      prompt += '.' + identityClause;
+    }
+    
+    // Clean up any formatting issues
+    prompt = prompt
+      .replace(/\.\s*\./g, '.') // Remove double periods
+      .replace(/\s+/g, ' ') // Normalize spaces
+      .trim();
+    
+    if (__DEV__) {
+      console.log('🧠 Photo Magic - built prompt:', {
+        mode: editMode,
+        selectedPresets: selectedLabels,
+        categories: Object.keys(groupedPresets),
+        instructionCount: instructions.length,
+        preserveIdentity,
+        preserveComposition,
+        promptLength: prompt.length,
+        fullPrompt: prompt,
+      });
+    }
+    
+    return prompt;
   };
   
   const handleProcessImage = async () => {
-    if (isSubmitting || isLoading || applyLockRef.current) return;
+    // Deterministic duplicate prevention - check and set atomically
+    if (applyLockRef.current) {
+      return;
+    }
+    applyLockRef.current = true;
+    
     if (!selectedImage) {
+      applyLockRef.current = false;
       Alert.alert('No Image', 'Please select an image first');
       return;
     }
+    
     const finalPrompt = buildPromptFromSelections();
     if (!finalPrompt) {
+      applyLockRef.current = false;
       Alert.alert('Select edits', 'Please select at least 1 preset or write a custom edit.');
       return;
     }
+    
     if (__DEV__) {
       console.log('🚀 Photo Magic - starting apply:', {
         selectedImage,
@@ -400,16 +399,16 @@ useEffect(() => {
         promptPreview: finalPrompt.slice(0, 160) + (finalPrompt.length > 160 ? '…' : ''),
       });
     }
+    
     setIsSubmitting(true);
-    applyLockRef.current = true;
+    
     try {
       await processWithPrompt(selectedImage, finalPrompt, 'custom');
     } catch {
       // error surfaced inside processWithPrompt already
     } finally {
       setIsSubmitting(false);
-      // slight delay to avoid re-entry during transition
-      setTimeout(() => { applyLockRef.current = false; }, 500);
+      applyLockRef.current = false;
     }
   };
 
@@ -563,9 +562,16 @@ useEffect(() => {
             <Text style={{ color: '#EAEAEA', fontSize: 16, fontFamily: 'Lexend-SemiBold' }}>
               {category === 'All' ? 'All Presets' : `${category} Presets`}
             </Text>
-            <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>
-              Tap to select • Long‑press for details
-            </Text>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>
+                Tap to select • Long‑press for details
+              </Text>
+              {selectedLabels.length > 0 && (
+                <Text style={{ color: '#F59E0B', fontSize: 11, fontFamily: 'Lexend-SemiBold', marginTop: 2 }}>
+                  {selectedLabels.length}/3 selected
+                </Text>
+              )}
+            </View>
           </View>
           
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
@@ -701,36 +707,39 @@ useEffect(() => {
           const hasEdits = (editMode === 'presets' && selectedLabels.length > 0) || 
                           (editMode === 'custom' && customPrompt.trim());
           
+          // Prevent double-taps by checking both conditions and ref lock
+          const isDisabled = !canApply || applyLockRef.current;
+          
           return (
             <Animated.View style={buttonAnimatedStyle}>
               <TouchableOpacity 
                 onPress={handleProcessImage}
                 activeOpacity={1}
                 onPressIn={() => {
-                  if (canApply) {
+                  if (canApply && !applyLockRef.current) {
                     buttonScale.value = withTiming(0.95, { duration: 100 });
                   }
                 }}
                 onPressOut={() => {
-                  if (canApply) {
+                  if (canApply && !applyLockRef.current) {
                     buttonScale.value = withTiming(1, { duration: 150 });
                   }
                 }}
-                disabled={!canApply}
+                disabled={isDisabled}
                 style={{ 
                   height: 64, 
                   borderRadius: 24, 
                   overflow: 'hidden',
-                  transform: [{ scale: canApply ? 1 : 0.98 }],
-                shadowColor: canApply ? '#F59E0B' : 'transparent',
-                shadowOffset: { width: 0, height: canApply ? 8 : 0 },
-                shadowOpacity: canApply ? 0.4 : 0,
-                shadowRadius: canApply ? 20 : 0,
-                elevation: canApply ? 12 : 0,
+                  transform: [{ scale: !isDisabled ? 1 : 0.98 }],
+                shadowColor: !isDisabled ? '#F59E0B' : 'transparent',
+                shadowOffset: { width: 0, height: !isDisabled ? 8 : 0 },
+                shadowOpacity: !isDisabled ? 0.4 : 0,
+                shadowRadius: !isDisabled ? 20 : 0,
+                elevation: !isDisabled ? 12 : 0,
               }}
-              accessibilityState={{ disabled: !canApply }}
+              accessibilityState={{ disabled: isDisabled }}
             >
-              {canApply ? (
+              {!isDisabled ? (
                 <View style={{ position: 'relative', flex: 1 }}>
                   {/* Animated background glow */}
                   <View style={{

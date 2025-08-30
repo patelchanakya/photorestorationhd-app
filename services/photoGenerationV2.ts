@@ -543,9 +543,9 @@ export async function generatePhotoWithPolling(
       }
     };
 
-    // Wait 1 second before starting polling (reduced from 3s for better performance)
+    // Wait 2.5 seconds before starting polling for better optimization
     if (__DEV__) {
-      console.log('⏳ Waiting 1 second before first status check (optimization)');
+      console.log('⏳ Waiting 2.5 seconds before first status check (optimization)');
     }
     
     setTimeout(() => {
@@ -553,6 +553,6 @@ export async function generatePhotoWithPolling(
         console.log('🔍 Starting optimized status polling');
       }
       poll();
-    }, 1000); // 1 second delay before first poll
+    }, 2500); // 2.5 second delay before first poll
   });
 }

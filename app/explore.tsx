@@ -239,17 +239,17 @@ export default function HomeGalleryLikeScreen() {
         </View>
 
 
-        {/* Outfits Section */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>Outfits</Text>
-        </View>
-        <AnimatedOutfits />
-
         {/* Memorial Section */}
         <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>Memorial</Text>
         </View>
         <MemorialFeatures />
+
+        {/* Outfits Section */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>Outfits</Text>
+        </View>
+        <AnimatedOutfits />
 
         {/* Other AI Features - Enlighten, etc. */}
         <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
