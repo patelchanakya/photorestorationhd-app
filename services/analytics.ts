@@ -46,7 +46,7 @@ class AnalyticsService {
     }
   }
 
-  async trackRestorationCompleted(success: boolean, imageSource: 'camera' | 'gallery', processingTime?: number, functionType?: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch') {
+  async trackRestorationCompleted(success: boolean, imageSource: 'camera' | 'gallery', processingTime?: number, functionType?: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'water_damage') {
     // Send to Clarity
     clarityService.sendCustomEvent(success ? 'restoration_success' : 'restoration_failure');
     clarityService.setCustomTag('image_source', imageSource);
@@ -100,7 +100,7 @@ class AnalyticsService {
     }
   }
 
-  trackModeUsed(functionType: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch', imageSource: 'camera' | 'gallery') {
+  trackModeUsed(functionType: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'water_damage', imageSource: 'camera' | 'gallery') {
     // Send to Clarity
     clarityService.sendCustomEvent('mode_used');
     clarityService.setCustomTag('function_type', functionType);

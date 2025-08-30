@@ -184,47 +184,6 @@ serve(async (req) => {
 
     console.log(`✅ Prediction created: ${prediction.id}`)
 
-    // Store prediction in database
-    const { error: dbError } = await supabase
-      .from('photo_predictions')
-      .insert({
-        id: prediction.id,
-        user_id: user_id || null,
-        mode: 'memorial',
-        style_key: style_key || null,
-        status: prediction.status || 'starting',
-        input: {
-          prompt,
-          style_title: selectedStyle?.title,
-          has_custom_prompt: !!custom_prompt
-        }
-      })
-
-    if (dbError) {
-      console.error('Failed to store prediction in database:', dbError)
-      // CRITICAL: If we can't track the prediction, rollback usage to compensate user
-      if (user_id && user_id !== 'anonymous') {
-        try {
-          await supabase.rpc('rollback_photo_usage', {
-            p_user_id: user_id
-          });
-          console.log('✅ Photo usage rolled back due to database tracking failure');
-        } catch (rollbackError) {
-          console.error('❌ CRITICAL: Failed to rollback after database error:', rollbackError);
-        }
-      }
-      return new Response(
-        JSON.stringify({ 
-          error: 'Failed to initialize prediction tracking',
-          details: 'Unable to track generation progress'
-        }),
-        { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
-    }
-
     // Return prediction ID to client for polling
     return new Response(
       JSON.stringify({ 

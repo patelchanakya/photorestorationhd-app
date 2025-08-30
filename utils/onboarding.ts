@@ -19,7 +19,7 @@ export interface OnboardingFeature {
   name: string;
   description: string;
   icon: string;
-  mapsTo: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'outfit' | 'background' | 'enlighten' | 'custom' | 'memorial' | 'skip';
+  mapsTo: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'outfit' | 'background' | 'enlighten' | 'custom' | 'memorial' | 'water_damage' | 'skip';
   gradient: [string, string];
   styleKey?: string;
   isCustomPrompt?: boolean;
@@ -44,7 +44,7 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
     name: 'Recreate',
     description: 'Recreation while staying consistent with features',
     icon: 'arrow.clockwise',
-    mapsTo: 'restoration',
+    mapsTo: 'repair',
     gradient: ['#f97316', '#fb923c']
   },
 
@@ -96,7 +96,7 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
     name: 'Water/Stain Damage',
     description: 'Remove water damage, stains, and discoloration',
     icon: 'drop',
-    mapsTo: 'restoration',
+    mapsTo: 'water_damage',
     gradient: ['#0ea5e9', '#3b82f6']
   },
   {

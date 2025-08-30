@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Clever",
-    "slug": "photorestorationhd-app", 
+    "slug": "photorestorationhd-app",
     "version": "2.0.0",
     "sdkVersion": "53.0.0",
     "orientation": "portrait",
@@ -88,9 +88,20 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_MEDIA_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.ACCESS_MEDIA_LOCATION"
       ],
       "package": "com.chanakyap.photorestorationhdapp"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/1e1e5fa5-1114-4591-9765-2534344ca453"
     }
   }
 }

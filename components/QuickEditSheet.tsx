@@ -27,6 +27,7 @@ const determineTileCategory = (functionType: string, styleKey?: string | null): 
   if (functionType === 'background') return 'background';  
   if (functionType === 'memorial') return 'memorial';
   if (functionType === 'custom') return 'popular';
+  if (functionType === 'water_damage') return 'feature';
   if (styleKey) return 'style';
   return 'feature';
 };

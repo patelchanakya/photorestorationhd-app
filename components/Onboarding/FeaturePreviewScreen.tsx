@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Alert, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, Dimensions, AppState } from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Image as ExpoImage } from 'expo-image';
 import { ONBOARDING_FEATURES } from '@/utils/onboarding';
 import * as ImagePicker from 'expo-image-picker';
+import { useFocusEffect } from '@react-navigation/native';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import Animated, { 
   useAnimatedStyle, 
@@ -71,6 +72,37 @@ export function FeaturePreviewScreen({
     // Buttons animation
     buttonsOpacity.value = withDelay(500, withTiming(1, { duration: 400 }));
   }, [selectedFeatureId, onSkip]);
+
+  // Handle app state changes (backgrounding/foregrounding)
+  React.useEffect(() => {
+    if (!videoPlayer) return;
+    
+    const handleAppStateChange = (nextAppState: string) => {
+      if (nextAppState === 'active') {
+        // Resume video playback when app returns to foreground
+        if (videoPlayer && !videoPlayer.playing) {
+          setTimeout(() => {
+            videoPlayer.play();
+          }, 100);
+        }
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription?.remove();
+  }, [videoPlayer]);
+
+  // Handle navigation focus (returning to screen)
+  useFocusEffect(
+    React.useCallback(() => {
+      // Resume playback when screen comes into focus
+      if (videoPlayer && !videoPlayer.playing) {
+        setTimeout(() => {
+          videoPlayer.play();
+        }, 100);
+      }
+    }, [videoPlayer])
+  );
 
   const headerAnimatedStyle = useAnimatedStyle(() => ({
     opacity: headerOpacity.value,

@@ -2,7 +2,7 @@ import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export type FunctionType = 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'outfit' | 'background' | 'enlighten' | 'custom' | 'restore_repair' | 'memorial';
+export type FunctionType = 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'outfit' | 'background' | 'enlighten' | 'custom' | 'restore_repair' | 'memorial' | 'water_damage';
 
 // Webhook-based photo generation service for v2 endpoints
 // This replaces the client-side polling approach with secure server-side generation
@@ -329,6 +329,20 @@ export async function generateRepair(
   });
 }
 
+// Water damage generation (uses hardcoded prompt)
+export async function generateWaterDamage(
+  imageUri: string,
+  userId?: string
+): Promise<GenerationResponse> {
+  if (__DEV__) {
+    console.log('💧 Starting water damage restoration via webhook system');
+  }
+
+  return callGenerationEndpoint('photo-water-damage-v2', imageUri, {
+    user_id: userId
+  });
+}
+
 // Status polling
 export async function pollPhotoStatus(predictionId: string): Promise<StatusResponse> {
   if (!SUPABASE_URL) {
@@ -419,7 +433,10 @@ export async function generatePhoto(
       return generateRepair(imageUri, customPrompt, userId);
     
     case 'restore_repair':
-      return generateRestoration(imageUri, customPrompt, userId);
+      return generateRepair(imageUri, customPrompt, userId);
+    
+    case 'water_damage':
+      return generateWaterDamage(imageUri, userId);
     
     default:
       throw new Error(`Unsupported function type: ${functionType}`);

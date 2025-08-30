@@ -7,9 +7,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface RepairRequest {
+interface WaterDamageRequest {
   image_data: string; // base64 image
-  custom_prompt?: string;
   user_id?: string; // For usage tracking
 }
 
@@ -24,7 +23,7 @@ serve(async (req) => {
   
   try {
     // Get request body
-    const { image_data, custom_prompt, user_id: requestUserId }: RepairRequest = await req.json()
+    const { image_data, user_id: requestUserId }: WaterDamageRequest = await req.json()
     user_id = requestUserId; // Store for error handler
 
     if (!image_data) {
@@ -67,85 +66,90 @@ serve(async (req) => {
 
     supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // UNIFIED PHOTO LIMITS ENFORCEMENT (primary protection)
-    if (user_id && user_id !== 'anonymous') {
-      console.log('🔍 Starting unified photo usage check for user:', user_id);
-      
-      // Auto-detect if user is Pro based on tracking ID format
-      const isPro = user_id.startsWith('store:') || user_id.startsWith('orig:') || user_id.startsWith('fallback:');
-      
-      console.log('🎯 User type detection:', {
-        userId: user_id,
-        isPro: isPro,
-        trackingIdType: isPro ? 'transaction' : 'anonymous'
-      });
+    // SERVER-SIDE PHOTO LIMITS ENFORCEMENT (primary protection)
+    // Block suspicious or invalid user IDs
+    const invalidUserIds = ['anonymous', 'fallback-anonymous', 'demo-user', '', null, undefined];
+    if (user_id && !invalidUserIds.includes(user_id)) {
+      console.log('🔍 Starting server-side photo usage check for user:', user_id);
       
       try {
-        // Use unified atomic function to check and increment usage
-        const { data: result, error } = await supabase.rpc('check_and_increment_photo_usage_unified', {
-          p_tracking_id: user_id,
-          p_is_pro: isPro
+        // Use atomic function to check and increment usage (same as client-side)
+        const { data: result, error } = await supabase.rpc('check_and_increment_photo_usage', {
+          p_user_id: user_id
         });
 
         if (error) {
-          console.error('❌ Unified photo atomic usage check failed:', error);
-          // For Pro users, allow request to proceed (they have unlimited photos)
-          if (isPro) {
-            console.log('✅ Pro user - allowing photo generation despite database error');
-          } else {
-            console.log('⚠️ Free user - falling back to client-side limits due to server error');
-          }
+          console.error('❌ Server-side photo atomic usage check failed:', error);
+          // Allow request to proceed if database error (fallback to client-side)
+          console.log('⚠️ Falling back to client-side photo limits due to server error');
         } else if (!result) {
-          // Boolean response from database function - only free users can be blocked
-          if (isPro) {
-            console.log('🚨 Unexpected: Pro user blocked by database function - allowing anyway');
-          } else {
-            console.log('❌ Free user photo limits enforcement blocked request:', {
-              userId: user_id,
-              reason: 'Photo usage limit exceeded (5 photos max)',
-              userType: 'free'
-            });
-            
-            return new Response(JSON.stringify({ 
-              success: false,
-              error: 'Photo usage limit exceeded',
-              code: 'PHOTO_LIMIT_EXCEEDED'
-            }), {
-              status: 403,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            });
-          }
-        } else {
-          console.log('✅ Unified photo atomic increment succeeded:', {
+          // Boolean response from database function
+          console.log('❌ Server-side photo limits enforcement blocked request:', {
             userId: user_id,
-            userType: isPro ? 'pro' : 'free',
-            note: isPro ? 'unlimited photos' : 'limited photos'
+            reason: 'Photo usage limit exceeded',
+            
+            
+          });
+          
+          return new Response(JSON.stringify({ 
+            success: false,
+            error: 'Photo usage limit exceeded',
+            code: 'PHOTO_LIMIT_EXCEEDED'
+          }), {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } else {
+          console.log('✅ Server-side photo atomic increment succeeded:', {
+            userId: user_id,
+            current_count: result.current_count,
+            limit: result.limit,
+            
           });
         }
       } catch (error) {
-        console.error('❌ Critical error in unified photo usage check:', error);
-        // For Pro users, always allow (they have unlimited photos)
-        if (isPro) {
-          console.log('✅ Pro user - allowing photo generation despite critical error');
-        } else {
-          console.log('⚠️ Free user - falling back to client-side limits due to critical server error');
-        }
+        console.error('❌ Critical error in server-side photo usage check:', error);
+        // Allow request to proceed if critical error (fallback to client-side)
+        console.log('⚠️ Falling back to client-side photo limits due to critical server error');
       }
     } else {
-      console.log('⚠️ No user_id provided - skipping photo limits check');
+      console.log('⚠️ Invalid user_id provided - skipping server-side photo limits check');
+      
+      // If user_id is one of the blocked values, return error instead of proceeding
+      if (invalidUserIds.includes(user_id)) {
+        return new Response(JSON.stringify({ 
+          error: 'Invalid user authentication. Please sign in again.',
+          code: 'INVALID_USER_ID'
+        }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
     }
 
     const replicate = new Replicate({
       auth: replicateApiToken,
     })
 
-    console.log('🔧 Starting photo repair with webhooks...')
+    console.log('🔧 Starting water damage restoration with webhooks...')
 
-    // Build input for photo repair using restore-image model (no prompts)
+    // Hardcoded prompt for water damage restoration
+    const prompt = "Restore and fix the photo. Remove scratches, blur, or damage. Keep the photo in black and white without adding color. Keep the person's face, body, and proportions exactly the same. Fill in black patches and leave no scratches."
+
+    // PROMPT LOGGING: Track actual prompt being used
+    console.log('🔧 WATER DAMAGE RESTORATION PROMPT:', {
+      mode: 'water_damage',
+      prompt: prompt
+    });
+
+    // Build input for water damage restoration using kontext-pro model
     const input = {
+      prompt,
       input_image: `data:image/jpeg;base64,${image_data}`,
       output_format: "png",
-      safety_tolerance: 0
+      aspect_ratio: "match_input_image",
+      safety_tolerance: 6,
+      prompt_upsampling: true
     }
 
     // Construct webhook URL
@@ -155,7 +159,7 @@ serve(async (req) => {
 
     // Create prediction with webhook - EXACT same format as client-side code
     const prediction = await replicate.predictions.create({
-      model: "flux-kontext-apps/restore-image",
+      model: "black-forest-labs/flux-kontext-pro",
       input,
       webhook: webhookUrl,
       webhook_events_filter: ["completed"] // Only notify when done
@@ -169,7 +173,7 @@ serve(async (req) => {
         success: true,
         prediction_id: prediction.id,
         status: prediction.status || 'starting',
-        mode: 'repair',
+        mode: 'water_damage',
         estimated_time: '5-10 seconds'
       }),
       {
@@ -178,7 +182,7 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('❌ Photo repair error:', error)
+    console.error('❌ Water damage restoration error:', error)
     
     // Rollback photo usage increment if generation failed after increment
     if (user_id && user_id !== 'anonymous') {
@@ -186,7 +190,7 @@ serve(async (req) => {
         await supabase.rpc('rollback_photo_usage', {
           p_user_id: user_id
         });
-        console.log('✅ Photo usage rollback completed after photo repair error');
+        console.log('✅ Photo usage rollback completed after water damage restoration error');
       } catch (rollbackError) {
         console.error('❌ Failed to rollback photo usage after error:', rollbackError);
       }
@@ -194,7 +198,7 @@ serve(async (req) => {
     
     return new Response(
       JSON.stringify({ 
-        error: 'Failed to start photo repair',
+        error: 'Failed to start water damage restoration',
         details: error instanceof Error ? error.message : 'Unknown error'
       }),
       { 
@@ -206,8 +210,8 @@ serve(async (req) => {
 })
 
 /* To invoke:
-curl -i --location --request POST 'http://localhost:54321/functions/v1/photo-repair-v2' \
+curl -i --location --request POST 'http://localhost:54321/functions/v1/photo-water-damage-v2' \
   --header 'Authorization: Bearer [anon_key]' \
   --header 'Content-Type: application/json' \
-  --data '{"image_data":"[base64_string]","custom_prompt":"fix scratches and enhance colors"}'
+  --data '{"image_data":"[base64_string]"}'
 */

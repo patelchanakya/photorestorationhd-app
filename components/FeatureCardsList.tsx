@@ -15,7 +15,7 @@ type CardItem = {
   id: string;
   title: string;
   subtitle: string;
-  functionType?: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'restore_repair';
+  functionType?: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'restore_repair' | 'water_damage';
   styleKey?: string;
   route?: string;
   image: any; // require('...')
@@ -23,7 +23,7 @@ type CardItem = {
 
 // Poster-style cards inspired by the provided reference
 const CARDS: CardItem[] = [
-  { id: 'fc_water_stain', title: 'Water Damage', subtitle: 'Remove water damage and stains', functionType: 'restore_repair', image: require('../assets/images/popular/stain/pop-7.png') },
+  { id: 'fc_water_stain', title: 'Water Damage', subtitle: 'Remove water damage and stains', functionType: 'water_damage', image: require('../assets/images/popular/stain/pop-7.png') },
   { id: 'fc_enhance', title: 'Clarify', subtitle: 'Remove blur, sharpen details', functionType: 'unblur', image: require('../assets/images/popular/enhance/pop-3.png') },
   { id: 'fc_recreate', title: 'Recreate', subtitle: 'Let Clever recreate your image', functionType: 'repair', image: require('../assets/images/popular/recreate/pop-5.png') },
   { id: 'fc_colorize', title: 'Colorize', subtitle: 'Add colors to B&W photos', functionType: 'colorize', image: require('../assets/images/popular/colorize/pop-1.png') },

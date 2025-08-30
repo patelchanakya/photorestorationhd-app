@@ -29,7 +29,7 @@ export default function HomeGalleryLikeScreen() {
   const railApproxHeight = isSmallPhone ? 58 : 86;
   const basePadding = isTabletLike ? 154 : (isSmallPhone ? 45 : 112); // Reduced by ~30%
   const bottomPadding = Math.max(basePadding, (insets?.bottom || 0) + railApproxHeight);
-  const openQuick = (functionType: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'background' | 'outfit' | 'custom' | 'restore_repair', styleKey?: string | null) => {
+  const openQuick = (functionType: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'background' | 'outfit' | 'custom' | 'restore_repair' | 'water_damage', styleKey?: string | null) => {
     try {
       useQuickEditStore.getState().open({ functionType, styleKey: styleKey ?? null });
     } catch {}

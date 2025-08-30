@@ -29,8 +29,8 @@ const FEATURE_MODE_MAP: Record<string, string> = {
   'make_slimmer': 'custom',
   
   // Main Features
-  'recreate': 'restoration',
-  'water_stain_damage': 'restoration',
+  'recreate': 'repair',
+  'water_stain_damage': 'water_damage',
   'restore_repair': 'restore_repair',
   'professional_outfit': 'outfit',
   'blur_background': 'background',
@@ -53,7 +53,7 @@ const FEATURE_PROMPTS: Record<string, string> = {
   'make_younger': "Make the subject look a bit younger while keeping their identity, facial features, and natural expression unchanged.",
   'add_wings': "Add realistic wings that match pose, background, and lighting.",
   'add_halo': "Add a subtle glowing halo above the subject's head.",
-  'make_slimmer': "Reduce visible body and facial fat while keeping natural proportions, pose, and facial identity intact. Make changes realistic and balanced without distorting the subject."
+  'make_slimmer': "Reduce visible body and facial fat while keeping natural proportions, pose, and facial identity intact. Make changes realistic and balanced without distorting the subject.",
 };
 
 // Inner component that uses the context

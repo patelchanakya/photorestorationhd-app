@@ -68,7 +68,8 @@
     "react-native-type-animation": "^0.4.4",
     "react-native-url-polyfill": "^2.0.0",
     "replicate": "^1.0.1",
-    "zustand": "^5.0.8"
+    "zustand": "^5.0.8",
+    "expo-updates": "~0.28.17"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
