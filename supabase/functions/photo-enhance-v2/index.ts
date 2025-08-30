@@ -185,7 +185,8 @@ serve(async (req) => {
         input: {
           prompt: prompt,
           enhance_mode: mode,
-          has_custom_prompt: !!custom_prompt
+          has_custom_prompt: !!custom_prompt,
+          custom_prompt: custom_prompt || null
         },
         created_at: new Date().toISOString()
       })

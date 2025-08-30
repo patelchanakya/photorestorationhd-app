@@ -1,6 +1,6 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import Replicate from "https://esm.sh/replicate@1.0.1"
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import Replicate from "https://esm.sh/replicate@1.0.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -168,7 +168,8 @@ serve(async (req) => {
         status: 'starting',
         input: {
           prompt: custom_prompt,
-          has_custom_prompt: true
+          has_custom_prompt: true,
+          custom_prompt: custom_prompt
         },
         created_at: new Date().toISOString()
       })
