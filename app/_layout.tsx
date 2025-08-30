@@ -1,6 +1,6 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import '../global.css';
@@ -30,6 +30,7 @@ import { useQuickEditStore } from '@/store/quickEditStore';
 import * as Clarity from '@microsoft/react-native-clarity';
 import { clarityService } from '@/services/clarityService';
 import { analyticsService } from '@/services/analytics';
+import { useAppInitStore } from '@/store/appInitStore';
 import { Dimensions } from 'react-native';
 
 // Configure LogBox for production
@@ -465,31 +466,14 @@ export default function RootLayout() {
   const onLoadingComplete = React.useCallback(() => {
     setShowInitialLoading(false);
   }, []);
+  
 
   if (!loaded) {
     // Async font loading only occurs in development.
     return null;
   }
 
-  if (showInitialLoading) {
-    return (
-      <SafeAreaProvider>
-        <View style={{ flex: 1, backgroundColor: '#000000' }}>
-          <ErrorBoundary>
-            <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#000000' }}>
-              <RevenueCatProvider>
-                <QueryClientProvider client={queryClient}>
-                  <JobProvider>
-                    <InitialLoadingScreen onLoadingComplete={onLoadingComplete} />
-                  </JobProvider>
-                </QueryClientProvider>
-              </RevenueCatProvider>
-            </GestureHandlerRootView>
-          </ErrorBoundary>
-        </View>
-      </SafeAreaProvider>
-    );
-  }
+  // Always render the main navigation - no conditional loading
 
   return (
     <SafeAreaProvider>
@@ -517,31 +501,16 @@ export default function RootLayout() {
 function MainNavigator() {
   // Auto-rollback recovery for failed usage charges
   useAutoRollbackRecovery();
-
-
-  // RevenueCat listener removed - handled by RevenueCat Context Provider
-  // Old listener removed
+  
+  if (__DEV__) {
+    console.log('🔥 [MAIN-NAVIGATOR] Rendering Stack Navigator');
+  }
 
   return (
-    <Stack initialRouteName="explore">
-      <Stack.Screen name="explore" options={{ headerShown: false }} />
-      <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-      <Stack.Screen name="onboarding-v2" options={{ headerShown: false }} />
-      <Stack.Screen name="onboarding-v3" options={{ headerShown: false }} />
-      <Stack.Screen name="index" options={{ headerShown: false, title: "Clever" }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="restoration/[id]" options={{ headerShown: false }} />
-      <Stack.Screen
-        name="settings-modal"
-        options={{
-          presentation: 'fullScreenModal',
-          headerShown: false,
-          contentStyle: { backgroundColor: 'black' },
-        }}
-      />
-      <Stack.Screen name="text-edits" options={{ headerShown: false }} />
-      <Stack.Screen name="photo-magic" options={{ headerShown: false }} />
-      <Stack.Screen name="+not-found" />
-    </Stack>
+    <Stack 
+      screenOptions={{ 
+        headerShown: false 
+      }}
+    />
   );
 }

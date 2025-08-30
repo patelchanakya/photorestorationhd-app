@@ -58,7 +58,30 @@ const FEATURE_PROMPTS: Record<string, string> = {
 
 // Inner component that uses the context
 function OnboardingFlow() {
+  if (__DEV__) {
+    console.log('🔥 [ONBOARDING-FLOW] Component mounting...');
+  }
+
   const router = useRouter();
+  
+  if (__DEV__) {
+    console.log('🔥 [ONBOARDING-FLOW] Getting context...');
+  }
+  
+  let contextValue;
+  try {
+    contextValue = useOnboardingContext();
+    if (__DEV__) {
+      console.log('🔥 [ONBOARDING-FLOW] Context retrieved successfully');
+      console.log('🔥 [ONBOARDING-FLOW] Current screen:', contextValue.currentScreen);
+    }
+  } catch (error) {
+    if (__DEV__) {
+      console.error('🔥 [ONBOARDING-FLOW] ERROR getting context:', error);
+    }
+    throw error;
+  }
+  
   const { 
     currentScreen, 
     navigateToScreen, 
@@ -67,7 +90,7 @@ function OnboardingFlow() {
     pickPhoto, 
     setCustomPrompt,
     completeOnboarding
-  } = useOnboardingContext();
+  } = contextValue;
   
   const {
     trackFeatureSelection,
@@ -229,8 +252,16 @@ function OnboardingFlow() {
 
   // Render current screen
   const renderCurrentScreen = () => {
+    if (__DEV__) {
+      console.log('🔥 [ONBOARDING-FLOW] renderCurrentScreen called');
+      console.log('🔥 [ONBOARDING-FLOW] currentScreen:', currentScreen);
+    }
+    
     switch (currentScreen) {
       case 'welcome':
+        if (__DEV__) {
+          console.log('🔥 [ONBOARDING-FLOW] Rendering WelcomeScreen');
+        }
         return <WelcomeScreen onContinue={handleWelcomeContinue} />;
       
       case 'permissions':
@@ -261,18 +292,46 @@ function OnboardingFlow() {
         return <SetupAnimationScreen onComplete={handleSetupComplete} />;
       
       default:
+        if (__DEV__) {
+          console.log('🔥 [ONBOARDING-FLOW] Default case - rendering WelcomeScreen');
+        }
         return <WelcomeScreen onContinue={handleWelcomeContinue} />;
     }
   };
 
-  return renderCurrentScreen();
+  if (__DEV__) {
+    console.log('🔥 [ONBOARDING-FLOW] About to call renderCurrentScreen');
+  }
+  
+  const screenComponent = renderCurrentScreen();
+  
+  if (__DEV__) {
+    console.log('🔥 [ONBOARDING-FLOW] Screen component generated:', !!screenComponent);
+  }
+
+  return screenComponent;
 }
 
 // Main component with provider wrapper
 export default function OnboardingV3() {
-  return (
-    <OnboardingProvider initialScreen="welcome">
-      <OnboardingFlow />
-    </OnboardingProvider>
-  );
+  if (__DEV__) {
+    console.log('🔥 [ONBOARDING-V3] Component mounting...');
+  }
+  
+  try {
+    if (__DEV__) {
+      console.log('🔥 [ONBOARDING-V3] About to render OnboardingProvider');
+    }
+    
+    return (
+      <OnboardingProvider initialScreen="welcome">
+        <OnboardingFlow />
+      </OnboardingProvider>
+    );
+  } catch (error) {
+    if (__DEV__) {
+      console.error('🔥 [ONBOARDING-V3] ERROR rendering:', error);
+    }
+    throw error;
+  }
 }

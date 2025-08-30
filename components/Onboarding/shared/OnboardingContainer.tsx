@@ -16,10 +16,26 @@ export function OnboardingContainer({
   style, 
   showGradient = true 
 }: OnboardingContainerProps) {
+  if (__DEV__) {
+    console.log('🔥 [ONBOARDING-CONTAINER] Component mounting...');
+    console.log('🔥 [ONBOARDING-CONTAINER] Props:', { 
+      children: !!children, 
+      style, 
+      showGradient 
+    });
+  }
+
   const insets = useSafeAreaInsets();
   const opacity = useSharedValue(0);
   
+  if (__DEV__) {
+    console.log('🔥 [ONBOARDING-CONTAINER] SafeArea insets:', insets);
+  }
+  
   React.useEffect(() => {
+    if (__DEV__) {
+      console.log('🔥 [ONBOARDING-CONTAINER] Starting opacity animation');
+    }
     opacity.value = withTiming(1, { duration: 400 });
   }, []);
 
@@ -27,7 +43,14 @@ export function OnboardingContainer({
     opacity: opacity.value,
   }));
 
+  if (__DEV__) {
+    console.log('🔥 [ONBOARDING-CONTAINER] Rendering with showGradient:', showGradient);
+  }
+
   if (showGradient) {
+    if (__DEV__) {
+      console.log('🔥 [ONBOARDING-CONTAINER] Rendering LinearGradient version');
+    }
     return (
       <LinearGradient 
         colors={[ONBOARDING_COLORS.backgroundGradientStart, ONBOARDING_COLORS.backgroundGradientEnd]} 
@@ -45,10 +68,19 @@ export function OnboardingContainer({
             style
           ]}
         >
-          {children}
+          {(() => {
+            if (__DEV__) {
+              console.log('🔥 [ONBOARDING-CONTAINER] Rendering children in gradient');
+            }
+            return children;
+          })()}
         </Animated.View>
       </LinearGradient>
     );
+  }
+
+  if (__DEV__) {
+    console.log('🔥 [ONBOARDING-CONTAINER] Rendering non-gradient version');
   }
 
   return (
@@ -65,7 +97,12 @@ export function OnboardingContainer({
         style
       ]}
     >
-      {children}
+      {(() => {
+        if (__DEV__) {
+          console.log('🔥 [ONBOARDING-CONTAINER] Rendering children in non-gradient');
+        }
+        return children;
+      })()}
     </Animated.View>
   );
 }

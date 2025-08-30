@@ -21,9 +21,18 @@ interface WelcomeScreenProps {
 }
 
 export function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
+  if (__DEV__) {
+    console.log('🔥 [WELCOME-SCREEN] Component mounting...');
+    console.log('🔥 [WELCOME-SCREEN] Props:', { onContinue: !!onContinue });
+  }
+
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
   const isTablet = screenWidth > 768;
   const imageHeight = Math.min(screenHeight * 0.4, isTablet ? 400 : 300);
+  
+  if (__DEV__) {
+    console.log('🔥 [WELCOME-SCREEN] Dimensions:', { screenWidth, screenHeight, isTablet, imageHeight });
+  }
   
   const { hasReliableConnection, refreshNetworkStatus } = useNetworkStatus();
   const [showNetworkModal, setShowNetworkModal] = React.useState(false);
@@ -35,11 +44,19 @@ export function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
   const buttonScale = useSharedValue(0.8);
 
   React.useEffect(() => {
+    if (__DEV__) {
+      console.log('🔥 [WELCOME-SCREEN] useEffect triggered');
+    }
+    
     // Track screen view
     analyticsService.trackScreenView('onboarding_welcome', {
       onboarding_version: 'v3',
       is_tablet: isTablet ? 'true' : 'false'
     });
+    
+    if (__DEV__) {
+      console.log('🔥 [WELCOME-SCREEN] Starting animations...');
+    }
     
     // Stagger the animations for a smooth entrance
     titleOpacity.value = withDelay(200, withTiming(1, { duration: 600 }));
@@ -49,6 +66,10 @@ export function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
     
     buttonOpacity.value = withDelay(600, withTiming(1, { duration: 400 }));
     buttonScale.value = withDelay(600, withSpring(1, { damping: 15, stiffness: 200 }));
+    
+    if (__DEV__) {
+      console.log('🔥 [WELCOME-SCREEN] Animations initiated');
+    }
   }, [isTablet]);
 
   const titleAnimatedStyle = useAnimatedStyle(() => ({
@@ -125,6 +146,10 @@ export function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
     }
     setShowNetworkModal(false);
   };
+
+  if (__DEV__) {
+    console.log('🔥 [WELCOME-SCREEN] About to render OnboardingContainer');
+  }
 
   return (
     <OnboardingContainer>

@@ -66,6 +66,30 @@ subscription_localizations.txt
 test-*.md
 *.sql
 
+# Additional documentation files
+prompts.md
+onboarding-tracking-implementation.md
+
+# Development environment files  
+.env.local
+.env.development
+
+# Git files
+.gitignore
+.gitattributes
+
+# IDE config
+.idea/
+*.iml
+
+# Test data
+test-data/
+mock-data/
+
+# Logs
+logs/
+*.log
+
 # Large video files (keep only essential ones)
 # Uncomment if you want to exclude some videos
 # assets/videos/magic/

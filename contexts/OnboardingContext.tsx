@@ -41,6 +41,11 @@ interface OnboardingProviderProps {
 }
 
 export function OnboardingProvider({ children, initialScreen = 'welcome' }: OnboardingProviderProps) {
+  if (__DEV__) {
+    console.log('🔥 [ONBOARDING-PROVIDER] Component mounting...');
+    console.log('🔥 [ONBOARDING-PROVIDER] InitialScreen:', initialScreen);
+  }
+
   const [currentScreen, setCurrentScreen] = useState<OnboardingScreen>(initialScreen);
   const [onboardingState, setOnboardingState] = useState<OnboardingState>({
     selectedFeature: null,
@@ -51,20 +56,46 @@ export function OnboardingProvider({ children, initialScreen = 'welcome' }: Onbo
     stepStartTime: null,
   });
   
+  if (__DEV__) {
+    console.log('🔥 [ONBOARDING-PROVIDER] State initialized');
+    console.log('🔥 [ONBOARDING-PROVIDER] CurrentScreen:', currentScreen);
+  }
+  
   const screenStartTimes = useRef<Record<string, number>>({});
   const hasInitialized = useRef(false);
 
   // Initialize tracking session on mount
   useEffect(() => {
+    if (__DEV__) {
+      console.log('🔥 [ONBOARDING-PROVIDER] useEffect triggered');
+      console.log('🔥 [ONBOARDING-PROVIDER] hasInitialized:', hasInitialized.current);
+    }
+    
     if (!hasInitialized.current) {
       hasInitialized.current = true;
+      if (__DEV__) {
+        console.log('🔥 [ONBOARDING-PROVIDER] Calling initializeTracking...');
+      }
       initializeTracking();
     }
   }, []);
 
   const initializeTracking = async () => {
+    if (__DEV__) {
+      console.log('🔥 [ONBOARDING-PROVIDER] initializeTracking started');
+    }
+    
     try {
+      if (__DEV__) {
+        console.log('🔥 [ONBOARDING-PROVIDER] Starting onboarding session...');
+      }
+      
       const sessionId = await onboardingTrackingService.startOnboardingSession('v3');
+      
+      if (__DEV__) {
+        console.log('🔥 [ONBOARDING-PROVIDER] Session started:', sessionId);
+        console.log('🔥 [ONBOARDING-PROVIDER] Collecting device info...');
+      }
       
       // Collect device info
       const deviceInfo = {
@@ -77,6 +108,10 @@ export function OnboardingProvider({ children, initialScreen = 'welcome' }: Onbo
         modelName: Device.modelName,
       };
       
+      if (__DEV__) {
+        console.log('🔥 [ONBOARDING-PROVIDER] Device info collected:', deviceInfo);
+      }
+      
       await onboardingTrackingService.updateDeviceInfo(deviceInfo, {});
       
       setOnboardingState(prev => ({ ...prev, sessionId, stepStartTime: Date.now() }));
@@ -88,7 +123,14 @@ export function OnboardingProvider({ children, initialScreen = 'welcome' }: Onbo
         status: 'viewed',
         stepData: { initialScreen: true }
       });
+      
+      if (__DEV__) {
+        console.log('🔥 [ONBOARDING-PROVIDER] Tracking initialized successfully');
+      }
     } catch (error) {
+      if (__DEV__) {
+        console.error('🔥 [ONBOARDING-PROVIDER] ERROR in initializeTracking:', error);
+      }
       console.error('Failed to initialize tracking:', error);
     }
   };
@@ -268,9 +310,20 @@ export function OnboardingProvider({ children, initialScreen = 'welcome' }: Onbo
     trackPermission,
   };
 
+  if (__DEV__) {
+    console.log('🔥 [ONBOARDING-PROVIDER] About to render Provider');
+    console.log('🔥 [ONBOARDING-PROVIDER] Children exists:', !!children);
+    console.log('🔥 [ONBOARDING-PROVIDER] Context value:', contextValue);
+  }
+
   return (
     <OnboardingContext.Provider value={contextValue}>
-      {children}
+      {(() => {
+        if (__DEV__) {
+          console.log('🔥 [ONBOARDING-PROVIDER] Rendering children...');
+        }
+        return children;
+      })()}
     </OnboardingContext.Provider>
   );
 }

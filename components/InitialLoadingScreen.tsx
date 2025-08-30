@@ -1,15 +1,14 @@
 import { analyticsService } from '@/services/analytics';
-// import { backToLifeService } from '@/services/backToLifeService'; // REMOVED - service deleted
 import { networkStateService } from '@/services/networkState';
 import { notificationService } from '@/services/notificationService';
 import { permissionsService } from '@/services/permissions';
 import { checkSubscriptionStatus, getCurrentSubscriptionTransactionInfo } from '@/services/revenuecat';
-// Removed: No longer using stable IDs - RevenueCat handles anonymous IDs automatically
 import { useRevenueCat } from '@/contexts/RevenueCatContext';
-// import { useVideoToastStore } from '@/store/videoToastStore';
 import { onboardingUtils } from '@/utils/onboarding';
+import { useCropModalStore } from '@/store/cropModalStore';
+import { useAppInitStore } from '@/store/appInitStore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
-import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Dimensions, Platform, Text, View } from 'react-native';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
@@ -21,10 +20,8 @@ import Animated, {
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-// Global initialization guards to prevent multiple initializations
-let hasInitializedGlobally = false;
-let initializationPromise: Promise<void> | null = null;
-
+// Module-level flag to prevent duplicate initialization across component re-mounts
+let hasShownIntro = false;
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -33,113 +30,18 @@ interface InitialLoadingScreenProps {
 }
 
 export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadingScreenProps) {
-  const router = useRouter();
   const { isPro, isLoading, refreshCustomerInfo } = useRevenueCat();
+  const { setInitialRoute, markInitialized } = useAppInitStore();
   const insets = useSafeAreaInsets();
 
-  // Helper function to navigate based on onboarding status
-  const navigateToApp = async () => {
-    try {
-      // Pro users skip onboarding completely
-      if (isPro) {
-        if (__DEV__) {
-          console.log('🎯 Pro user detected - skipping onboarding');
-          // Log transaction info for Pro users
-          getCurrentSubscriptionTransactionInfo().catch(() => {});
-        }
-        router.replace('/explore');
-        return;
-      }
-
-      // Check if user has completed onboarding OR wants to always skip
-      const [hasSeenOnboarding, alwaysSkip, alwaysShow] = await Promise.all([
-        onboardingUtils.hasSeenOnboarding(),
-        onboardingUtils.getAlwaysSkipOnboarding(),
-        onboardingUtils.getAlwaysShowOnboarding(),
-      ]);
-      
-      // TEMPORARY: Always show onboarding v3 during testing
-      if (__DEV__) {
-        console.log('🎯 [TESTING] Always showing onboarding v3 for testing');
-        router.replace('/onboarding-v3');
-        // Show paywall for free users after onboarding completion (longer delay for new users)
-        setTimeout(() => {
-          import('@/services/revenuecat').then(({ presentPaywall }) => {
-            presentPaywall().catch(() => {});
-          });
-        }, 1800); // Allow time for "System's all set" message to sink in
-        return;
-      }
-
-      if (!alwaysShow && (hasSeenOnboarding || alwaysSkip)) {
-        if (__DEV__) {
-          console.log('🎯 User has seen onboarding - going to explore');
-        }
-        router.replace('/explore');
-        // Show paywall for free users who completed onboarding
-        setTimeout(() => {
-          import('@/services/revenuecat').then(({ presentPaywall }) => {
-            presentPaywall().catch(() => {});
-          });
-        }, 300);
-      } else {
-        if (__DEV__) {
-          console.log('🎯 New user - showing onboarding v3');
-        }
-        router.replace('/onboarding-v3');
-        // Show paywall for free users after onboarding completion (longer delay for new users)
-        setTimeout(() => {
-          import('@/services/revenuecat').then(({ presentPaywall }) => {
-            presentPaywall().catch(() => {});
-          });
-        }, 1800); // Allow time for "System's all set" message to sink in
-      }
-    } catch (error) {
-      if (__DEV__) {
-        console.error('❌ Navigation error, defaulting to explore:', error);
-      }
-      router.replace('/explore');
-      // Show paywall even on error for free users
-      if (!isPro) {
-        setTimeout(() => {
-          import('@/services/revenuecat').then(({ presentPaywall }) => {
-            presentPaywall().catch(() => {});
-          });
-        }, 300);
-      }
-    }
-  };
-  
-  // Simple retry helper to harden startup against transient failures
-  const retry = async <T,>(fn: () => Promise<T>, attempts: number = 2, delayMs: number = 700): Promise<T> => {
-    let lastError: any;
-    for (let i = 0; i <= attempts; i++) {
-      try {
-        return await fn();
-      } catch (e) {
-        lastError = e;
-        if (i < attempts) {
-          await new Promise((r) => setTimeout(r, delayMs));
-          continue;
-        }
-      }
-    }
-    throw lastError;
-  };
-
-  
-  // State
-  const [isComplete, setIsComplete] = useState(false);
-  const [hasStarted, setHasStarted] = useState(false);
-  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
-  const [showOnloadingVideo, setShowOnloadingVideo] = useState(false);
-  const [onloadingComplete, setOnloadingComplete] = useState(false);
+  // Simple state
+  const [currentVideo, setCurrentVideo] = useState<'loading' | 'onboarding' | 'done'>('loading');
 
   // Main loading video player - play once only
   const videoPlayer = useVideoPlayer(require('../assets/videos/loading.mp4'), (player) => {
     player.loop = false;  // Play once only
     player.muted = true;
-    player.play(); // Auto-play immediately
+    // Don't auto-play - will be triggered when needed
   });
 
   // Onboarding intro video player
@@ -148,239 +50,148 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
     player.muted = true;
     // Don't auto-play - will be triggered after main video
   });
-  
-  // Refs for cleanup
-  const initializationRef = useRef<any>(null);
-  const customerInfoListenerRemoverRef = useRef<null | (() => void)>(null);
-  const completionStartedRef = useRef(false);
 
-  // Simple minimum time timer - 5.8s (one full video play)
+  // Single initialization flow
   useEffect(() => {
-    const minTimeTimer = setTimeout(() => {
+    // Prevent duplicate initialization using module flag
+    if (hasShownIntro) {
       if (__DEV__) {
-        console.log('⏱️ Minimum display time elapsed (5.8s)');
+        console.log('⚠️ Skipping duplicate initialization - intro already shown');
       }
-      setMinTimeElapsed(true);
-    }, 5800); // 5.8 seconds for one full video play
+      return;
+    }
+    hasShownIntro = true;
+    markInitialized();
     
-    return () => clearTimeout(minTimeTimer);
-  }, []);
-
-  // Simple video ready check - just ensure it plays
-  useEffect(() => {
-    const subscription = videoPlayer.addListener('statusChange', ({ status }) => {
-      if (status === 'readyToPlay' && !videoPlayer.playing) {
+    const handleAppInitialization = async () => {
+      try {
         if (__DEV__) {
-          console.log('📹 Video ready - starting playback');
+          console.log('🚀 Starting app initialization...');
         }
+
+        // Start loading video
         videoPlayer.play();
-      }
-    });
-    
-    return () => {
-      subscription?.remove();
-    };
-  }, []);
+        
+        // Wait minimum time (5.8s) and initialize services in parallel
+        const [_] = await Promise.all([
+          new Promise(resolve => setTimeout(resolve, 5800)), // Loading video duration
+          initializeServices()
+        ]);
 
-  // Handle transition to onboarding video
-  useEffect(() => {
-    if (minTimeElapsed && isComplete && !showOnloadingVideo && !completionStartedRef.current) {
-      completionStartedRef.current = true;
-      
-      // Pro users skip onboarding intro video
-      if (isPro) {
         if (__DEV__) {
-          console.log('🎯 Pro user - skipping onboarding intro video, going directly to app');
+          console.log('✅ Loading video and services complete');
         }
-        navigateToApp();
-        onLoadingComplete();
-        return;
-      }
-      
-      // Check if free user has already completed onboarding
-      onboardingUtils.hasSeenOnboarding().then(hasSeenOnboarding => {
-        if (hasSeenOnboarding && !__DEV__) {
-          if (__DEV__) {
-            console.log('🎯 Free user completed onboarding - skipping intro video, going to app with paywall');
+
+        // Check pro status after loading video (RevenueCat should be ready by now)
+        let isProUser = false;
+        try {
+          if (Constants.appOwnership !== 'expo') {
+            const isConfigured = await Purchases.isConfigured();
+            if (isConfigured) {
+              const info = await Purchases.getCustomerInfo();
+              isProUser = Object.keys(info.entitlements.active).length > 0;
+            }
           }
-          navigateToApp();
+        } catch (error) {
+          if (__DEV__) {
+            console.log('⚠️ Pro status check failed, treating as free user');
+          }
+        }
+        
+        // Check onboarding status
+        const hasSeenOnboarding = await onboardingUtils.hasSeenOnboarding();
+        
+        // Make routing decision
+        if (isProUser) {
+          if (__DEV__) {
+            console.log('🎯 Pro user - going directly to app');
+          }
+          setInitialRoute('explore');
           onLoadingComplete();
           return;
         }
         
-        // Show onboarding intro video for new users or dev mode
-        if (__DEV__) {
-          console.log('🎬 Starting onboarding intro video');
+        if (hasSeenOnboarding) {
+          if (__DEV__) {
+            console.log('🎯 Free user completed onboarding - going to app');
+          }
+          setInitialRoute('explore');
+          onLoadingComplete();
+          return;
         }
-        setShowOnloadingVideo(true);
-        // Start the onboarding video
+        
+        // New user - show onboarding video then go to onboarding
+        if (__DEV__) {
+          console.log('🎯 New user - showing onboarding video');
+        }
+        setCurrentVideo('onboarding');
+        
+        // Play onboarding video
         setTimeout(() => {
           onloadingVideoPlayer.play();
         }, 300);
-      });
-    }
-  }, [minTimeElapsed, isComplete, showOnloadingVideo, isPro]);
-
-  // Track onboarding video completion
-  useEffect(() => {
-    if (!showOnloadingVideo) return;
-    
-    const subscription = onloadingVideoPlayer.addListener('statusChange', ({ status }) => {
-      if (status === 'idle' && !onloadingComplete) {
+        
+        // Wait for video to complete
+        await new Promise(resolve => {
+          const subscription = onloadingVideoPlayer.addListener('statusChange', ({ status }) => {
+            if (status === 'idle') {
+              subscription?.remove();
+              resolve(void 0);
+            }
+          });
+          
+          setTimeout(() => {
+            subscription?.remove();
+            resolve(void 0);
+          }, 12500);
+        });
+        
         if (__DEV__) {
-          console.log('🎬 Onboarding video completed');
+          console.log('🎬 Onboarding video complete - going to onboarding');
         }
-        setOnloadingComplete(true);
-      }
-    });
-    
-    // Fallback timer for onboarding video (12.5s)
-    const timer = setTimeout(() => {
-      if (!onloadingComplete) {
-        setOnloadingComplete(true);
-      }
-    }, 12500);
-    
-    return () => {
-      subscription?.remove();
-      clearTimeout(timer);
-    };
-  }, [showOnloadingVideo, onloadingComplete]);
-
-  // Final exit logic - after onboarding video completes
-  useEffect(() => {
-    if (onloadingComplete && !completionStartedRef.current) {
-      completionStartedRef.current = true;
-      if (__DEV__) {
-        console.log('✅ All videos complete - navigating to onboarding');
-      }
-      
-      // Small delay for smooth transition
-      setTimeout(async () => {
-        try { await navigateToApp(); } catch {}
+        setInitialRoute('onboarding-v3');
         onLoadingComplete();
-      }, 300);
-    }
-  }, [onloadingComplete]);
 
-
-  // Ultimate failsafe: after 10s, force completion
-  useEffect(() => {
-    const failSafe = setTimeout(() => {
-      if (completionStartedRef.current) return;
-      if (__DEV__) {
-        console.log('⚠️ Ultimate failsafe triggered - forcing exit after 10s');
-      }
-      setMinTimeElapsed(true);
-      setIsComplete(true);
-    }, 10000); // 10 second ultimate failsafe
-    return () => clearTimeout(failSafe);
-  }, []); // No dependencies - start timer immediately
-
-  // No external sheen dependency
-
-  // Initialize app - start immediately in parallel with video
-  useEffect(() => {
-    if (initializationPromise) {
-      // Someone already started initialization; wait for it, then exit loading
-      initializationPromise.then(() => onLoadingComplete());
-      return;
-    }
-
-    if (__DEV__) {
-      console.log('🚀 InitialLoadingScreen: Starting initialization immediately...');
-    }
-    hasInitializedGlobally = true;
-    setHasStarted(true);
-
-    // Create a shared one-time promise that completes after init + brief UI delay
-    initializationPromise = new Promise<void>((resolve) => {
-      const runInitialization = async () => {
-        try {
-          // Step 1: Permissions
-          // We request photo library at startup (for gallery), and only check notifications.
-          await initializePermissions();
-
-          // Step 2: RevenueCat Configuration
-          // RevenueCat is configured in _layout.tsx before this component loads
-          // No additional configuration needed here
-
-          // Step 2.5: Wait for RevenueCat Context to be ready with subscription data (non-blocking)
-          try {
-            await waitForRevenueCatContext();
-          } catch (error) {
-            if (__DEV__) {
-              console.log('⚠️ RevenueCat context wait failed, continuing startup:', error);
-            }
-          }
-
-          // Step 3: Device Services
-          await initializeDeviceServices();
-
-          // Step 4: Analytics
-          await retry(initializeAnalytics, 2, 600);
-
-          // Step 5: Notifications (initialize only; do not prompt yet)
-          await retry(initializeNotifications, 1, 600);
-
-          // Step 6: Check for completed videos
-          await retry(checkAndRecoverVideos, 2, 800);
-
-          // Step 7: Heavy component preloading (optional performance boost)
-          try {
-            // Preload heavy components that are likely to be needed next
-            await Promise.all([
-              import('@/app/explore'),
-              import('@/components/BeforeAfterSlider'),
-              // import('@/components/ProcessingScreen'), // Skip if not available
-            ]);
-            if (__DEV__) {
-              console.log('✅ Heavy components preloaded');
-            }
-          } catch (error) {
-            if (__DEV__) {
-              console.log('⚠️ Component preloading failed (non-fatal):', error);
-            }
-          }
-
-          // Step 8: Final checks - skip redundant subscription check
-          // RevenueCat Context already handles subscription status
-          if (__DEV__) {
-            console.log('✅ Initialization complete - RevenueCat Context manages subscription state');
-          }
-          // Ready
-        } catch (error) {
-          if (__DEV__) {
-            console.error('❌ Initialization error:', error);
-          }
+      } catch (error) {
+        if (__DEV__) {
+          console.error('❌ Initialization error:', error);
         }
-      };
-
-      // Start initialization immediately
-      (async () => {
-        try {
-          await runInitialization();
-          setIsComplete(true);
-        } finally {
-          resolve();
+        // Fallback to explore
+        if (__DEV__) {
+          console.log('❌ Error fallback - going to explore');
         }
-      })();
-    });
-
-    initializationPromise.then(() => {
-      // Do nothing here; completion sequence handled when both init done and min time elapsed
-    });
-
-    return () => {
-      const remove = customerInfoListenerRemoverRef.current;
-      if (remove) {
-        try { remove(); } catch {}
+        setInitialRoute('explore');
+        onLoadingComplete();
       }
     };
-  }, []); // Start immediately on mount, no dependencies
+
+    handleAppInitialization();
+  }, []);
+
+  // Initialize all services
+  const initializeServices = async () => {
+    try {
+      await Promise.allSettled([
+        waitForRevenueCatContext(),
+        initializeVideoRecovery(),
+        initializeDeviceServices(), 
+        initializeAnalytics(),
+        initializePermissions(),
+        initializeNotifications(),
+        checkAndRecoverVideos()
+      ]);
+      
+      if (__DEV__) {
+        console.log('✅ All services initialized');
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.error('❌ Service initialization error:', error);
+      }
+    }
+  };
 
   // RevenueCat initialization is handled in _layout.tsx
-  // This function is kept for compatibility but does nothing
   const initializeRevenueCat = async () => {
     // No-op: RevenueCat is configured in _layout.tsx
   };
@@ -388,13 +199,12 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
   const initializeVideoRecovery = async () => {
     // Auto-recover from any stuck video processing states on app launch
         try {
-          const { isVideoProcessing, setIsVideoProcessing, setIsProcessing, setErrorMessage } = await import('@/store/cropModalStore').then(m => m.useCropModalStore.getState());
+          const { isVideoProcessing, setIsVideoProcessing, setIsProcessing, setErrorMessage } = useCropModalStore.getState();
           
           if (isVideoProcessing) {
             console.log('🔧 [STARTUP] Detected stuck video processing state - auto-recovering...');
             
             // Check timestamps for ghost processing detection
-            const AsyncStorage = await import('@react-native-async-storage/async-storage').then(m => m.default);
             const lastProcessingTime = await AsyncStorage.getItem('lastVideoProcessingTime').catch(() => null);
             const pendingVideo = await AsyncStorage.getItem('pendingVideo').catch(() => null);
             
@@ -538,9 +348,6 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
         console.log('🎬 Starting video recovery check...');
       }
       
-      // TODO: Re-implement video recovery when store is available
-      // await useVideoToastStore.getState().checkForPendingVideo();
-      
       if (__DEV__) {
         console.log('✅ Video recovery check completed');
       }
@@ -555,7 +362,7 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
   return (
     <View style={{ flex: 1, backgroundColor: '#000000' }}>
       {/* Main loading video - shows initially */}
-      {!showOnloadingVideo && (
+      {currentVideo === 'loading' && (
         <VideoView
           player={videoPlayer}
           style={{ 
@@ -574,8 +381,8 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
         />
       )}
 
-      {/* Onboarding intro video - shows after main video and init complete */}
-      {showOnloadingVideo && (
+      {/* Onboarding intro video - shows after main video */}
+      {currentVideo === 'onboarding' && (
         <VideoView
           player={onloadingVideoPlayer}
           style={{ 
@@ -592,24 +399,6 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
           nativeControls={false}
           allowsFullscreen={false}
         />
-      )}
-      
-      {/* Loading indicator overlay - shows after main video if initialization not done yet */}
-      {minTimeElapsed && !isComplete && !showOnloadingVideo && (
-        <View 
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: '#000000',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <ActivityIndicator size="large" color="#ffffff" style={{ transform: [{ scale: 0.8 }] }} />
-        </View>
       )}
     </View>
   );
