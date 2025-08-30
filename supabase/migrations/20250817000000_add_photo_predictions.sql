@@ -16,7 +16,7 @@ CREATE TABLE photo_predictions (
   
   -- Add constraints
   CONSTRAINT valid_status CHECK (status IN ('starting', 'processing', 'succeeded', 'failed', 'canceled')),
-  CONSTRAINT valid_mode CHECK (mode IN ('repair', 'outfit', 'background', 'enhance', 'custom'))
+  CONSTRAINT valid_mode CHECK (mode IN ('repair', 'outfit', 'background', 'enhance', 'custom', 'memorial', 'water_damage', 'restoration'))
 );
 
 -- Add indexes for performance
@@ -69,7 +69,7 @@ COMMENT ON COLUMN photo_predictions.user_id IS
 'Tracking ID from getPhotoTrackingId() - used for usage limits and attribution';
 
 COMMENT ON COLUMN photo_predictions.mode IS 
-'AI processing mode: repair, outfit, background, enhance, custom';
+'AI processing mode: repair, outfit, background, enhance, custom, memorial, water_damage, restoration';
 
 COMMENT ON COLUMN photo_predictions.style_key IS 
 'Specific style variant like outfit-1 (Fix Clothes), bg-2 (Heavenly), etc';

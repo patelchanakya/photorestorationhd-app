@@ -1,6 +1,6 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type FunctionType = 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'outfit' | 'background' | 'enlighten' | 'custom' | 'restore_repair' | 'memorial' | 'water_damage';
 
@@ -329,9 +329,10 @@ export async function generateRepair(
   });
 }
 
-// Water damage generation (uses hardcoded prompt)
+// Water damage generation (supports custom prompts)
 export async function generateWaterDamage(
   imageUri: string,
+  customPrompt?: string,
   userId?: string
 ): Promise<GenerationResponse> {
   if (__DEV__) {
@@ -339,6 +340,7 @@ export async function generateWaterDamage(
   }
 
   return callGenerationEndpoint('photo-water-damage-v2', imageUri, {
+    custom_prompt: customPrompt,
     user_id: userId
   });
 }
@@ -436,7 +438,7 @@ export async function generatePhoto(
       return generateRepair(imageUri, customPrompt, userId);
     
     case 'water_damage':
-      return generateWaterDamage(imageUri, userId);
+      return generateWaterDamage(imageUri, customPrompt, userId);
     
     default:
       throw new Error(`Unsupported function type: ${functionType}`);

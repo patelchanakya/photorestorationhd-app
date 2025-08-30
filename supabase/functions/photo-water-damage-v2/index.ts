@@ -1,6 +1,6 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import Replicate from "https://esm.sh/replicate@1.0.1"
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import Replicate from "https://esm.sh/replicate@1.0.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,6 +9,7 @@ const corsHeaders = {
 
 interface WaterDamageRequest {
   image_data: string; // base64 image
+  custom_prompt?: string; // Optional custom prompt
   user_id?: string; // For usage tracking
 }
 
@@ -23,7 +24,7 @@ serve(async (req) => {
   
   try {
     // Get request body
-    const { image_data, user_id: requestUserId }: WaterDamageRequest = await req.json()
+    const { image_data, custom_prompt, user_id: requestUserId }: WaterDamageRequest = await req.json()
     user_id = requestUserId; // Store for error handler
 
     if (!image_data) {
@@ -133,13 +134,15 @@ serve(async (req) => {
 
     console.log('🔧 Starting water damage restoration with webhooks...')
 
-    // Hardcoded prompt for water damage restoration
-    const prompt = "Restore and fix the photo. Remove scratches, blur, or damage. Keep the photo in black and white without adding color. Keep the person's face, body, and proportions exactly the same. Fill in black patches and leave no scratches."
+    // Use custom prompt if provided, otherwise use default water damage prompt
+    const prompt = custom_prompt || "Remove water damage, stains, and moisture marks from the photo. Restore the original image quality while preserving all details. Keep the person's face, body, and proportions exactly the same. Remove any water spots, discoloration, or damage caused by moisture exposure."
 
     // PROMPT LOGGING: Track actual prompt being used
     console.log('🔧 WATER DAMAGE RESTORATION PROMPT:', {
       mode: 'water_damage',
-      prompt: prompt
+      prompt: prompt,
+      has_custom_prompt: !!custom_prompt,
+      custom_prompt: custom_prompt || null
     });
 
     // Build input for water damage restoration using kontext-pro model
