@@ -297,7 +297,7 @@ export default function RestorationScreen() {
   // Handler for dismissing the screen (back navigation)  
   const handleDismiss = async () => {
     await clearActivePrediction();
-    router.replace('/explore');
+    router.dismissTo('/explore');
   };
 
   const handleExport = async () => {
