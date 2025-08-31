@@ -854,7 +854,7 @@ export const getSubscriptionPlanDetails = async (): Promise<SubscriptionPlanDeta
 
     const proEntitlement = customerInfo.entitlements.active['pro'];
     
-    if (!proEntitlement?.isActive) {
+    if (!proEntitlement) {
       return null;
     }
 

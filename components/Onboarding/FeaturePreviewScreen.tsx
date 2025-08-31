@@ -1,20 +1,20 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Alert, Dimensions, AppState } from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { Image as ExpoImage } from 'expo-image';
 import { ONBOARDING_FEATURES } from '@/utils/onboarding';
-import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect } from '@react-navigation/native';
+import { Image as ExpoImage } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import { VideoView, useVideoPlayer } from 'expo-video';
-import Animated, { 
-  useAnimatedStyle, 
-  useSharedValue, 
-  withSpring,
+import React from 'react';
+import { Alert, AppState, Dimensions, Text, TouchableOpacity, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
   withDelay,
-  withTiming 
+  withSpring,
+  withTiming
 } from 'react-native-reanimated';
-import { OnboardingContainer } from './shared/OnboardingContainer';
 import { OnboardingButton } from './shared/OnboardingButton';
+import { OnboardingContainer } from './shared/OnboardingContainer';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -42,11 +42,13 @@ export function FeaturePreviewScreen({
 
   // Get preview media for the selected feature
   const previewMedia = getPreviewMedia(selectedFeatureId);
-  const videoPlayer = previewMedia.type === 'video' ? useVideoPlayer(previewMedia.source, (player) => {
-    player.loop = true;
-    player.muted = true;
-    player.play();
-  }) : null;
+  const videoPlayer = useVideoPlayer(previewMedia.source, (player) => {
+    if (previewMedia.type === 'video') {
+      player.loop = true;
+      player.muted = true;
+      player.play();
+    }
+  });
 
   React.useEffect(() => {
     // If "none_above" is selected, automatically skip to community screen
@@ -294,7 +296,7 @@ function getPreviewMedia(featureId: string): PreviewMedia {
     
     // Magic sections (top priority)
     'recreate': { type: 'video', source: require('../../assets/videos/recreate.mp4') },
-    'water_stain_damage': { type: 'image', source: require('../../assets/images/popular/descratch/pop-2.png') },
+    'water_stain_damage': { type: 'image', source: require('../../assets/images/popular/stain/pop-7.png') },
     'restore_repair': { type: 'image', source: require('../../assets/images/popular/descratch/pop-2.png') },
     'professional_outfit': { type: 'video', source: require('../../assets/videos/magic/outfits/thumbnail/formal-wear/professional.mp4') },
     'blur_background': { type: 'image', source: require('../../assets/images/backgrounds/thumbnail/blur/blurred.jpeg') },
