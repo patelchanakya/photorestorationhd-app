@@ -1,6 +1,7 @@
 import { BottomSheet } from '@/components/sheets/BottomSheet';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
+import { usePhotoUsage } from '@/services/photoUsageService';
 import { presentPaywall, validatePremiumAccess } from '@/services/revenuecat';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BlurView } from 'expo-blur';
@@ -39,6 +40,7 @@ export default function TextEditsScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const photoRestoration = usePhotoRestoration();
+  const { data: photoUsage } = usePhotoUsage();
   const [infoVisible, setInfoVisible] = useState(false);
   const [infoTitle, setInfoTitle] = useState<string>('');
   const [infoText, setInfoText] = useState<string>('');
@@ -116,6 +118,29 @@ useEffect(() => {
 
 
   const processWithPrompt = useCallback(async (uri: string, prompt: string, editMode?: string) => {
+    // CRITICAL: Check photo usage limits BEFORE making any API calls
+    if (photoUsage && !photoUsage.canUse && photoUsage.planType === 'free') {
+      if (__DEV__) {
+        console.log('❌ [TEXT-EDIT] Photo limit exceeded, showing paywall instead of API call');
+      }
+      
+      try {
+        const success = await presentPaywall();
+        if (!success) {
+          if (__DEV__) {
+            console.log('🚫 [TEXT-EDIT] User cancelled paywall, cancelling processing');
+          }
+          return;
+        }
+        // If successful, continue with processing (usage will be rechecked on server)
+      } catch (error) {
+        if (__DEV__) {
+          console.error('❌ [TEXT-EDIT] Paywall error:', error);
+        }
+        return;
+      }
+    }
+    
     // CRITICAL: Check for active prediction before any processing
     const activePredictionId = await AsyncStorage.getItem('activePredictionId');
     if (activePredictionId) {
@@ -179,20 +204,11 @@ useEffect(() => {
       stage: 'started'
     });
 
-    // Store text-edit context for recovery
-    await AsyncStorage.setItem('activeTextEditContext', JSON.stringify({
-      mode: 'text-edits',
-      timestamp: Date.now(),
-      prompt: prompt.substring(0, 100), // Store preview of prompt for logging
-      functionType
-    }));
+    // Store a flag indicating we're in text-edits flow for recovery
+    await AsyncStorage.setItem('isTextEditsFlow', 'true');
     
     if (__DEV__) {
-      console.log('📝 [TEXT-EDIT] Stored context for recovery:', {
-        mode: 'text_edits',
-        functionType,
-        prompt_preview: prompt.substring(0, 50) + (prompt.length > 50 ? '...' : '')
-      });
+      console.log('📝 [TEXT-EDIT] Set text-edits flow flag for recovery');
     }
 
     // Show loading UI
@@ -201,24 +217,35 @@ useEffect(() => {
     try {
       const result = await photoRestoration.mutateAsync({ imageUri: uri, functionType, imageSource: 'gallery', customPrompt: prompt });
       
-      // Clear text-edit context and prediction ID on successful completion since we're navigating away
-      await AsyncStorage.multiRemove(['activeTextEditContext', 'activePredictionId']);
+      // Store text-edit context with prediction ID for deterministic recovery
+      await AsyncStorage.setItem(`textEditContext_${result.id}`, JSON.stringify({
+        mode: 'text-edits',
+        imageUri: uri,
+        functionType,
+        customPrompt: prompt,
+        timestamp: Date.now(),
+        predictionId: result.id
+      }));
       
       if (__DEV__) {
-        console.log('📝 [TEXT-EDIT] Cleared context after successful completion');
+        console.log('📝 [TEXT-EDIT] Stored text-edit context with prediction ID for deterministic recovery:', {
+          predictionId: result.id,
+          mode: 'text-edits',
+          functionType,
+          prompt_preview: prompt.substring(0, 50) + (prompt.length > 50 ? '...' : '')
+        });
       }
+      
+      // Clear text-edits flow flag now that we have the prediction ID and context stored
+      await AsyncStorage.removeItem('isTextEditsFlow');
       
       setIsLoading(false);
       router.replace(`/restoration/${result.id}`);
     } catch (err: any) {
       setIsLoading(false);
       
-      // Clear text-edit context and prediction ID on error - recovery will handle this if needed
-      await AsyncStorage.multiRemove(['activeTextEditContext', 'activePredictionId']);
-      
-      if (__DEV__) {
-        console.log('📝 [TEXT-EDIT] Cleared context after error');
-      }
+      // Clear text-edits flow flag on error
+      await AsyncStorage.removeItem('isTextEditsFlow');
       
       // Handle photo limit exceeded error with user-friendly message
       let errorTitle = 'Processing Failed';

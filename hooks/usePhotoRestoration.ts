@@ -1,6 +1,6 @@
 import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import { analyticsService } from '@/services/analytics';
-import { generatePhotoWithPolling, type FunctionType } from '@/services/photoGenerationV2';
+import { generatePhoto, pollPhotoStatus, type FunctionType } from '@/services/photoGenerationV2';
 import { useInvalidatePhotoUsage } from '@/services/photoUsageService';
 import { restorationTrackingService } from '@/services/restorationTracking';
 import { getAppUserId } from '@/services/revenuecat';
@@ -9,6 +9,7 @@ import { restorationService } from '@/services/supabase';
 import { getUnifiedTrackingId } from '@/services/trackingIds';
 import { useRestorationStore } from '@/store/restorationStore';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { InteractionManager } from 'react-native';
 
 // Request deduplication map to prevent duplicate API calls
@@ -48,10 +49,94 @@ export function usePhotoRestoration() {
       // Get styleKey from global context for more unique deduplication
       const styleKey = (global as any).__quickEditStyleKey || undefined;
       
+      // Check AsyncStorage FIRST (survives app backgrounding)
+      const existingPredictionId = await AsyncStorage.getItem('activePredictionId');
+      if (existingPredictionId) {
+        const existingContext = await AsyncStorage.getItem('predictionContext');
+        if (existingContext) {
+          try {
+            const context = JSON.parse(existingContext);
+            
+            // Check if same request
+            if (context.imageUri === imageUri && 
+                context.functionType === functionType &&
+                context.styleKey === (styleKey || null) &&
+                context.customPrompt === (customPrompt || null)) {
+              
+              const status = await pollPhotoStatus(existingPredictionId);
+              
+              if (status.status === 'processing' || status.status === 'starting') {
+                if (__DEV__) {
+                  const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+                  console.log(`[${timestamp}] 🔄 DUPLICATE BLOCKED: Using existing prediction from AsyncStorage:`, {
+                    prediction_id: existingPredictionId,
+                    status: status.status,
+                    progress: status.progress
+                  });
+                }
+                
+                // Get userId for the existing prediction
+                const trackingId = await getUnifiedTrackingId('photo');
+                let existingUserId = trackingId;
+                if (!existingUserId) {
+                  existingUserId = await getAppUserId();
+                }
+                
+                // Poll existing to completion
+                const restoredUrl = await generatePhotoWithPolling(imageUri, functionType, {
+                  styleKey,
+                  customPrompt,
+                  userId: existingUserId || 'fallback-anonymous',
+                  onProgress: (progress, status) => {
+                    // Update global progress tracker
+                    (global as any).__currentJobProgress = progress;
+                    if (__DEV__) {
+                      console.log(`📊 Existing prediction progress: ${progress}% (${status})`);
+                    }
+                  },
+                  timeoutMs: 120000
+                });
+                
+                return {
+                  id: existingPredictionId,
+                  originalImageUri: imageUri,
+                  restoredImageUri: restoredUrl,
+                  status: 'completed' as const,
+                  createdAt: new Date(),
+                };
+              }
+              
+              if (status.status === 'succeeded' && status.output) {
+                if (__DEV__) {
+                  const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+                  console.log(`[${timestamp}] ✅ DUPLICATE BLOCKED: Using completed prediction from AsyncStorage:`, {
+                    prediction_id: existingPredictionId,
+                    output_length: status.output.length
+                  });
+                }
+                await AsyncStorage.removeItem('activePredictionId');
+                await AsyncStorage.removeItem('predictionContext');
+                return {
+                  id: existingPredictionId,
+                  originalImageUri: imageUri,
+                  restoredImageUri: status.output,
+                  status: 'completed' as const,
+                  createdAt: new Date(),
+                };
+              }
+            }
+          } catch (error) {
+            if (__DEV__) {
+              console.error('⚠️ Error checking existing prediction:', error);
+            }
+          }
+        }
+      }
+      
       // Create simple, consistent deduplication key (NO timestamp!)
       const requestKey = `${imageUri}_${functionType}_${styleKey || 'none'}_${customPrompt || 'none'}`;
       
-      // Check if this exact request is already in progress
+      // Check if this exact request is already in progress (in-memory deduplication)
       if (activeRequests.has(requestKey)) {
         if (__DEV__) {
           console.log('🔄 DUPLICATE BLOCKED: Returning existing promise for', requestKey);
@@ -108,12 +193,23 @@ export function usePhotoRestoration() {
           });
         }
         
-        // Create restoration record in local database (AsyncStorage)
+        // Start generation FIRST to get prediction ID
+        const startResponse = await generatePhoto(imageUri, functionType, {
+          styleKey,
+          customPrompt,
+          userId: userId || 'fallback-anonymous'
+        });
+        
+        const predictionId = startResponse.prediction_id;
+        
+        // NOW create restoration record using prediction ID
         const restoration = await restorationService.create({
+          prediction_id: predictionId,
           user_id: userId || 'fallback-anonymous',
           original_filename: originalFilename,
           status: 'processing',
           function_type: (functionType as any),
+          custom_prompt: customPrompt, // Store custom prompt for Photo Magic detection
         });
 
         // Track restoration start in Supabase (metadata only)
@@ -125,18 +221,20 @@ export function usePhotoRestoration() {
           trackingType
         );
 
-        // Call Replicate API with timeout (max 3 minutes)
-        const apiStartTime = Date.now();
-        if (__DEV__) {
-          console.log(`📡 [TIMING] Starting API call at: +${apiStartTime - startTime}ms`);
-        }
+        // Store the prediction ID for recovery
+        await AsyncStorage.setItem('activePredictionId', predictionId);
+        await AsyncStorage.setItem('predictionContext', JSON.stringify({
+          imageUri,
+          functionType,
+          styleKey: styleKey || null,
+          customPrompt: customPrompt || null,
+          timestamp: Date.now()
+        }));
         
-        // Use webhook-based system with built-in polling and progress tracking
         if (__DEV__) {
-          console.log('🚀 Using webhook system for generation');
+          console.log('✅ Generation started, prediction ID:', predictionId);
+          console.log('💾 [RECOVERY] Stored prediction ID and context for recovery');
         }
-
-        // Get styleKey from QuickEditStore if available (already retrieved above for deduplication)
         
         // PROMPT LOGGING: Detailed client-side generation tracking
         console.log('🎯 HOOK GENERATION DETAILS:', {
@@ -145,23 +243,54 @@ export function usePhotoRestoration() {
           customPrompt,
           userId: userId || 'fallback-anonymous',
           hasCustomPrompt: !!customPrompt,
-          hasStyleKey: !!styleKey
+          hasStyleKey: !!styleKey,
+          predictionId
         });
         
-        const restoredUrl = await generatePhotoWithPolling(imageUri, functionType, {
-          styleKey,
-          customPrompt,
-          userId: userId || 'fallback-anonymous',
-          onProgress: (progress, status) => {
-            // Update global progress tracker for JobContext compatibility
-            (global as any).__currentJobProgress = progress;
-            
-            if (__DEV__) {
-              console.log(`📊 Webhook progress: ${progress}% (${status})`);
+        // Now poll for completion using the prediction ID
+        const apiStartTime = Date.now();
+        const restoredUrl = await new Promise<string>((resolve, reject) => {
+          const poll = async () => {
+            try {
+              const statusResponse = await pollPhotoStatus(predictionId);
+              
+              // Update global progress tracker
+              (global as any).__currentJobProgress = statusResponse.progress;
+              
+              if (__DEV__) {
+                console.log(`📊 Webhook progress: ${statusResponse.progress}% (${statusResponse.status})`);
+              }
+              
+              if (statusResponse.is_complete) {
+                if (statusResponse.is_successful && statusResponse.output) {
+                  // Clear storage on completion
+                  await AsyncStorage.removeItem('activePredictionId');
+                  await AsyncStorage.removeItem('predictionContext');
+                  resolve(statusResponse.output);
+                } else {
+                  const error = statusResponse.error || 'Generation failed without error message';
+                  reject(new Error(error));
+                }
+                return;
+              }
+              
+              // Continue polling
+              setTimeout(poll, 2000);
+            } catch (error) {
+              if (error instanceof Error && error.message?.includes('Network request failed')) {
+                if (__DEV__) {
+                  console.log('📱 Network interrupted during polling (likely backgrounded) - prediction still stored for recovery');
+                }
+                return; // Don't reject, let recovery handle it
+              }
+              reject(error);
             }
-          },
-          timeoutMs: 120000 // 2 minutes timeout for webhook system
+          };
+          
+          // Start polling after initial delay
+          setTimeout(poll, 2500);
         });
+        
         const apiEndTime = Date.now();
         if (__DEV__) {
           console.log(`🎉 [TIMING] API completed in ${apiEndTime - apiStartTime}ms, URL:`, restoredUrl);
@@ -324,13 +453,26 @@ export function usePhotoRestoration() {
         
         if (error instanceof Error) {
           errorMessage = error.message;
+          
+          // Special handling for backgrounding network interruptions
+          if (error.message.includes('Network request failed')) {
+            if (__DEV__) {
+              const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+              console.log(`[${timestamp}] 📱 Network interruption during restoration (likely backgrounded) - prediction still stored for recovery`);
+            }
+            
+            // Don't track as error if it's likely just backgrounding
+            // The prediction is still stored and recovery will handle it
+            // Throw the error so it can be handled by the mutation's onError
+            throw new Error('Background network interruption - prediction preserved for recovery');
+          }
+          
           if (error.message.includes('network') || 
               error.message.includes('fetch') || 
               error.message.includes('internet connection') ||
               error.message.includes('connection lost') ||
               error.message.includes('timed out') ||
-              error.message.includes('timeout') ||
-              error.message.includes('Network request failed')) {
+              error.message.includes('timeout')) {
             errorType = 'network_error';
           } else if (error.message.includes('API') || error.message.includes('replicate')) {
             errorType = 'api_error';
@@ -433,6 +575,15 @@ export function usePhotoRestoration() {
       }
     },
     onError: (error, variables) => {
+      // Handle backgrounding network interruptions gracefully
+      if (error instanceof Error && error.message?.includes('Background network interruption')) {
+        if (__DEV__) {
+          console.log('📱 Photo restoration interrupted by backgrounding - will resume via recovery');
+        }
+        // Don't invalidate usage cache or show error - the prediction is still valid
+        return;
+      }
+      
       if (__DEV__) {
         console.error('Photo restoration failed:', error);
       }

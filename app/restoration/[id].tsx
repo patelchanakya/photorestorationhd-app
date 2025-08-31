@@ -123,6 +123,36 @@ export default function RestorationScreen() {
 
   const { setIsProcessing, setProgress, setCanCancel, setCurrentImageUri } = useCropModalStore();
   
+  // Clean up text-edit context and flow flag if this restoration came from text-edits
+  useEffect(() => {
+    const cleanupTextEditContext = async () => {
+      if (id) {
+        try {
+          const contextKey = `textEditContext_${id}`;
+          const context = await AsyncStorage.getItem(contextKey);
+          if (context) {
+            await AsyncStorage.removeItem(contextKey);
+            if (__DEV__) {
+              console.log('🧹 [RESTORATION] Cleaned up text-edit context for prediction:', id);
+            }
+          }
+          
+          // Also clear the text-edits flow flag
+          await AsyncStorage.removeItem('isTextEditsFlow');
+          if (__DEV__) {
+            console.log('🧹 [RESTORATION] Cleaned up text-edits flow flag');
+          }
+        } catch (error) {
+          if (__DEV__) {
+            console.warn('⚠️ [RESTORATION] Failed to cleanup text-edit context:', error);
+          }
+        }
+      }
+    };
+    
+    cleanupTextEditContext();
+  }, [id]);
+  
   useEffect(() => {
     if (isNewRestoration) {
       const isVideoGeneration = functionType === 'backtolife';
@@ -264,10 +294,10 @@ export default function RestorationScreen() {
     }
   };
 
-  // Handler for dismissing the screen (back navigation)
+  // Handler for dismissing the screen (back navigation)  
   const handleDismiss = async () => {
     await clearActivePrediction();
-    router.back();
+    router.replace('/explore');
   };
 
   const handleExport = async () => {
@@ -447,11 +477,26 @@ export default function RestorationScreen() {
   }
 
 
-  if (!restoration || restoration.status !== 'completed') {
+  // Allow rendering if we have restoration data, even if status isn't 'completed' 
+  // Recovery system might navigate here before local status is updated
+  if (!restoration) {
     return (
       <View className="flex-1 bg-gray-100 justify-center items-center">
         <Text className="text-gray-800 text-lg">
-          Restoration not found or still processing
+          Restoration not found
+        </Text>
+      </View>
+    );
+  }
+  
+  // If status is not completed but we have restoration data, check if we have output URLs
+  const hasOutputUrl = restoration.replicate_url || restoration.video_replicate_url;
+  
+  if (restoration.status !== 'completed' && !hasOutputUrl) {
+    return (
+      <View className="flex-1 bg-gray-100 justify-center items-center">
+        <Text className="text-gray-800 text-lg">
+          Still processing...
         </Text>
       </View>
     );

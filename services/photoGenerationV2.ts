@@ -17,6 +17,16 @@ if (!SUPABASE_ANON_KEY) {
   console.error('EXPO_PUBLIC_SUPABASE_ANON_KEY is not set in environment variables');
 }
 
+// Helper function for enhanced logging with timestamps
+function logWithTimestamp(message: string, data?: any) {
+  const timestamp = new Date().toISOString().split('T')[1].split('.')[0]; // HH:MM:SS format
+  if (data) {
+    console.log(`[${timestamp}] ${message}`, data);
+  } else {
+    console.log(`[${timestamp}] ${message}`);
+  }
+}
+
 // Helper function to convert local image to base64
 async function imageToBase64(uri: string): Promise<string> {
   const base64 = await FileSystem.readAsStringAsync(uri, {
@@ -445,6 +455,87 @@ export async function generatePhoto(
   }
 }
 
+// Helper function to continue polling an existing prediction
+async function continuePollingExisting(
+  predictionId: string,
+  timeoutMs: number,
+  onProgress?: (progress: number, status: string) => void
+): Promise<string> {
+  const startTime = Date.now();
+  
+  return new Promise((resolve, reject) => {
+    const poll = async () => {
+      try {
+        const elapsed = Date.now() - startTime;
+        
+        if (elapsed > timeoutMs) {
+          reject(new Error('Generation timed out. Please try again.'));
+          return;
+        }
+        
+        const status = await pollPhotoStatus(predictionId);
+        
+        if (onProgress) {
+          onProgress(status.progress, status.status);
+        }
+        
+        if (__DEV__) {
+          console.log(`📊 Polling existing: ${status.status} (${status.progress}%) - ${elapsed}ms elapsed`);
+        }
+        
+        if (status.is_complete) {
+          if (status.is_successful && status.output) {
+            // Clear storage on completion
+            await AsyncStorage.removeItem('activePredictionId');
+            await AsyncStorage.removeItem('predictionContext');
+            if (__DEV__) {
+              console.log(`🎉 Existing prediction completed: ${status.output}`);
+            }
+            resolve(status.output);
+          } else {
+            const error = status.error || 'Generation failed without error message';
+            if (__DEV__) {
+              console.error(`❌ Existing prediction failed: ${error}`);
+            }
+            reject(new Error(error));
+          }
+          return;
+        }
+        
+        // Adaptive polling intervals
+        let nextInterval: number;
+        if (elapsed < 5000) {
+          nextInterval = 1000;
+        } else if (elapsed < 10000) {
+          nextInterval = 1500;
+        } else {
+          nextInterval = 2000;
+        }
+        
+        setTimeout(poll, nextInterval);
+      } catch (error) {
+        // Handle network errors from backgrounding gracefully
+        if (error instanceof Error && error.message?.includes('Network request failed')) {
+          if (__DEV__) {
+            logWithTimestamp('📱 Network interrupted during existing prediction polling (likely backgrounded) - prediction still stored for recovery');
+          }
+          // Don't reject - the prediction is still processing on Replicate
+          // Recovery will handle it when app resumes with network
+          return;
+        }
+        
+        if (__DEV__) {
+          console.error('❌ Error polling existing prediction:', error);
+        }
+        reject(error);
+      }
+    };
+    
+    // Start polling immediately (no delay for existing)
+    poll();
+  });
+}
+
 // Polling wrapper with timeout and progress tracking
 export async function generatePhotoWithPolling(
   imageUri: string,
@@ -460,19 +551,113 @@ export async function generatePhotoWithPolling(
   const { onProgress, timeoutMs = 120000 } = options; // 2 minute default timeout
   
   if (__DEV__) {
-    console.log(`🚀 Starting ${functionType} generation with polling`);
+    logWithTimestamp(`🚀 Starting ${functionType} generation with polling`);
   }
 
-  // Start generation
+  // Check for existing prediction BEFORE creating new
+  const existingPredictionId = await AsyncStorage.getItem('activePredictionId');
+  const existingContext = await AsyncStorage.getItem('predictionContext');
+  
+  if (existingPredictionId && existingContext) {
+    try {
+      const context = JSON.parse(existingContext);
+      
+      // Check if same request (all params must match)
+      const isSameRequest = 
+        context.imageUri === imageUri && 
+        context.functionType === functionType &&
+        context.styleKey === (options.styleKey || null) &&
+        context.customPrompt === (options.customPrompt || null);
+      
+      if (isSameRequest) {
+        // Check actual status from Replicate
+        const status = await pollPhotoStatus(existingPredictionId);
+        
+        if (status.status === 'processing' || status.status === 'starting') {
+          // Continue polling existing - NO NEW API CALL
+          if (__DEV__) {
+            logWithTimestamp(`🔄 Found active prediction: ${existingPredictionId}, continuing to poll`, {
+              status: status.status,
+              progress: status.progress
+            });
+          }
+          return continuePollingExisting(existingPredictionId, timeoutMs, onProgress);
+        }
+        
+        if (status.status === 'succeeded' && status.output) {
+          // Already done - return immediately
+          if (__DEV__) {
+            logWithTimestamp(`✅ Found completed prediction: ${existingPredictionId}`, {
+              output_length: status.output.length
+            });
+          }
+          await AsyncStorage.removeItem('activePredictionId');
+          await AsyncStorage.removeItem('predictionContext');
+          return status.output;
+        }
+        
+        // Failed/canceled - clear and allow retry
+        if (status.status === 'failed' || status.status === 'canceled') {
+          if (__DEV__) {
+            logWithTimestamp(`🧹 Clearing ${status.status} prediction: ${existingPredictionId}`, {
+              error: status.error
+            });
+          }
+          await AsyncStorage.removeItem('activePredictionId');
+          await AsyncStorage.removeItem('predictionContext');
+          // Falls through to create new
+        }
+      } else {
+        // Different request - user wants something else
+        if (__DEV__) {
+          logWithTimestamp('🔄 Different request detected, clearing old prediction tracking', {
+            existing_function: context.functionType,
+            new_function: functionType,
+            existing_image: context.imageUri?.substring(0, 30) + '...',
+            new_image: imageUri?.substring(0, 30) + '...'
+          });
+        }
+        await AsyncStorage.removeItem('activePredictionId');
+        await AsyncStorage.removeItem('predictionContext');
+      }
+    } catch (error) {
+      // If check fails, clear and continue
+      if (__DEV__) {
+        logWithTimestamp('⚠️ Error checking existing prediction:', error);
+      }
+      await AsyncStorage.removeItem('activePredictionId');
+      await AsyncStorage.removeItem('predictionContext');
+    }
+  }
+
+  // Only create new if no valid existing
+  if (__DEV__) {
+    logWithTimestamp(`🚀 Creating new ${functionType} generation`, {
+      function_type: functionType,
+      has_style_key: !!options.styleKey,
+      has_custom_prompt: !!options.customPrompt
+    });
+  }
   const startResponse = await generatePhoto(imageUri, functionType, options);
   const predictionId = startResponse.prediction_id;
   
-  // Store the active prediction ID for recovery
+  // Store the prediction ID AND context for recovery
   await AsyncStorage.setItem('activePredictionId', predictionId);
+  await AsyncStorage.setItem('predictionContext', JSON.stringify({
+    imageUri,
+    functionType,
+    styleKey: options.styleKey || null,
+    customPrompt: options.customPrompt || null,
+    timestamp: Date.now()
+  }));
   
   if (__DEV__) {
-    console.log(`✅ Generation started, prediction ID: ${predictionId}`);
-    console.log('💾 [RECOVERY] Stored prediction ID for recovery');
+    logWithTimestamp(`✅ Generation started, prediction ID: ${predictionId}`);
+    logWithTimestamp('💾 [RECOVERY] Stored prediction ID and context for recovery', {
+      prediction_id: predictionId,
+      image_uri: imageUri.substring(0, 30) + '...',
+      function_type: functionType
+    });
   }
 
   // Poll for completion with optimized timing
@@ -504,6 +689,9 @@ export async function generatePhotoWithPolling(
         // Check if complete
         if (statusResponse.is_complete) {
           if (statusResponse.is_successful && statusResponse.output) {
+            // Clear storage on completion
+            await AsyncStorage.removeItem('activePredictionId');
+            await AsyncStorage.removeItem('predictionContext');
             if (__DEV__) {
               console.log(`🎉 Generation completed successfully: ${statusResponse.output}`);
             }
@@ -538,6 +726,16 @@ export async function generatePhotoWithPolling(
         // Continue polling with adaptive interval
         setTimeout(poll, nextPollInterval);
       } catch (error) {
+        // Handle network errors from backgrounding gracefully
+        if (error instanceof Error && error.message?.includes('Network request failed')) {
+          if (__DEV__) {
+            logWithTimestamp('📱 Network interrupted during polling (likely backgrounded) - prediction still stored for recovery');
+          }
+          // Don't reject - the prediction is still processing on Replicate
+          // Recovery will handle it when app resumes with network
+          return;
+        }
+        
         if (__DEV__) {
           console.error('❌ Polling error:', error);
         }

@@ -173,17 +173,17 @@ export const localStorageHelpers = {
 
 // Restoration database operations (now using AsyncStorage only)
 export const restorationService = {
-  // Create a new restoration record
-  async create(data: Partial<Restoration>): Promise<Restoration> {
+  // Create a new restoration record with prediction ID as primary identifier
+  async create(data: Partial<Restoration> & { prediction_id: string }): Promise<Restoration> {
     // Clear cache when creating new restoration
     this.clearRestorationCache();
     if (__DEV__) {
-      console.log('💾 Creating restoration record locally:', data);
+      console.log('💾 Creating restoration record with prediction ID:', data.prediction_id);
     }
     
-    // Always create with a local ID
+    // Use prediction ID as the primary ID - no more local restoration IDs
     const restoration = {
-      id: `restoration-${Date.now()}`,
+      id: data.prediction_id,
       user_id: data.user_id || 'anonymous',
       original_filename: data.original_filename || '',
       restored_filename: data.restored_filename,
@@ -195,12 +195,13 @@ export const restorationService = {
       error_message: data.error_message,
       prediction_id: data.prediction_id,
       function_type: data.function_type || 'restoration',
+      custom_prompt: data.custom_prompt, // Add custom_prompt field for Photo Magic detection
     } as Restoration;
 
-    // Save to local storage
+    // Save to local storage using prediction ID as key
     await localStorageHelpers.saveRestoration(restoration);
     if (__DEV__) {
-      console.log('✅ Restoration saved locally:', restoration.id);
+      console.log('✅ Restoration saved locally with prediction ID:', restoration.id);
     }
     
     return restoration;

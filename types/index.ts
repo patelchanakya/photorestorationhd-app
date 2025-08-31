@@ -23,6 +23,7 @@ export interface Restoration {
   error_message?: string;
   prediction_id?: string;
   function_type?: 'restoration' | 'unblur' | 'colorize' | 'descratch' | 'outfit' | 'background' | 'repair' | 'enlighten' | 'custom';
+  custom_prompt?: string; // Add custom_prompt field for Photo Magic detection
   is_video?: boolean;
 }
 

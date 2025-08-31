@@ -61,20 +61,7 @@ serve(async (req) => {
       )
     }
 
-    // Initialize Replicate with server-side API key
-    const replicateApiToken = Deno.env.get('REPLICATE_API_TOKEN')
-    if (!replicateApiToken) {
-      console.error('REPLICATE_API_TOKEN not found in environment')
-      return new Response(
-        JSON.stringify({ error: 'Server configuration error' }),
-        { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
-    }
-
-    // Initialize Supabase client
+    // Initialize Supabase client FIRST for limits validation
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     
@@ -91,21 +78,21 @@ serve(async (req) => {
 
     supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Simple Pro/Free user check
+    // CRITICAL: Check usage limits BEFORE initializing Replicate or processing image
     if (user_id && user_id !== 'anonymous') {
       const isPro = user_id.startsWith('store:') || user_id.startsWith('orig:') || user_id.startsWith('fallback:');
       
       if (isPro) {
         console.log('✅ Pro user detected - unlimited photos, skipping database check');
       } else {
-        // Only check database for free users
-        console.log('🔍 Free user - checking photo limits');
+        // Check and increment usage atomically for free users BEFORE any processing
+        console.log('🔍 Free user - checking photo limits BEFORE Replicate initialization');
         const { data: result, error } = await supabase.rpc('check_and_increment_photo_usage', {
           p_user_id: user_id
         });
         
         if (!result && !error) {
-          console.log('❌ Free user photo limit exceeded');
+          console.log('❌ Free user photo limit exceeded - returning error BEFORE wasting API resources');
           return new Response(JSON.stringify({ 
             success: false,
             error: 'Photo usage limit exceeded',
@@ -116,6 +103,19 @@ serve(async (req) => {
           });
         }
       }
+    }
+
+    // Only initialize Replicate AFTER usage check passes
+    const replicateApiToken = Deno.env.get('REPLICATE_API_TOKEN')
+    if (!replicateApiToken) {
+      console.error('REPLICATE_API_TOKEN not found in environment')
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error' }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
     }
 
     const replicate = new Replicate({

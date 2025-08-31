@@ -1,6 +1,6 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import '../global.css';
@@ -108,8 +108,27 @@ function useAppState(onChange: (status: AppStateStatus) => void) {
   }, [onChange]);
 }
 
+// Recovery mutex to prevent concurrent operations
+let recoveryInProgress = false;
+
 // Recovery function to check for active predictions
 async function checkActivePrediction() {
+  // Prevent concurrent recovery operations
+  if (recoveryInProgress) {
+    console.log('🔒 [RECOVERY] Recovery already in progress, skipping duplicate call');
+    return;
+  }
+  
+  recoveryInProgress = true;
+  try {
+    await performRecoveryCheck();
+  } finally {
+    recoveryInProgress = false;
+  }
+}
+
+// Actual recovery logic
+async function performRecoveryCheck() {
   const startTime = Date.now();
   try {
     const activePredictionId = await AsyncStorage.getItem('activePredictionId');
@@ -210,7 +229,87 @@ async function checkActivePrediction() {
         total_recovery_time_ms: Date.now() - startTime
       });
       
-      // Check if this prediction came from text-edits
+      // Check if this prediction came from text-edits using multiple detection methods
+      let isTextEditsFlow = false;
+      
+      // Method 1: Check for stored text-edit context with prediction ID
+      try {
+        const storedContext = await AsyncStorage.getItem(`textEditContext_${activePredictionId}`);
+        if (storedContext) {
+          const textEditContext = JSON.parse(storedContext);
+          isTextEditsFlow = textEditContext?.mode === 'text-edits';
+        }
+      } catch (error) {
+        console.warn('⚠️ [RECOVERY] Failed to parse text-edit context:', error);
+      }
+      
+      // Method 2: Check for text-edits flow flag (fallback for timing issues)
+      if (!isTextEditsFlow) {
+        try {
+          const flowFlag = await AsyncStorage.getItem('isTextEditsFlow');
+          isTextEditsFlow = flowFlag === 'true';
+          if (isTextEditsFlow && __DEV__) {
+            console.log('📝 [RECOVERY] Detected text-edits flow via fallback flag');
+          }
+        } catch (error) {
+          console.warn('⚠️ [RECOVERY] Failed to check text-edits flow flag:', error);
+        }
+      }
+      
+      if (isTextEditsFlow) {
+        console.log('📝 [RECOVERY] Text-edit prediction detected via deterministic context lookup, navigating to restoration screen');
+        
+        // Update local restoration record with completed output URL for recovery
+        try {
+          const { localStorageHelpers } = require('@/services/supabase');
+          await localStorageHelpers.updateRestoration(activePredictionId, {
+            status: 'completed',
+            replicate_url: prediction.output,
+            progress: 100
+          });
+          if (__DEV__) {
+            console.log('📊 [RECOVERY] Updated local restoration record with completed output');
+          }
+        } catch (error) {
+          console.warn('⚠️ [RECOVERY] Failed to update local restoration record:', error);
+        }
+        
+        // Navigate to restoration screen for text-edits predictions
+        // Note: Context will be cleared by restoration screen after successful mount
+        router.push(`/restoration/${activePredictionId}`);
+        
+        console.log('✅ [RECOVERY] Navigated to restoration screen for text-edit prediction:', activePredictionId);
+        return;
+      }
+      
+      // Standard Quick Edit Sheet recovery for non-text-edit predictions
+      console.log('📱 [RECOVERY] Quick Edit prediction detected, opening sheet');
+      
+      // Check if this is the same prediction that's already displayed
+      const currentQuickEditState = useQuickEditStore.getState();
+      if (currentQuickEditState.visible && currentQuickEditState.restoredId === activePredictionId) {
+        console.log('⚠️ [RECOVERY] Same prediction already displayed, skipping duplicate UI update');
+        // Don't clear prediction - let user interact with it first
+        return;
+      }
+      
+      // Update Quick Edit Sheet with the recovered result (even if already visible but in loading state)
+      const { setResult } = useQuickEditStore.getState();
+      setResult(activePredictionId, prediction.output);
+      
+      // Show the Quick Edit Sheet (safe to call even if already visible)
+      useQuickEditStore.setState({ visible: true });
+      
+      console.log('✅ [RECOVERY] Quick Edit Sheet updated with completed result for prediction:', activePredictionId);
+    } else if (prediction.status === 'processing') {
+      console.log('⏳ [RECOVERY] Generation still processing, keeping for user discovery:', {
+        prediction_id: activePredictionId,
+        progress: prediction.progress,
+        elapsed_seconds: prediction.elapsed_seconds,
+        mode: prediction.mode
+      });
+      
+      // Check if this is from text-edits and handle appropriately
       let textEditContext: any = null;
       try {
         const storedContext = await AsyncStorage.getItem('activeTextEditContext');
@@ -222,57 +321,12 @@ async function checkActivePrediction() {
       }
       
       if (textEditContext?.mode === 'text-edits') {
-        console.log('📝 [RECOVERY] Text-edit prediction detected, navigating to restoration screen:', {
-          prediction_id: activePredictionId,
-          context: textEditContext,
-          will_navigate_to: `/restoration/${activePredictionId}`
-        });
-        
-        // Clear both prediction ID and text-edit context
-        await AsyncStorage.removeItem('activePredictionId');
-        await AsyncStorage.removeItem('activeTextEditContext');
-        
-        // Navigate to restoration screen instead of opening Quick Edit Sheet
-        // router.replace(`/restoration/${activePredictionId}`);
-        
-        console.log('✅ [RECOVERY] Navigated to restoration screen for text-edit prediction:', activePredictionId);
-        return;
+        console.log('📝 [RECOVERY] Text-edit prediction still processing, user should see loading state in text-edits screen');
+        // Don't navigate - let text-edits screen handle the recovery via its own polling
+        // The activePredictionId will be picked up by the deduplication system
       }
       
-      // Standard Quick Edit Sheet recovery for non-text-edit predictions
-      console.log('📱 [RECOVERY] Quick Edit prediction detected, opening sheet');
-      
-      // Check if Quick Edit Sheet is already open to prevent duplicate UI updates
-      const currentQuickEditState = useQuickEditStore.getState();
-      if (currentQuickEditState.visible) {
-        console.log('⚠️ [RECOVERY] Quick Edit Sheet already open, skipping duplicate UI update');
-        // Don't clear prediction - let user interact with it first
-        return;
-      }
-      
-      // Check if this is the same prediction that's already displayed
-      if (currentQuickEditState.restoredId === activePredictionId) {
-        console.log('⚠️ [RECOVERY] Same prediction already displayed, skipping duplicate UI update');
-        // Don't clear prediction - let user interact with it first
-        return;
-      }
-      
-      // Re-open Quick Edit Sheet with the recovered result
-      const { setResult } = useQuickEditStore.getState();
-      setResult(activePredictionId, prediction.output);
-      
-      // Show the Quick Edit Sheet
-      useQuickEditStore.setState({ visible: true });
-      
-      console.log('✅ [RECOVERY] Quick Edit Sheet opened successfully for prediction:', activePredictionId);
-    } else if (prediction.status === 'processing') {
-      console.log('⏳ [RECOVERY] Generation still processing, keeping for user discovery:', {
-        prediction_id: activePredictionId,
-        progress: prediction.progress,
-        elapsed_seconds: prediction.elapsed_seconds,
-        mode: prediction.mode
-      });
-      // Could potentially resume polling here, but for now just leave it for user to discover
+      // For other predictions, leave for user discovery
     } else if (prediction.status === 'failed') {
       console.error('❌ [RECOVERY] Previous generation failed, clearing state:', {
         prediction_id: activePredictionId,
