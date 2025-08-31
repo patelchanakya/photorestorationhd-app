@@ -10,6 +10,7 @@ import { localStorageHelpers } from '@/services/supabase';
 import { useCropModalStore } from '@/store/cropModalStore';
 import { useRestorationStore } from '@/store/restorationStore';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
@@ -21,22 +22,23 @@ import * as StoreReview from 'expo-store-review';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    AppState,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    Share,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  AppState,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  Share,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import Purchases from 'react-native-purchases';
 // Using React Native SafeAreaView to avoid double-insetting
 import Animated, {
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring
 } from 'react-native-reanimated';
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
@@ -178,10 +180,8 @@ export default function SettingsModalScreen() {
                 resetCropModal();
                 
                 // Clear any pending video and timestamp from AsyncStorage
-                import('@react-native-async-storage/async-storage').then(({ default: AsyncStorage }) => {
-                  AsyncStorage.removeItem('pendingVideo').catch(() => {});
-                  AsyncStorage.removeItem('lastVideoProcessingTime').catch(() => {});
-                });
+                AsyncStorage.removeItem('pendingVideo').catch(() => {});
+                AsyncStorage.removeItem('lastVideoProcessingTime').catch(() => {});
                 
                 console.log('✅ [DEBUG] Video processing state cleared');
                 
@@ -427,7 +427,6 @@ export default function SettingsModalScreen() {
               }
 
               // Force new anonymous ID creation for anonymous users
-              const { default: Purchases } = await import('react-native-purchases');
               
               try {
                 // Try logout first (works for identified users)

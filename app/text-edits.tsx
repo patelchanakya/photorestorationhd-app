@@ -116,6 +116,17 @@ useEffect(() => {
 
 
   const processWithPrompt = useCallback(async (uri: string, prompt: string, editMode?: string) => {
+    // CRITICAL: Check for active prediction before any processing
+    const activePredictionId = await AsyncStorage.getItem('activePredictionId');
+    if (activePredictionId) {
+      if (__DEV__) {
+        console.log('🚫 [TEXT-EDIT] CRITICAL BLOCK: Found active prediction, cannot start new processing:', activePredictionId);
+      }
+      setIsLoading(true);
+      // Recovery will handle navigation when prediction completes
+      return;
+    }
+    
     // Prevent duplicate processing calls
     if (isLoading) {
       if (__DEV__) {

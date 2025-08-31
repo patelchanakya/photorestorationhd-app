@@ -1,6 +1,7 @@
 import { BeforeAfterSlider } from '@/components/BeforeAfterSlider';
-import { IconSymbol } from '@/components/ui/IconSymbol';
 import { SavingModal, type SavingModalRef } from '@/components/SavingModal';
+import { IconSymbol } from '@/components/ui/IconSymbol';
+import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 import { type FunctionType } from '@/services/photoGenerationV2';
 import { photoStorage } from '@/services/storage';
@@ -9,14 +10,14 @@ import { useCropModalStore } from '@/store/cropModalStore';
 import { useQuickEditStore } from '@/store/quickEditStore';
 import { useRestorationScreenStore } from '@/store/restorationScreenStore';
 import { useRestorationStore } from '@/store/restorationStore';
-import { useRevenueCat } from '@/contexts/RevenueCatContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as StoreReview from 'expo-store-review';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useCallback, useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActionSheetIOS,
     ActivityIndicator,
@@ -529,7 +530,6 @@ export default function RestorationScreen() {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               
               // Open image picker to select new photo for same function type
-              const ImagePicker = await import('expo-image-picker');
               const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
               if (res.status !== 'granted') {
                 setIsNavigating(false);

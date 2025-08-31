@@ -1,5 +1,5 @@
-import * as SecureStore from 'expo-secure-store';
 import * as Crypto from 'expo-crypto';
+import * as SecureStore from 'expo-secure-store';
 import Purchases from 'react-native-purchases';
 import { getCustomerInfo, getSubscriptionPlanDetails } from './revenuecat';
 
@@ -109,7 +109,6 @@ export const getPhotoTrackingId = async (planType: string): Promise<string | nul
     }
 
     // Free users: use RevenueCat anonymous ID
-    const { getCustomerInfo } = await import('./revenuecat');
     const customerInfo = await getCustomerInfo();
     
     if (!customerInfo?.originalAppUserId) {

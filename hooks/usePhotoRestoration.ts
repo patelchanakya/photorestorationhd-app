@@ -1,12 +1,13 @@
+import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import { analyticsService } from '@/services/analytics';
-import { type FunctionType } from '@/services/photoGenerationV2';
+import { generatePhotoWithPolling, type FunctionType } from '@/services/photoGenerationV2';
 import { useInvalidatePhotoUsage } from '@/services/photoUsageService';
-import { generatePhotoWithPolling } from '@/services/photoGenerationV2';
 import { restorationTrackingService } from '@/services/restorationTracking';
+import { getAppUserId } from '@/services/revenuecat';
 import { photoStorage } from '@/services/storage';
 import { restorationService } from '@/services/supabase';
+import { getUnifiedTrackingId } from '@/services/trackingIds';
 import { useRestorationStore } from '@/store/restorationStore';
-import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { InteractionManager } from 'react-native';
 
@@ -88,7 +89,6 @@ export function usePhotoRestoration() {
         const originalFilename = await photoStorage.saveOriginal(imageUri);
 
         // Get unified tracking ID (transaction ID for Pro, anonymous ID for free)
-        const { getUnifiedTrackingId } = await import('@/services/trackingIds');
         const trackingId = await getUnifiedTrackingId('photo');
         
         // Fallback to RevenueCat anonymous ID if unified tracking fails
@@ -97,7 +97,6 @@ export function usePhotoRestoration() {
           if (__DEV__) {
             console.log('⚠️ Unified tracking ID failed, falling back to RevenueCat anonymous ID');
           }
-          const { getAppUserId } = await import('@/services/revenuecat');
           userId = await getAppUserId();
         }
         
@@ -249,14 +248,6 @@ export function usePhotoRestoration() {
             let restoredUri: string;
             
             if (false) {
-              // Save as video with .mp4 extension
-              const videoDownloadStart = Date.now();
-              restoredFilename = await photoStorage.saveVideo(restoredUrl, originalFilename);
-              restoredUri = photoStorage.getPhotoUri('video', restoredFilename);
-              if (__DEV__) {
-                const videoDownloadTime = Date.now() - videoDownloadStart;
-                console.log(`🎬 [BACKGROUND] Video saved in ${videoDownloadTime}ms:`, restoredFilename, restoredUri);
-              }
             } else {
               // Save as photo with original extension
               const photoDownloadStart = Date.now();
@@ -283,9 +274,6 @@ export function usePhotoRestoration() {
                 console.log(`🖼️ [BACKGROUND] Thumbnail created in ${thumbnailTime}ms:`, thumbnailFilename);
               }
             } else {
-              if (__DEV__) {
-                console.log('🎬 [BACKGROUND] Skipping thumbnail creation for video result');
-              }
             }
 
             // Final update with local files ready
@@ -319,12 +307,6 @@ export function usePhotoRestoration() {
           clearInterval(progressInterval);
         }
         
-        // For video results, store the result ID for navigation
-        if (false) {
-          // Videos are saved with a different naming pattern
-          // Store the video filename for later retrieval
-          (immediateResult as any).videoFilename = `${originalFilename}_restored.mp4`;
-        }
 
         return immediateResult;
       } catch (error) {

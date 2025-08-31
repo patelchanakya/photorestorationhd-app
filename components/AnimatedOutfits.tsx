@@ -1,4 +1,6 @@
 // Removed Pro gating - all outfits are now free
+import { analyticsService } from '@/services/analytics';
+import { useQuickEditStore } from '@/store/quickEditStore';
 import { useFocusEffect } from '@react-navigation/native';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -8,7 +10,6 @@ import { VideoView, useVideoPlayer } from 'expo-video';
 import React from 'react';
 import { AppState, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
-import { analyticsService } from '@/services/analytics';
 
 interface OutfitItem {
   id: string;
@@ -189,7 +190,6 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 1 });
     if (!result.canceled && result.assets[0]) {
       try {
-        const { useQuickEditStore } = await import('@/store/quickEditStore');
         useQuickEditStore.getState().openWithImage({ functionType: 'outfit' as any, imageUri: result.assets[0].uri, styleName: outfit.title, customPrompt: outfit.outfitPrompt || outfit.title });
       } catch {
         // fallback: existing flow

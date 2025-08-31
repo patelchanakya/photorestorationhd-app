@@ -233,8 +233,7 @@ async function checkActivePrediction() {
         await AsyncStorage.removeItem('activeTextEditContext');
         
         // Navigate to restoration screen instead of opening Quick Edit Sheet
-        const { router } = await import('expo-router');
-        router.replace(`/restoration/${activePredictionId}`);
+        // router.replace(`/restoration/${activePredictionId}`);
         
         console.log('✅ [RECOVERY] Navigated to restoration screen for text-edit prediction:', activePredictionId);
         return;

@@ -160,6 +160,25 @@ export function QuickEditSheet() {
     checkActiveWork();
   }, []); // Only on component mount
 
+  // Additional check when sheet becomes visible
+  React.useEffect(() => {
+    if (visible) {
+      const checkActiveWork = async () => {
+        const activePredictionId = await AsyncStorage.getItem('activePredictionId');
+        
+        if (activePredictionId) {
+          if (__DEV__) {
+            console.log('📱 [QUICK-EDIT] Found active prediction when sheet became visible:', activePredictionId);
+          }
+          setStage('loading');
+          return;
+        }
+      };
+      
+      checkActiveWork();
+    }
+  }, [visible]);
+
   React.useEffect(() => {
     // Mount and animate in
     if (visible) {
@@ -238,14 +257,22 @@ export function QuickEditSheet() {
   const handleUpload = async () => {
     if (!selectedImageUri || !functionType) return;
     
-    // Simple check - just look for active prediction
+    // CRITICAL: Check for active prediction before any processing
     const activePredictionId = await AsyncStorage.getItem('activePredictionId');
     if (activePredictionId) {
       if (__DEV__) {
-        console.log('🚫 [QUICK-EDIT] Blocking duplicate - found active prediction:', activePredictionId);
+        console.log('🚫 [QUICK-EDIT] CRITICAL BLOCK: Found active prediction, cannot start new processing:', activePredictionId);
       }
       setStage('loading');
       // Recovery will handle navigation when prediction completes
+      return;
+    }
+    
+    // Additional safety check - if we're already in loading state, don't proceed
+    if (stage === 'loading') {
+      if (__DEV__) {
+        console.log('🚫 [QUICK-EDIT] Already in loading state, blocking duplicate processing');
+      }
       return;
     }
     

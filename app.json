@@ -23,6 +23,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.chanakyap.photorestorationhdapp",
+      "buildNumber": "49",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSPhotoLibraryAddUsageDescription": "This app needs access to your photo library to save restored photos.",

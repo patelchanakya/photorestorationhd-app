@@ -1,4 +1,6 @@
 // Memorial-focused features for passed loved ones and remembrance photos
+import { analyticsService } from '@/services/analytics';
+import { useQuickEditStore } from '@/store/quickEditStore';
 import { useFocusEffect } from '@react-navigation/native';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -8,7 +10,6 @@ import { VideoView, useVideoPlayer } from 'expo-video';
 import React from 'react';
 import { AppState, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
-import { analyticsService } from '@/services/analytics';
 
 interface MemorialItem {
   id: string;
@@ -177,7 +178,6 @@ export function MemorialFeatures({ memorialItems = DEFAULT_MEMORIAL_ITEMS }: { m
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 1 });
     if (!result.canceled && result.assets[0]) {
       try {
-        const { useQuickEditStore } = await import('@/store/quickEditStore');
         useQuickEditStore.getState().openWithImage({ functionType: 'memorial' as any, imageUri: result.assets[0].uri, styleKey: memorialItem.id, styleName: memorialItem.title, customPrompt: memorialItem.memorialPrompt || memorialItem.title });
       } catch {
         // fallback: existing flow

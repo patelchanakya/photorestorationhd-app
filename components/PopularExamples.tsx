@@ -1,4 +1,6 @@
 // Removed Pro gating - all popular examples are now free
+import { analyticsService } from '@/services/analytics';
+import { useQuickEditStore } from '@/store/quickEditStore';
 import { useFocusEffect } from '@react-navigation/native';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -8,7 +10,6 @@ import { VideoView, useVideoPlayer } from 'expo-video';
 import React from 'react';
 import { AppState, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
-import { analyticsService } from '@/services/analytics';
 
 interface PopularItem {
   id: string;
@@ -231,7 +232,6 @@ export function PopularExamples({ items = DEFAULT_POPULAR_ITEMS }: { items?: Pop
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 1 });
     if (!result.canceled && result.assets[0]) {
       try {
-        const { useQuickEditStore } = await import('@/store/quickEditStore');
         useQuickEditStore.getState().openWithImage({ 
           functionType: 'custom' as any, 
           imageUri: result.assets[0].uri, 
