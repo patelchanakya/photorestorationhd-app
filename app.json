@@ -97,9 +97,7 @@
       ],
       "package": "com.chanakyap.photorestorationhdapp"
     },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion": "2.0.1",
     "updates": {
       "url": "https://u.expo.dev/1e1e5fa5-1114-4591-9765-2534344ca453"
     }
