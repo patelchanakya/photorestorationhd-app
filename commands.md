@@ -52,11 +52,18 @@ EAS_LOCAL_BUILD_SKIP_EAGER_BUNDLE=1 npx eas build --platform ios --profile produ
 4. Rebuild only when adding new native modules
 
 ### Physical Device Testing with Logs
-1. Build preview: `npx eas build --platform ios --profile preview --local`
-2. Submit to internal testing: `npx eas submit --platform ios --latest`
-3. Install from TestFlight on your device
-4. Run dev server: `npx expo start --dev-client`
-5. Connect to device and see logs in terminal
+1. **EAS Method (Complex):**
+   - Build preview: `npx eas build --platform ios --profile preview --local`
+   - Submit to internal testing: `npx eas submit --platform ios --latest`
+   - Install from TestFlight on your device
+   - Run dev server: `npx expo start --dev-client`
+   - Connect to device and see logs in terminal
+
+2. **Direct Method (Simple):**
+   - Run: `npx expo run:ios --device`
+   - This builds and installs directly on your connected iPhone
+   - Shows logs in terminal automatically
+   - No manual .ipa installation needed
 
 ## ✅ What You Can Change Without Rebuilding
 - UI (layouts, colors, screens)
