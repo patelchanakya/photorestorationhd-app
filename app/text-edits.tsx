@@ -61,10 +61,31 @@ useEffect(() => {
     setSelectedImage(imageUri as string);
   }
   
-  // If we have an image and prompt from navigation, process it ONCE
+  // If we have an image and prompt from navigation, check for existing prediction first
   if (imageUri && initialPrompt && !hasProcessed && !isLoading) {
-    setHasProcessed(true);
-    processWithPrompt(imageUri as string, initialPrompt as string, mode as string);
+    const checkAndProcess = async () => {
+      // Check for existing prediction FIRST to prevent duplicates on app resume
+      const existingPredictionId = await AsyncStorage.getItem('activePredictionId');
+      
+      if (existingPredictionId) {
+        if (__DEV__) {
+          console.log('🚫 [TEXT-EDIT] Blocking duplicate: Found existing prediction', existingPredictionId);
+        }
+        setIsLoading(true); // Show loading UI
+        setHasProcessed(true); // Prevent processing
+        // Recovery in _layout.tsx will handle navigation when prediction completes
+        return;
+      }
+      
+      // No existing prediction - safe to process
+      if (__DEV__) {
+        console.log('✅ [TEXT-EDIT] No existing prediction, starting new processing');
+      }
+      setHasProcessed(true);
+      processWithPrompt(imageUri as string, initialPrompt as string, mode as string);
+    };
+    
+    checkAndProcess();
   }
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [imageUri, initialPrompt, mode, hasProcessed, fromUpload, selectedImage]);
@@ -145,8 +166,8 @@ useEffect(() => {
     try {
       const result = await photoRestoration.mutateAsync({ imageUri: uri, functionType, imageSource: 'gallery', customPrompt: prompt });
       
-      // Clear text-edit context on successful completion since we're navigating away
-      await AsyncStorage.removeItem('activeTextEditContext');
+      // Clear text-edit context and prediction ID on successful completion since we're navigating away
+      await AsyncStorage.multiRemove(['activeTextEditContext', 'activePredictionId']);
       
       if (__DEV__) {
         console.log('📝 [TEXT-EDIT] Cleared context after successful completion');
@@ -157,8 +178,8 @@ useEffect(() => {
     } catch (err: any) {
       setIsLoading(false);
       
-      // Clear text-edit context on error - recovery will handle this if needed
-      await AsyncStorage.removeItem('activeTextEditContext');
+      // Clear text-edit context and prediction ID on error - recovery will handle this if needed
+      await AsyncStorage.multiRemove(['activeTextEditContext', 'activePredictionId']);
       
       if (__DEV__) {
         console.log('📝 [TEXT-EDIT] Cleared context after error');

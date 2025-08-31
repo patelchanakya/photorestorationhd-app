@@ -517,7 +517,7 @@ export default function RestorationScreen() {
                restoration?.function_type === 'outfit' ? 'Outfit Changed' :
                restoration?.function_type === 'background' ? 'Background Changed' :
                restoration?.function_type === 'custom' ? 'Edited Photo' :
-               restoration?.function_type === 'water_damage' ? 'Water Damage Fixed' :
+               (restoration?.function_type as any) === 'water_damage' ? 'Water Damage Fixed' :
                'Enhanced Photo'}
             </Text>
           </View>

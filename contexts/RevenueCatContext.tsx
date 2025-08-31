@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import Constants from 'expo-constants';
-import Purchases, { CustomerInfo } from 'react-native-purchases';
 import { analyticsService } from '@/services/analytics';
 import { getOrCreateCustomUserId } from '@/services/trackingIds';
+import Constants from 'expo-constants';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import Purchases, { CustomerInfo } from 'react-native-purchases';
 
 interface RevenueCatContextValue {
   customerInfo: CustomerInfo | null;

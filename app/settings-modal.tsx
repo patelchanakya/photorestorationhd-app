@@ -1,16 +1,16 @@
 // Removed LanguageSelectionModal - translation system removed
-import { onboardingUtils } from '@/utils/onboarding';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { photoRestorationKeys } from '@/hooks/usePhotoRestoration';
 // Removed translation system
-import { getAppUserId, restorePurchasesSecure, checkSubscriptionStatus, presentPaywall } from '@/services/revenuecat';
-import { useCropModalStore } from '@/store/cropModalStore';
-import { photoStorage } from '@/services/storage';
-import { localStorageHelpers } from '@/services/supabase';
-import { useRestorationStore } from '@/store/restorationStore';
 import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import { usePhotoUsage, type PhotoUsage } from '@/services/photoUsageService';
+import { checkSubscriptionStatus, getAppUserId, presentPaywall, restorePurchasesSecure } from '@/services/revenuecat';
+import { photoStorage } from '@/services/storage';
+import { localStorageHelpers } from '@/services/supabase';
+import { useCropModalStore } from '@/store/cropModalStore';
+import { useRestorationStore } from '@/store/restorationStore';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
 import Constants from 'expo-constants';
@@ -19,25 +19,24 @@ import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import * as StoreReview from 'expo-store-review';
 import * as WebBrowser from 'expo-web-browser';
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  AppState,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  Share,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    AppState,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    Share,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 // Using React Native SafeAreaView to avoid double-insetting
 import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring
 } from 'react-native-reanimated';
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
@@ -46,7 +45,7 @@ export default function SettingsModalScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { setRestorationCount } = useRestorationStore();
-  const { isPro } = useRevenueCat();
+  const { isPro, refreshCustomerInfo } = useRevenueCat();
   const [photoUsage, setPhotoUsage] = useState<PhotoUsage | null>(null);
   
   // Video processing state management
@@ -336,6 +335,10 @@ export default function SettingsModalScreen() {
       if (result.success) {
         if (result.hasActiveEntitlements) {
           console.log('✅ [SECURITY] Restore successful - subscription confirmed by Apple');
+          
+          // Refresh context to update UI state
+          await refreshCustomerInfo();
+          
           Alert.alert(
             'Restored!',
 'Your purchases have been restored successfully!',

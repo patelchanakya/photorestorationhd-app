@@ -34,7 +34,7 @@ export default function HomeGalleryLikeScreen() {
       useQuickEditStore.getState().open({ functionType, styleKey: styleKey ?? null });
     } catch {}
   };
-  const { isPro, forceRefresh } = useRevenueCat();
+  const { isPro, forceRefresh, refreshCustomerInfo } = useRevenueCat();
   const router = useRouter();
   
 
@@ -95,6 +95,9 @@ export default function HomeGalleryLikeScreen() {
                     const result = await restorePurchasesSecure();
                     
                     if (result.success && result.hasActiveEntitlements) {
+                      // Refresh context to update UI state
+                      await refreshCustomerInfo();
+                      
                       Alert.alert(
                         'Pro Member ✓',
                         'Your subscription is active! You have unlimited access to all features.',

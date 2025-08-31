@@ -67,31 +67,21 @@ serve(async (req) => {
 
     supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // SERVER-SIDE PHOTO LIMITS ENFORCEMENT (primary protection)
-    // Block suspicious or invalid user IDs
-    const invalidUserIds = ['anonymous', 'fallback-anonymous', 'demo-user', '', null, undefined];
-    if (user_id && !invalidUserIds.includes(user_id)) {
-      console.log('🔍 Starting server-side photo usage check for user:', user_id);
+    // Simple Pro/Free user check
+    if (user_id && user_id !== 'anonymous') {
+      const isPro = user_id.startsWith('store:') || user_id.startsWith('orig:') || user_id.startsWith('fallback:');
       
-      try {
-        // Use atomic function to check and increment usage (same as client-side)
+      if (isPro) {
+        console.log('✅ Pro user detected - unlimited photos, skipping database check');
+      } else {
+        // Only check database for free users
+        console.log('🔍 Free user - checking photo limits');
         const { data: result, error } = await supabase.rpc('check_and_increment_photo_usage', {
           p_user_id: user_id
         });
-
-        if (error) {
-          console.error('❌ Server-side photo atomic usage check failed:', error);
-          // Allow request to proceed if database error (fallback to client-side)
-          console.log('⚠️ Falling back to client-side photo limits due to server error');
-        } else if (!result) {
-          // Boolean response from database function
-          console.log('❌ Server-side photo limits enforcement blocked request:', {
-            userId: user_id,
-            reason: 'Photo usage limit exceeded',
-            
-            
-          });
-          
+        
+        if (!result && !error) {
+          console.log('❌ Free user photo limit exceeded');
           return new Response(JSON.stringify({ 
             success: false,
             error: 'Photo usage limit exceeded',
@@ -100,31 +90,7 @@ serve(async (req) => {
             status: 403,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
-        } else {
-          console.log('✅ Server-side photo atomic increment succeeded:', {
-            userId: user_id,
-            current_count: result.current_count,
-            limit: result.limit,
-            
-          });
         }
-      } catch (error) {
-        console.error('❌ Critical error in server-side photo usage check:', error);
-        // Allow request to proceed if critical error (fallback to client-side)
-        console.log('⚠️ Falling back to client-side photo limits due to critical server error');
-      }
-    } else {
-      console.log('⚠️ Invalid user_id provided - skipping server-side photo limits check');
-      
-      // If user_id is one of the blocked values, return error instead of proceeding
-      if (invalidUserIds.includes(user_id)) {
-        return new Response(JSON.stringify({ 
-          error: 'Invalid user authentication. Please sign in again.',
-          code: 'INVALID_USER_ID'
-        }), {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
       }
     }
 

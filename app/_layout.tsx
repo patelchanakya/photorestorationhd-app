@@ -1,37 +1,31 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack, useRouter } from 'expo-router';
+import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import '../global.css';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GlobalNotifications } from '@/components/GlobalNotifications';
-import InitialLoadingScreen from '@/components/InitialLoadingScreen';
-import { useAutoRollbackRecovery } from '@/hooks/useRollbackRecovery';
 import { JobProvider } from '@/contexts/JobContext';
 import { RevenueCatProvider } from '@/contexts/RevenueCatContext';
-import { Platform } from 'react-native';
-import { LOG_LEVEL } from 'react-native-purchases';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useAutoRollbackRecovery } from '@/hooks/useRollbackRecovery';
+import { AppState, AppStateStatus, Dimensions, LogBox, Platform, View } from 'react-native';
+import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 // Removed LanguageProvider - translations system removed
 // useSubscriptionStore removed - using RevenueCat Context Provider instead
-import NetInfo from '@react-native-community/netinfo';
-import { QueryClient, QueryClientProvider, focusManager, onlineManager } from '@tanstack/react-query';
-import { Image as ExpoImage } from 'expo-image';
-import React, { useEffect } from 'react';
-import { AppState, AppStateStatus, LogBox, View } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import Purchases from 'react-native-purchases';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import Constants from 'expo-constants';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { clarityService } from '@/services/clarityService';
 import { useQuickEditStore } from '@/store/quickEditStore';
 import * as Clarity from '@microsoft/react-native-clarity';
-import { clarityService } from '@/services/clarityService';
-import { analyticsService } from '@/services/analytics';
-import { useAppInitStore } from '@/store/appInitStore';
-import { Dimensions } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
+import { QueryClient, QueryClientProvider, focusManager, onlineManager } from '@tanstack/react-query';
+import Constants from 'expo-constants';
+import { Image as ExpoImage } from 'expo-image';
+import React, { useEffect } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // Configure LogBox for production
 if (!__DEV__) {

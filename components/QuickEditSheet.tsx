@@ -213,6 +213,18 @@ export function QuickEditSheet() {
 
   const handleUpload = async () => {
     if (!selectedImageUri || !functionType) return;
+    
+    // Check for existing prediction FIRST to prevent duplicates on app resume
+    const existingPredictionId = await AsyncStorage.getItem('activePredictionId');
+    if (existingPredictionId) {
+      if (__DEV__) {
+        console.log('🚫 [QUICK-EDIT] Blocking duplicate: Found existing prediction', existingPredictionId);
+      }
+      setStage('loading');
+      // Recovery in _layout.tsx will handle navigation when prediction completes
+      return;
+    }
+    
     if (isUploading || isProcessingRef.current) {
       if (__DEV__) {
         console.log('🚫 DUPLICATE CALL BLOCKED:', { isUploading, isProcessingRef: isProcessingRef.current });

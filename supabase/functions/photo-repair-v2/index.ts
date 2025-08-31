@@ -67,71 +67,31 @@ serve(async (req) => {
 
     supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // UNIFIED PHOTO LIMITS ENFORCEMENT (primary protection)
+    // Simple Pro/Free user check
     if (user_id && user_id !== 'anonymous') {
-      console.log('🔍 Starting unified photo usage check for user:', user_id);
-      
-      // Auto-detect if user is Pro based on tracking ID format
       const isPro = user_id.startsWith('store:') || user_id.startsWith('orig:') || user_id.startsWith('fallback:');
       
-      console.log('🎯 User type detection:', {
-        userId: user_id,
-        isPro: isPro,
-        trackingIdType: isPro ? 'transaction' : 'anonymous'
-      });
-      
-      try {
-        // Use the fixed photo usage function that reads from database
+      if (isPro) {
+        console.log('✅ Pro user detected - unlimited photos, skipping database check');
+      } else {
+        // Only check database for free users
+        console.log('🔍 Free user - checking photo limits');
         const { data: result, error } = await supabase.rpc('check_and_increment_photo_usage', {
           p_user_id: user_id
         });
-
-        if (error) {
-          console.error('❌ Unified photo atomic usage check failed:', error);
-          // For Pro users, allow request to proceed (they have unlimited photos)
-          if (isPro) {
-            console.log('✅ Pro user - allowing photo generation despite database error');
-          } else {
-            console.log('⚠️ Free user - falling back to client-side limits due to server error');
-          }
-        } else if (!result) {
-          // Boolean response from database function - only free users can be blocked
-          if (isPro) {
-            console.log('🚨 Unexpected: Pro user blocked by database function - allowing anyway');
-          } else {
-            console.log('❌ Free user photo limits enforcement blocked request:', {
-              userId: user_id,
-              reason: 'Photo usage limit exceeded (5 photos max)',
-              userType: 'free'
-            });
-            
-            return new Response(JSON.stringify({ 
-              success: false,
-              error: 'Photo usage limit exceeded',
-              code: 'PHOTO_LIMIT_EXCEEDED'
-            }), {
-              status: 403,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            });
-          }
-        } else {
-          console.log('✅ Photo usage increment succeeded:', {
-            userId: user_id,
-            userType: isPro ? 'pro' : 'free',
-            note: isPro ? 'unlimited photos' : 'limited photos'
+        
+        if (!result && !error) {
+          console.log('❌ Free user photo limit exceeded');
+          return new Response(JSON.stringify({ 
+            success: false,
+            error: 'Photo usage limit exceeded',
+            code: 'PHOTO_LIMIT_EXCEEDED'
+          }), {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
-      } catch (error) {
-        console.error('❌ Critical error in photo usage check:', error);
-        // For Pro users, always allow (they have unlimited photos)
-        if (isPro) {
-          console.log('✅ Pro user - allowing photo generation despite critical error');
-        } else {
-          console.log('⚠️ Free user - falling back to client-side limits due to critical server error');
-        }
       }
-    } else {
-      console.log('⚠️ No user_id provided - skipping photo limits check');
     }
 
     const replicate = new Replicate({

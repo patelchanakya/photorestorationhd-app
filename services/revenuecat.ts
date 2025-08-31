@@ -1,6 +1,6 @@
 import { analyticsService } from '@/services/analytics';
 // Removed: No longer using stable IDs - RevenueCat handles anonymous IDs automatically
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 
 // Timeout wrapper for RevenueCat API calls to prevent hanging
@@ -45,14 +45,11 @@ const QUERY_KEYS = {
 
 // Note: Store updates are now handled by RevenueCat Context Provider
 // The context automatically updates when customer info changes via listeners
-import * as SecureStore from 'expo-secure-store';
 import * as Crypto from 'expo-crypto';
+import * as SecureStore from 'expo-secure-store';
 import Purchases, {
     CustomerInfo,
-    PURCHASES_ERROR_CODE,
-    PurchasesError,
-    PurchasesOffering,
-    PurchasesPackage
+    PurchasesOffering
 } from 'react-native-purchases';
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 
@@ -1033,6 +1030,9 @@ export const restorePurchasesSecure = async (): Promise<RestoreResult & {
     }
 
     console.log('🔄 Starting restore purchases...');
+    
+    // Clear cache before restore for fresh data
+    await Purchases.invalidateCustomerInfoCache();
     
     // RevenueCat handles all Apple ID validation internally
     // It automatically checks with Apple StoreKit and validates receipts
