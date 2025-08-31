@@ -1,25 +1,24 @@
+import { CustomImageCropper } from '@/components/CustomImageCropper';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 import { useSavePhoto } from '@/hooks/useSavePhoto';
-import { CustomImageCropper } from '@/components/CustomImageCropper';
-import { useQuickEditStore } from '@/store/quickEditStore';
-import { photoStorage } from '@/services/storage';
 import { presentPaywall } from '@/services/revenuecat';
-import { useRouter } from 'expo-router';
+import { useQuickEditStore } from '@/store/quickEditStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image as ExpoImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 // Removed heavy blur to reduce memory/CPU
-import * as ImagePicker from 'expo-image-picker';
-import * as Haptics from 'expo-haptics';
-import React from 'react';
-import { Alert, Dimensions, Modal, Text, TouchableOpacity, View, Pressable, ActivityIndicator, Platform } from 'react-native';
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BlurView } from 'expo-blur';
 import { ProUpgradeModal } from '@/components/ProUpgradeModal';
 import { SavingModal, SavingModalRef } from '@/components/SavingModal';
 import { analyticsService } from '@/services/analytics';
+import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
+import React from 'react';
+import { ActivityIndicator, AppState, Dimensions, Modal, Platform, Pressable, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Helper to determine tile category
 const determineTileCategory = (functionType: string, styleKey?: string | null): 'outfit' | 'background' | 'memorial' | 'popular' | 'feature' | 'style' => {
@@ -158,6 +157,39 @@ export function QuickEditSheet() {
       return () => clearTimeout(t);
     }
   }, [visible]);
+
+  // Recovery logic for app backgrounding/foregrounding
+  React.useEffect(() => {
+    const handleAppStateChange = (nextAppState: string) => {
+      if (nextAppState === 'active' && stage === 'loading') {
+        // App came to foreground - check if we need to resume processing
+        checkForRecovery();
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription?.remove();
+  }, [stage]);
+
+  // Check for recovery when app becomes active
+  const checkForRecovery = React.useCallback(async () => {
+    try {
+      const activePredictionId = await AsyncStorage.getItem('activePredictionId');
+      if (activePredictionId && stage === 'loading') {
+        if (__DEV__) {
+          console.log('🔄 [RECOVERY] QuickEditSheet: Found active prediction, resuming...');
+        }
+        // Resume processing by checking status
+        setStage('loading');
+        setProgress(50); // Set to middle progress
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.error('❌ [RECOVERY] QuickEditSheet: Recovery check failed:', error);
+      }
+    }
+  }, [stage]);
+
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
   const dimStyle = useAnimatedStyle(() => ({ opacity: overlayOpacity.value }));
   const saveBtnStyle = useAnimatedStyle(() => ({ transform: [{ scale: saveButtonScale.value }] }));
@@ -224,6 +256,25 @@ export function QuickEditSheet() {
 
     // Server-side webhook handles all usage checking and limits
 
+    // Store recovery context for app backgrounding
+    try {
+      await AsyncStorage.setItem('activeQuickEditContext', JSON.stringify({
+        functionType,
+        styleKey,
+        styleName,
+        customPrompt: customPrompt || undefined,
+        timestamp: Date.now(),
+        stage: 'loading'
+      }));
+      if (__DEV__) {
+        console.log('💾 [RECOVERY] QuickEditSheet: Stored recovery context');
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.error('❌ [RECOVERY] QuickEditSheet: Failed to store recovery context:', error);
+      }
+    }
+
     setStage('loading');
 
     const started = Date.now();
@@ -240,6 +291,18 @@ export function QuickEditSheet() {
       const id = data.id;
       const restoredUri = (data as any).restoredImageUri || '';
       
+      // Clear recovery context on success
+      try {
+        await AsyncStorage.removeItem('activeQuickEditContext');
+        if (__DEV__) {
+          console.log('✅ [RECOVERY] QuickEditSheet: Cleared recovery context on success');
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.error('❌ [RECOVERY] QuickEditSheet: Failed to clear recovery context:', error);
+        }
+      }
+
       // Track success
       const processingTime = Date.now() - started;
       analyticsService.trackTileUsage({

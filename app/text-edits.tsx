@@ -1,19 +1,19 @@
+import { BottomSheet } from '@/components/sheets/BottomSheet';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 import { presentPaywall, validatePremiumAccess } from '@/services/revenuecat';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { BottomSheet } from '@/components/sheets/BottomSheet';
+import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import Animated, { FadeInDown, FadeInUp, FadeOut, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Animated, { FadeInDown, FadeInUp, FadeOut, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 // New components
-import { ImageSelector } from '@/components/PhotoMagic/ImageSelector';
 import { CategoryTabs } from '@/components/PhotoMagic/CategoryTabs';
+import { ImageSelector } from '@/components/PhotoMagic/ImageSelector';
 import { PresetCard } from '@/components/PhotoMagic/PresetCard';
 import { analyticsService } from '@/services/analytics';
 
@@ -62,7 +62,7 @@ useEffect(() => {
   }
   
   // If we have an image and prompt from navigation, process it ONCE
-  if (imageUri && initialPrompt && !hasProcessed) {
+  if (imageUri && initialPrompt && !hasProcessed && !isLoading) {
     setHasProcessed(true);
     processWithPrompt(imageUri as string, initialPrompt as string, mode as string);
   }
@@ -71,6 +71,14 @@ useEffect(() => {
 
 
   const processWithPrompt = useCallback(async (uri: string, prompt: string, editMode?: string) => {
+    // Prevent duplicate processing calls
+    if (isLoading) {
+      if (__DEV__) {
+        console.log('🚫 DUPLICATE PROCESSING BLOCKED: Already processing');
+      }
+      return;
+    }
+    
     // CRITICAL: Gate Pro-only features before processing
     const proOnlyModes = ['outfit', 'background'];
     if (proOnlyModes.includes(editMode || '')) {

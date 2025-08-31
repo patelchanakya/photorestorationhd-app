@@ -14,7 +14,7 @@ const logSupabaseIssue = (message: string, error?: any) => {
     // For now, just ensure the error doesn't crash the app
     try {
       console.warn('⚠️ Supabase:', message);
-    } catch (e) {
+    } catch {
       // Failsafe - do nothing if console.warn fails
     }
   }
@@ -48,7 +48,7 @@ export const testSupabaseConnection = async (): Promise<{ success: boolean; mess
     }
 
     // Simple query to test connection - just get count of device_usage table
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('device_usage')
       .select('device_id', { count: 'exact', head: true });
 
@@ -166,6 +166,84 @@ export interface Database {
           prediction_id?: string | null;
           webhook_status?: string | null;
           function_type?: string;
+        };
+      };
+      photo_predictions: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          mode: 'repair' | 'outfit' | 'background' | 'enhance' | 'custom' | 'memorial' | 'water_damage' | 'restoration';
+          style_key: string | null;
+          status: 'starting' | 'processing' | 'succeeded' | 'failed' | 'canceled';
+          input: any; // JSONB
+          output: string | null;
+          error: string | null;
+          created_at: string | null; // Can be null due to default
+          completed_at: string | null;
+          metadata: any; // JSONB
+        };
+        Insert: {
+          id: string;
+          user_id?: string | null;
+          mode: 'repair' | 'outfit' | 'background' | 'enhance' | 'custom' | 'memorial' | 'water_damage' | 'restoration';
+          style_key?: string | null;
+          status?: 'starting' | 'processing' | 'succeeded' | 'failed' | 'canceled';
+          input?: any; // JSONB
+          output?: string | null;
+          error?: string | null;
+          created_at?: string | null;
+          completed_at?: string | null;
+          metadata?: any; // JSONB
+        };
+        Update: {
+          user_id?: string | null;
+          mode?: 'repair' | 'outfit' | 'background' | 'enhance' | 'custom' | 'memorial' | 'water_damage' | 'restoration';
+          style_key?: string | null;
+          status?: 'starting' | 'processing' | 'succeeded' | 'failed' | 'canceled';
+          input?: any; // JSONB
+          output?: string | null;
+          error?: string | null;
+          created_at?: string | null;
+          completed_at?: string | null;
+          metadata?: any; // JSONB
+        };
+      };
+      user_unified_usage: {
+        Row: {
+          id: number;
+          tracking_id: string;
+          photo_count: number;
+          video_count: number;
+          plan_type: 'free' | 'weekly' | 'monthly';
+          is_pro: boolean;
+          photo_limit: number;
+          video_limit: number;
+          billing_cycle_start: string | null;
+          next_reset_date: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          tracking_id: string;
+          photo_count?: number;
+          video_count?: number;
+          plan_type?: 'free' | 'weekly' | 'monthly';
+          is_pro?: boolean;
+          photo_limit?: number;
+          video_limit?: number;
+          billing_cycle_start?: string | null;
+          next_reset_date?: string | null;
+        };
+        Update: {
+          photo_count?: number;
+          video_count?: number;
+          plan_type?: 'free' | 'weekly' | 'monthly';
+          is_pro?: boolean;
+          photo_limit?: number;
+          video_limit?: number;
+          billing_cycle_start?: string | null;
+          next_reset_date?: string | null;
+          updated_at?: string;
         };
       };
       user_onboarding: {
