@@ -173,7 +173,22 @@ export const getVideoTrackingId = async (options?: { retries?: number, retryDela
       
       // Check if user has Pro entitlement (blocks free users)
       const proEntitlement = customerInfo.entitlements?.active?.pro;
-      if (!proEntitlement?.isActive) {
+      
+      // Debug logging for entitlement state
+      console.log('🔍 [VIDEO] Entitlement Debug:', {
+        hasProEntitlement: !!proEntitlement,
+        isActive: proEntitlement?.isActive,
+        periodType: proEntitlement?.periodType,
+        store: proEntitlement?.store,
+        isSandbox: proEntitlement?.isSandbox,
+        productIdentifier: proEntitlement?.productIdentifier,
+        expirationDate: proEntitlement?.expirationDate,
+        latestPurchaseDate: proEntitlement?.latestPurchaseDate,
+        originalPurchaseDate: proEntitlement?.originalPurchaseDate,
+        timestamp: new Date().toISOString()
+      });
+      
+      if (!proEntitlement) {
         console.log('❌ [VIDEO] No Pro entitlement - blocking free users');
         return null;
       }
