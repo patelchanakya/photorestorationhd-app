@@ -81,10 +81,9 @@ serve(async (req) => {
       });
       
       try {
-        // Use unified atomic function to check and increment usage
-        const { data: result, error } = await supabase.rpc('check_and_increment_photo_usage_unified', {
-          p_tracking_id: user_id,
-          p_is_pro: isPro
+        // Use the fixed photo usage function that reads from database
+        const { data: result, error } = await supabase.rpc('check_and_increment_photo_usage', {
+          p_user_id: user_id
         });
 
         if (error) {
@@ -116,14 +115,14 @@ serve(async (req) => {
             });
           }
         } else {
-          console.log('✅ Unified photo atomic increment succeeded:', {
+          console.log('✅ Photo usage increment succeeded:', {
             userId: user_id,
             userType: isPro ? 'pro' : 'free',
             note: isPro ? 'unlimited photos' : 'limited photos'
           });
         }
       } catch (error) {
-        console.error('❌ Critical error in unified photo usage check:', error);
+        console.error('❌ Critical error in photo usage check:', error);
         // For Pro users, always allow (they have unlimited photos)
         if (isPro) {
           console.log('✅ Pro user - allowing photo generation despite critical error');

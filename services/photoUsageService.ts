@@ -1,9 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import React from 'react';
-import { getSubscriptionPlanDetails } from './revenuecat';
-import { getPhotoTrackingId } from './trackingIds';
-import { supabase } from './supabaseClient';
 import { networkStateService } from './networkState';
+import { getSubscriptionPlanDetails } from './revenuecat';
+import { supabase } from './supabaseClient';
+import { getPhotoTrackingId } from './trackingIds';
 import { getFreePhotoLimit } from './usageLimits';
 
 // PhotoUsage type moved here from photoUsageStore
@@ -160,22 +159,18 @@ export const photoUsageService = {
       
       const freeLimit = getFreePhotoLimit();
       const { data, error } = await supabase.rpc('check_and_increment_photo_usage', {
-        p_user_id: photoKey,
-        p_usage_limit: freeLimit
+        p_user_id: photoKey
+        // Removed p_usage_limit - function now reads from database
       });
       
       if (error) {
-        if (__DEV__) {
-          console.error('❌ Photo usage increment error:', error);
-        }
+              console.error('❌ Photo usage increment error:', error);
         return false;
       }
       
       const success = Boolean(data);
       
-      if (__DEV__) {
-        console.log(success ? '✅ Photo usage incremented' : '❌ Photo limit reached');
-      }
+      console.log(success ? '✅ Photo usage incremented' : '❌ Photo limit reached');
       
       return success;
     } catch (error) {

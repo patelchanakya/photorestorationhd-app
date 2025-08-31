@@ -305,8 +305,8 @@ export async function verifyAndIncrementUsage(
     if (!accessResult.isPro && feature === 'photos') {
       // For free users, userId should be $RCAnonymousID:xxxxx
       const { data: canIncrement, error } = await supabase.rpc('check_and_increment_photo_usage', {
-        p_user_id: userId,
-        p_usage_limit: 5 // Free user limit
+        p_user_id: userId
+        // Removed p_usage_limit - function now reads from database
       });
 
       if (error) {

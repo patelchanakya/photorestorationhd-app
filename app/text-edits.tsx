@@ -169,8 +169,8 @@ useEffect(() => {
       let errorMessage = 'Something went wrong. Please try again.';
       
       if (err?.message?.includes('PHOTO_LIMIT_EXCEEDED') || err?.code === 'PHOTO_LIMIT_EXCEEDED') {
-        errorTitle = 'Daily Limit Reached';
-        errorMessage = 'You\'ve reached your daily photo editing limit. Please try again tomorrow or upgrade to Pro for unlimited edits.';
+        errorTitle = 'Free Limit Reached';
+        errorMessage = 'You\'ve reached your free photo editing limit. Upgrade to Pro for unlimited edits.';
       } else if (err?.message) {
         errorMessage = err.message;
       }

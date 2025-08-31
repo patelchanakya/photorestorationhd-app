@@ -332,7 +332,7 @@ export function QuickEditSheet() {
       
       // Override technical error messages with user-friendly ones
       if (errorMsg.includes('PHOTO_LIMIT_EXCEEDED') || e?.code === 'PHOTO_LIMIT_EXCEEDED') {
-        errorMsg = 'You\'ve reached your daily photo limit. Tap here to upgrade to Pro for unlimited edits!';
+        errorMsg = 'You\'ve reached your free photo limit. Tap here to upgrade to Pro for unlimited edits!';
         setIsLimitError(true);
       } else if (errorMsg.includes('Unable to verify photo limits') || 
           errorMsg.includes('Servers are loaded') ||
