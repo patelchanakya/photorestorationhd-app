@@ -55,21 +55,56 @@ export default function TextEditsScreen() {
     transform: [{ scale: buttonScale.value }],
   }));
   
+// Initialize processing state on component mount - handles app restart and cleanup
+useEffect(() => {
+  const initializeProcessingState = async () => {
+    // Check if we have an existing prediction from before app restart
+    const existingPredictionId = await AsyncStorage.getItem('activePredictionId');
+    
+    if (existingPredictionId && imageUri && initialPrompt) {
+      // Scenario 3: App restarted but we have unfinished work
+      if (__DEV__) {
+        console.log('📱 [TEXT-EDIT] Found existing prediction on mount:', existingPredictionId);
+      }
+      setIsLoading(true);
+      setHasProcessed(true);
+      // Recovery in _layout.tsx will handle navigation when ready
+      return;
+    }
+    
+    // No active prediction - clear any stale pending flags
+    // This handles expired predictions and prevents stuck states
+    await AsyncStorage.removeItem('pendingTextEditProcess');
+    if (__DEV__) {
+      console.log('🧹 [TEXT-EDIT] Cleared stale flags on mount');
+    }
+  };
+  
+  initializeProcessingState();
+}, []); // Only on component mount
+
 useEffect(() => {
   // If we have an image from upload, set it as selected
   if (imageUri && fromUpload && !selectedImage) {
     setSelectedImage(imageUri as string);
   }
   
-  // If we have an image and prompt from navigation, check for existing prediction first
+  // If we have an image and prompt from navigation, check for existing or pending processing
   if (imageUri && initialPrompt && !hasProcessed && !isLoading) {
     const checkAndProcess = async () => {
-      // Check for existing prediction FIRST to prevent duplicates on app resume
-      const existingPredictionId = await AsyncStorage.getItem('activePredictionId');
+      // Check for ANY processing marker (existing prediction or pending process)
+      const [existingPredictionId, pendingProcess] = await Promise.all([
+        AsyncStorage.getItem('activePredictionId'),
+        AsyncStorage.getItem('pendingTextEditProcess')
+      ]);
       
-      if (existingPredictionId) {
+      if (existingPredictionId || pendingProcess) {
         if (__DEV__) {
-          console.log('🚫 [TEXT-EDIT] Blocking duplicate: Found existing prediction', existingPredictionId);
+          console.log('🚫 [TEXT-EDIT] Blocking duplicate:', {
+            existingPredictionId,
+            pendingProcess,
+            reason: existingPredictionId ? 'active_prediction' : 'pending_process'
+          });
         }
         setIsLoading(true); // Show loading UI
         setHasProcessed(true); // Prevent processing
@@ -77,10 +112,13 @@ useEffect(() => {
         return;
       }
       
-      // No existing prediction - safe to process
+      // IMMEDIATELY mark as pending (before any async work)
+      await AsyncStorage.setItem('pendingTextEditProcess', 'true');
+      
       if (__DEV__) {
-        console.log('✅ [TEXT-EDIT] No existing prediction, starting new processing');
+        console.log('✅ [TEXT-EDIT] No existing processing, starting new (marked as pending)');
       }
+      
       setHasProcessed(true);
       processWithPrompt(imageUri as string, initialPrompt as string, mode as string);
     };
@@ -163,11 +201,23 @@ useEffect(() => {
     // Show loading UI
     setIsLoading(true);
     
+    // Clear pending flag as we now have active processing starting
+    try {
+      await AsyncStorage.removeItem('pendingTextEditProcess');
+      if (__DEV__) {
+        console.log('🧹 [TEXT-EDIT] Cleared pending flag - processing now active');
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.warn('⚠️ [TEXT-EDIT] Failed to clear pending flag:', error);
+      }
+    }
+    
     try {
       const result = await photoRestoration.mutateAsync({ imageUri: uri, functionType, imageSource: 'gallery', customPrompt: prompt });
       
-      // Clear text-edit context and prediction ID on successful completion since we're navigating away
-      await AsyncStorage.multiRemove(['activeTextEditContext', 'activePredictionId']);
+      // Clear text-edit context, prediction ID, and pending flag on successful completion since we're navigating away
+      await AsyncStorage.multiRemove(['activeTextEditContext', 'activePredictionId', 'pendingTextEditProcess']);
       
       if (__DEV__) {
         console.log('📝 [TEXT-EDIT] Cleared context after successful completion');
@@ -178,8 +228,8 @@ useEffect(() => {
     } catch (err: any) {
       setIsLoading(false);
       
-      // Clear text-edit context and prediction ID on error - recovery will handle this if needed
-      await AsyncStorage.multiRemove(['activeTextEditContext', 'activePredictionId']);
+      // Clear text-edit context, prediction ID, and pending flag on error - recovery will handle this if needed
+      await AsyncStorage.multiRemove(['activeTextEditContext', 'activePredictionId', 'pendingTextEditProcess']);
       
       if (__DEV__) {
         console.log('📝 [TEXT-EDIT] Cleared context after error');
