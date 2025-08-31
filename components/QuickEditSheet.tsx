@@ -136,6 +136,30 @@ export function QuickEditSheet() {
   const [isUploading, setIsUploading] = React.useState(false);
   const [showUpgrade, setShowUpgrade] = React.useState(false);
   const isProcessingRef = React.useRef(false);
+
+  // Simple mount check - prevent duplicates by checking for active work
+  React.useEffect(() => {
+    const checkActiveWork = async () => {
+      const activePredictionId = await AsyncStorage.getItem('activePredictionId');
+      
+      if (activePredictionId && visible) {
+        // We have active work - show loading state
+        if (__DEV__) {
+          console.log('📱 [QUICK-EDIT] Found active prediction on mount:', activePredictionId);
+        }
+        setStage('loading');
+        // Recovery will handle navigation
+        return;
+      }
+      
+      if (__DEV__) {
+        console.log('✅ [QUICK-EDIT] No active work found on mount');
+      }
+    };
+    
+    checkActiveWork();
+  }, []); // Only on component mount
+
   React.useEffect(() => {
     // Mount and animate in
     if (visible) {
@@ -214,14 +238,14 @@ export function QuickEditSheet() {
   const handleUpload = async () => {
     if (!selectedImageUri || !functionType) return;
     
-    // Check for existing prediction FIRST to prevent duplicates on app resume
-    const existingPredictionId = await AsyncStorage.getItem('activePredictionId');
-    if (existingPredictionId) {
+    // Simple check - just look for active prediction
+    const activePredictionId = await AsyncStorage.getItem('activePredictionId');
+    if (activePredictionId) {
       if (__DEV__) {
-        console.log('🚫 [QUICK-EDIT] Blocking duplicate: Found existing prediction', existingPredictionId);
+        console.log('🚫 [QUICK-EDIT] Blocking duplicate - found active prediction:', activePredictionId);
       }
       setStage('loading');
-      // Recovery in _layout.tsx will handle navigation when prediction completes
+      // Recovery will handle navigation when prediction completes
       return;
     }
     
