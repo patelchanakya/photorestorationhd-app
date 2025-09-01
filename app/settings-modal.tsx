@@ -7,7 +7,6 @@ import { usePhotoUsage, type PhotoUsage } from '@/services/photoUsageService';
 import { checkSubscriptionStatus, getAppUserId, presentPaywall, restorePurchasesSecure } from '@/services/revenuecat';
 import { photoStorage } from '@/services/storage';
 import { localStorageHelpers } from '@/services/supabase';
-import { pollPhotoStatus } from '@/services/photoGenerationV2';
 import { useCropModalStore } from '@/store/cropModalStore';
 import { useRestorationStore } from '@/store/restorationStore';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
@@ -61,8 +60,6 @@ export default function SettingsModalScreen() {
   const [revenueCatUserId, setRevenueCatUserId] = useState<string | null>(null);
   // Removed translation system
   
-  // Debug state
-  const [debugPredictionInfo, setDebugPredictionInfo] = useState<any>(null);
   
   // Ref to track restore operation for cancellation
   const restoreOperationRef = useRef<{ cancelled: boolean }>({ cancelled: false });
@@ -164,131 +161,6 @@ export default function SettingsModalScreen() {
     return () => subscription?.remove();
   }, [isRestoring]);
 
-  // Debug functions for prediction testing
-  const checkStoredPrediction = async () => {
-    try {
-      const activePredictionId = await AsyncStorage.getItem('activePredictionId');
-      const predictionContext = await AsyncStorage.getItem('predictionContext');
-      
-      let info = {
-        predictionId: activePredictionId || 'None',
-        context: null as any,
-        status: 'Unknown',
-        timestamp: null as any
-      };
-      
-      if (predictionContext) {
-        try {
-          info.context = JSON.parse(predictionContext);
-          info.timestamp = info.context.timestamp ? new Date(info.context.timestamp).toLocaleString() : 'Unknown';
-        } catch (e) {
-          info.context = 'Failed to parse';
-        }
-      }
-      
-      if (activePredictionId) {
-        try {
-          const status = await pollPhotoStatus(activePredictionId);
-          info.status = status.status;
-        } catch (e) {
-          info.status = 'Failed to fetch';
-        }
-      }
-      
-      setDebugPredictionInfo(info);
-      
-      Alert.alert(
-        'Debug: Current Prediction State',
-        `Prediction ID: ${info.predictionId}\nStatus: ${info.status}\nImage: ${info.context?.imageUri ? 'Set' : 'None'}\nFunction: ${info.context?.functionType || 'None'}\nCreated: ${info.timestamp || 'Unknown'}`,
-        [{ text: 'OK' }]
-      );
-    } catch (error) {
-      Alert.alert('Debug Error', `Failed to check prediction: ${error}`, [{ text: 'OK' }]);
-    }
-  };
-  
-  const simulateActivePrediction = async () => {
-    Alert.alert(
-      'Simulate Active Prediction',
-      'This will set a fake prediction in AsyncStorage for testing.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Set Fake Prediction', 
-          onPress: async () => {
-            try {
-              const fakePredictionId = `test-${Date.now()}`;
-              const fakeContext = {
-                imageUri: 'fake-image-uri.jpg',
-                functionType: 'restoration',
-                styleKey: null,
-                customPrompt: null,
-                timestamp: Date.now()
-              };
-              
-              await AsyncStorage.setItem('activePredictionId', fakePredictionId);
-              await AsyncStorage.setItem('predictionContext', JSON.stringify(fakeContext));
-              
-              Alert.alert(
-                'Fake Prediction Set',
-                `Prediction ID: ${fakePredictionId}\nNow try starting a restoration to test deduplication logic.`,
-                [{ text: 'OK' }]
-              );
-            } catch (error) {
-              Alert.alert('Error', `Failed to set fake prediction: ${error}`, [{ text: 'OK' }]);
-            }
-          }
-        }
-      ]
-    );
-  };
-  
-  const clearPredictionStorage = async () => {
-    try {
-      await AsyncStorage.removeItem('activePredictionId');
-      await AsyncStorage.removeItem('predictionContext');
-      setDebugPredictionInfo(null);
-      
-      Alert.alert(
-        'Prediction Storage Cleared',
-        'All prediction data has been removed from AsyncStorage.',
-        [{ text: 'OK' }]
-      );
-    } catch (error) {
-      Alert.alert('Error', `Failed to clear prediction storage: ${error}`, [{ text: 'OK' }]);
-    }
-  };
-  
-  const testDuplicateRequest = async () => {
-    Alert.alert(
-      'Test Duplicate Request',
-      'Start a restoration, then come back here and tap "Test Duplicate" to see if deduplication works.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Test Duplicate',
-          onPress: async () => {
-            const activePredictionId = await AsyncStorage.getItem('activePredictionId');
-            if (!activePredictionId) {
-              Alert.alert('No Active Prediction', 'Start a restoration first, then try this test.', [{ text: 'OK' }]);
-              return;
-            }
-            
-            try {
-              const status = await pollPhotoStatus(activePredictionId);
-              Alert.alert(
-                'Duplicate Test Result',
-                `Current prediction: ${activePredictionId}\nStatus: ${status.status}\nProgress: ${status.progress}%\n\nNow try starting the SAME restoration again to see if it gets blocked.`,
-                [{ text: 'OK' }]
-              );
-            } catch (error) {
-              Alert.alert('Test Error', `Failed to check prediction status: ${error}`, [{ text: 'OK' }]);
-            }
-          }
-        }
-      ]
-    );
-  };
 
   // Clear stuck video processing state
   const handleClearStuckVideo = async () => {
@@ -920,23 +792,23 @@ Best regards`;
       <View className="flex-1">
         {/* Header */}
         <View className="flex-row items-center justify-between px-4 py-3 border-b border-white/10">
-          <View style={{ width: 32 }} />
-          <Text style={{ color: 'white', fontSize: 18, fontFamily: 'Lexend-SemiBold' }}>
-            Settings
-          </Text>
           <TouchableOpacity
             onPress={handleClose}
             className="w-8 h-8 items-center justify-center"
           >
-            <IconSymbol name="chevron.down" size={20} color="#fff" />
+            <IconSymbol name="arrow.left" size={20} color="#fff" />
           </TouchableOpacity>
+          <Text style={{ color: 'white', fontSize: 18, fontFamily: 'Lexend-SemiBold' }}>
+            Settings
+          </Text>
+          <View style={{ width: 32 }} />
         </View>
 
         {/* Content */}
         <ScrollView 
           className="flex-1 px-4"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ flexGrow: 1, paddingBottom: 12, paddingTop: 0 }}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 12, paddingTop: 24 }}
           contentInsetAdjustmentBehavior="never"
           automaticallyAdjustContentInsets={false}
         >
@@ -1195,121 +1067,7 @@ Best regards`;
             </View>
 
             {/* Debug Section - Development Only */}
-            {__DEV__ && (
-              <View className="mb-8">
-                <Text style={{ color: '#f59e0b', fontSize: 16, fontFamily: 'Lexend-SemiBold', marginBottom: 16 }}>
-                  Debug Tools
-                </Text>
-                
-                <View className="bg-white/5 rounded-xl overflow-hidden">
-                  
-                  {/* Check Stored Prediction */}
-                  <TouchableOpacity 
-                    className="flex-row items-center p-4 border-b border-white/10"
-                    onPress={checkStoredPrediction}
-                  >
-                    <View className="w-9 h-9 bg-blue-500/20 rounded-full items-center justify-center mr-3">
-                      <Ionicons name="information-circle" size={18} color="#3b82f6" />
-                    </View>
-                    <View className="flex-1">
-                      <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium' }}>
-                        Check Stored Prediction
-                      </Text>
-                      <Text className="text-white/60 text-sm">
-                        View current AsyncStorage prediction state
-                      </Text>
-                    </View>
-                    <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
-                  </TouchableOpacity>
 
-                  {/* Simulate Active Prediction */}
-                  <TouchableOpacity 
-                    className="flex-row items-center p-4 border-b border-white/10"
-                    onPress={simulateActivePrediction}
-                  >
-                    <View className="w-9 h-9 bg-green-500/20 rounded-full items-center justify-center mr-3">
-                      <Ionicons name="play-circle" size={18} color="#22c55e" />
-                    </View>
-                    <View className="flex-1">
-                      <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium' }}>
-                        Simulate Active Prediction
-                      </Text>
-                      <Text className="text-white/60 text-sm">
-                        Set fake prediction for testing deduplication
-                      </Text>
-                    </View>
-                    <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
-                  </TouchableOpacity>
-
-                  {/* Test Duplicate Request */}
-                  <TouchableOpacity 
-                    className="flex-row items-center p-4 border-b border-white/10"
-                    onPress={testDuplicateRequest}
-                  >
-                    <View className="w-9 h-9 bg-yellow-500/20 rounded-full items-center justify-center mr-3">
-                      <Ionicons name="copy" size={18} color="#eab308" />
-                    </View>
-                    <View className="flex-1">
-                      <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium' }}>
-                        Test Duplicate Request
-                      </Text>
-                      <Text className="text-white/60 text-sm">
-                        Check if deduplication blocks duplicates
-                      </Text>
-                    </View>
-                    <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
-                  </TouchableOpacity>
-
-                  {/* Clear Prediction Storage */}
-                  <TouchableOpacity 
-                    className="flex-row items-center p-4"
-                    onPress={clearPredictionStorage}
-                  >
-                    <View className="w-9 h-9 bg-red-500/20 rounded-full items-center justify-center mr-3">
-                      <Ionicons name="trash" size={18} color="#ef4444" />
-                    </View>
-                    <View className="flex-1">
-                      <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium' }}>
-                        Clear Prediction Storage
-                      </Text>
-                      <Text className="text-white/60 text-sm">
-                        Remove all prediction data from AsyncStorage
-                      </Text>
-                    </View>
-                    <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-
-            {/* Storage Section */}
-            <View className="mb-8">
-              <Text style={{ color: '#f59e0b', fontSize: 16, fontFamily: 'Lexend-SemiBold', marginBottom: 16 }}>
-                Storage
-              </Text>
-              
-              <View className="bg-white/5 rounded-xl overflow-hidden">
-                
-
-                {/* Delete All Photos */}
-                <TouchableOpacity 
-                  className="flex-row items-center p-4"
-                  onPress={handleDeleteAllPhotos}>
-                  <View className="w-9 h-9 bg-red-500/20 rounded-full items-center justify-center mr-3">
-                    <Ionicons name="trash" size={18} color="#ef4444" />
-                  </View>
-                  <View className="flex-1">
-                    <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium' }}>
-                      Delete All Photos
-                    </Text>
-                    <Text className="text-white/60 text-sm">
-                      Permanently remove all photos from gallery
-                    </Text>
-                  </View>
-                  <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
-                </TouchableOpacity>
-              </View>
-            </View>
 
 
             {/* Account & Legal Section */}
@@ -1369,7 +1127,7 @@ Best regards`;
                       Version
                     </Text>
                     <Text className="text-white/60 text-sm">
-                      2.0
+                      2.0.1
                     </Text>
                   </View>
                 </View>

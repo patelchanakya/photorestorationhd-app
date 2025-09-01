@@ -17,6 +17,7 @@ import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 // useSubscriptionStore removed - using RevenueCat Context Provider instead
 import { clarityService } from '@/services/clarityService';
 import { useQuickEditStore } from '@/store/quickEditStore';
+import { useAppInitStore } from '@/store/appInitStore';
 import * as Clarity from '@microsoft/react-native-clarity';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
@@ -275,42 +276,80 @@ async function performRecoveryCheck() {
         }
         
         // Check if app is initialized before navigating
-        const { isInitialized } = require('@/store/appInitStore').useAppInitStore.getState();
+        const { isInitialized } = useAppInitStore.getState();
         
         if (!isInitialized) {
           // Cold start - store the recovery intent for after initialization
           console.log('📝 [RECOVERY] App not initialized, deferring navigation until after app loads');
           await AsyncStorage.setItem('pendingRecoveryNavigation', JSON.stringify({
             route: `/restoration/${activePredictionId}`,
+            output: prediction.output,
+            predictionCreatedAt: prediction.created_at,
             timestamp: Date.now()
           }));
         } else {
-          // App already initialized (returning from background) - navigate immediately
-          router.push(`/restoration/${activePredictionId}`);
-          console.log('✅ [RECOVERY] Navigated to restoration screen for text-edit prediction:', activePredictionId);
+          // App already initialized - validate URL before navigating
+          try {
+            const response = await fetch(prediction.output, { method: 'HEAD' });
+            if (response.ok) {
+              router.push(`/restoration/${activePredictionId}`);
+              console.log('✅ [RECOVERY] Navigated to restoration screen for text-edit prediction:', activePredictionId);
+            } else {
+              // URL expired - silently cleanup
+              await AsyncStorage.removeItem('activePredictionId');
+              console.log('🧹 [RECOVERY] Text-edit prediction URL expired, cleaned up');
+            }
+          } catch {
+            // URL validation failed - silently cleanup
+            await AsyncStorage.removeItem('activePredictionId');
+            console.log('🧹 [RECOVERY] Text-edit prediction URL validation failed, cleaned up');
+          }
         }
         return;
       }
       
       // Standard Quick Edit Sheet recovery for non-text-edit predictions
-      console.log('📱 [RECOVERY] Quick Edit prediction detected, opening sheet');
+      console.log('📱 [RECOVERY] Quick Edit prediction detected, checking initialization');
       
-      // Check if this is the same prediction that's already displayed
-      const currentQuickEditState = useQuickEditStore.getState();
-      if (currentQuickEditState.visible && currentQuickEditState.restoredId === activePredictionId) {
-        console.log('⚠️ [RECOVERY] Same prediction already displayed, skipping duplicate UI update');
-        // Don't clear prediction - let user interact with it first
-        return;
+      // Check if app is initialized
+      const { isInitialized } = useAppInitStore.getState();
+      
+      if (!isInitialized) {
+        // Cold start - defer Quick Edit Sheet opening
+        console.log('📝 [RECOVERY] App not initialized, deferring Quick Edit Sheet');
+        await AsyncStorage.setItem('pendingQuickEditRecovery', JSON.stringify({
+          predictionId: activePredictionId,
+          output: prediction.output,
+          predictionCreatedAt: prediction.created_at,
+          timestamp: Date.now()
+        }));
+      } else {
+        // App already initialized - validate URL before opening Quick Edit Sheet
+        try {
+          const response = await fetch(prediction.output, { method: 'HEAD' });
+          if (response.ok) {
+            // Check if this is the same prediction that's already displayed
+            const currentQuickEditState = useQuickEditStore.getState();
+            if (currentQuickEditState.visible && currentQuickEditState.restoredId === activePredictionId) {
+              console.log('⚠️ [RECOVERY] Same prediction already displayed, skipping duplicate UI update');
+              return;
+            }
+            
+            const { setResult } = useQuickEditStore.getState();
+            setResult(activePredictionId, prediction.output);
+            useQuickEditStore.setState({ visible: true });
+            console.log('✅ [RECOVERY] Quick Edit Sheet opened with completed result');
+          } else {
+            // URL expired - silently cleanup
+            await AsyncStorage.removeItem('activePredictionId');
+            console.log('🧹 [RECOVERY] Quick Edit prediction URL expired, cleaned up');
+          }
+        } catch {
+          // URL validation failed - silently cleanup
+          await AsyncStorage.removeItem('activePredictionId');
+          console.log('🧹 [RECOVERY] Quick Edit prediction URL validation failed, cleaned up');
+        }
       }
-      
-      // Update Quick Edit Sheet with the recovered result (even if already visible but in loading state)
-      const { setResult } = useQuickEditStore.getState();
-      setResult(activePredictionId, prediction.output);
-      
-      // Show the Quick Edit Sheet (safe to call even if already visible)
-      useQuickEditStore.setState({ visible: true });
-      
-      console.log('✅ [RECOVERY] Quick Edit Sheet updated with completed result for prediction:', activePredictionId);
     } else if (prediction.status === 'processing') {
       console.log('⏳ [RECOVERY] Generation still processing, keeping for user discovery:', {
         prediction_id: activePredictionId,

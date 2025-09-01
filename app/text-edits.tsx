@@ -130,6 +130,8 @@ useEffect(() => {
           if (__DEV__) {
             console.log('🚫 [TEXT-EDIT] User cancelled paywall, cancelling processing');
           }
+          setIsSubmitting(false);
+          applyLockRef.current = false;
           return;
         }
         // If successful, continue with processing (usage will be rechecked on server)
@@ -137,6 +139,8 @@ useEffect(() => {
         if (__DEV__) {
           console.error('❌ [TEXT-EDIT] Paywall error:', error);
         }
+        setIsSubmitting(false);
+        applyLockRef.current = false;
         return;
       }
     }

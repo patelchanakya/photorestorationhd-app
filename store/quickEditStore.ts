@@ -66,7 +66,14 @@ export const useQuickEditStore = create<QuickEditState>((set) => ({
   setSelectedImage: (uri) => set({ selectedImageUri: uri, stage: uri ? 'preview' : 'select' }),
   setStage: (stage) => set({ stage }),
   setProgress: (p) => set({ progress: Math.max(0, Math.min(100, p)) }),
-  setResult: (id, restoredUri) => set({ restoredId: id, restoredImageUri: restoredUri, stage: 'done', progress: 100 }),
+  setResult: (id, restoredUri) => {
+    set({ restoredId: id, restoredImageUri: restoredUri, stage: 'done', progress: 100 });
+    // Clear activePredictionId immediately when result is shown to user
+    AsyncStorage.removeItem('activePredictionId').catch(() => {});
+    if (__DEV__) {
+      console.log('🧹 [RECOVERY] Cleared prediction state - result shown to user');
+    }
+  },
   setStyleKey: (key) => set({ styleKey: key }),
   setError: (message) => set({ errorMessage: message, stage: 'error', progress: 0 }),
   close: () => {

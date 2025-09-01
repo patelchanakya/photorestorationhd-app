@@ -513,7 +513,7 @@ export function QuickEditSheet() {
             <View style={{ padding: 16, paddingBottom: Math.max(12, insets.bottom + 8) }}>
               {/* Header */}
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                <TouchableOpacity onPress={handleClose} disabled={stage === 'loading'} hitSlop={{ top: 8, left: 8, bottom: 8, right: 8 }} style={{ padding: 4, opacity: stage === 'loading' ? 0.4 : 1 }}>
+                <TouchableOpacity onPress={handleClose} hitSlop={{ top: 8, left: 8, bottom: 8, right: 8 }} style={{ padding: 4 }}>
                   <IconSymbol name="xmark" size={20} color="#EAEAEA" />
                 </TouchableOpacity>
                 <Text style={{ color: '#EAEAEA', fontSize: 16, fontFamily: 'Lexend-Bold' }}>

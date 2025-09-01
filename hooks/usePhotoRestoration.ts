@@ -1,6 +1,6 @@
 import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import { analyticsService } from '@/services/analytics';
-import { generatePhoto, pollPhotoStatus, type FunctionType } from '@/services/photoGenerationV2';
+import { generatePhoto, generatePhotoWithPolling, pollPhotoStatus, type FunctionType } from '@/services/photoGenerationV2';
 import { useInvalidatePhotoUsage } from '@/services/photoUsageService';
 import { restorationTrackingService } from '@/services/restorationTracking';
 import { getAppUserId } from '@/services/revenuecat';
@@ -87,7 +87,7 @@ export function usePhotoRestoration() {
                   styleKey,
                   customPrompt,
                   userId: existingUserId || 'fallback-anonymous',
-                  onProgress: (progress, status) => {
+                  onProgress: (progress: any, status: any) => {
                     // Update global progress tracker
                     (global as any).__currentJobProgress = progress;
                     if (__DEV__) {

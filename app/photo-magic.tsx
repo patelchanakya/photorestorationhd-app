@@ -1,11 +1,11 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { analyticsService } from '@/services/analytics';
 import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import React, { useState } from 'react';
-import { analyticsService } from '@/services/analytics';
 import { Alert, ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -130,16 +130,7 @@ export default function PhotoMagicUploadScreen() {
         }}
       >
         <TouchableOpacity onPress={() => router.back()}>
-          <View style={{
-            width: 32,
-            height: 32,
-            borderRadius: 16,
-            backgroundColor: 'rgba(255,255,255,0.1)',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <IconSymbol name="arrow.left" size={16} color="#EAEAEA" />
-          </View>
+          <IconSymbol name="arrow.left" size={20} color="#EAEAEA" />
         </TouchableOpacity>
         
         <View style={{ alignItems: 'center' }}>

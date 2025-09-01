@@ -64,28 +64,94 @@ export default function HomeGalleryLikeScreen() {
     });
   }, [isTabletLike, isPro]);
 
-  // Check for pending recovery navigation after app initialization
+  // Check for pending recovery navigation and Quick Edit recovery after app initialization
   React.useEffect(() => {
     const checkPendingRecovery = async () => {
       try {
+        // Check for pending navigation (restoration screen)
         const pendingNavigation = await AsyncStorage.getItem('pendingRecoveryNavigation');
         if (pendingNavigation) {
-          const { route, timestamp } = JSON.parse(pendingNavigation);
+          const { route, output, predictionCreatedAt, timestamp } = JSON.parse(pendingNavigation);
           
-          // Check if the pending navigation is recent (within last 30 seconds to avoid stale navigations)
-          const isRecent = Date.now() - timestamp < 30000;
+          // Check if storage is recent (within last 5 minutes to avoid crashed sessions)
+          const storageIsRecent = Date.now() - timestamp < 300000; // 5 minutes
           
-          if (isRecent) {
-            console.log('📝 [EXPLORE] Executing pending recovery navigation:', route);
-            await AsyncStorage.removeItem('pendingRecoveryNavigation');
-            router.push(route);
+          // Check if prediction is still valid (within 1 hour)
+          const predictionAge = predictionCreatedAt ? Date.now() - new Date(predictionCreatedAt).getTime() : 0;
+          const predictionIsValid = predictionAge < 3600000; // 1 hour
+          
+          if (storageIsRecent && predictionIsValid && route && route.startsWith('/restoration/') && output) {
+            // Validate image URL is still accessible
+            try {
+              const response = await fetch(output, { method: 'HEAD' });
+              if (response.ok) {
+                console.log('📝 [EXPLORE] Executing pending recovery navigation:', route);
+                await AsyncStorage.removeItem('pendingRecoveryNavigation');
+                router.push(route);
+                return; // Don't check Quick Edit if we're navigating away
+              } else {
+                // URL expired - silently cleanup
+                await AsyncStorage.removeItem('pendingRecoveryNavigation');
+                await AsyncStorage.removeItem('activePredictionId');
+              }
+            } catch {
+              // URL validation failed - silently cleanup
+              await AsyncStorage.removeItem('pendingRecoveryNavigation');
+              await AsyncStorage.removeItem('activePredictionId');
+            }
           } else {
-            console.log('📝 [EXPLORE] Clearing stale pending recovery navigation');
+            // Stale, invalid, or malformed - silently cleanup
             await AsyncStorage.removeItem('pendingRecoveryNavigation');
+            if (!predictionIsValid) {
+              await AsyncStorage.removeItem('activePredictionId');
+            }
+          }
+        }
+
+        // Check for pending Quick Edit recovery
+        const pendingQuickEdit = await AsyncStorage.getItem('pendingQuickEditRecovery');
+        if (pendingQuickEdit) {
+          const { predictionId, output, predictionCreatedAt, timestamp } = JSON.parse(pendingQuickEdit);
+          
+          // Check if storage is recent (within last 5 minutes to avoid crashed sessions)
+          const storageIsRecent = Date.now() - timestamp < 300000; // 5 minutes
+          
+          // Check if prediction is still valid (within 1 hour)
+          const predictionAge = predictionCreatedAt ? Date.now() - new Date(predictionCreatedAt).getTime() : 0;
+          const predictionIsValid = predictionAge < 3600000; // 1 hour
+          
+          if (storageIsRecent && predictionIsValid && output && output.startsWith('http')) {
+            // Validate image URL is still accessible
+            try {
+              const response = await fetch(output, { method: 'HEAD' });
+              if (response.ok) {
+                console.log('📝 [EXPLORE] Executing pending Quick Edit recovery:', predictionId);
+                await AsyncStorage.removeItem('pendingQuickEditRecovery');
+                
+                const { setResult } = useQuickEditStore.getState();
+                setResult(predictionId, output);
+                useQuickEditStore.setState({ visible: true });
+                console.log('✅ [EXPLORE] Quick Edit Sheet opened with recovered result');
+              } else {
+                // URL expired - silently cleanup
+                await AsyncStorage.removeItem('pendingQuickEditRecovery');
+                await AsyncStorage.removeItem('activePredictionId');
+              }
+            } catch {
+              // URL validation failed - silently cleanup
+              await AsyncStorage.removeItem('pendingQuickEditRecovery');
+              await AsyncStorage.removeItem('activePredictionId');
+            }
+          } else {
+            // Stale, invalid, or malformed - silently cleanup
+            await AsyncStorage.removeItem('pendingQuickEditRecovery');
+            if (!predictionIsValid) {
+              await AsyncStorage.removeItem('activePredictionId');
+            }
           }
         }
       } catch (error) {
-        console.warn('⚠️ [EXPLORE] Failed to check pending recovery navigation:', error);
+        console.warn('⚠️ [EXPLORE] Failed to check pending recovery:', error);
       }
     };
 

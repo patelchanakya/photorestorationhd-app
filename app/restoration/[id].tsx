@@ -96,6 +96,15 @@ export default function RestorationScreen() {
       }
       
       setRestoration(data);
+      
+      // If this is a completed restoration being shown to user, clear activePredictionId
+      // to prevent recovery system from showing it again
+      if (data && data.status === 'completed' && (data.restored_filename || data.replicate_url)) {
+        await AsyncStorage.removeItem('activePredictionId');
+        if (__DEV__) {
+          console.log('🧹 [RECOVERY] Cleared prediction state - completed restoration shown to user');
+        }
+      }
     } catch (error) {
       console.error('Failed to load restoration:', error);
       Alert.alert('Error', 'Failed to load restoration details');
