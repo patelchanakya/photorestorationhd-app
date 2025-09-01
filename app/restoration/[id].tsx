@@ -1,35 +1,38 @@
 import { BeforeAfterSlider } from '@/components/BeforeAfterSlider';
-import { ProcessingScreen } from '@/components/ProcessingScreen';
+import { SavingModal, type SavingModalRef } from '@/components/SavingModal';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
+import { type FunctionType } from '@/services/photoGenerationV2';
 import { photoStorage } from '@/services/storage';
 import { restorationService } from '@/services/supabase';
-import { useRestorationStore } from '@/store/restorationStore';
+import { useCropModalStore } from '@/store/cropModalStore';
+import { useQuickEditStore } from '@/store/quickEditStore';
 import { useRestorationScreenStore } from '@/store/restorationScreenStore';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
-import * as Haptics from 'expo-haptics';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useRestorationStore } from '@/store/restorationStore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
-import React, { useCallback, useEffect } from 'react';
+import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router, useLocalSearchParams } from 'expo-router';
+import * as StoreReview from 'expo-store-review';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActionSheetIOS,
-  ActivityIndicator,
-  Alert,
-  Dimensions,
-  FlatList,
-  Image,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  Share,
-  Text,
-  TouchableOpacity,
-  View,
+    ActionSheetIOS,
+    ActivityIndicator,
+    Alert,
+    Dimensions,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    Share,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
-const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
 // Get screen dimensions for responsive design
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -37,7 +40,7 @@ const isSmallDevice = SCREEN_WIDTH < 375;
 const isTinyDevice = SCREEN_HEIGHT < 700;
 
 export default function RestorationScreen() {
-  const { id, imageUri, functionType, imageSource } = useLocalSearchParams();
+  const { id, imageUri, functionType, imageSource, customPrompt } = useLocalSearchParams();
   
   // Use Zustand store for all state management
   const {
@@ -45,8 +48,6 @@ export default function RestorationScreen() {
     setRestoration,
     loading,
     setLoading,
-    downloadText,
-    setDownloadText,
     allRestorations,
     setAllRestorations,
     isNavigating,
@@ -62,7 +63,10 @@ export default function RestorationScreen() {
   const photoRestoration = usePhotoRestoration();
   const decrementRestorationCount = useRestorationStore((state) => state.decrementRestorationCount);
   const simpleSlider = useRestorationStore((state) => state.simpleSlider);
-  const { isPro } = useSubscriptionStore();
+  const totalRestorations = useRestorationStore((state) => state.totalRestorations);
+  const hasShownRatingPrompt = useRestorationStore((state) => state.hasShownRatingPrompt);
+  const setHasShownRatingPrompt = useRestorationStore((state) => state.setHasShownRatingPrompt);
+  const { isPro } = useRevenueCat();
   
   // Check if this is a new restoration request
   const isNewRestoration = !!imageUri && !!functionType;
@@ -74,41 +78,33 @@ export default function RestorationScreen() {
     };
   }, [resetState]);
   
-  // Animation values for the save button
-  const buttonScale = useSharedValue(1);
-  const iconScale = useSharedValue(1);
-  const iconRotation = useSharedValue(0);
-  const successBackground = useSharedValue(0);
+  // Saving modal state
+  const [showSavingModal, setShowSavingModal] = useState(false);
+  const savingModalRef = useRef<SavingModalRef>(null);
 
-  
-  // Animated styles for save button
-  const animatedButtonStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: buttonScale.value }],
-    };
-  });
-
-  const animatedIconStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        { scale: iconScale.value },
-        { rotate: `${iconRotation.value}deg` }
-      ],
-    };
-  });
-
-
-
-  const animatedSuccessStyle = useAnimatedStyle(() => {
-    return {
-      backgroundColor: successBackground.value === 1 ? '#10b981' : '#f97316',
-    };
-  });
 
   const loadRestoration = useCallback(async () => {
     try {
-      const data = await restorationService.getById(id as string);
+      let data = await restorationService.getById(id as string);
+      
+      // If not found by restoration ID, try prediction ID (for recovery system)
+      if (!data) {
+        if (__DEV__) {
+          console.log('🔍 Restoration not found by ID, trying prediction ID:', id);
+        }
+        data = await restorationService.getByPredictionId(id as string);
+      }
+      
       setRestoration(data);
+      
+      // If this is a completed restoration being shown to user, clear activePredictionId
+      // to prevent recovery system from showing it again
+      if (data && data.status === 'completed' && (data.restored_filename || data.replicate_url)) {
+        await AsyncStorage.removeItem('activePredictionId');
+        if (__DEV__) {
+          console.log('🧹 [RECOVERY] Cleared prediction state - completed restoration shown to user');
+        }
+      }
     } catch (error) {
       console.error('Failed to load restoration:', error);
       Alert.alert('Error', 'Failed to load restoration details');
@@ -134,43 +130,142 @@ export default function RestorationScreen() {
     }
   }, [id]);
 
+  const { setIsProcessing, setProgress, setCanCancel, setCurrentImageUri } = useCropModalStore();
+  
+  // Clean up text-edit context and flow flag if this restoration came from text-edits
+  useEffect(() => {
+    const cleanupTextEditContext = async () => {
+      if (id) {
+        try {
+          const contextKey = `textEditContext_${id}`;
+          const context = await AsyncStorage.getItem(contextKey);
+          if (context) {
+            await AsyncStorage.removeItem(contextKey);
+            if (__DEV__) {
+              console.log('🧹 [RESTORATION] Cleaned up text-edit context for prediction:', id);
+            }
+          }
+          
+          // Also clear the text-edits flow flag
+          await AsyncStorage.removeItem('isTextEditsFlow');
+          if (__DEV__) {
+            console.log('🧹 [RESTORATION] Cleaned up text-edits flow flag');
+          }
+        } catch (error) {
+          if (__DEV__) {
+            console.warn('⚠️ [RESTORATION] Failed to cleanup text-edit context:', error);
+          }
+        }
+      }
+    };
+    
+    cleanupTextEditContext();
+  }, [id]);
+  
   useEffect(() => {
     if (isNewRestoration) {
-      // Start restoration process for new images
+      const isVideoGeneration = functionType === 'backtolife';
+      
+      // Start processing with simple store
+      setIsProcessing(true);
+      setCurrentImageUri(imageUri as string);
+      setProgress(0);
+      setCanCancel(isVideoGeneration); // Only videos can be cancelled
+      
+      if (__DEV__) {
+        console.log(`🚀 Started ${isVideoGeneration ? 'video' : 'photo'} processing`);
+      }
+      
+      const startTime = Date.now();
+      const estimatedDuration = isVideoGeneration ? 120 : 7; // seconds
+      
+      // Simple progress timer
+      let progressIntervalId: ReturnType<typeof setInterval> | null = null;
+      progressIntervalId = setInterval(() => {
+        const elapsed = (Date.now() - startTime) / 1000;
+        const progress = Math.min(Math.floor((elapsed / estimatedDuration) * 95), 95);
+        setProgress(progress);
+        
+        if (__DEV__ && progress % 10 === 0) {
+          console.log(`📊 Progress: ${progress}%`);
+        }
+      }, 1000);
+      
+      // Start the actual processing in background
       photoRestoration.mutate({
         imageUri: imageUri as string,
-        functionType: functionType as 'restoration' | 'unblur' | 'colorize',
-        imageSource: (imageSource as 'camera' | 'gallery') || 'gallery'
+        functionType: functionType as FunctionType,
+        imageSource: (imageSource as 'camera' | 'gallery') || 'gallery',
+        customPrompt: customPrompt ? decodeURIComponent(customPrompt as string) : undefined
       });
+
+      // Cleanup progress timer on unmount or effect re-run
+      return () => {
+        if (progressIntervalId) {
+          clearInterval(progressIntervalId);
+        }
+      };
     } else {
       // Load existing restoration
       loadRestoration();
       loadAllRestorations();
     }
-  }, [isNewRestoration, imageUri, functionType, imageSource, loadRestoration, loadAllRestorations]);
+  }, [isNewRestoration, imageUri, functionType, imageSource, customPrompt, loadRestoration, loadAllRestorations]);
   
   // Handle restoration success
   useEffect(() => {
     if (photoRestoration.isSuccess && photoRestoration.data) {
       const restorationData = photoRestoration.data;
       
-      // Immediately complete the progress animation
-      completeProcessing();
-      
-      // Add a small delay to show 100% completion before redirecting
+      // Complete processing with 100% progress
+      setProgress(100);
       setTimeout(() => {
-        // Navigate to the completed restoration view
-        router.replace(`/restoration/${restorationData.id}`);
-      }, 800); // 800ms delay to show completion
+        setIsProcessing(false);
+      }, 500); // Brief delay to show 100% completion
+      
+      // Check if this is a video result
+      const isVideoResult = (restorationData as any).videoFilename;
+      
+      // Video usage tracking is handled server-side by webhook system
+      const isBackToLifeMode = functionType === 'backtolife';
+      
+      if (isBackToLifeMode && __DEV__) {
+        console.log('🎥 Back to Life video completed - usage already tracked server-side');
+      }
+      
+      // Stay on current restoration page - results are shown inline
+      if (__DEV__) {
+        console.log('✅ Restoration completed, results shown inline');
+      }
+      
+      // Check if we should show rating prompt (after 3rd restoration)
+      if (totalRestorations >= 3 && !hasShownRatingPrompt) {
+        // Additional delay to let the restoration screen load
+        setTimeout(async () => {
+          if (await StoreReview.hasAction()) {
+            await StoreReview.requestReview();
+            setHasShownRatingPrompt(true);
+            if (__DEV__) {
+              console.log('📱 Showed rating prompt after 3rd restoration');
+            }
+          }
+        }, 1200); // Wait 1.2s after navigation
+      }
     }
-  }, [photoRestoration.isSuccess, photoRestoration.data, completeProcessing]);
+  }, [photoRestoration.isSuccess, photoRestoration.data, functionType, totalRestorations, hasShownRatingPrompt, setHasShownRatingPrompt]);
   
   // Clear progress immediately when error occurs
   useEffect(() => {
     if (photoRestoration.isError) {
       clearProcessingProgress();
+      setIsProcessing(false);
+      Alert.alert(
+        'Processing Failed',
+        photoRestoration.error?.message || 'Something went wrong. Please try again.',
+        [{ text: 'OK' }]
+      );
     }
-  }, [photoRestoration.isError, clearProcessingProgress]);
+  }, [photoRestoration.isError, photoRestoration.error, clearProcessingProgress, setIsProcessing]);
   
   // Check if files exist when viewing existing restoration
   useEffect(() => {
@@ -200,65 +295,50 @@ export default function RestorationScreen() {
     checkFiles();
   }, [restoration, isNewRestoration, setFilesExist]);
 
-  // Reset animation function
-  const resetAnimation = () => {
-    setDownloadText('Save');
+  // Helper function to clear active prediction state
+  const clearActivePrediction = async () => {
+    await AsyncStorage.removeItem('activePredictionId');
+    if (__DEV__) {
+      console.log('🧹 [RECOVERY] Cleared prediction state after user action');
+    }
+  };
+
+  // Handler for dismissing the screen (back navigation)  
+  const handleDismiss = async () => {
+    await clearActivePrediction();
+    router.dismissTo('/explore');
   };
 
   const handleExport = async () => {
-    if (!restoration?.restored_filename) return;
+    if (!restoration || !restoredUri) return;
 
     try {
-      // Start animation sequence
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      
-      // Button press animation
-      buttonScale.value = withSequence(
-        withTiming(0.9, { duration: 100 }),
-        withSpring(1.05, { damping: 15 })
-      );
-      
-      // Icon animation - bounce and rotate
-      iconScale.value = withSequence(
-        withTiming(1.2, { duration: 150 }),
-        withSpring(1, { damping: 10 })
-      );
-      
-      iconRotation.value = withSequence(
-        withTiming(10, { duration: 100 }),
-        withTiming(-10, { duration: 100 }),
-        withTiming(0, { duration: 100 })
-      );
-      
-      
-      // Change text
-      runOnJS(setDownloadText)('Saving...');
-      
-      const uri = photoStorage.getPhotoUri('restored', restoration.restored_filename);
-      await photoStorage.exportToCameraRoll(uri);
-      
-      // Success feedback
-      buttonScale.value = withSequence(
-        withTiming(1.05, { duration: 100 }),
-        withSpring(1, { damping: 10 })
-      );
+      // Show saving modal
+      setShowSavingModal(true);
       
       // Haptic feedback
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      
+      // Use the determined URI (could be local file or Replicate URL)
+      await photoStorage.exportToCameraRoll(restoredUri);
+      
+      // Success haptic feedback
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       
-      // Show success text
-      runOnJS(setDownloadText)('Saved!');
+      // Trigger success state in modal
+      savingModalRef.current?.showSuccess();
       
-      // Reset after delay
-      setTimeout(() => {
-        setDownloadText('Save');
-      }, 1500);
+      // Clear active prediction state since user has saved the result
+      await clearActivePrediction();
       
     } catch (err: any) {
+      console.error('Failed to save photo to camera roll:', err);
+      
+      // Hide modal on error
+      setShowSavingModal(false);
+      
       // Error feedback
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      runOnJS(resetAnimation)();
-      console.error('Failed to save photo to camera roll:', err);
       
       // Check if it's a permission or Expo Go error
       if (err.message?.includes('NSPhotoLibraryAddUsageDescription') || 
@@ -294,14 +374,16 @@ export default function RestorationScreen() {
   };
 
   const handleShare = async () => {
-    if (!restoration?.restored_filename) return;
+    if (!restoration || !restoredUri) return;
 
     try {
-      const uri = photoStorage.getPhotoUri('restored', restoration.restored_filename);
       await Share.share({
-        url: uri,
+        url: restoredUri,
         message: 'Check out my restored photo!',
       });
+      
+      // Clear active prediction state since user has shared the result
+      await clearActivePrediction();
     } catch (error) {
       console.error('Failed to share photo:', error);
       Alert.alert('Error', 'Failed to share photo');
@@ -386,20 +468,13 @@ export default function RestorationScreen() {
     );
   }
 
-  // Show loading state for new restorations or while loading existing ones
-  if (loading || photoRestoration.isPending) {
-    // For new restorations, use the enhanced processing screen (only if no error)
-    if (isNewRestoration && functionType && !photoRestoration.isError) {
-      return (
-        <ProcessingScreen
-          functionType={functionType as 'restoration' | 'unblur' | 'colorize'}
-          isProcessing={photoRestoration.isPending}
-          isError={photoRestoration.isError}
-        />
-      );
-    }
-    
-    // For loading existing restorations, use simple loading
+  // Don't show any loading screen for new restorations - JobContext handles UI
+  if (isNewRestoration) {
+    return null; // JobContext components (PhotoProcessingModal/VideoProcessingToast) handle the UI
+  }
+  
+  // Show loading state only for existing restorations being loaded
+  if (loading) {
     return (
       <View className="flex-1 bg-gray-100 justify-center items-center px-6">
         <ActivityIndicator size="large" color="#f97316" />
@@ -411,42 +486,132 @@ export default function RestorationScreen() {
   }
 
 
-  if (!restoration || restoration.status !== 'completed') {
+  // Allow rendering if we have restoration data, even if status isn't 'completed' 
+  // Recovery system might navigate here before local status is updated
+  if (!restoration) {
     return (
       <View className="flex-1 bg-gray-100 justify-center items-center">
         <Text className="text-gray-800 text-lg">
-          Restoration not found or still processing
+          Restoration not found
+        </Text>
+      </View>
+    );
+  }
+  
+  // If status is not completed but we have restoration data, check if we have output URLs
+  const hasOutputUrl = restoration.replicate_url || restoration.video_replicate_url;
+  
+  if (restoration.status !== 'completed' && !hasOutputUrl) {
+    return (
+      <View className="flex-1 bg-gray-100 justify-center items-center">
+        <Text className="text-gray-800 text-lg">
+          Still processing...
         </Text>
       </View>
     );
   }
 
   const originalUri = restoration ? photoStorage.getPhotoUri('original', restoration.original_filename) : '';
-  const restoredUri = restoration?.restored_filename
-    ? photoStorage.getPhotoUri('restored', restoration.restored_filename)
-    : null;
+  
+  // Determine the best URI to display: Replicate URL first, then local files when ready
+  const getRestoredUri = () => {
+    if (!restoration) return null;
+    
+    // If local files are ready, use local file (best quality, offline available)
+    if (restoration.local_files_ready && restoration.restored_filename) {
+      return photoStorage.getPhotoUri('restored', restoration.restored_filename);
+    }
+    
+    // If video, check for video Replicate URL
+    if (restoration.video_replicate_url) {
+      return restoration.video_replicate_url;
+    }
+    
+    // If image, check for image Replicate URL
+    if (restoration.replicate_url) {
+      return restoration.replicate_url;
+    }
+    
+    // Fallback to local file if available (legacy support)
+    if (restoration.restored_filename) {
+      return photoStorage.getPhotoUri('restored', restoration.restored_filename);
+    }
+    
+    return null;
+  };
+  
+  const restoredUri = getRestoredUri();
+  const isUsingReplicateUrl = restoration && (
+    (restoration.replicate_url && !restoration.local_files_ready) || 
+    (restoration.video_replicate_url && !restoration.local_files_ready)
+  );
 
   // Debug logging
-  console.log('🖼️ Original URI:', originalUri);
-  console.log('🖼️ Restored URI:', restoredUri);
+  if (__DEV__) {
+    console.log('🖼️ Original URI:', originalUri);
+    console.log('🖼️ Restored URI:', restoredUri);
+    console.log('🔗 Using Replicate URL:', isUsingReplicateUrl);
+    console.log('📁 Local files ready:', restoration?.local_files_ready);
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaView className="flex-1 bg-white">
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#0B0B0F' }}>
         {/* Clean Header */}
-        <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-100">
-          <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2">
-            <IconSymbol name="chevron.left" size={isSmallDevice ? 20 : 24} color="#000" />
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)' }}>
+          <TouchableOpacity onPress={handleDismiss} style={{ padding: 8, marginLeft: -8 }}>
+            <IconSymbol name="chevron.left" size={isSmallDevice ? 20 : 24} color="#EAEAEA" />
           </TouchableOpacity>
-          <View className="flex-1 mx-2">
-            <Text className={`${isSmallDevice ? 'text-sm' : 'text-base'} font-semibold text-gray-900 text-center`} numberOfLines={1}>
-              {restoration?.function_type === 'unblur' ? 'Unblurred Photo' : 
+          <View style={{ flex: 1, marginHorizontal: 8 }}>
+            <Text style={{ fontSize: isSmallDevice ? 14 : 16, fontWeight: '600', color: '#FFFFFF', textAlign: 'center' }} numberOfLines={1}>
+              {restoration?.function_type === 'repair' ? 'Repaired Photo' :
+               restoration?.function_type === 'unblur' ? 'Enhanced Photo' : 
                restoration?.function_type === 'colorize' ? 'Colorized Photo' : 
-               restoration?.function_type === 'descratch' ? 'Descratched Photo' : 'Auto Restored Photo'}
+               restoration?.function_type === 'descratch' ? 'Restored Photo' : 
+               restoration?.function_type === 'enlighten' ? 'Brightened Photo' :
+               restoration?.function_type === 'outfit' ? 'Outfit Changed' :
+               restoration?.function_type === 'background' ? 'Background Changed' :
+               restoration?.function_type === 'custom' ? 'Edited Photo' :
+               (restoration?.function_type as any) === 'water_damage' ? 'Water Damage Fixed' :
+               'Enhanced Photo'}
             </Text>
           </View>
-          <TouchableOpacity onPress={showDeleteActionSheet} className="p-2 -mr-2">
-            <IconSymbol name="trash" size={isSmallDevice ? 18 : 20} color="#ef4444" />
+          {/* Small camera icon for taking another photo with same mode */}
+          <TouchableOpacity 
+            onPress={async () => {
+              if (isNavigating) return;
+              setIsNavigating(true);
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              
+              // Open image picker to select new photo for same function type
+              const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
+              if (res.status !== 'granted') {
+                setIsNavigating(false);
+                return;
+              }
+              
+              const result = await ImagePicker.launchImageLibraryAsync({ 
+                mediaTypes: ['images'], 
+                allowsEditing: false, 
+                quality: 1 
+              });
+              
+              if (!result.canceled && result.assets[0]) {
+                // Use QuickEditSheet with same function type and custom prompt if applicable
+                const currentFunctionType = restoration?.function_type || functionType || 'restoration';
+                const prompt = customPrompt ? decodeURIComponent(customPrompt as string) : undefined;
+                useQuickEditStore.getState().openWithImage({
+                  functionType: currentFunctionType as any,
+                  imageUri: result.assets[0].uri,
+                  customPrompt: prompt
+                });
+              } else {
+                setIsNavigating(false);
+              }
+            }}
+            style={{ padding: 8, marginRight: -8 }}
+          >
+            <IconSymbol name="camera" size={isSmallDevice ? 18 : 20} color="#9ca3af" />
           </TouchableOpacity>
         </View>
 
@@ -459,7 +624,7 @@ export default function RestorationScreen() {
               The photo files have been deleted or moved. This restoration record will be cleaned up.
             </Text>
             <TouchableOpacity 
-              onPress={() => router.back()}
+              onPress={handleDismiss}
               className="bg-blue-500 px-6 py-3 rounded-full"
             >
               <Text className="text-white font-semibold">Go Back</Text>
@@ -470,13 +635,13 @@ export default function RestorationScreen() {
         {/* Main Content - ScrollView for small screens */}
         {filesExist && (
         <ScrollView 
-          className="flex-1"
+          style={{ flex: 1 }}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ flexGrow: 1 }}
         >
-          <View className="flex-1 px-4">
+          <View style={{ flex: 1, paddingHorizontal: 16 }}>
             {/* Before/After Slider */}
-            <View className={`${isTinyDevice ? 'py-4' : 'flex-1 justify-center'}`}>
+            <View style={{ paddingVertical: isTinyDevice ? 16 : 0, flex: isTinyDevice ? 0 : 1, justifyContent: isTinyDevice ? 'flex-start' : 'center' }}>
               <BeforeAfterSlider
                 beforeUri={originalUri}
                 afterUri={restoredUri || originalUri}
@@ -485,144 +650,91 @@ export default function RestorationScreen() {
               />
             </View>
 
-            {/* Primary Actions */}
-            <View className={`${isTinyDevice ? 'pb-2' : 'pb-3'}`}>
-              {/* Save & Share Buttons - Clean Row */}
-              <View className={`flex-row ${isSmallDevice ? 'gap-2' : 'gap-3'} ${isTinyDevice ? 'mb-2' : 'mb-3'}`}>
-                {/* Save Button */}
-                <AnimatedTouchableOpacity
-                  style={[
-                    {
-                      flex: 1,
-                      height: isSmallDevice ? 48 : 52,
-                      borderRadius: 14,
-                      backgroundColor: '#f97316',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexDirection: 'row',
-                      position: 'relative',
-                    },
-                    animatedButtonStyle,
-                    animatedSuccessStyle,
-                  ]}
-                  onPress={handleExport}
-                >
-                  {/* Simple icon and text */}
-                  <Animated.View style={animatedIconStyle}>
-                    <IconSymbol name="arrow.down.circle.fill" size={isSmallDevice ? 20 : 22} color="#fff" />
-                  </Animated.View>
-                  <Text style={{ color: '#fff', fontSize: isSmallDevice ? 14 : 16, fontWeight: '600', marginLeft: 6 }}>
-                    {downloadText}
-                  </Text>
-                </AnimatedTouchableOpacity>
-
-                {/* Share Button */}
+            {/* Primary Actions - 70/30 split */}
+            <View style={{ paddingBottom: isTinyDevice ? 16 : 24 }}>
+              <View className="flex-row" style={{ gap: 8 }}>
+                {/* Save Button - 70% width */}
                 <TouchableOpacity
-                  className={`flex-1 ${isSmallDevice ? 'h-[48px]' : 'h-[52px]'} bg-gray-100 rounded-[14px] flex-row items-center justify-center active:scale-95`}
-                  onPress={handleShare}
+                  style={{
+                    flex: 7,
+                    height: 56,
+                    borderRadius: 28,
+                    overflow: 'hidden',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexDirection: 'row',
+                  }}
+                  onPress={handleExport}
+                  activeOpacity={0.8}
                 >
-                  <IconSymbol name="square.and.arrow.up" size={isSmallDevice ? 18 : 20} color="#374151" />
-                  <Text className={`text-gray-700 font-semibold ${isSmallDevice ? 'text-sm' : 'text-base'} ml-1.5`}>Share</Text>
+                  <LinearGradient
+                    colors={['#FF7A00', '#FFB54D']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={{
+                      position: 'absolute',
+                      left: 0,
+                      right: 0,
+                      top: 0,
+                      bottom: 0,
+                    }}
+                  />
+                  <View>
+                    <IconSymbol 
+                      name="arrow.down.circle.fill" 
+                      size={22} 
+                      color="#fff" 
+                    />
+                  </View>
+                  <Text style={{ 
+                    color: '#fff', 
+                    fontSize: 16, 
+                    fontWeight: '700', 
+                    marginLeft: 8,
+                    letterSpacing: 0.3
+                  }}>
+                    Save to Photos
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Share Button - 30% width */}
+                <TouchableOpacity
+                  style={{
+                    flex: 3,
+                    height: 56,
+                    borderRadius: 28,
+                    backgroundColor: 'rgba(255,255,255,0.1)',
+                    borderWidth: 1,
+                    borderColor: 'rgba(255,255,255,0.2)',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  onPress={handleShare}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{
+                    color: '#fff',
+                    fontSize: 16,
+                    fontWeight: '600',
+                    letterSpacing: 0.3
+                  }}>
+                    Share
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
 
-            {/* Bottom Section */}
-            <View className={`${isTinyDevice ? 'pb-3' : 'pb-4'}`}>
-              {/* Restore Another Photo Button */}
-              <TouchableOpacity
-                className={`w-full ${isSmallDevice ? 'h-12' : 'h-14'} bg-gray-900 rounded-2xl items-center justify-center flex-row active:scale-95`}
-            onPress={async () => {
-              // Prevent multiple rapid taps
-              if (isNavigating) return;
-              
-              setIsNavigating(true);
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-              
-              // Simply dismiss all modals and go back to the camera (home screen)
-              if (router.canGoBack()) {
-                router.dismissAll();
-              } else {
-                // If we can't go back, replace with home
-                router.replace('/');
-              }
-              
-              // Reset navigation state after a delay
-              setTimeout(() => setIsNavigating(false), 1000);
-            }}
-          >
-                <IconSymbol name="camera" size={isSmallDevice ? 18 : 20} color="#fff" />
-                <Text className={`text-white font-semibold ${isSmallDevice ? 'text-sm' : 'text-base'} ml-2`}>
-                  Take Another Photo
-                </Text>
-              </TouchableOpacity>
-
-              {/* Other Restorations */}
-              {allRestorations.length > 0 && (
-                <View className={`${isTinyDevice ? 'mt-4' : 'mt-6'}`}>
-                  <Text className={`text-gray-700 ${isSmallDevice ? 'text-xs' : 'text-sm'} font-medium ${isTinyDevice ? 'mb-2' : 'mb-3'}`}>
-                    Recent Restorations
-                  </Text>
-                  <FlatList
-                    data={allRestorations}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    keyExtractor={(item) => item.id}
-                    removeClippedSubviews={true}
-                    initialNumToRender={5}
-                    maxToRenderPerBatch={3}
-                    windowSize={5}
-                    getItemLayout={(data, index) => ({
-                      length: isSmallDevice ? 58 : 70,
-                      offset: (isSmallDevice ? 58 : 70) * index,
-                      index,
-                    })}
-                    renderItem={({ item }) => {
-                      const thumbnailSize = isSmallDevice ? 50 : 60;
-                      return (
-                        <TouchableOpacity
-                          className={`${isSmallDevice ? 'mr-2' : 'mr-3'} active:scale-95`}
-                  onPress={() => {
-                    // Prevent navigating to the same restoration
-                    if (item.id === id) return;
-                    
-                    // Prevent multiple rapid taps
-                    if (isNavigating) return;
-                    
-                    setIsNavigating(true);
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    
-                    // Replace instead of push to avoid stacking
-                    router.replace(`/restoration/${item.id}`);
-                    
-                    // Reset navigation state after a delay
-                    setTimeout(() => setIsNavigating(false), 1000);
-                  }}
-                >
-                  <View className={`rounded-lg overflow-hidden ${item.id === id ? 'border-2 border-orange-500' : 'border border-gray-200'}`}>
-                    <Image
-                              source={{ uri: item.thumbnail_filename 
-                                ? photoStorage.getPhotoUri('thumbnail', item.thumbnail_filename)
-                                : photoStorage.getPhotoUri('restored', item.restored_filename!)
-                              }}
-                              style={{ width: thumbnailSize, height: thumbnailSize, opacity: item.id === id ? 0.6 : 1 }}
-                              className="rounded-lg"
-                            />
-                            {item.id === id && (
-                              <View className="absolute inset-0 bg-orange-500/20 rounded-lg" />
-                            )}
-                          </View>
-                        </TouchableOpacity>
-                      );
-                    }}
-                    contentContainerStyle={{ paddingRight: 16 }}
-                  />
-                </View>
-              )}
-            </View>
+            {/* Bottom Section - Removed */}
           </View>
         </ScrollView>
         )}
+        
+        {/* Saving Modal */}
+        <SavingModal 
+          ref={savingModalRef}
+          visible={showSavingModal} 
+          onComplete={() => setShowSavingModal(false)}
+        />
       </SafeAreaView>
     </GestureHandlerRootView>
   );

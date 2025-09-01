@@ -2,19 +2,50 @@
   "expo": {
     "name": "Clever",
     "slug": "photorestorationhd-app",
-    "version": "1.0.4",
+    "version": "2.0.1",
+    "sdkVersion": "53.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "photorestorationhdapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
+    "jsEngine": "hermes",
+    "splash": {
+      "image": "./assets/images/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
+    "assetBundlePatterns": [
+      "assets/images/*",
+      "assets/fonts/*",
+      "assets/videos/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.chanakyap.photorestorationhdapp",
+      "buildNumber": "49",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSPhotoLibraryAddUsageDescription": "This app needs access to your photo library to save restored photos.",
-        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to select and save photos."
+        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to select and save photos.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false,
+          "NSAllowsArbitraryLoadsInWebContent": false,
+          "NSExceptionDomains": {
+            "supabase.co": {
+              "NSIncludesSubdomains": true,
+              "NSTemporaryExceptionRequiresForwardSecrecy": false
+            },
+            "replicate.com": {
+              "NSIncludesSubdomains": true,
+              "NSTemporaryExceptionRequiresForwardSecrecy": false
+            },
+            "replicate.delivery": {
+              "NSIncludesSubdomains": true,
+              "NSTemporaryExceptionRequiresForwardSecrecy": false
+            }
+          }
+        }
       },
       "storeKitConfiguration": "./PastPix.storekit"
     },
@@ -40,7 +71,8 @@
         }
       ],
       "expo-secure-store",
-      "expo-localization"
+      "expo-localization",
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true
@@ -50,6 +82,25 @@
       "eas": {
         "projectId": "1e1e5fa5-1114-4591-9765-2534344ca453"
       }
+    },
+    "android": {
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_MEDIA_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_MEDIA_LOCATION"
+      ],
+      "package": "com.chanakyap.photorestorationhdapp"
+    },
+    "runtimeVersion": "2.0.1",
+    "updates": {
+      "url": "https://u.expo.dev/1e1e5fa5-1114-4591-9765-2534344ca453"
     }
   }
 }

@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Restoration } from '../types';
+import { photoStorage } from './storage';
 
 // This service now uses AsyncStorage exclusively for offline-first functionality
 // No Supabase dependency required
@@ -15,7 +16,6 @@ export const localStorageHelpers = {
         // Check if thumbnail exists
         let hasFiles = false;
         if (restoration.thumbnail_filename) {
-          const { photoStorage } = await import('./storage');
           hasFiles = await photoStorage.checkPhotoExists('thumbnail', restoration.thumbnail_filename);
         }
         
@@ -32,7 +32,6 @@ export const localStorageHelpers = {
       
       // Clear restoration cache if any records were cleaned
       if (cleanedCount > 0) {
-        const { restorationService } = await import('./supabase');
         restorationService.clearRestorationCache();
       }
       
@@ -174,17 +173,17 @@ export const localStorageHelpers = {
 
 // Restoration database operations (now using AsyncStorage only)
 export const restorationService = {
-  // Create a new restoration record
-  async create(data: Partial<Restoration>): Promise<Restoration> {
+  // Create a new restoration record with prediction ID as primary identifier
+  async create(data: Partial<Restoration> & { prediction_id: string }): Promise<Restoration> {
     // Clear cache when creating new restoration
     this.clearRestorationCache();
     if (__DEV__) {
-      console.log('💾 Creating restoration record locally:', data);
+      console.log('💾 Creating restoration record with prediction ID:', data.prediction_id);
     }
     
-    // Always create with a local ID
+    // Use prediction ID as the primary ID - no more local restoration IDs
     const restoration = {
-      id: `restoration-${Date.now()}`,
+      id: data.prediction_id,
       user_id: data.user_id || 'anonymous',
       original_filename: data.original_filename || '',
       restored_filename: data.restored_filename,
@@ -196,12 +195,13 @@ export const restorationService = {
       error_message: data.error_message,
       prediction_id: data.prediction_id,
       function_type: data.function_type || 'restoration',
+      custom_prompt: data.custom_prompt, // Add custom_prompt field for Photo Magic detection
     } as Restoration;
 
-    // Save to local storage
+    // Save to local storage using prediction ID as key
     await localStorageHelpers.saveRestoration(restoration);
     if (__DEV__) {
-      console.log('✅ Restoration saved locally:', restoration.id);
+      console.log('✅ Restoration saved locally with prediction ID:', restoration.id);
     }
     
     return restoration;
@@ -245,6 +245,35 @@ export const restorationService = {
     }
     
     return restoration;
+  },
+
+  // Get restoration by prediction ID (for recovery system)
+  async getByPredictionId(predictionId: string): Promise<Restoration | null> {
+    if (__DEV__) {
+      console.log('🔍 Getting restoration by prediction ID:', predictionId);
+    }
+    
+    try {
+      const allRestorations = await localStorageHelpers.getAllLocalRestorations();
+      const restoration = allRestorations.find(r => r.prediction_id === predictionId);
+      
+      if (restoration) {
+        if (__DEV__) {
+          console.log('✅ Restoration found by prediction ID:', predictionId, '-> ID:', restoration.id);
+        }
+      } else {
+        if (__DEV__) {
+          console.log('⚠️ Restoration not found by prediction ID:', predictionId);
+        }
+      }
+      
+      return restoration || null;
+    } catch (error) {
+      if (__DEV__) {
+        console.error('❌ Error finding restoration by prediction ID:', error);
+      }
+      return null;
+    }
   },
 
   // Cache for restoration data

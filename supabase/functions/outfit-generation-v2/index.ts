@@ -1,0 +1,238 @@
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import Replicate from "https://esm.sh/replicate@1.0.1";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+interface OutfitRequest {
+  image_data: string; // base64 image
+  custom_prompt?: string;
+  style_key?: string; // Specific outfit style (outfit-1, outfit-2, etc.)
+  user_id?: string; // For usage tracking
+}
+
+// Outfit style prompts from AnimatedOutfits.tsx
+const OUTFIT_STYLES: Record<string, { title: string; prompt: string }> = {
+  'outfit-1': {
+    title: 'Fix Clothes',
+    prompt: "Clean ALL clothing completely. Remove ALL stains and dirt from shirt, pants, dress, everything. Keep same colors. Keep same style. Only clean, nothing else changes."
+  },
+  'outfit-2': {
+    title: 'Change Color',
+    prompt: "Keep the subject's clothing design, texture, shape, and style exactly the same, but change the color to a random, attractive color that looks natural and flattering. Avoid overly bright or obnoxious colors - choose something stylish and wearable. Make sure the new color appears natural under the existing lighting and shadows. Do not alter the subject's face, hair, background, accessories, or any other aspect of the photo - only change the clothing color."
+  },
+  'outfit-3': {
+    title: 'Job Interview',
+    prompt: "Replace the subject's clothing with smart business casual attire suitable for a job interview: a nice blazer with dark jeans or smart trousers, or a professional dress that's approachable and friendly. Use neutral, professional colors that look confident but not intimidating. Keep the subject's face, hairstyle, pose, lighting, and background unchanged. Ensure clothing appears realistic with natural fabric folds and texture."
+  },
+  'outfit-4': {
+    title: 'Wedding Outfit',
+    prompt: "Replace clothing with wedding attire. Preserve exact head position of all subjects, specifically keeping facial features and head positioning the same, along with pose, background, and lighting. Do not alter any other elements of the image."
+  },
+  'outfit-5': {
+    title: 'Professional',
+    prompt: "Replace ALL of the subject's clothing with a complete professional outfit: a well-tailored black suit with white dress shirt and tie for men, or an elegant professional dress or suit for women. This includes replacing shirts, pants, shorts, dresses, skirts - EVERY piece of clothing. Keep the subject's facial features, hairstyle, pose, lighting, and background exactly the same. Ensure the entire outfit is cohesive, properly fitted, and has natural fabric folds and realistic texture under the existing lighting."
+  },
+  'outfit-6': {
+    title: 'Casual Day',
+    prompt: "Change the subject's clothing to casual, comfortable wear such as a t-shirt and jeans or a relaxed summer outfit. Keep the subject's face, hairstyle, pose, lighting, and background unchanged. Ensure the clothing appears soft, naturally worn, and fits realistically with natural fabric folds and textures."
+  }
+}
+
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
+  let user_id: string | undefined; // Declare in outer scope for error handler
+  let supabase: any; // Declare in outer scope for error handler
+  
+  try {
+    // Get request body
+    const { image_data, custom_prompt, style_key, user_id: requestUserId }: OutfitRequest = await req.json()
+    user_id = requestUserId; // Store for error handler
+
+    if (!image_data) {
+      return new Response(
+        JSON.stringify({ error: 'image_data is required' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    // Initialize Supabase client early for limits validation
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Missing Supabase environment variables')
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error' }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+    // Simple Pro/Free user check
+    if (user_id && user_id !== 'anonymous') {
+      const isPro = user_id.startsWith('store:') || user_id.startsWith('orig:') || user_id.startsWith('fallback:');
+      
+      if (isPro) {
+        console.log('✅ Pro user detected - unlimited photos, skipping database check');
+      } else {
+        // Only check database for free users
+        console.log('🔍 Free user - checking photo limits');
+        const { data: result, error } = await supabase.rpc('check_and_increment_photo_usage', {
+          p_user_id: user_id
+        });
+        
+        if (!result && !error) {
+          console.log('❌ Free user photo limit exceeded');
+          return new Response(JSON.stringify({ 
+            success: false,
+            error: 'Photo usage limit exceeded',
+            code: 'PHOTO_LIMIT_EXCEEDED'
+          }), {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      }
+    }
+
+    // Initialize Replicate with server-side API key
+    const replicateApiToken = Deno.env.get('REPLICATE_API_TOKEN')
+    if (!replicateApiToken) {
+      console.error('REPLICATE_API_TOKEN not found in environment')
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error' }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    // Supabase client already initialized above for limits validation
+    const replicate = new Replicate({
+      auth: replicateApiToken,
+    })
+
+    console.log('🎨 Starting outfit generation with webhooks...')
+
+    // Determine the prompt to use
+    let prompt = custom_prompt;
+    let selectedStyle = null;
+    
+    if (!prompt && style_key && OUTFIT_STYLES[style_key]) {
+      selectedStyle = OUTFIT_STYLES[style_key];
+      prompt = selectedStyle.prompt;
+      console.log(`🎨 Using outfit style: ${selectedStyle.title}`);
+    }
+    
+    if (!prompt) {
+      prompt = "change only the clothing and outfit, keep the exact same face, facial features, hair, pose, body position, and background unchanged, professional business attire";
+    }
+
+    // Build input for outfit generation
+    const input = {
+      prompt,
+      input_image: `data:image/jpeg;base64,${image_data}`,
+      output_format: "png",
+      aspect_ratio: "match_input_image",
+      safety_tolerance: 6,
+      prompt_upsampling: true
+    }
+
+    // Construct webhook URL
+    const webhookUrl = `${supabaseUrl}/functions/v1/photo-webhook`
+
+    console.log('🔄 Creating Replicate prediction with webhook...')
+
+    // Create prediction with webhook
+    const prediction = await replicate.predictions.create({
+      model: "black-forest-labs/flux-kontext-pro",
+      input,
+      webhook: webhookUrl,
+      webhook_events_filter: ["completed"] // Only notify when done
+    })
+
+    console.log(`✅ Prediction created: ${prediction.id}`)
+
+    // Upsert prediction into database for status tracking
+    const { error: insertError } = await supabase
+      .from('photo_predictions')
+      .upsert({
+        id: prediction.id,
+        user_id: user_id || 'anonymous',
+        mode: 'outfit',
+        status: 'starting',
+        style_key: style_key || null,
+        input: {
+          prompt: prompt,
+          style_title: selectedStyle?.title || null,
+          has_custom_prompt: !!custom_prompt,
+          custom_prompt: custom_prompt || null
+        },
+        created_at: new Date().toISOString()
+      })
+
+    if (insertError) {
+      console.error('Failed to insert prediction into database:', insertError)
+      // Continue anyway - webhook will handle updates
+    } else {
+      console.log(`✅ Prediction ${prediction.id} inserted into database`)
+    }
+
+    // Return prediction ID to client for polling
+    return new Response(
+      JSON.stringify({ 
+        success: true,
+        prediction_id: prediction.id,
+        status: prediction.status || 'starting',
+        mode: 'outfit',
+        style_used: selectedStyle?.title || 'Custom',
+        estimated_time: '5-10 seconds'
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    )
+
+  } catch (error) {
+    console.error('❌ Outfit generation error:', error)
+    
+    // Rollback photo usage increment if generation failed after increment
+    if (user_id && user_id !== 'anonymous') {
+      try {
+        await supabase.rpc('rollback_photo_usage', {
+          p_user_id: user_id
+        });
+        console.log('✅ Photo usage rollback completed after outfit generation error');
+      } catch (rollbackError) {
+        console.error('❌ Failed to rollback photo usage after error:', rollbackError);
+      }
+    }
+    
+    return new Response(
+      JSON.stringify({ 
+        error: 'Failed to start outfit generation',
+        details: error.message 
+      }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    )
+  }
+})

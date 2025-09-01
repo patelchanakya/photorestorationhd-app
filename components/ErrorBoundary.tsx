@@ -52,7 +52,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           <Text style={{ 
             color: 'white', 
             fontSize: 22, 
-            fontWeight: 'bold', 
+            fontFamily: 'Lexend-Bold', 
             marginTop: 16, 
             marginBottom: 8,
             textAlign: 'center'
@@ -83,7 +83,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             <IconSymbol name="arrow.clockwise" size={18} color="white" />
             <Text style={{ 
               color: 'white', 
-              fontWeight: 'bold', 
+              fontFamily: 'Lexend-Bold', 
               fontSize: 16 
             }}>
               Try Again

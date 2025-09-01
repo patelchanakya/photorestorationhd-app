@@ -1,16 +1,17 @@
-import { LanguageSelectionModal } from '@/components/LanguageSelectionModal';
+// Removed LanguageSelectionModal - translation system removed
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { photoRestorationKeys } from '@/hooks/usePhotoRestoration';
-import { getSupportedLanguages, useTranslation } from '@/i18n';
-import { deviceTrackingService } from '@/services/deviceTracking';
-import { restorationTrackingService } from '@/services/restorationTracking';
-import { getAppUserId, presentPaywall, restorePurchasesDetailed } from '@/services/revenuecat';
+// Removed translation system
+import { useRevenueCat } from '@/contexts/RevenueCatContext';
+import { usePhotoUsage, type PhotoUsage } from '@/services/photoUsageService';
+import { checkSubscriptionStatus, getAppUserId, presentPaywall, restorePurchasesSecure } from '@/services/revenuecat';
 import { photoStorage } from '@/services/storage';
 import { localStorageHelpers } from '@/services/supabase';
-import { testSupabaseConnection } from '@/services/supabaseClient';
+import { useCropModalStore } from '@/store/cropModalStore';
 import { useRestorationStore } from '@/store/restorationStore';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
 import Constants from 'expo-constants';
@@ -19,10 +20,11 @@ import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import * as StoreReview from 'expo-store-review';
 import * as WebBrowser from 'expo-web-browser';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  AppState,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -31,8 +33,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Purchases from 'react-native-purchases';
+// Using React Native SafeAreaView to avoid double-insetting
 import Animated, {
-  FadeIn,
   useAnimatedStyle,
   useSharedValue,
   withSpring
@@ -43,24 +46,67 @@ const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpaci
 export default function SettingsModalScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { showFlashButton, toggleFlashButton, setRestorationCount, galleryViewMode, setGalleryViewMode, simpleSlider, setSimpleSlider } = useRestorationStore();
-  const { isPro, freeRestorationsUsed, freeRestorationsLimit, expirationDate } = useSubscriptionStore();
+  const { setRestorationCount } = useRestorationStore();
+  const { isPro, refreshCustomerInfo } = useRevenueCat();
+  const [photoUsage, setPhotoUsage] = useState<PhotoUsage | null>(null);
+  
+  // Video processing state management
+  const { isVideoProcessing, reset: resetCropModal } = useCropModalStore();
   
   // Local loading states
   const [isRestoring, setIsRestoring] = useState(false);
-  const [timeUntilNext, setTimeUntilNext] = useState<string>('Available now');
-  const [showLanguageModal, setShowLanguageModal] = useState(false);
-  const [supabaseStatus, setSupabaseStatus] = useState<string>('');
-  const [isTestingSupabase, setIsTestingSupabase] = useState(false);
+  const [isResettingIdentity, setIsResettingIdentity] = useState(false);
+  // Removed language modal state
   const [revenueCatUserId, setRevenueCatUserId] = useState<string | null>(null);
-  const [msRemaining, setMsRemaining] = useState<number>(0);
-  const { t, currentLanguage } = useTranslation();
-  const supportedLanguages = getSupportedLanguages();
+  // Removed translation system
   
-  // Get current language info
-  const getCurrentLanguageInfo = () => {
-    return supportedLanguages.find(lang => lang.code === currentLanguage) || supportedLanguages[0];
-  };
+  
+  // Ref to track restore operation for cancellation
+  const restoreOperationRef = useRef<{ cancelled: boolean }>({ cancelled: false });
+
+  // Use TanStack Query hook for photo usage
+  const { data: photoUsageFromQuery, refetch: refetchPhotoUsage } = usePhotoUsage();
+  
+  // Fetch video usage for Pro users only
+  const fetchVideoUsageData = useCallback(async () => {
+    try {
+      if (isPro) {
+        // Video usage tracking disabled
+        if (__DEV__) {
+          console.log('🎬 Settings: Video usage tracking disabled');
+        }
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.error('❌ Failed to fetch video usage data:', error);
+      }
+    }
+  }, [isPro]);
+
+  // Update photo usage from TanStack Query
+  useEffect(() => {
+    if (photoUsageFromQuery) {
+      setPhotoUsage(photoUsageFromQuery);
+      if (__DEV__) {
+        console.log('📸 Settings: Updated photo usage from query:', photoUsageFromQuery);
+      }
+    }
+  }, [photoUsageFromQuery]);
+
+  // Initial fetch on mount
+  useEffect(() => {
+    fetchVideoUsageData();
+  }, [fetchVideoUsageData]);
+
+  // Refetch usage data when settings modal gets focus (after video generation)
+  useFocusEffect(
+    useCallback(() => {
+      refetchPhotoUsage();
+      fetchVideoUsageData();
+    }, [refetchPhotoUsage, fetchVideoUsageData])
+  );
+  
+  // Removed language functionality
 
   // Format time remaining with seconds for live countdown
   const formatTimeWithSeconds = (ms: number): string => {
@@ -81,37 +127,7 @@ export default function SettingsModalScreen() {
     }
   };
 
-  // Update countdown timer for free users
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    const initializeCountdown = async () => {
-      if (!isPro) {
-        // Get initial time remaining from device tracking (only once)
-        const initialMsRemaining = await deviceTrackingService.getTimeUntilNextFreeRestoration();
-        setMsRemaining(initialMsRemaining);
-        setTimeUntilNext(formatTimeWithSeconds(initialMsRemaining));
-        
-        // Start live countdown that decrements locally every second
-        interval = setInterval(() => {
-          setMsRemaining(prev => {
-            const newMs = Math.max(0, prev - 1000); // Subtract 1 second
-            const formattedTime = formatTimeWithSeconds(newMs);
-            setTimeUntilNext(formattedTime);
-            return newMs;
-          });
-        }, 1000);
-      }
-    };
-
-    initializeCountdown();
-
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
-  }, [isPro]);
+  // Note: Countdown timer functionality removed - now using lifetime limits instead of time-based limits
 
   // Fetch RevenueCat user ID on mount
   useEffect(() => {
@@ -132,6 +148,66 @@ export default function SettingsModalScreen() {
 
     fetchRevenueCatUserId();
   }, []);
+
+  // AppState listener to cancel restore on backgrounding
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'background' && isRestoring) {
+        console.log('📱 App backgrounded during restore - marking operation as cancelled');
+        restoreOperationRef.current.cancelled = true;
+      }
+    });
+
+    return () => subscription?.remove();
+  }, [isRestoring]);
+
+
+  // Clear stuck video processing state
+  const handleClearStuckVideo = async () => {
+    try {
+      console.log('🔧 [DEBUG] Clearing stuck video processing state...');
+      
+      // Show confirmation alert
+      Alert.alert(
+        'Clear Stuck Video?',
+        'This will reset any stuck video processing. Use this if a video appears to be processing but nothing is happening.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Clear', 
+            style: 'destructive',
+            onPress: () => {
+              try {
+                // Clear the crop modal state
+                resetCropModal();
+                
+                // Clear any pending video and timestamp from AsyncStorage
+                AsyncStorage.removeItem('pendingVideo').catch(() => {});
+                AsyncStorage.removeItem('lastVideoProcessingTime').catch(() => {});
+                
+                console.log('✅ [DEBUG] Video processing state cleared');
+                
+                Alert.alert(
+                  'Cleared!',
+                  'Video processing state has been reset. You can now try generating videos again.',
+                  [{ text: 'OK' }]
+                );
+              } catch (error) {
+                console.error('❌ [DEBUG] Failed to clear video state:', error);
+                Alert.alert(
+                  'Error',
+                  'Failed to clear video state. Try restarting the app.',
+                  [{ text: 'OK' }]
+                );
+              }
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('❌ [DEBUG] Error in handleClearStuckVideo:', error);
+    }
+  };
 
   // Format bytes to human readable
   const formatBytes = (bytes: number): string => {
@@ -230,35 +306,86 @@ export default function SettingsModalScreen() {
   // Subscription handlers
   const handleRestorePurchases = async () => {
     try {
+      // Prevent double-tapping
+      if (isRestoring) {
+        console.log('🔒 Restore already in progress, ignoring tap');
+        return;
+      }
+
       // Add haptic feedback
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       
       setIsRestoring(true);
       
-      const result = await restorePurchasesDetailed();
+      // Reset cancellation flag
+      restoreOperationRef.current.cancelled = false;
+      
+      console.log('🔒 [SECURITY] Starting secure restore with Apple validation...');
+      const result = await restorePurchasesSecure();
+      
+      // Check if operation was cancelled due to backgrounding
+      if (restoreOperationRef.current.cancelled) {
+        console.log('🚫 Restore operation was cancelled due to app backgrounding');
+        Alert.alert(
+          'Operation Interrupted',
+          'The restore was interrupted. Please try again.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
       
       if (result.success) {
         if (result.hasActiveEntitlements) {
+          console.log('✅ [SECURITY] Restore successful - subscription confirmed by Apple');
+          
+          // Refresh context to update UI state
+          await refreshCustomerInfo();
+          
           Alert.alert(
             'Restored!',
-            t('alerts.purchasesRestored'),
+'Your purchases have been restored successfully!',
             [{ text: 'Great!' }]
           );
         } else {
+          console.log('ℹ️ [SECURITY] Restore completed but no active subscriptions found');
           Alert.alert(
             'No Purchases Found',
-            t('alerts.noPurchasesFound'),
-            [{ text: t('common.ok') }]
+'No previous purchases found on this account.',
+            [{ text: 'OK' }]
           );
         }
       } else {
-        // Only show error alert for actual errors, not cancellations
-        if (result.error !== 'cancelled') {
+        // Enhanced error handling for security validation failures
+        if (result.error === 'cancelled' && result.errorMessage?.includes('Apple ID')) {
+          console.log('🚨 [SECURITY] Restore blocked - no subscription on current Apple ID');
+          
           Alert.alert(
-            t('alerts.restoreFailed'),
-            result.errorMessage || 'Unable to restore purchases. Please try again.',
-            [{ text: t('common.ok') }]
+            'No Subscription Found',
+            'No active subscription found on this Apple ID. Please sign in with the Apple ID used for purchase.',
+            [
+              { text: 'OK', style: 'default' },
+              {
+                text: 'How to Fix',
+                style: 'default',
+                onPress: () => {
+                  Alert.alert(
+                    'How to Restore Purchases',
+                    '1. Go to Settings → App Store\n2. Sign in with the Apple ID used for purchase\n3. Return to Clever and tap Restore Purchases again',
+                    [{ text: 'Got it', style: 'default' }]
+                  );
+                }
+              }
+            ]
           );
+        } else {
+          // Only show error alert for actual errors, not security blocks
+          if (result.error !== 'cancelled') {
+            Alert.alert(
+              'Restore Failed',
+              result.errorMessage || 'Unable to restore purchases. Please try again.',
+              [{ text: 'OK' }]
+            );
+          }
         }
       }
     } catch (error) {
@@ -267,32 +394,107 @@ export default function SettingsModalScreen() {
         console.error('Error restoring purchases:', error);
       }
       Alert.alert(
-        t('common.error'),
+'Error',
         'Failed to restore purchases. Please try again.',
-        [{ text: t('common.ok') }]
+        [{ text: 'OK' }]
       );
     } finally {
       setIsRestoring(false);
     }
   };
 
-  const handleManageSubscription = async () => {
-    try {
-      const url = Platform.OS === 'ios' 
-        ? 'https://apps.apple.com/account/subscriptions'
-        : 'https://play.google.com/store/account/subscriptions';
-      
-      await Linking.openURL(url);
-    } catch (error) {
-      if (__DEV__) {
-        console.error('Error opening subscription management:', error);
-      }
-      Alert.alert(
-        t('common.error'),
-        'Unable to open subscription management. Please check your device settings.',
-        [{ text: t('common.ok') }]
-      );
+  // Reset subscription identity - safe way to clear RevenueCat cache/anonymous ID
+  const handleResetSubscriptionIdentity = async () => {
+    const isExpoGo = Constants.appOwnership === 'expo';
+    if (isExpoGo) {
+      Alert.alert('Not Available', 'This feature is not available in Expo Go.');
+      return;
     }
+
+    Alert.alert(
+      'Reset Subscription Identity',
+      'This will reset your RevenueCat identity and sync with the current Apple ID. Use this if you\'re having subscription issues. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Reset', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              setIsResettingIdentity(true);
+
+              if (__DEV__) {
+                console.log('🔄 Manual subscription identity reset initiated');
+              }
+
+              // Force new anonymous ID creation for anonymous users
+              
+              try {
+                // Try logout first (works for identified users)
+                await Purchases.logOut();
+              } catch (logoutError: any) {
+                if (logoutError.message?.includes('anonymous')) {
+                  if (__DEV__) {
+                    console.log('🔄 User is anonymous - forcing new identity creation');
+                  }
+                  
+                  // For anonymous users, we need to force a complete reset
+                  // This is the nuclear option that creates a fresh anonymous ID
+                  try {
+                    await Purchases.invalidateCustomerInfoCache();
+                    
+                    // Reconfigure RevenueCat to force new anonymous ID
+                    const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY;
+                    if (apiKey) {
+                      await Purchases.configure({ 
+                        apiKey: apiKey,
+                        useAmazon: false,
+                      });
+                    }
+                  } catch (reconfigError) {
+                    if (__DEV__) {
+                      console.log('⚠️ Reconfigure failed, continuing with cache invalidation only');
+                    }
+                  }
+                } else {
+                  throw logoutError; // Re-throw non-anonymous errors
+                }
+              }
+              
+              await Purchases.invalidateCustomerInfoCache();
+              
+              // @ts-ignore - method available at runtime  
+              await (Purchases as any).syncPurchases?.();
+              
+              await checkSubscriptionStatus();
+
+              if (__DEV__) {
+                console.log('✅ Manual subscription identity reset complete');
+              }
+
+              Alert.alert(
+                'Reset Complete',
+                'Subscription identity has been reset and synced with your current Apple ID.',
+                [{ text: 'OK' }]
+              );
+              
+            } catch (error) {
+              if (__DEV__) {
+                console.error('❌ Manual subscription reset failed:', error);
+              }
+              Alert.alert(
+                'Reset Failed',
+                'Unable to reset subscription identity. Please try again.',
+                [{ text: 'OK' }]
+              );
+            } finally {
+              setIsResettingIdentity(false);
+            }
+          }
+        }
+      ]
+    );
   };
 
   // Handle paywall presentation
@@ -337,74 +539,9 @@ export default function SettingsModalScreen() {
     }
   };
 
-  // Debug functions for TestFlight builds
-  const handleTestSupabase = async () => {
-    setIsTestingSupabase(true);
-    setSupabaseStatus('Testing connection...');
-    
-    try {
-      const result = await testSupabaseConnection();
-      if (result.success) {
-        setSupabaseStatus('✅ Connected successfully');
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } else {
-        setSupabaseStatus(`❌ Failed: ${result.message}`);
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      }
-    } catch (error) {
-      setSupabaseStatus(`❌ Error: ${error instanceof Error ? error.message : 'Unknown'}`);
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    } finally {
-      setIsTestingSupabase(false);
-    }
-  };
 
 
-  const handleGetRestorationStats = async () => {
-    try {
-      const stats = await restorationTrackingService.getRestorationStats();
-      if (stats) {
-        Alert.alert(
-          'Restoration Stats',
-          `Total: ${stats.total}\nCompleted: ${stats.completed}\nFailed: ${stats.failed}\nPending: ${stats.pending}`,
-          [{ text: 'OK' }]
-        );
-      } else {
-        Alert.alert('Stats Unavailable', 'Unable to fetch restoration statistics.', [{ text: 'OK' }]);
-      }
-    } catch (error) {
-      Alert.alert(
-        'Error',
-        `Failed to get stats: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        [{ text: 'OK' }]
-      );
-    }
-  };
-
-
-  // Format subscription status
-  const getSubscriptionStatus = () => {
-    if (isPro) {
-      if (expirationDate) {
-        const expDate = new Date(expirationDate);
-        const isExpired = expDate < new Date();
-        
-        if (isExpired) {
-          return 'Expired';
-        } else {
-          return `Active until ${expDate.toLocaleDateString()}`;
-        }
-      }
-      return 'Active';
-    }
-    
-    // This should only be shown for free users now
-    const status = `Free (${freeRestorationsUsed}/${freeRestorationsLimit} used)`;
-    if (timeUntilNext === 'Available now') {
-      return status;
-    }
-    return `${status} • Next in ${timeUntilNext}`;
-  };
+  // Subscription status helper no longer needed in UI (subtitle removed)
 
   // Social media URLs
   const socialMediaUrls = {
@@ -483,11 +620,12 @@ export default function SettingsModalScreen() {
       
       // Fallback: copy URL to clipboard
       try {
+        const appStoreUrl = 'https://apps.apple.com/app/photo-restoration-hd/id6748838784';
         await Clipboard.setStringAsync(appStoreUrl);
         Alert.alert(
           'Link Copied',
           'The app link has been copied to your clipboard!',
-          [{ text: t('common.ok'), style: 'default' }]
+          [{ text: 'OK', style: 'default' }]
         );
       } catch (clipboardError) {
         if (__DEV__) {
@@ -522,7 +660,7 @@ I need help with Clever.
 
 SUPPORT ID: ${supportId}
 Device: ${Platform.OS} ${Platform.Version}
-App Version: 1.0.4
+App Version: 1.0.5
 
 Please include the Support ID above in your message so we can assist you quickly.
 
@@ -542,7 +680,7 @@ Best regards`;
         Alert.alert(
           'Email Copied',
           'Support email address has been copied to your clipboard!\n\nphotorestorationhd@gmail.com',
-          [{ text: t('common.ok'), style: 'default' }]
+          [{ text: 'OK', style: 'default' }]
         );
       }
       
@@ -559,7 +697,7 @@ Best regards`;
         Alert.alert(
           'Email Copied',
           'Support email address has been copied to your clipboard!\n\nphotorestorationhd@gmail.com',
-          [{ text: t('common.ok'), style: 'default' }]
+          [{ text: 'OK', style: 'default' }]
         );
       } catch (clipboardError) {
         if (__DEV__) {
@@ -568,7 +706,7 @@ Best regards`;
         Alert.alert(
           'Contact Support',
           'Please contact us at: photorestorationhd@gmail.com',
-          [{ text: t('common.ok'), style: 'default' }]
+          [{ text: 'OK', style: 'default' }]
         );
       }
     }
@@ -599,7 +737,7 @@ Best regards`;
           Alert.alert(
             'Rate Us',
             'Thank you for using Clever! Please rate us on the App Store.',
-            [{ text: t('common.ok'), style: 'default' }]
+            [{ text: 'OK', style: 'default' }]
           );
         }
       }
@@ -614,7 +752,7 @@ Best regards`;
       Alert.alert(
         'Rate Us',
         'Thank you for using Clever! Please rate us on the App Store.',
-        [{ text: t('common.ok'), style: 'default' }]
+        [{ text: 'OK', style: 'default' }]
       );
     }
   };
@@ -650,270 +788,149 @@ Best regards`;
   }));
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: 'black' }}>
-      <Animated.View entering={FadeIn} style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'black' }}> 
+      <View className="flex-1">
         {/* Header */}
-        <View style={{ 
-          flexDirection: 'row', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          paddingHorizontal: 16, 
-          paddingVertical: 12, 
-          borderBottomWidth: 1, 
-          borderBottomColor: 'rgba(255,255,255,0.1)' 
-        }}>
-          <View style={{ width: 32 }} />
-          <Text style={{ color: 'white', fontSize: 18, fontWeight: '600' }}>
-            {t('settings.title')}
-          </Text>
+        <View className="flex-row items-center justify-between px-4 py-3 border-b border-white/10">
           <TouchableOpacity
             onPress={handleClose}
-            style={{ 
-              width: 32, 
-              height: 32, 
-              alignItems: 'center', 
-              justifyContent: 'center' 
-            }}
+            className="w-8 h-8 items-center justify-center"
           >
-            <IconSymbol name="chevron.down" size={20} color="#fff" />
+            <IconSymbol name="arrow.left" size={20} color="#fff" />
           </TouchableOpacity>
+          <Text style={{ color: 'white', fontSize: 18, fontFamily: 'Lexend-SemiBold' }}>
+            Settings
+          </Text>
+          <View style={{ width: 32 }} />
         </View>
 
         {/* Content */}
         <ScrollView 
-          style={{ flex: 1, paddingHorizontal: 16 }}
+          className="flex-1 px-4"
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 12, paddingTop: 24 }}
+          contentInsetAdjustmentBehavior="never"
+          automaticallyAdjustContentInsets={false}
         >
-          <View style={{ paddingVertical: 20 }}>
+          <View className="pt-0 pb-0">
             
             {/* Subscription Section */}
-            <View style={{ marginBottom: 32 }}>
-              <Text style={{ 
-                color: 'rgba(249,115,22,1)', 
-                fontSize: 16, 
-                fontWeight: '600', 
-                marginBottom: 16 
-              }}>
-                {t('settings.subscription')}
+            <View className="mb-8">
+              <Text style={{ color: '#f59e0b', fontSize: 16, fontFamily: 'Lexend-SemiBold', marginBottom: 16 }}>
+                Subscription
               </Text>
               
-              <View style={{ 
-                backgroundColor: 'rgba(255,255,255,0.05)', 
-                borderRadius: 12, 
-                overflow: 'hidden' 
-              }}>
+              <View className="bg-white/5 rounded-xl overflow-hidden">
                 
-                {/* Free Restoration Status */}
-                {!isPro && (
-                  <TouchableOpacity
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      padding: 16,
-                      borderBottomWidth: 1,
-                      borderBottomColor: 'rgba(255,255,255,0.1)'
-                    }}
-                    onPress={handleShowPaywall}
-                  >
-                    <View style={{
-                      width: 36,
-                      height: 36,
-                      backgroundColor: freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' 
-                        ? 'rgba(239,68,68,0.2)' 
-                        : 'rgba(34,197,94,0.2)',
-                      borderRadius: 18,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: 12
-                    }}>
-                      <IconSymbol 
-                        name={freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' 
-                          ? "clock" 
-                          : "gift"} 
-                        size={18} 
-                        color={freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' 
-                          ? "#ef4444" 
-                          : "#22c55e"} 
-                      />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                        {t('settings.freeRestorations')}
-                      </Text>
-                      <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                        {timeUntilNext === 'Available now' ? t('language.availableNow') : t('language.nextIn', { time: timeUntilNext })}
-                      </Text>
-                    </View>
-                    <View style={{
-                      backgroundColor: freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' 
-                        ? 'rgba(239,68,68,0.2)' 
-                        : 'rgba(34,197,94,0.2)',
-                      borderRadius: 8,
-                      paddingHorizontal: 8,
-                      paddingVertical: 4,
-                      marginRight: 8
-                    }}>
-                      <Text style={{
-                        color: freeRestorationsUsed >= freeRestorationsLimit && timeUntilNext !== 'Available now' 
-                          ? '#ef4444' 
-                          : '#22c55e',
-                        fontSize: 12,
-                        fontWeight: '600'
-                      }}>
-                        {freeRestorationsUsed}/{freeRestorationsLimit}
-                      </Text>
-                    </View>
-                    <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
-                  </TouchableOpacity>
-                )}
 
                 {/* Subscription Status - Only show for Pro users */}
                 {isPro && (
-                  <View style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16,
-                    borderBottomWidth: 1,
-                    borderBottomColor: 'rgba(255,255,255,0.1)'
-                  }}>
-                    <View style={{
-                      width: 36,
-                      height: 36,
-                      backgroundColor: 'rgba(34,197,94,0.2)',
-                      borderRadius: 18,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: 12
-                    }}>
-                      <IconSymbol 
-                        name="crown.fill"
-                        size={18} 
-                        color="#22c55e"
-                      />
+                  <View className="flex-row items-center p-4 border-b border-white/10">
+                    <View className="w-9 h-9 bg-green-500/20 rounded-full items-center justify-center mr-3">
+                      <IconSymbol name="crown.fill" size={18} color="#22c55e" />
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                        {t('settings.proSubscription')}
-                      </Text>
-                      <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                        {getSubscriptionStatus()}
+                    <View className="flex-1">
+                      <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium' }}>
+                        Pro Subscription
                       </Text>
                     </View>
                   </View>
                 )}
 
+                {/* Photo Usage - Show for all users (free users have limits) */}
+                {photoUsage && (
+                  <TouchableOpacity 
+                    className="flex-row items-center p-4 border-b border-white/10"
+                    onPress={async () => {
+                      try {
+                        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        if (__DEV__) {
+                          console.log('🔄 Refreshing photo usage from TanStack Query...');
+                        }
+                        await refetchPhotoUsage();
+                      } catch (error) {
+                        if (__DEV__) {
+                          console.error('❌ Failed to refresh photo usage:', error);
+                        }
+                      }
+                    }}
+                  >
+                    <View className="w-9 h-9 bg-blue-500/20 rounded-full items-center justify-center mr-3">
+                      <IconSymbol name="photo.fill" size={18} color="#3b82f6" />
+                    </View>
+                    <View className="flex-1">
+                      <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium' }}>
+                        {photoUsage.limit === -1 ? 'Photo Restoration (Unlimited)' : 'Photo Restoration'}
+                      </Text>
+                      <Text className="text-white/60 text-sm">
+                        {photoUsage.planType === 'free' ? 'Tap to refresh' : 'Pro subscription active'}
+                      </Text>
+                    </View>
+                    <View className={`${
+                      photoUsage.limit === -1 
+                        ? 'bg-blue-500/20' 
+                        : !photoUsage.canUse 
+                          ? 'bg-red-500/20' 
+                          : 'bg-green-500/20'
+                    } px-2 py-1 rounded-xl`}>
+                      <Text className={`${
+                        photoUsage.limit === -1 
+                          ? 'text-blue-500' 
+                          : !photoUsage.canUse 
+                            ? 'text-red-500' 
+                            : 'text-green-500'
+                      } text-xs font-semibold`}>
+                        {photoUsage.limit === -1 ? '∞' : `${photoUsage.used}/${photoUsage.limit}`}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
+
+                {/* BackToLife feature removed */}
+
                 {/* Restore Purchases */}
                 <TouchableOpacity 
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16,
-                    borderBottomWidth: isPro ? 1 : 0,
-                    borderBottomColor: 'rgba(255,255,255,0.1)',
-                    opacity: isRestoring ? 0.7 : 1
-                  }}
+                  className={`flex-row items-center p-4 ${isPro ? 'border-b border-white/10' : ''}`}
                   onPress={handleRestorePurchases}
                   disabled={isRestoring}
                 >
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
+                  <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
                     {isRestoring ? (
                       <ActivityIndicator size="small" color="#f97316" />
                     ) : (
                       <IconSymbol name="arrow.clockwise" size={18} color="#f97316" />
                     )}
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      {isRestoring ? t('common.loading') : t('settings.restorePurchases')}
+                  <View className="flex-1">
+                    <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium' }}>
+                      {isRestoring ? 'Checking with App Store...' : 'Restore Purchases'}
                     </Text>
-                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                      {isRestoring ? t('common.loading') : t('settings.restorePurchasesDescription')}
+                    <Text className="text-white/60 text-sm">
+                      {isRestoring ? 'Verifying your subscription' : 'Sync your purchases with this device'}
                     </Text>
                   </View>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </TouchableOpacity>
 
-                {/* Manage Subscription */}
-                {isPro && (
-                  <TouchableOpacity 
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      padding: 16
-                    }}
-                    onPress={handleManageSubscription}
-                  >
-                    <View style={{
-                      width: 36,
-                      height: 36,
-                      backgroundColor: 'rgba(249,115,22,0.2)',
-                      borderRadius: 18,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: 12
-                    }}>
-                      <IconSymbol name="gear" size={18} color="#f97316" />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                        {t('settings.manageSubscription')}
-                      </Text>
-                      <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                        {t('settings.manageSubscriptionDescription')}
-                      </Text>
-                    </View>
-                    <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
-                  </TouchableOpacity>
-                )}
+
               </View>
             </View>
             
             {/* Connect & Support Section */}
-            <View style={{ marginBottom: 32 }}>
-              <Text style={{ 
-                color: 'rgba(249,115,22,1)', 
-                fontSize: 16, 
-                fontWeight: '600', 
-                marginBottom: 16 
-              }}>
-                {t('settings.connectSupport')}
+            <View className="mb-8">
+              <Text style={{ color: '#f59e0b', fontSize: 16, fontFamily: 'Lexend-SemiBold', marginBottom: 16 }}>
+                Connect & Support
               </Text>
               
-              <View style={{ 
-                backgroundColor: 'rgba(255,255,255,0.05)', 
-                borderRadius: 12, 
-                overflow: 'hidden' 
-              }}>
+              <View className="bg-white/5 rounded-xl overflow-hidden">
                 
                 {/* Follow Us */}
-                <TouchableOpacity style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: 'rgba(255,255,255,0.1)'
-                }}>
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
+                <TouchableOpacity className="flex-row items-center p-4 border-b border-white/10">
+                  <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
                     <Ionicons name="people" size={18} color="#f97316" />
                   </View>
-                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
-                    {t('settings.followUs')}
+                  <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium', flex: 1 }}>
+                    Follow Us
                   </Text>
                   <View style={{ flexDirection: 'row', gap: 12 }}>
                     <AnimatedTouchableOpacity
@@ -961,91 +978,54 @@ Best regards`;
 
                 {/* Email Support */}
                 <AnimatedTouchableOpacity 
-                  style={[{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16,
-                    borderBottomWidth: 1,
-                    borderBottomColor: 'rgba(255,255,255,0.1)'
-                  }, emailStyle]}
+                  style={emailStyle}
+                  className="flex-row items-center p-4 border-b border-white/10"
                   onPress={handleEmailSupport}
                   activeOpacity={0.8}
                   accessibilityLabel="Email support"
                   accessibilityHint="Opens email to contact support"
                 >
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
+                  <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
                     <Ionicons name="mail" size={18} color="#f97316" />
                   </View>
-                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
-                    {t('settings.emailSupport')}
+                  <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium', flex: 1 }}>
+                    Email Support
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </AnimatedTouchableOpacity>
 
                 {/* Rate Us */}
                 <AnimatedTouchableOpacity 
-                  style={[{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16,
-                    borderBottomWidth: 1,
-                    borderBottomColor: 'rgba(255,255,255,0.1)'
-                  }, rateStyle]}
+                  style={rateStyle}
+                  className="flex-row items-center p-4 border-b border-white/10"
                   onPress={handleRateUs}
                   activeOpacity={0.8}
                   accessibilityLabel="Rate us"
                   accessibilityHint="Opens rating prompt or app store page"
                 >
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
+                  <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
                     <Ionicons name="star" size={18} color="#f97316" />
                   </View>
-                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
-                    {t('settings.rateUs')}
+                  <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium', flex: 1 }}>
+                    Rate Us
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </AnimatedTouchableOpacity>
 
                 {/* Share App */}
                 <AnimatedTouchableOpacity 
-                  style={[{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16
-                  }, shareStyle]}
+                  style={shareStyle}
+                  className="flex-row items-center p-4"
                   onPress={handleShareApp}
                   activeOpacity={0.8}
                   accessibilityLabel="Share app"
                   accessibilityHint="Opens share sheet to share app with others"
                 >
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
+                  <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
                     <Ionicons name="share-social" size={18} color="#f97316" />
                   </View>
-                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
-                    {t('settings.shareApp')}
+                  <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium', flex: 1 }}>
+                    Share App
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </AnimatedTouchableOpacity>
@@ -1053,384 +1033,61 @@ Best regards`;
             </View>
             
             {/* Preferences Section */}
-            <View style={{ marginBottom: 32 }}>
-              <Text style={{ 
-                color: 'rgba(249,115,22,1)', 
-                fontSize: 16, 
-                fontWeight: '600', 
-                marginBottom: 16 
-              }}>
-                {t('settings.preferences')}
+            <View className="mb-8">
+              <Text style={{ color: '#f59e0b', fontSize: 16, fontFamily: 'Lexend-SemiBold', marginBottom: 16 }}>
+                Preferences
               </Text>
               
-              <View style={{ 
-                backgroundColor: 'rgba(255,255,255,0.05)', 
-                borderRadius: 12, 
-                overflow: 'hidden' 
-              }}>
+              <View className="bg-white/5 rounded-xl overflow-hidden">
                 
                 {/* Language */}
                 <TouchableOpacity 
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16,
-                    borderBottomWidth: 1,
-                    borderBottomColor: 'rgba(255,255,255,0.1)'
-                  }}
-                  onPress={() => setShowLanguageModal(true)}
+                  className="flex-row items-center p-4"
+                  onPress={() => Alert.alert('Language', 'Language selection coming soon')}
                 >
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
+                  <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
                     <Ionicons name="globe" size={18} color="#f97316" />
                   </View>
-                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
-                    {t('settings.language')}
+                  <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium', flex: 1 }}>
+                    Language
                   </Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Text style={{ fontSize: 20 }}>{getCurrentLanguageInfo().flag}</Text>
-                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 15 }}>{getCurrentLanguageInfo().nativeName}</Text>
+                  <View className="flex-row items-center">
+                    <Text className="text-xl mr-1">🇺🇸</Text>
+                    <Text className="text-white/60 text-sm">English</Text>
                   </View>
-                  <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" style={{ marginLeft: 8 }} />
-                </TouchableOpacity>
-                
-                {/* Show Flash Toggle */}
-                <TouchableOpacity 
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16
-                  }}
-                  onPress={toggleFlashButton}
-                >
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
-                    <Ionicons name="flash" size={18} color="#f97316" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      {t('settings.showFlashButton')}
-                    </Text>
-                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                      {t('settings.showFlashButtonDescription')}
-                    </Text>
-                  </View>
-                  <View style={{
-                    width: 44,
-                    height: 24,
-                    backgroundColor: showFlashButton ? '#f97316' : 'rgba(255,255,255,0.2)',
-                    borderRadius: 12,
-                    alignItems: 'center',
-                    justifyContent: showFlashButton ? 'flex-end' : 'flex-start',
-                    flexDirection: 'row',
-                    paddingHorizontal: 2
-                  }}>
-                    <View style={{
-                      width: 20,
-                      height: 20,
-                      backgroundColor: 'white',
-                      borderRadius: 10
-                    }} />
+                  <View className="ml-2">
+                    <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                   </View>
                 </TouchableOpacity>
                 
-                {/* Grid View Mode */}
-                <TouchableOpacity 
-                  onPress={() => setGalleryViewMode(galleryViewMode === 'list' ? 'grid' : 'list')}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16,
-                    borderBottomWidth: __DEV__ ? 1 : 0,
-                    borderBottomColor: 'rgba(255,255,255,0.1)'
-                  }}>
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
-                    <IconSymbol 
-                      name="square.grid.2x2" 
-                      size={18} 
-                      color="#f97316" 
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      {t('settings.gridView')}
-                    </Text>
-                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                      {t('settings.gridViewDescription')}
-                    </Text>
-                  </View>
-                  <View style={{
-                    width: 44,
-                    height: 24,
-                    backgroundColor: galleryViewMode === 'grid' ? '#f97316' : 'rgba(255,255,255,0.2)',
-                    borderRadius: 12,
-                    alignItems: 'center',
-                    justifyContent: galleryViewMode === 'grid' ? 'flex-end' : 'flex-start',
-                    flexDirection: 'row',
-                    paddingHorizontal: 2
-                  }}>
-                    <View style={{
-                      width: 20,
-                      height: 20,
-                      backgroundColor: 'white',
-                      borderRadius: 10
-                    }} />
-                  </View>
-                </TouchableOpacity>
-                
-                {/* Simple Slider Toggle */}
-                <TouchableOpacity 
-                  onPress={() => setSimpleSlider(!simpleSlider)}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16,
-                    borderBottomWidth: __DEV__ ? 1 : 0,
-                    borderBottomColor: 'rgba(255,255,255,0.1)'
-                  }}>
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
-                    <IconSymbol 
-                      name="slider.horizontal.3" 
-                      size={18} 
-                      color="#f97316" 
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      Simple Slider
-                    </Text>
-                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                      Clean line slider without arrows
-                    </Text>
-                  </View>
-                  <View style={{
-                    width: 44,
-                    height: 24,
-                    backgroundColor: simpleSlider ? '#f97316' : 'rgba(255,255,255,0.2)',
-                    borderRadius: 12,
-                    alignItems: 'center',
-                    justifyContent: simpleSlider ? 'flex-end' : 'flex-start',
-                    flexDirection: 'row',
-                    paddingHorizontal: 2
-                  }}>
-                    <View style={{
-                      width: 20,
-                      height: 20,
-                      backgroundColor: 'white',
-                      borderRadius: 10
-                    }} />
-                  </View>
-                </TouchableOpacity>
+
+
+
               </View>
             </View>
 
+            {/* Debug Section - Development Only */}
 
-            {/* Storage Section */}
-            <View style={{ marginBottom: 32 }}>
-              <Text style={{ 
-                color: 'rgba(249,115,22,1)', 
-                fontSize: 16, 
-                fontWeight: '600', 
-                marginBottom: 16 
-              }}>
-                {t('settings.storage')}
-              </Text>
-              
-              <View style={{ 
-                backgroundColor: 'rgba(255,255,255,0.05)', 
-                borderRadius: 12, 
-                overflow: 'hidden' 
-              }}>
-                
 
-                {/* Delete All Photos */}
-                <TouchableOpacity 
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16
-                  }}
-                  onPress={handleDeleteAllPhotos}>
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(239,68,68,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
-                    <Ionicons name="trash" size={18} color="#ef4444" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      {t('settings.deleteAllPhotos')}
-                    </Text>
-                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                      {t('settings.deleteAllPhotosDescription')}
-                    </Text>
-                  </View>
-                  <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Debug Section (Development only) */}
-            {__DEV__ && (
-              <View style={{ marginBottom: 32 }}>
-                <Text style={{ 
-                  color: 'rgba(249,115,22,1)', 
-                  fontSize: 16, 
-                  fontWeight: '600', 
-                  marginBottom: 16 
-                }}>
-                  Debug (Development)
-                </Text>
-                
-                <View style={{ 
-                  backgroundColor: 'rgba(255,255,255,0.05)', 
-                  borderRadius: 12, 
-                  overflow: 'hidden' 
-                }}>
-                  
-                  {/* Test Supabase Connection */}
-                  <TouchableOpacity 
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      padding: 16,
-                      borderBottomWidth: 1,
-                      borderBottomColor: 'rgba(255,255,255,0.1)'
-                    }}
-                    onPress={handleTestSupabase}
-                    disabled={isTestingSupabase}>
-                    <View style={{
-                      width: 36,
-                      height: 36,
-                      backgroundColor: 'rgba(59,130,246,0.2)',
-                      borderRadius: 18,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: 12
-                    }}>
-                      {isTestingSupabase ? (
-                        <ActivityIndicator size="small" color="#3b82f6" />
-                      ) : (
-                        <Ionicons name="cloud-outline" size={18} color="#3b82f6" />
-                      )}
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                        Test Supabase Connection
-                      </Text>
-                      <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                        {supabaseStatus || 'Check if database is reachable'}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-
-                  {/* Get Restoration Stats */}
-                  <TouchableOpacity 
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      padding: 16
-                    }}
-                    onPress={handleGetRestorationStats}>
-                    <View style={{
-                      width: 36,
-                      height: 36,
-                      backgroundColor: 'rgba(168,85,247,0.2)',
-                      borderRadius: 18,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: 12
-                    }}>
-                      <Ionicons name="stats-chart-outline" size={18} color="#a855f7" />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                        View Restoration Stats
-                      </Text>
-                      <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                        Show statistics from Supabase
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
 
             {/* Account & Legal Section */}
-            <View style={{ marginBottom: 32 }}>
-              <Text style={{ 
-                color: 'rgba(249,115,22,1)', 
-                fontSize: 16, 
-                fontWeight: '600', 
-                marginBottom: 16 
-              }}>
-                {t('settings.accountLegal')}
+            <View className="mb-8">
+              <Text style={{ color: '#f59e0b', fontSize: 16, fontFamily: 'Lexend-SemiBold', marginBottom: 16 }}>
+                Account & Legal
               </Text>
               
-              <View style={{ 
-                backgroundColor: 'rgba(255,255,255,0.05)', 
-                borderRadius: 12, 
-                overflow: 'hidden' 
-              }}>
+              <View className="bg-white/5 rounded-xl overflow-hidden">
                 
                 {/* Privacy Policy */}
                 <TouchableOpacity 
                   onPress={() => WebBrowser.openBrowserAsync('https://cleverapp.lovable.app/privacy-policy')}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16,
-                    borderBottomWidth: 1,
-                    borderBottomColor: 'rgba(255,255,255,0.1)'
-                  }}>
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
+                  className="flex-row items-center p-4 border-b border-white/10"
+                >
+                  <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
                     <Ionicons name="lock-closed" size={18} color="#f97316" />
                   </View>
-                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
-                    {t('settings.privacyPolicy')}
+                  <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium', flex: 1 }}>
+                    Privacy Policy
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </TouchableOpacity>
@@ -1438,71 +1095,39 @@ Best regards`;
                 {/* Terms of Use */}
                 <TouchableOpacity 
                   onPress={() => WebBrowser.openBrowserAsync('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: 16
-                  }}>
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
+                  className="flex-row items-center p-4"
+                >
+                  <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
                     <Ionicons name="document-text" size={18} color="#f97316" />
                   </View>
-                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', flex: 1 }}>
-                    {t('settings.termsOfUse')}
+                  <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium', flex: 1 }}>
+                    Terms of Use
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </TouchableOpacity>
               </View>
             </View>
 
+
             {/* About Section */}
-            <View style={{ marginBottom: 32 }}>
-              <Text style={{ 
-                color: 'rgba(249,115,22,1)', 
-                fontSize: 16, 
-                fontWeight: '600', 
-                marginBottom: 16 
-              }}>
-                {t('settings.about')}
+            <View className="mb-0">
+              <Text style={{ color: '#f59e0b', fontSize: 16, fontFamily: 'Lexend-SemiBold', marginBottom: 16 }}>
+                About
               </Text>
               
-              <View style={{ 
-                backgroundColor: 'rgba(255,255,255,0.05)', 
-                borderRadius: 12, 
-                overflow: 'hidden' 
-              }}>
+              <View className="bg-white/5 rounded-xl overflow-hidden">
                 
                 {/* Version */}
-                <View style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 16,
-                  borderBottomWidth: 0
-                }}>
-                  <View style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: 'rgba(249,115,22,0.2)',
-                    borderRadius: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
+                <View className="flex-row items-center p-4">
+                  <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
                     <IconSymbol name="info.circle" size={18} color="#f97316" />
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
-                      {t('settings.version')}
+                  <View className="flex-1">
+                    <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium' }}>
+                      Version
                     </Text>
-                    <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
-                      1.0.4
+                    <Text className="text-white/60 text-sm">
+                      2.0.1
                     </Text>
                   </View>
                 </View>
@@ -1512,15 +1137,11 @@ Best regards`;
 
           </View>
           
-          {/* Language Selection Modal */}
-          <LanguageSelectionModal 
-            visible={showLanguageModal}
-            onClose={() => setShowLanguageModal(false)}
-          />
+          {/* Removed Language Selection Modal - translation system removed */}
           
           
         </ScrollView>
-      </Animated.View>
+      </View>
     </SafeAreaView>
   );
 }

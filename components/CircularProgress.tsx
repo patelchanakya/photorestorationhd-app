@@ -210,7 +210,7 @@ export function CircularProgress({
           <Animated.Text style={[
             { 
               fontSize: 16, 
-              fontWeight: 'bold', 
+              fontFamily: 'Lexend-Bold', 
               color: '#374151',
               marginTop: icon ? 4 : 0
             },

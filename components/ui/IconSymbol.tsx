@@ -1,12 +1,8 @@
 // Fallback for using MaterialIcons on Android and web.
 
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { SymbolViewProps, SymbolWeight } from 'expo-symbols';
-import { ComponentProps } from 'react';
+import { SymbolWeight } from 'expo-symbols';
 import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native';
-
-type IconMapping = Record<SymbolViewProps['name'], ComponentProps<typeof MaterialIcons>['name']>;
-type IconSymbolName = keyof typeof MAPPING;
 
 /**
  * Add your SF Symbols to Material Icons mappings here.
@@ -35,8 +31,48 @@ const MAPPING = {
   'crown.fill': 'star',
   'person.crop.circle': 'person',
   'square.grid.2x2': 'grid-view',
+  'rectangle.stack': 'photo-library',
   'exclamationmark.triangle': 'warning',
-} as IconMapping;
+  // Additional mappings for action rail
+  'wand.and.stars': 'auto-awesome',
+  'eye': 'remove-red-eye',
+  'paintbrush': 'brush',
+  'bandage': 'healing',
+  'sparkle': 'auto-awesome',
+  'sparkles': 'auto-awesome',
+  'pencil': 'edit',
+  'square.and.pencil': 'edit',
+  'tshirt': 'checkroom',
+  'image': 'image',
+  'checkmark': 'check',
+  'checkmark.circle.fill': 'check-circle',
+  // Additional icons for FeatureCardsList
+  'wrench.and.screwdriver': 'build',
+  'paintpalette': 'palette',
+  'sun.max': 'wb-sunny',
+  'photo.on.rectangle': 'photo-album',
+  // Additional missing icons
+  'arrow.left': 'arrow-back',
+  'chevron.left': 'chevron-left',
+  'arrow.down.circle.fill': 'keyboard-arrow-down',
+  'photo.fill': 'photo',
+  'arrow.counterclockwise': 'refresh',
+  'eye.slash': 'visibility-off',
+  'lightbulb': 'lightbulb-outline',
+  'star.fill': 'star',
+  'envelope': 'mail-outline',
+  'wifi.slash': 'wifi-off',
+  'arrow.2.squarepath': 'repeat',
+  'photo.on.rectangle.angled': 'photo-album',
+  'arrow.right': 'arrow-forward',
+  'xmark': 'close',
+  'exclamationmark.triangle.fill': 'warning',
+  'info.circle.fill': 'info',
+  'square.and.arrow.down': 'file-download',
+  'exclamationmark.circle.fill': 'error',
+} as const;
+
+type IconSymbolName = keyof typeof MAPPING;
 
 /**
  * An icon component that uses native SF Symbols on iOS, and Material Icons on Android and web.
