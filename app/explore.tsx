@@ -10,6 +10,7 @@ import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import { analyticsService } from '@/services/analytics';
 import { presentPaywall, restorePurchasesSecure, validatePremiumAccess } from '@/services/revenuecat';
 import { useQuickEditStore } from '@/store/quickEditStore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
@@ -62,6 +63,34 @@ export default function HomeGalleryLikeScreen() {
       is_pro: isPro ? 'true' : 'false'
     });
   }, [isTabletLike, isPro]);
+
+  // Check for pending recovery navigation after app initialization
+  React.useEffect(() => {
+    const checkPendingRecovery = async () => {
+      try {
+        const pendingNavigation = await AsyncStorage.getItem('pendingRecoveryNavigation');
+        if (pendingNavigation) {
+          const { route, timestamp } = JSON.parse(pendingNavigation);
+          
+          // Check if the pending navigation is recent (within last 30 seconds to avoid stale navigations)
+          const isRecent = Date.now() - timestamp < 30000;
+          
+          if (isRecent) {
+            console.log('📝 [EXPLORE] Executing pending recovery navigation:', route);
+            await AsyncStorage.removeItem('pendingRecoveryNavigation');
+            router.push(route);
+          } else {
+            console.log('📝 [EXPLORE] Clearing stale pending recovery navigation');
+            await AsyncStorage.removeItem('pendingRecoveryNavigation');
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ [EXPLORE] Failed to check pending recovery navigation:', error);
+      }
+    };
+
+    checkPendingRecovery();
+  }, [router]);
 
   return (
     <Animated.View style={[{ flex: 1 }, screenAnimationStyle]}>

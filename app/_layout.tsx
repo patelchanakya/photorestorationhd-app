@@ -274,11 +274,21 @@ async function performRecoveryCheck() {
           console.warn('⚠️ [RECOVERY] Failed to update local restoration record:', error);
         }
         
-        // Navigate to restoration screen for text-edits predictions
-        // Note: Context will be cleared by restoration screen after successful mount
-        router.push(`/restoration/${activePredictionId}`);
+        // Check if app is initialized before navigating
+        const { isInitialized } = require('@/store/appInitStore').useAppInitStore.getState();
         
-        console.log('✅ [RECOVERY] Navigated to restoration screen for text-edit prediction:', activePredictionId);
+        if (!isInitialized) {
+          // Cold start - store the recovery intent for after initialization
+          console.log('📝 [RECOVERY] App not initialized, deferring navigation until after app loads');
+          await AsyncStorage.setItem('pendingRecoveryNavigation', JSON.stringify({
+            route: `/restoration/${activePredictionId}`,
+            timestamp: Date.now()
+          }));
+        } else {
+          // App already initialized (returning from background) - navigate immediately
+          router.push(`/restoration/${activePredictionId}`);
+          console.log('✅ [RECOVERY] Navigated to restoration screen for text-edit prediction:', activePredictionId);
+        }
         return;
       }
       
