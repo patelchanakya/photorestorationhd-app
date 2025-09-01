@@ -61,7 +61,6 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
       return;
     }
     hasShownIntro = true;
-    markInitialized();
     
     const handleAppInitialization = async () => {
       try {
@@ -107,6 +106,7 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
             console.log('🎯 Pro user - going directly to app');
           }
           setInitialRoute('explore');
+          markInitialized();
           onLoadingComplete();
           return;
         }
@@ -116,6 +116,7 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
             console.log('🎯 Free user completed onboarding - going to app');
           }
           setInitialRoute('explore');
+          markInitialized();
           onLoadingComplete();
           return;
         }
@@ -150,6 +151,7 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
           console.log('🎬 Onboarding video complete - going to onboarding');
         }
         setInitialRoute('onboarding-v3');
+        markInitialized();
         onLoadingComplete();
 
       } catch (error) {
@@ -161,6 +163,7 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
           console.log('❌ Error fallback - going to explore');
         }
         setInitialRoute('explore');
+        markInitialized();
         onLoadingComplete();
       }
     };
