@@ -397,12 +397,8 @@ export async function generatePhoto(
   } = {}
 ): Promise<GenerationResponse> {
   // Clear any existing prediction state before starting new generation
-  // This prevents stale state from interfering with new generations
-  await AsyncStorage.removeItem('activePredictionId');
-  
-  if (__DEV__) {
-    console.log('🧹 [RECOVERY] Cleared any existing prediction state before new generation');
-  }
+  // The usePhotoRestoration hook handles clearing and storing prediction IDs
+  // No need to clear here as it creates a gap where no prediction ID exists
   
   const { styleKey, customPrompt, userId } = options;
 

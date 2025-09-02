@@ -16,7 +16,7 @@ import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import React from 'react';
-import { ActivityIndicator, AppState, Dimensions, Modal, Platform, Pressable, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Modal, Platform, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -61,6 +61,7 @@ export function QuickEditSheet() {
   const [isCropping, setIsCropping] = React.useState(false);
   const hasAppliedCropRef = React.useRef(false);
   const [mediaLoading, setMediaLoading] = React.useState(false);
+  const [imageError, setImageError] = React.useState(false);
   const [isLimitError, setIsLimitError] = React.useState(false);
   const [showSavingModal, setShowSavingModal] = React.useState(false);
   const savingModalRef = React.useRef<SavingModalRef>(null);
@@ -163,6 +164,9 @@ export function QuickEditSheet() {
   // Additional check when sheet becomes visible
   React.useEffect(() => {
     if (visible) {
+      // Reset image error state when sheet becomes visible
+      setImageError(false);
+      
       const checkActiveWork = async () => {
         const activePredictionId = await AsyncStorage.getItem('activePredictionId');
         
@@ -201,82 +205,9 @@ export function QuickEditSheet() {
     }
   }, [visible]);
 
-  // Recovery logic for app backgrounding/foregrounding
-  React.useEffect(() => {
-    const handleAppStateChange = (nextAppState: string) => {
-      if (nextAppState === 'active' && stage === 'loading') {
-        // App came to foreground - check if we need to resume processing
-        checkForRecovery();
-      }
-    };
 
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
-    return () => subscription?.remove();
-  }, [stage]);
-
-  // Check for recovery when app becomes active
-  const checkForRecovery = React.useCallback(async () => {
-    try {
-      const activePredictionId = await AsyncStorage.getItem('activePredictionId');
-      if (activePredictionId && stage === 'loading') {
-        if (__DEV__) {
-          console.log('🔄 [RECOVERY] QuickEditSheet: Found active prediction, resuming...');
-        }
-        // Resume processing by checking status
-        setStage('loading');
-        setProgress(50); // Set to middle progress
-      }
-    } catch (error) {
-      if (__DEV__) {
-        console.error('❌ [RECOVERY] QuickEditSheet: Recovery check failed:', error);
-      }
-    }
-  }, [stage]);
-
-  // Handle recovery navigation - close sheet when recovery system navigates elsewhere
-  React.useEffect(() => {
-    let navigationCleanupTimeout: ReturnType<typeof setTimeout> | null = null;
-
-    const checkForRecoveryNavigation = async () => {
-      try {
-        // Check if recovery system has cleared the prediction (indicating navigation occurred)
-        const activePredictionId = await AsyncStorage.getItem('activePredictionId');
-        const pendingNavigation = await AsyncStorage.getItem('pendingRecoveryNavigation');
-        
-        // If we're in loading state, visible, and recovery has cleared the prediction or set up navigation
-        if (visible && stage === 'loading' && (!activePredictionId || pendingNavigation)) {
-          if (__DEV__) {
-            console.log('🔄 [RECOVERY] QuickEditSheet: Recovery navigation detected, closing sheet');
-          }
-          
-          // Clear processing state and close sheet to prevent stuck loading screen
-          isProcessingRef.current = false;
-          
-          // Close with a slight delay to ensure proper cleanup, force close to bypass loading state check
-          navigationCleanupTimeout = setTimeout(() => {
-            if (visible) {
-              handleClose(true);
-            }
-          }, 100);
-        }
-      } catch (error) {
-        if (__DEV__) {
-          console.error('❌ [RECOVERY] QuickEditSheet: Recovery navigation check failed:', error);
-        }
-      }
-    };
-
-    // Check periodically when sheet is visible and loading
-    let checkInterval: ReturnType<typeof setInterval> | null = null;
-    if (visible && stage === 'loading') {
-      checkInterval = setInterval(checkForRecoveryNavigation, 500);
-    }
-
-    return () => {
-      if (checkInterval) clearInterval(checkInterval);
-      if (navigationCleanupTimeout) clearTimeout(navigationCleanupTimeout);
-    };
-  }, [visible, stage, handleClose]);
+  // Recovery is now handled centrally in InitialLoadingScreen
+  // No need for individual recovery checks in components
 
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
   const dimStyle = useAnimatedStyle(() => ({ opacity: overlayOpacity.value }));
@@ -576,16 +507,30 @@ export function QuickEditSheet() {
               {!isCropping ? (
                 <View style={{ height: MEDIA_HEIGHT, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' }}>
                   {(stage === 'done' ? restoredImageUri : selectedImageUri) ? (
-                    <ExpoImage 
-                      source={{ uri: (stage === 'done' && restoredImageUri) ? restoredImageUri : (selectedImageUri as string) }} 
-                      style={{ width: '100%', height: '100%' }} 
-                      contentFit="contain" 
-                      cachePolicy="memory"
-                      allowDownscaling
-                      transition={0}
-                      onLoadStart={() => setMediaLoading(true)}
-                      onLoadEnd={() => setMediaLoading(false)}
-                    />
+                    !imageError ? (
+                      <ExpoImage 
+                        source={{ uri: (stage === 'done' && restoredImageUri) ? restoredImageUri : (selectedImageUri as string) }} 
+                        style={{ width: '100%', height: '100%' }} 
+                        contentFit="contain" 
+                        cachePolicy="memory"
+                        allowDownscaling
+                        transition={0}
+                        onLoadStart={() => setMediaLoading(true)}
+                        onLoadEnd={() => setMediaLoading(false)}
+                        onError={() => {
+                          if (stage === 'done' && restoredImageUri) {
+                            console.log('🚨 [QUICK-EDIT] Recovered image URL failed to load, likely expired');
+                            setImageError(true);
+                          }
+                        }}
+                      />
+                    ) : (
+                      <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+                        <IconSymbol name="exclamationmark.triangle" size={32} color="#ef4444" />
+                        <Text style={{ color: '#ef4444', marginTop: 8, fontSize: 14, textAlign: 'center' }}>Image No Longer Available</Text>
+                        <Text style={{ color: 'rgba(255,255,255,0.6)', marginTop: 4, fontSize: 12, textAlign: 'center' }}>This result has expired</Text>
+                      </View>
+                    )
                   ) : (
                     <View style={{ alignItems: 'center' }}>
                       <IconSymbol name="photo.on.rectangle" size={28} color="rgba(255,255,255,0.75)" />
@@ -722,40 +667,64 @@ export function QuickEditSheet() {
                   </>
                 )}
                 {stage === 'done' && (
-                  <>
-                    <Animated.View style={[saveBtnStyle]}>
-                      <TouchableOpacity 
-                        onPress={handleSave} 
-                        disabled={savePhotoMutation.isPending}
-                        style={{ 
-                          paddingHorizontal: 22, 
-                          height: 56, 
-                          borderRadius: 28, 
-                          backgroundColor: 'rgba(255,255,255,0.1)', 
-                          borderWidth: 1, 
-                          borderColor: 'rgba(255,255,255,0.25)', 
-                          alignItems: 'center', 
-                          justifyContent: 'center',
-                          opacity: savePhotoMutation.isPending ? 0.6 : 1
-                        }}
-                      >
-                        {savePhotoMutation.isPending ? (
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                            <ActivityIndicator size="small" color="#fff" />
-                            <Text style={{ color: '#fff', fontFamily: 'Lexend-SemiBold' }}>Saving...</Text>
-                          </View>
-                        ) : (
-                          <Text style={{ color: '#fff', fontFamily: 'Lexend-SemiBold' }}>Save</Text>
-                        )}
-                      </TouchableOpacity>
-                    </Animated.View>
-                    <TouchableOpacity onPress={handleView} style={{ flex: 1, height: 56, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', minWidth: 120 }}>
-                      <LinearGradient colors={['#F59E0B', '#F59E0B']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
-                      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                        <Text style={{ color: '#0B0B0F', fontWeight: '900', fontSize: 16 }}>View</Text>
-                      </View>
+                  imageError ? (
+                    // Show only close option when image is unavailable
+                    <TouchableOpacity 
+                      onPress={async () => {
+                        // Clean up the prediction state and close
+                        await AsyncStorage.removeItem('activePredictionId');
+                        console.log('🧹 [QUICK-EDIT] Cleaned up expired prediction state');
+                        handleClose(false);
+                      }}
+                      style={{ 
+                        flex: 1, 
+                        height: 56, 
+                        borderRadius: 28, 
+                        backgroundColor: 'rgba(255,255,255,0.1)', 
+                        borderWidth: 1, 
+                        borderColor: 'rgba(255,255,255,0.25)', 
+                        alignItems: 'center', 
+                        justifyContent: 'center' 
+                      }}
+                    >
+                      <Text style={{ color: '#fff', fontFamily: 'Lexend-SemiBold' }}>Close</Text>
                     </TouchableOpacity>
-                  </>
+                  ) : (
+                    <>
+                      <Animated.View style={[saveBtnStyle]}>
+                        <TouchableOpacity 
+                          onPress={handleSave} 
+                          disabled={savePhotoMutation.isPending}
+                          style={{ 
+                            paddingHorizontal: 22, 
+                            height: 56, 
+                            borderRadius: 28, 
+                            backgroundColor: 'rgba(255,255,255,0.1)', 
+                            borderWidth: 1, 
+                            borderColor: 'rgba(255,255,255,0.25)', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            opacity: savePhotoMutation.isPending ? 0.6 : 1
+                          }}
+                        >
+                          {savePhotoMutation.isPending ? (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                              <ActivityIndicator size="small" color="#fff" />
+                              <Text style={{ color: '#fff', fontFamily: 'Lexend-SemiBold' }}>Saving...</Text>
+                            </View>
+                          ) : (
+                            <Text style={{ color: '#fff', fontFamily: 'Lexend-SemiBold' }}>Save</Text>
+                          )}
+                        </TouchableOpacity>
+                      </Animated.View>
+                      <TouchableOpacity onPress={handleView} style={{ flex: 1, height: 56, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', minWidth: 120 }}>
+                        <LinearGradient colors={['#F59E0B', '#F59E0B']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+                        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                          <Text style={{ color: '#0B0B0F', fontWeight: '900', fontSize: 16 }}>View</Text>
+                        </View>
+                      </TouchableOpacity>
+                    </>
+                  )
                 )}
               </View>
 

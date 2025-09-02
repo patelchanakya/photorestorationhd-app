@@ -87,10 +87,9 @@ export const useQuickEditStore = create<QuickEditState>((set) => ({
   },
   forceClose: () => {
     set({ visible: false, stage: 'hidden', functionType: null, selectedImageUri: null, restoredId: null, restoredImageUri: null, progress: 0, styleKey: null, styleName: null, errorMessage: null });
-    // Clear any active prediction ID to prevent stale recovery - forced close for recovery navigation
-    AsyncStorage.removeItem('activePredictionId').catch(() => {});
+    // Do NOT clear activePredictionId during force close - recovery needs it for navigation
     if (__DEV__) {
-      console.log('🧹 [RECOVERY] Force closed Quick Edit Sheet for recovery navigation');
+      console.log('🧹 [RECOVERY] Force closed Quick Edit Sheet for recovery navigation (preserving activePredictionId)');
     }
   },
 }));

@@ -8,7 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import React, { useRef } from 'react';
-import { AppState, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { AppState, ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 interface OutfitItem {
@@ -214,6 +214,16 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
 };
 
 export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: OutfitItem[] }) {
+  const { width, height } = useWindowDimensions();
+  const shortestSide = Math.min(width, height);
+  const longestSide = Math.max(width, height);
+  const isTabletLike = shortestSide >= 768;
+  const isSmallPhone = longestSide <= 700;
+  
+  // Responsive tile dimensions
+  const tileWidth = isTabletLike ? 140 : (isSmallPhone ? 100 : 120);
+  const fontSize = isTabletLike ? 16 : (isSmallPhone ? 12 : 14);
+  
   const router = useRouter();
   const handleOutfitSelect = async (outfit: OutfitItem) => {
     // No Pro gating - all outfits are now free
@@ -259,13 +269,13 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
           <Animated.View
             key={item.id}
             entering={FadeIn.delay(index * 100).duration(800)}
-            style={{ width: 120, marginRight: index === outfits.length - 1 ? 0 : 10 }}
+            style={{ width: tileWidth, marginRight: index === outfits.length - 1 ? 0 : 10 }}
           >
             <TouchableOpacity
               activeOpacity={0.9}
               onPress={() => handleOutfitSelect(item)}
               style={{ 
-                width: 120, 
+                width: tileWidth, 
                 aspectRatio: 9/16, 
                 borderRadius: 16, 
                 overflow: 'hidden', 
@@ -295,12 +305,17 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
               />
               
               {/* Bottom label - removed PRO badge */}
-              <View style={{ position: 'absolute', left: 10, bottom: 10 }}>
-                <Text style={{ 
-                  color: '#FFFFFF', 
-                  fontFamily: 'Lexend-SemiBold', 
-                  fontSize: 14 
-                }}>
+              <View style={{ position: 'absolute', left: 10, right: 10, bottom: 10 }}>
+                <Text 
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                  style={{ 
+                    color: '#FFFFFF', 
+                    fontFamily: 'Lexend-SemiBold', 
+                    fontSize: fontSize,
+                    lineHeight: fontSize * 1.2
+                  }}
+                >
                   {item.title}
                 </Text>
               </View>

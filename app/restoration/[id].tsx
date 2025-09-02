@@ -95,6 +95,17 @@ export default function RestorationScreen() {
         data = await restorationService.getByPredictionId(id as string);
       }
       
+      if (__DEV__) {
+        console.log('📱 [RESTORATION] Loaded restoration data:', {
+          found: !!data,
+          status: data?.status,
+          hasReplicateUrl: !!data?.replicate_url,
+          hasVideoUrl: !!data?.video_replicate_url,
+          hasLocalFiles: !!data?.restored_filename,
+          localFilesReady: data?.local_files_ready
+        });
+      }
+      
       setRestoration(data);
       
       // If this is a completed restoration being shown to user, clear activePredictionId
@@ -503,10 +514,20 @@ export default function RestorationScreen() {
   
   if (restoration.status !== 'completed' && !hasOutputUrl) {
     return (
-      <View className="flex-1 bg-gray-100 justify-center items-center">
-        <Text className="text-gray-800 text-lg">
+      <View className="flex-1 bg-gray-100 justify-center items-center px-6">
+        <IconSymbol name="hourglass" size={48} color="#f97316" />
+        <Text className="text-gray-800 text-lg mt-4 text-center">
           Still processing...
         </Text>
+        <Text className="text-gray-600 text-sm mt-2 text-center">
+          This usually takes a few seconds. Please try again shortly.
+        </Text>
+        <TouchableOpacity 
+          className="mt-4 px-6 py-3 bg-orange-500 rounded-lg"
+          onPress={() => router.back()}
+        >
+          <Text className="text-white font-medium">Go Back</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -545,6 +566,27 @@ export default function RestorationScreen() {
     (restoration.replicate_url && !restoration.local_files_ready) || 
     (restoration.video_replicate_url && !restoration.local_files_ready)
   );
+
+  // If restoration exists but no output URI is available, show error state
+  if (restoration && !restoredUri) {
+    return (
+      <View className="flex-1 bg-gray-100 justify-center items-center px-6">
+        <IconSymbol name="exclamationmark.triangle" size={48} color="#ef4444" />
+        <Text className="text-gray-800 text-lg mt-4 text-center">
+          Result Not Available
+        </Text>
+        <Text className="text-gray-600 text-sm mt-2 text-center">
+          The restored image is no longer available. This can happen if the result has expired.
+        </Text>
+        <TouchableOpacity 
+          className="mt-4 px-6 py-3 bg-orange-500 rounded-lg"
+          onPress={() => router.back()}
+        >
+          <Text className="text-white font-medium">Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   // Debug logging
   if (__DEV__) {

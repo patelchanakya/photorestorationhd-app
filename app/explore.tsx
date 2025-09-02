@@ -9,7 +9,9 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import { analyticsService } from '@/services/analytics';
 import { presentPaywall, restorePurchasesSecure, validatePremiumAccess } from '@/services/revenuecat';
+import { restorationService } from '@/services/supabase';
 import { useQuickEditStore } from '@/store/quickEditStore';
+import { useAppInitStore } from '@/store/appInitStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import * as ImagePicker from 'expo-image-picker';
@@ -64,98 +66,47 @@ export default function HomeGalleryLikeScreen() {
     });
   }, [isTabletLike, isPro]);
 
-  // Check for pending recovery navigation and Quick Edit recovery after app initialization
+  // Handle recovery after app initialization (centralized in appInitStore)
   React.useEffect(() => {
-    const checkPendingRecovery = async () => {
-      try {
-        // Check for pending navigation (restoration screen)
-        const pendingNavigation = await AsyncStorage.getItem('pendingRecoveryNavigation');
-        if (pendingNavigation) {
-          const { route, output, predictionCreatedAt, timestamp } = JSON.parse(pendingNavigation);
+    const handleRecovery = async () => {
+      const { recoveryState, clearRecoveryState } = useAppInitStore.getState();
+      
+      if (recoveryState.hasRecovery) {
+        if (recoveryState.recoveryType === 'textEdit' && recoveryState.recoveryData?.route) {
+          console.log('📝 [EXPLORE] Executing text-edit recovery navigation:', recoveryState.recoveryData.route);
+          clearRecoveryState();
+          router.push(recoveryState.recoveryData.route);
+        } else if (recoveryState.recoveryType === 'quickEdit' && recoveryState.recoveryData?.predictionId && recoveryState.recoveryData?.restoredUri) {
+          console.log('📱 [EXPLORE] Executing Quick Edit recovery:', recoveryState.recoveryData.predictionId);
+          clearRecoveryState();
           
-          // Check if storage is recent (within last 5 minutes to avoid crashed sessions)
-          const storageIsRecent = Date.now() - timestamp < 300000; // 5 minutes
-          
-          // Check if prediction is still valid (within 1 hour)
-          const predictionAge = predictionCreatedAt ? Date.now() - new Date(predictionCreatedAt).getTime() : 0;
-          const predictionIsValid = predictionAge < 3600000; // 1 hour
-          
-          if (storageIsRecent && predictionIsValid && route && route.startsWith('/restoration/') && output) {
-            // Validate image URL is still accessible
-            try {
-              const response = await fetch(output, { method: 'HEAD' });
-              if (response.ok) {
-                console.log('📝 [EXPLORE] Executing pending recovery navigation:', route);
-                await AsyncStorage.removeItem('pendingRecoveryNavigation');
-                router.push(route);
-                return; // Don't check Quick Edit if we're navigating away
-              } else {
-                // URL expired - silently cleanup
-                await AsyncStorage.removeItem('pendingRecoveryNavigation');
-                await AsyncStorage.removeItem('activePredictionId');
-              }
-            } catch {
-              // URL validation failed - silently cleanup
-              await AsyncStorage.removeItem('pendingRecoveryNavigation');
-              await AsyncStorage.removeItem('activePredictionId');
+          try {
+            // Try to update existing restoration record with the recovered URL
+            const restoration = await restorationService.getByPredictionId(recoveryState.recoveryData.predictionId);
+            if (restoration) {
+              console.log('🔧 [EXPLORE] Updating restoration record with fresh recovered URL');
+              await restorationService.update(restoration.id, {
+                replicate_url: recoveryState.recoveryData.restoredUri,
+                status: 'completed',
+                completed_at: new Date().toISOString()
+              });
+              console.log('✅ [EXPLORE] Restoration record updated for recovery');
+            } else {
+              console.log('📝 [EXPLORE] No restoration record found - will show Quick Edit Sheet only');
             }
-          } else {
-            // Stale, invalid, or malformed - silently cleanup
-            await AsyncStorage.removeItem('pendingRecoveryNavigation');
-            if (!predictionIsValid) {
-              await AsyncStorage.removeItem('activePredictionId');
-            }
+          } catch (error) {
+            console.warn('⚠️ [EXPLORE] Failed to update restoration record during recovery:', error);
           }
+          
+          const { setResult } = useQuickEditStore.getState();
+          setResult(recoveryState.recoveryData.predictionId, recoveryState.recoveryData.restoredUri);
+          useQuickEditStore.setState({ visible: true });
+          console.log('✅ [EXPLORE] Quick Edit Sheet opened with recovered result');
         }
-
-        // Check for pending Quick Edit recovery
-        const pendingQuickEdit = await AsyncStorage.getItem('pendingQuickEditRecovery');
-        if (pendingQuickEdit) {
-          const { predictionId, output, predictionCreatedAt, timestamp } = JSON.parse(pendingQuickEdit);
-          
-          // Check if storage is recent (within last 5 minutes to avoid crashed sessions)
-          const storageIsRecent = Date.now() - timestamp < 300000; // 5 minutes
-          
-          // Check if prediction is still valid (within 1 hour)
-          const predictionAge = predictionCreatedAt ? Date.now() - new Date(predictionCreatedAt).getTime() : 0;
-          const predictionIsValid = predictionAge < 3600000; // 1 hour
-          
-          if (storageIsRecent && predictionIsValid && output && output.startsWith('http')) {
-            // Validate image URL is still accessible
-            try {
-              const response = await fetch(output, { method: 'HEAD' });
-              if (response.ok) {
-                console.log('📝 [EXPLORE] Executing pending Quick Edit recovery:', predictionId);
-                await AsyncStorage.removeItem('pendingQuickEditRecovery');
-                
-                const { setResult } = useQuickEditStore.getState();
-                setResult(predictionId, output);
-                useQuickEditStore.setState({ visible: true });
-                console.log('✅ [EXPLORE] Quick Edit Sheet opened with recovered result');
-              } else {
-                // URL expired - silently cleanup
-                await AsyncStorage.removeItem('pendingQuickEditRecovery');
-                await AsyncStorage.removeItem('activePredictionId');
-              }
-            } catch {
-              // URL validation failed - silently cleanup
-              await AsyncStorage.removeItem('pendingQuickEditRecovery');
-              await AsyncStorage.removeItem('activePredictionId');
-            }
-          } else {
-            // Stale, invalid, or malformed - silently cleanup
-            await AsyncStorage.removeItem('pendingQuickEditRecovery');
-            if (!predictionIsValid) {
-              await AsyncStorage.removeItem('activePredictionId');
-            }
-          }
-        }
-      } catch (error) {
-        console.warn('⚠️ [EXPLORE] Failed to check pending recovery:', error);
       }
     };
 
-    checkPendingRecovery();
+    handleRecovery();
   }, [router]);
 
   return (

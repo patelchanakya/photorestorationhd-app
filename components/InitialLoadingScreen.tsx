@@ -7,6 +7,7 @@ import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import { onboardingUtils } from '@/utils/onboarding';
 import { useCropModalStore } from '@/store/cropModalStore';
 import { useAppInitStore } from '@/store/appInitStore';
+import { useQuickEditStore } from '@/store/quickEditStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import React, { useEffect, useRef, useState } from 'react';
@@ -31,7 +32,7 @@ interface InitialLoadingScreenProps {
 
 export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadingScreenProps) {
   const { isPro, isLoading, refreshCustomerInfo } = useRevenueCat();
-  const { setInitialRoute, markInitialized } = useAppInitStore();
+  const { setInitialRoute, markInitialized, setRecoveryState } = useAppInitStore();
   const insets = useSafeAreaInsets();
   const isMountedRef = useRef(true);
 
@@ -155,7 +156,24 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
         // Check onboarding status
         const hasSeenOnboarding = await onboardingUtils.hasSeenOnboarding();
         
-        // Make routing decision
+        // Check for recovery state after initialization
+        const { recoveryState } = useAppInitStore.getState();
+        
+        // Handle recovery navigation first (highest priority)
+        if (recoveryState.hasRecovery) {
+          if (recoveryState.recoveryType === 'textEdit' && recoveryState.recoveryData?.route) {
+            if (__DEV__) {
+              console.log('🔄 [RECOVERY] Text-edit recovery detected - navigating to restoration screen');
+            }
+            markInitialized();
+            onLoadingComplete();
+            // Navigation will be handled by the explore screen checking recovery state
+            setInitialRoute('explore');
+            return;
+          }
+        }
+        
+        // Make normal routing decision
         if (isProUser) {
           if (__DEV__) {
             console.log('🎯 Pro user - going directly to app');
@@ -244,7 +262,8 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
         initializeAnalytics(),
         initializePermissions(),
         initializeNotifications(),
-        checkAndRecoverVideos()
+        checkAndRecoverVideos(),
+        performRecoveryCheck() // Add recovery check during initialization
       ]);
       
       if (__DEV__) {
@@ -422,6 +441,175 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
         console.error('❌ Failed to check for completed videos:', error);
       }
       // Don't throw - initialization should continue even if video recovery fails
+    }
+  };
+
+  // Recovery check function - adapted from _layout.tsx
+  const performRecoveryCheck = async () => {
+    const startTime = Date.now();
+    try {
+      const activePredictionId = await AsyncStorage.getItem('activePredictionId');
+      if (!activePredictionId) {
+        console.log('🔍 [RECOVERY] No active prediction found - recovery skipped');
+        setRecoveryState({ hasRecovery: false });
+        return;
+      }
+      
+      console.log('🔍 [RECOVERY] Starting recovery check for prediction:', activePredictionId);
+      
+      // Get Supabase environment variables
+      const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
+      const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+      
+      if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+        console.error('⚠️ [RECOVERY] CRITICAL: Missing Supabase configuration');
+        await AsyncStorage.removeItem('activePredictionId');
+        setRecoveryState({ hasRecovery: false });
+        return;
+      }
+      
+      console.log('📡 [RECOVERY] Calling secure photo-status endpoint for prediction:', activePredictionId);
+      
+      // Check prediction status using secure photo-status endpoint
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/photo-status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ prediction_id: activePredictionId })
+      });
+      
+      const responseTime = Date.now() - startTime;
+      
+      if (!response.ok) {
+        console.error('🚨 [RECOVERY] photo-status endpoint error:', {
+          prediction_id: activePredictionId,
+          status: response.status,
+          response_time_ms: responseTime
+        });
+        await AsyncStorage.removeItem('activePredictionId');
+        setRecoveryState({ hasRecovery: false });
+        return;
+      }
+      
+      const result = await response.json();
+      
+      if (!result.success) {
+        console.warn('🧹 [RECOVERY] Prediction not found in database, clearing state:', {
+          prediction_id: activePredictionId,
+          error: result.error || 'Unknown database error',
+          response_time_ms: responseTime
+        });
+        await AsyncStorage.removeItem('activePredictionId');
+        setRecoveryState({ hasRecovery: false });
+        return;
+      }
+      
+      const prediction = result;
+      
+      console.log('📊 [RECOVERY] Prediction retrieved from database:', {
+        prediction_id: activePredictionId,
+        status: prediction.status,
+        mode: prediction.mode,
+        has_output: prediction.has_output,
+        is_complete: prediction.is_complete,
+        is_successful: prediction.is_successful,
+        progress: prediction.progress,
+        response_time_ms: responseTime
+      });
+      
+      if (!prediction.has_output && prediction.is_complete) {
+        console.warn('🧹 [RECOVERY] Prediction completed but no output available - likely expired');
+        await AsyncStorage.removeItem('activePredictionId');
+        setRecoveryState({ hasRecovery: false });
+        return;
+      }
+      
+      // Valid prediction with output available
+      if (prediction.status === 'succeeded' && prediction.output) {
+        console.log('🎉 [RECOVERY] SUCCESS: Found completed generation, checking recovery context');
+        
+        // Check if this prediction came from text-edits using multiple detection methods
+        let isTextEditsFlow = false;
+        
+        try {
+          const storedContext = await AsyncStorage.getItem(`textEditContext_${activePredictionId}`);
+          if (storedContext) {
+            const textEditContext = JSON.parse(storedContext);
+            isTextEditsFlow = textEditContext?.mode === 'text-edits';
+          }
+        } catch (error) {
+          console.warn('⚠️ [RECOVERY] Failed to parse text-edit context:', error);
+        }
+        
+        if (!isTextEditsFlow) {
+          try {
+            const flowFlag = await AsyncStorage.getItem('isTextEditsFlow');
+            isTextEditsFlow = flowFlag === 'true';
+          } catch (error) {
+            console.warn('⚠️ [RECOVERY] Failed to check text-edits flow flag:', error);
+          }
+        }
+        
+        if (isTextEditsFlow) {
+          console.log('📝 [RECOVERY] Text-edit prediction detected, will navigate to restoration screen');
+          
+          // Update local restoration record with completed output URL for recovery
+          try {
+            const { localStorageHelpers } = require('@/services/supabase');
+            await localStorageHelpers.updateRestoration(activePredictionId, {
+              status: 'completed',
+              replicate_url: prediction.output,
+              progress: 100
+            });
+          } catch (error) {
+            console.warn('⚠️ [RECOVERY] Failed to update local restoration record:', error);
+          }
+          
+          // Store text-edit recovery state for navigation after initialization
+          setRecoveryState({
+            hasRecovery: true,
+            recoveryType: 'textEdit',
+            recoveryData: {
+              predictionId: activePredictionId,
+              route: `/restoration/${activePredictionId}`
+            }
+          });
+          
+          return;
+        }
+        
+        // Quick Edit Sheet recovery for non-text-edit predictions
+        console.log('📱 [RECOVERY] Quick Edit prediction detected, will show sheet with result');
+        
+        // Store recovery data - let the UI handle any URL loading issues
+        setRecoveryState({
+          hasRecovery: true,
+          recoveryType: 'quickEdit',
+          recoveryData: {
+            predictionId: activePredictionId,
+            restoredUri: prediction.output
+          }
+        });
+        console.log('✅ [RECOVERY] Quick Edit recovery data stored for later display');
+      } else if (prediction.status === 'processing') {
+        console.log('⏳ [RECOVERY] Generation still processing, no recovery UI needed');
+        setRecoveryState({ hasRecovery: false });
+      } else if (prediction.status === 'failed') {
+        console.error('❌ [RECOVERY] Previous generation failed, clearing state');
+        await AsyncStorage.removeItem('activePredictionId');
+        setRecoveryState({ hasRecovery: false });
+      }
+      
+    } catch (error) {
+      const totalTime = Date.now() - startTime;
+      console.error('🚨 [RECOVERY] CRITICAL ERROR: Recovery check failed:', {
+        error: error instanceof Error ? error.message : String(error),
+        total_time_ms: totalTime
+      });
+      await AsyncStorage.removeItem('activePredictionId');
+      setRecoveryState({ hasRecovery: false });
     }
   };
 

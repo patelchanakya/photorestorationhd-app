@@ -170,6 +170,14 @@ export function usePhotoRestoration() {
       }
       
       try {
+        // Clear any existing prediction state before starting new generation
+        await AsyncStorage.removeItem('activePredictionId');
+        await AsyncStorage.removeItem('predictionContext');
+        
+        if (__DEV__) {
+          console.log('🧹 [RECOVERY] Cleared any existing prediction state before new generation');
+        }
+        
         // Save original photo locally
         const originalFilename = await photoStorage.saveOriginal(imageUri);
 
