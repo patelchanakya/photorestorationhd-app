@@ -804,8 +804,12 @@ useEffect(() => {
           const hasEdits = (editMode === 'presets' && selectedLabels.length > 0) || 
                           (editMode === 'custom' && customPrompt.trim());
           
+          // Check if free limit is reached - button should be enabled to trigger paywall
+          const isFreeLimitReached = photoUsage && !photoUsage.canUse && photoUsage.planType === 'free';
+          
           // Prevent double-taps by checking both conditions and ref lock
-          const isDisabled = !canApply || applyLockRef.current;
+          // But allow clicking if free limit is reached (to trigger paywall)
+          const isDisabled = (!canApply || applyLockRef.current) && !isFreeLimitReached;
           
           return (
             <Animated.View style={buttonAnimatedStyle}>
@@ -813,12 +817,12 @@ useEffect(() => {
                 onPress={handleProcessImage}
                 activeOpacity={1}
                 onPressIn={() => {
-                  if (canApply && !applyLockRef.current) {
+                  if ((canApply || isFreeLimitReached) && !applyLockRef.current) {
                     buttonScale.value = withTiming(0.95, { duration: 100 });
                   }
                 }}
                 onPressOut={() => {
-                  if (canApply && !applyLockRef.current) {
+                  if ((canApply || isFreeLimitReached) && !applyLockRef.current) {
                     buttonScale.value = withTiming(1, { duration: 150 });
                   }
                 }}
@@ -836,7 +840,7 @@ useEffect(() => {
               }}
               accessibilityState={{ disabled: isDisabled }}
             >
-              {!isDisabled ? (
+              {(!isDisabled || isFreeLimitReached) ? (
                 <View style={{ position: 'relative', flex: 1 }}>
                   {/* Animated background glow */}
                   <View style={{
