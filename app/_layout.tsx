@@ -111,6 +111,8 @@ function useAppState(onChange: (status: AppStateStatus) => void) {
 
 // Recovery mutex to prevent concurrent operations
 let recoveryInProgress = false;
+// Navigation guard to prevent duplicate navigation attempts
+let navigationInProgress = false;
 
 // Recovery function to check for active predictions
 async function checkActivePrediction() {
@@ -288,12 +290,24 @@ async function performRecoveryCheck() {
             timestamp: Date.now()
           }));
         } else {
-          // App already initialized - validate URL before navigating
+          // App already initialized - validate URL before navigating with guard
+          if (navigationInProgress) {
+            console.log('⚠️ [RECOVERY] Navigation already in progress, skipping text-edit navigation');
+            return;
+          }
+          
           try {
             const response = await fetch(prediction.output, { method: 'HEAD' });
             if (response.ok) {
-              router.push(`/restoration/${activePredictionId}`);
-              console.log('✅ [RECOVERY] Navigated to restoration screen for text-edit prediction:', activePredictionId);
+              navigationInProgress = true;
+              try {
+                router.push(`/restoration/${activePredictionId}`);
+                console.log('✅ [RECOVERY] Navigated to restoration screen for text-edit prediction:', activePredictionId);
+              } finally {
+                setTimeout(() => {
+                  navigationInProgress = false;
+                }, 1000);
+              }
             } else {
               // URL expired - silently cleanup
               await AsyncStorage.removeItem('activePredictionId');
@@ -324,12 +338,49 @@ async function performRecoveryCheck() {
           timestamp: Date.now()
         }));
       } else {
-        // App already initialized - validate URL before opening Quick Edit Sheet
+        // App already initialized - check if sheet is already visible first
+        const currentQuickEditState = useQuickEditStore.getState();
+        
+        if (currentQuickEditState.visible && currentQuickEditState.stage === 'loading') {
+          // Quick Edit Sheet is visible and loading - close it first, then navigate to restoration screen
+          console.log('📱 [RECOVERY] Quick Edit Sheet is loading, closing and navigating to restoration screen');
+          
+          // Force close the sheet immediately (bypasses loading state protection)
+          const { forceClose } = useQuickEditStore.getState();
+          forceClose();
+          
+          // Clear the active prediction state
+          await AsyncStorage.removeItem('activePredictionId');
+          
+          // Small delay to ensure sheet animation completes, then navigate with guard
+          setTimeout(() => {
+            if (navigationInProgress) {
+              console.log('⚠️ [RECOVERY] Navigation already in progress, skipping duplicate attempt');
+              return;
+            }
+            
+            navigationInProgress = true;
+            try {
+              router.push(`/restoration/${activePredictionId}`);
+              console.log('✅ [RECOVERY] Navigated to restoration screen after closing Quick Edit Sheet');
+            } catch (error) {
+              console.error('❌ [RECOVERY] Failed to navigate to restoration screen:', error);
+            } finally {
+              // Reset navigation guard after a short delay
+              setTimeout(() => {
+                navigationInProgress = false;
+              }, 1000);
+            }
+          }, 300);
+          
+          return;
+        }
+        
+        // Normal Quick Edit Sheet recovery - validate URL before opening
         try {
           const response = await fetch(prediction.output, { method: 'HEAD' });
           if (response.ok) {
             // Check if this is the same prediction that's already displayed
-            const currentQuickEditState = useQuickEditStore.getState();
             if (currentQuickEditState.visible && currentQuickEditState.restoredId === activePredictionId) {
               console.log('⚠️ [RECOVERY] Same prediction already displayed, skipping duplicate UI update');
               return;

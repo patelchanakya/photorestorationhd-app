@@ -25,6 +25,7 @@ export interface QuickEditState {
   setStyleKey: (key: string | null) => void;
   setError: (message: string) => void;
   close: () => void;
+  forceClose: () => void;
 }
 
 export const useQuickEditStore = create<QuickEditState>((set) => ({
@@ -82,6 +83,14 @@ export const useQuickEditStore = create<QuickEditState>((set) => ({
     AsyncStorage.removeItem('activePredictionId').catch(() => {});
     if (__DEV__) {
       console.log('🧹 [RECOVERY] Cleared prediction state on Quick Edit Sheet close');
+    }
+  },
+  forceClose: () => {
+    set({ visible: false, stage: 'hidden', functionType: null, selectedImageUri: null, restoredId: null, restoredImageUri: null, progress: 0, styleKey: null, styleName: null, errorMessage: null });
+    // Clear any active prediction ID to prevent stale recovery - forced close for recovery navigation
+    AsyncStorage.removeItem('activePredictionId').catch(() => {});
+    if (__DEV__) {
+      console.log('🧹 [RECOVERY] Force closed Quick Edit Sheet for recovery navigation');
     }
   },
 }));

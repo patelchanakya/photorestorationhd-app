@@ -110,9 +110,9 @@ export function QuickEditSheet() {
   const overlayOpacity = useSharedValue(0);
   const MEDIA_HEIGHT = 240;
   const saveButtonScale = useSharedValue(1);
-  const handleClose = React.useCallback(async () => {
-    // Prevent dismissal while processing
-    if (stage === 'loading') {
+  const handleClose = React.useCallback(async (forceClose = false) => {
+    // Prevent dismissal while processing unless forced (for recovery)
+    if (stage === 'loading' && !forceClose) {
       return;
     }
     try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
@@ -121,7 +121,7 @@ export function QuickEditSheet() {
     await AsyncStorage.removeItem('activePredictionId');
     
     if (__DEV__) {
-      console.log('❌ [RECOVERY] Cleared prediction state after dismiss');
+      console.log('❌ [RECOVERY] Cleared prediction state after dismiss', forceClose ? '(forced)' : '');
     }
     
     close();
@@ -232,6 +232,51 @@ export function QuickEditSheet() {
       }
     }
   }, [stage]);
+
+  // Handle recovery navigation - close sheet when recovery system navigates elsewhere
+  React.useEffect(() => {
+    let navigationCleanupTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const checkForRecoveryNavigation = async () => {
+      try {
+        // Check if recovery system has cleared the prediction (indicating navigation occurred)
+        const activePredictionId = await AsyncStorage.getItem('activePredictionId');
+        const pendingNavigation = await AsyncStorage.getItem('pendingRecoveryNavigation');
+        
+        // If we're in loading state, visible, and recovery has cleared the prediction or set up navigation
+        if (visible && stage === 'loading' && (!activePredictionId || pendingNavigation)) {
+          if (__DEV__) {
+            console.log('🔄 [RECOVERY] QuickEditSheet: Recovery navigation detected, closing sheet');
+          }
+          
+          // Clear processing state and close sheet to prevent stuck loading screen
+          isProcessingRef.current = false;
+          
+          // Close with a slight delay to ensure proper cleanup, force close to bypass loading state check
+          navigationCleanupTimeout = setTimeout(() => {
+            if (visible) {
+              handleClose(true);
+            }
+          }, 100);
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.error('❌ [RECOVERY] QuickEditSheet: Recovery navigation check failed:', error);
+        }
+      }
+    };
+
+    // Check periodically when sheet is visible and loading
+    let checkInterval: ReturnType<typeof setInterval> | null = null;
+    if (visible && stage === 'loading') {
+      checkInterval = setInterval(checkForRecoveryNavigation, 500);
+    }
+
+    return () => {
+      if (checkInterval) clearInterval(checkInterval);
+      if (navigationCleanupTimeout) clearTimeout(navigationCleanupTimeout);
+    };
+  }, [visible, stage, handleClose]);
 
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
   const dimStyle = useAnimatedStyle(() => ({ opacity: overlayOpacity.value }));
@@ -496,7 +541,7 @@ export function QuickEditSheet() {
       <View style={{ flex: 1, justifyContent: 'flex-end' }}>
         <Pressable
           // Disable backdrop dismiss while processing
-          onPress={stage === 'loading' ? undefined : handleClose}
+          onPress={stage === 'loading' ? undefined : () => handleClose(false)}
           accessibilityRole="button"
           accessibilityLabel="Close editor"
           style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
@@ -513,7 +558,12 @@ export function QuickEditSheet() {
             <View style={{ padding: 16, paddingBottom: Math.max(12, insets.bottom + 8) }}>
               {/* Header */}
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                <TouchableOpacity onPress={handleClose} hitSlop={{ top: 8, left: 8, bottom: 8, right: 8 }} style={{ padding: 4 }}>
+                <TouchableOpacity 
+                  onPress={() => handleClose(false)} 
+                  disabled={stage === 'loading'} 
+                  hitSlop={{ top: 8, left: 8, bottom: 8, right: 8 }} 
+                  style={{ padding: 4, opacity: stage === 'loading' ? 0.5 : 1 }}
+                >
                   <IconSymbol name="xmark" size={20} color="#EAEAEA" />
                 </TouchableOpacity>
                 <Text style={{ color: '#EAEAEA', fontSize: 16, fontFamily: 'Lexend-Bold' }}>
