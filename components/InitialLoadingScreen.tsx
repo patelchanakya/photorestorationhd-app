@@ -33,23 +33,70 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
   const { isPro, isLoading, refreshCustomerInfo } = useRevenueCat();
   const { setInitialRoute, markInitialized } = useAppInitStore();
   const insets = useSafeAreaInsets();
+  const isMountedRef = useRef(true);
 
   // Simple state
   const [currentVideo, setCurrentVideo] = useState<'loading' | 'onboarding' | 'done'>('loading');
 
   // Main loading video player - play once only
   const videoPlayer = useVideoPlayer(require('../assets/videos/loading.mp4'), (player) => {
-    player.loop = false;  // Play once only
-    player.muted = true;
-    // Don't auto-play - will be triggered when needed
+    try {
+      player.loop = false;  // Play once only
+      player.muted = true;
+      // Don't auto-play - will be triggered when needed
+    } catch (error) {
+      console.error('Loading video player init error:', error);
+    }
   });
 
   // Onboarding intro video player
   const onloadingVideoPlayer = useVideoPlayer(require('../assets/videos/onloading.mp4'), (player) => {
-    player.loop = false;  // Play once only
-    player.muted = true;
-    // Don't auto-play - will be triggered after main video
+    try {
+      player.loop = false;  // Play once only
+      player.muted = true;
+      // Don't auto-play - will be triggered after main video
+    } catch (error) {
+      console.error('Onboarding video player init error:', error);
+    }
   });
+
+  // Cleanup video players on unmount
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    return () => {
+      isMountedRef.current = false;
+      
+      // Cleanup both video players
+      try {
+        if (videoPlayer) {
+          const status = videoPlayer.status;
+          if (status !== 'idle') {
+            videoPlayer.pause();
+          }
+          videoPlayer.release();
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.log('Loading video cleanup handled');
+        }
+      }
+
+      try {
+        if (onloadingVideoPlayer) {
+          const status = onloadingVideoPlayer.status;
+          if (status !== 'idle') {
+            onloadingVideoPlayer.pause();
+          }
+          onloadingVideoPlayer.release();
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.log('Onboarding video cleanup handled');
+        }
+      }
+    };
+  }, []);
 
   // Single initialization flow
   useEffect(() => {
@@ -69,7 +116,15 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
         }
 
         // Start loading video
-        videoPlayer.play();
+        try {
+          if (videoPlayer.status !== 'idle' && isMountedRef.current) {
+            videoPlayer.play();
+          }
+        } catch (error) {
+          if (__DEV__) {
+            console.log('Loading video play error handled');
+          }
+        }
         
         // Wait minimum time (5.8s) and initialize services in parallel
         const [_] = await Promise.all([
@@ -129,7 +184,15 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
         
         // Play onboarding video
         setTimeout(() => {
-          onloadingVideoPlayer.play();
+          try {
+            if (onloadingVideoPlayer.status !== 'idle' && isMountedRef.current) {
+              onloadingVideoPlayer.play();
+            }
+          } catch (error) {
+            if (__DEV__) {
+              console.log('Onboarding video play error handled');
+            }
+          }
         }, 300);
         
         // Wait for video to complete
@@ -381,6 +444,7 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
           contentFit="contain"
           nativeControls={false}
           allowsFullscreen={false}
+          useExoShutter={false}
         />
       )}
 
@@ -401,6 +465,7 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
           contentFit="contain"
           nativeControls={false}
           allowsFullscreen={false}
+          useExoShutter={false}
         />
       )}
     </View>

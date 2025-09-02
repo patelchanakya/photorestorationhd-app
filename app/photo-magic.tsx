@@ -5,7 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { VideoView, useVideoPlayer } from 'expo-video';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Alert, ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -13,12 +13,17 @@ export default function PhotoMagicUploadScreen() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
   const [isSelecting, setIsSelecting] = useState(false);
+  const isMountedRef = useRef(true);
 
   // Video player setup
   const videoPlayer = useVideoPlayer(require('../assets/videos/text-edit.mp4'), (player) => {
-    player.loop = true;
-    player.muted = true;
-    player.play();
+    try {
+      player.loop = true;
+      player.muted = true;
+      player.play();
+    } catch (error) {
+      console.error('Video player initialization error:', error);
+    }
   });
 
   // Track screen view on mount
@@ -27,6 +32,35 @@ export default function PhotoMagicUploadScreen() {
       is_tablet: width > 768 ? 'true' : 'false'
     });
   }, [width]);
+
+  // Cleanup video player on unmount
+  React.useEffect(() => {
+    // Set mounted flag
+    isMountedRef.current = true;
+
+    return () => {
+      // Clear mounted flag
+      isMountedRef.current = false;
+      
+      // Cleanup video player
+      try {
+        if (videoPlayer) {
+          // Try to check status first as a validity check
+          const status = videoPlayer.status;
+          if (status !== 'idle') {
+            videoPlayer.pause();
+          }
+          videoPlayer.release();
+        }
+      } catch (error) {
+        // Silently handle cleanup errors as player may already be deallocated
+        // This is expected when React Native garbage collects the player
+        if (__DEV__) {
+          console.log('Video player cleanup handled - this is normal');
+        }
+      }
+    };
+  }, []); // Empty deps - only run on mount/unmount
 
   const pickImage = async () => {
     if (isSelecting) return;
@@ -78,6 +112,18 @@ export default function PhotoMagicUploadScreen() {
     setIsSelecting(true);
 
     try {
+      // Pause video to free up memory before camera launch
+      try {
+        if (videoPlayer && videoPlayer.status !== 'idle' && videoPlayer.playing) {
+          videoPlayer.pause();
+        }
+      } catch (pauseError) {
+        // Continue even if pause fails
+        if (__DEV__) {
+          console.log('Video pause before camera handled');
+        }
+      }
+
       const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
       
       if (permissionResult.granted === false) {
@@ -111,6 +157,17 @@ export default function PhotoMagicUploadScreen() {
     } catch (error) {
       Alert.alert('Error', 'Failed to take photo. Please try again.');
       console.error('Camera error:', error);
+      
+      // Resume video playback on error if component is still mounted
+      try {
+        if (isMountedRef.current && videoPlayer && videoPlayer.status !== 'idle' && !videoPlayer.playing) {
+          videoPlayer.play();
+        }
+      } catch (videoError) {
+        if (__DEV__) {
+          console.log('Video resume handled');
+        }
+      }
     } finally {
       setIsSelecting(false);
     }

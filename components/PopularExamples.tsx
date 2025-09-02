@@ -7,7 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { VideoView, useVideoPlayer } from 'expo-video';
-import React from 'react';
+import React, { useRef } from 'react';
 import { AppState, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
@@ -112,6 +112,8 @@ const DEFAULT_POPULAR_ITEMS: PopularItem[] = [
 const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) => {
   // Deterministic values based on index for visual variety
   const videoIndex = index || 0;
+  const isMountedRef = useRef(true);
+  
   const playbackRate = React.useMemo(() => {
     // Normal playback speeds
     const rates = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0];
@@ -124,11 +126,38 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
   }, [videoIndex]);
   
   const player = useVideoPlayer(video, (player) => {
-    player.loop = true;
-    player.muted = true;
-    player.playbackRate = playbackRate;
-    // Don't auto-play, wait for effect
+    try {
+      player.loop = true;
+      player.muted = true;
+      player.playbackRate = playbackRate;
+      // Don't auto-play, wait for effect
+    } catch (error) {
+      console.error('PopularExamples video player init error:', error);
+    }
   });
+
+  // Cleanup video player on unmount
+  React.useEffect(() => {
+    isMountedRef.current = true;
+    
+    return () => {
+      isMountedRef.current = false;
+      
+      try {
+        if (player) {
+          const status = player.status;
+          if (status !== 'idle') {
+            player.pause();
+          }
+          player.release();
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.log('PopularExamples video cleanup handled');
+        }
+      }
+    };
+  }, []);
 
   React.useEffect(() => {
     if (!player) return;
@@ -139,16 +168,24 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
     const totalDelay = baseDelay + randomOffset;
     
     const playTimer = setTimeout(() => {
+      if (!isMountedRef.current) return;
+      
       // Seek to different starting points to break up synchronization
       try {
-        player.currentTime = initialSeek;
+        if (player.status !== 'idle') {
+          player.currentTime = initialSeek;
+        }
       } catch (e) {
         // Ignore seek errors on initial load
       }
       
       // Start playing with the varied playback rate
-      if (!player.playing) {
-        player.play();
+      try {
+        if (!player.playing && player.status !== 'idle') {
+          player.play();
+        }
+      } catch (e) {
+        // Ignore play errors
       }
     }, totalDelay);
     
@@ -158,13 +195,19 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
   // Handle app state changes (backgrounding/foregrounding)
   React.useEffect(() => {
     const handleAppStateChange = (nextAppState: string) => {
-      if (nextAppState === 'active') {
+      if (nextAppState === 'active' && isMountedRef.current) {
         // Resume video playback when app returns to foreground
-        if (player && !player.playing) {
-          // Small delay to let the app settle
-          setTimeout(() => {
-            player.play();
-          }, 100 + videoIndex * 50);
+        try {
+          if (player && !player.playing && player.status !== 'idle') {
+            // Small delay to let the app settle
+            setTimeout(() => {
+              if (isMountedRef.current) {
+                player.play();
+              }
+            }, 100 + videoIndex * 50);
+          }
+        } catch (error) {
+          // Ignore resume errors
         }
       }
     };
@@ -177,10 +220,16 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
   useFocusEffect(
     React.useCallback(() => {
       // Resume playback when screen comes into focus
-      if (player && !player.playing) {
-        setTimeout(() => {
-          player.play();
-        }, 100 + videoIndex * 50);
+      try {
+        if (player && !player.playing && player.status !== 'idle' && isMountedRef.current) {
+          setTimeout(() => {
+            if (isMountedRef.current) {
+              player.play();
+            }
+          }, 100 + videoIndex * 50);
+        }
+      } catch (error) {
+        // Ignore focus resume errors
       }
       
       return () => {

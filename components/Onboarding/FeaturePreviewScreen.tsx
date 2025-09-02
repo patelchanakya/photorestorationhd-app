@@ -4,7 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { VideoView, useVideoPlayer } from 'expo-video';
-import React from 'react';
+import React, { useRef } from 'react';
 import { Alert, AppState, Dimensions, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -32,6 +32,7 @@ export function FeaturePreviewScreen({
   onPickPhoto 
 }: FeaturePreviewScreenProps) {
   const selectedFeature = ONBOARDING_FEATURES.find(f => f.id === selectedFeatureId);
+  const isMountedRef = useRef(true);
   
   const headerOpacity = useSharedValue(0);
   const titleOpacity = useSharedValue(0);
@@ -43,12 +44,39 @@ export function FeaturePreviewScreen({
   // Get preview media for the selected feature
   const previewMedia = getPreviewMedia(selectedFeatureId);
   const videoPlayer = useVideoPlayer(previewMedia.source, (player) => {
-    if (previewMedia.type === 'video') {
-      player.loop = true;
-      player.muted = true;
-      player.play();
+    try {
+      if (previewMedia.type === 'video') {
+        player.loop = true;
+        player.muted = true;
+        player.play();
+      }
+    } catch (error) {
+      console.error('FeaturePreview video player init error:', error);
     }
   });
+
+  // Cleanup video player on unmount
+  React.useEffect(() => {
+    isMountedRef.current = true;
+
+    return () => {
+      isMountedRef.current = false;
+      
+      try {
+        if (videoPlayer) {
+          const status = videoPlayer.status;
+          if (status !== 'idle') {
+            videoPlayer.pause();
+          }
+          videoPlayer.release();
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.log('FeaturePreview video cleanup handled');
+        }
+      }
+    };
+  }, []);
 
   React.useEffect(() => {
     // If "none_above" is selected, automatically skip to community screen
@@ -80,12 +108,18 @@ export function FeaturePreviewScreen({
     if (!videoPlayer) return;
     
     const handleAppStateChange = (nextAppState: string) => {
-      if (nextAppState === 'active') {
+      if (nextAppState === 'active' && isMountedRef.current) {
         // Resume video playback when app returns to foreground
-        if (videoPlayer && !videoPlayer.playing) {
-          setTimeout(() => {
-            videoPlayer.play();
-          }, 100);
+        try {
+          if (videoPlayer && !videoPlayer.playing && videoPlayer.status !== 'idle') {
+            setTimeout(() => {
+              if (isMountedRef.current) {
+                videoPlayer.play();
+              }
+            }, 100);
+          }
+        } catch (error) {
+          // Ignore resume errors
         }
       }
     };
@@ -98,10 +132,16 @@ export function FeaturePreviewScreen({
   useFocusEffect(
     React.useCallback(() => {
       // Resume playback when screen comes into focus
-      if (videoPlayer && !videoPlayer.playing) {
-        setTimeout(() => {
-          videoPlayer.play();
-        }, 100);
+      try {
+        if (videoPlayer && !videoPlayer.playing && videoPlayer.status !== 'idle' && isMountedRef.current) {
+          setTimeout(() => {
+            if (isMountedRef.current) {
+              videoPlayer.play();
+            }
+          }, 100);
+        }
+      } catch (error) {
+        // Ignore focus resume errors
       }
     }, [videoPlayer])
   );
@@ -241,6 +281,7 @@ export function FeaturePreviewScreen({
                 contentFit='cover'
                 nativeControls={false}
                 allowsFullscreen={false}
+                useExoShutter={false}
               />
             ) : (
               <ExpoImage

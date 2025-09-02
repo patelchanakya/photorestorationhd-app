@@ -7,7 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { VideoView, useVideoPlayer } from 'expo-video';
-import React from 'react';
+import React, { useRef } from 'react';
 import { AppState, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
@@ -76,6 +76,8 @@ const DEFAULT_MEMORIAL_ITEMS: MemorialItem[] = [
 const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) => {
   // Deterministic values based on index for visual variety
   const videoIndex = index || 0;
+  const isMountedRef = useRef(true);
+  
   const playbackRate = React.useMemo(() => {
     // Normal playback speeds
     const rates = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0];
@@ -88,11 +90,38 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
   }, [videoIndex]);
   
   const player = useVideoPlayer(video, (player) => {
-    player.loop = true;
-    player.muted = true;
-    player.playbackRate = playbackRate;
-    // Don't auto-play, wait for explicit play call
+    try {
+      player.loop = true;
+      player.muted = true;
+      player.playbackRate = playbackRate;
+      // Don't auto-play, wait for explicit play call
+    } catch (error) {
+      console.error('AnimatedBackgrounds video player init error:', error);
+    }
   });
+
+  // Cleanup video player on unmount
+  React.useEffect(() => {
+    isMountedRef.current = true;
+    
+    return () => {
+      isMountedRef.current = false;
+      
+      try {
+        if (player) {
+          const status = player.status;
+          if (status !== 'idle') {
+            player.pause();
+          }
+          player.release();
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.log('AnimatedBackgrounds video cleanup handled');
+        }
+      }
+    };
+  }, []);
 
   // Start playback with staggered timing and seek to initial position
   React.useEffect(() => {
@@ -102,8 +131,16 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
     
     // Seek to initial position then start playing
     playTimer = setTimeout(() => {
-      player.currentTime = initialSeek;
-      player.play();
+      if (!isMountedRef.current) return;
+      
+      try {
+        if (player.status !== 'idle') {
+          player.currentTime = initialSeek;
+          player.play();
+        }
+      } catch (error) {
+        // Ignore playback errors
+      }
     }, videoIndex * 150); // Staggered start for visual variety
     
     return () => clearTimeout(playTimer);
@@ -112,13 +149,19 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
   // Handle app state changes (backgrounding/foregrounding)
   React.useEffect(() => {
     const handleAppStateChange = (nextAppState: string) => {
-      if (nextAppState === 'active') {
+      if (nextAppState === 'active' && isMountedRef.current) {
         // Resume video playback when app returns to foreground
-        if (player && !player.playing) {
-          // Small delay to let the app settle
-          setTimeout(() => {
-            player.play();
-          }, 100 + videoIndex * 50); // Staggered resume
+        try {
+          if (player && !player.playing && player.status !== 'idle') {
+            // Small delay to let the app settle
+            setTimeout(() => {
+              if (isMountedRef.current) {
+                player.play();
+              }
+            }, 100 + videoIndex * 50); // Staggered resume
+          }
+        } catch (error) {
+          // Ignore resume errors
         }
       }
     };
@@ -131,10 +174,16 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
   useFocusEffect(
     React.useCallback(() => {
       // Resume playback when screen comes into focus
-      if (player && !player.playing) {
-        setTimeout(() => {
-          player.play();
-        }, 100 + videoIndex * 50);
+      try {
+        if (player && !player.playing && player.status !== 'idle' && isMountedRef.current) {
+          setTimeout(() => {
+            if (isMountedRef.current) {
+              player.play();
+            }
+          }, 100 + videoIndex * 50);
+        }
+      } catch (error) {
+        // Ignore focus resume errors
       }
     }, [player, videoIndex])
   );
