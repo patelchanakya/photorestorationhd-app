@@ -26,7 +26,7 @@ interface SetupStep {
 const SETUP_STEPS: SetupStep[] = [
   {
     id: 'profile',
-    title: 'Creating your profile',
+    title: 'Setting up your space',
     icon: 'person.circle'
   },
   {
@@ -376,7 +376,13 @@ function SetupStepItem({ step, isActive, isCompleted, isUpcoming }: SetupStepIte
       </View>
 
       {/* Status indicator */}
-      <View style={{ marginLeft: 8 }}>
+      <View style={{ 
+        marginLeft: 8,
+        width: 16,
+        height: 16,
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
         {isActive && (
           <Animated.View style={[
             {
