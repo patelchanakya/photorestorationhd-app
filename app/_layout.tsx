@@ -26,7 +26,7 @@ import Constants from 'expo-constants';
 import { Image as ExpoImage } from 'expo-image';
 import React, { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 
 // Configure LogBox for production
 if (!__DEV__) {
@@ -572,7 +572,7 @@ export default function RootLayout() {
   // Always render the main navigation - no conditional loading
 
   return (
-    <SafeAreaProvider>
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <View style={{ flex: 1, backgroundColor: '#000000' }}>
         <ErrorBoundary>
           <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#000000' }}>
