@@ -101,7 +101,7 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
   },
   {
     id: 'restore_repair',
-    name: 'Restore & Repair',
+    name: 'Fix My Photo',
     description: 'Fix tears, scratches, and damage in old photos',
     icon: 'bandage',
     mapsTo: 'restoration',

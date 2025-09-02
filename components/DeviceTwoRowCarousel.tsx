@@ -179,7 +179,7 @@ export function DeviceTwoRowCarousel({ functionType }: DeviceTwoRowCarouselProps
             }}
             style={{ marginTop: 12 }}
           >
-            <Text style={{ color: '#111827', textAlign: 'center', fontFamily: 'Lexend-Bold', textDecorationLine: 'underline' }}>Repair from Device</Text>
+            <Text style={{ color: '#111827', textAlign: 'center', fontFamily: 'Lexend-Bold', textDecorationLine: 'underline' }}>Fix from Device</Text>
           </TouchableOpacity>
         </View>
       </View>

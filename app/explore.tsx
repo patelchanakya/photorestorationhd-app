@@ -303,9 +303,9 @@ export default function HomeGalleryLikeScreen() {
 
 {/* BackToLife feature removed */}
 
-      {/* Restore/Repair section title */}
+      {/* Fix My Image section title */}
       <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>Restore/Repair</Text>
+        <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>Fix My Photo</Text>
         <TouchableOpacity
           onPress={async () => {
             // Validate premium access before proceeding
