@@ -1,0 +1,324 @@
+{
+  "app": {
+    "name": "Clever"
+  },
+  "explore": {
+    "header": {
+      "title": "Clever",
+      "pro": "PRO"
+    },
+    "sections": {
+      "popular": "热门",
+      "fixMyPhoto": "修复我的照片",
+      "memorial": "纪念",
+      "outfits": "服装",
+      "magic": "魔法"
+    },
+    "alerts": {
+      "proMember": {
+        "title": "Pro 会员 ✓",
+        "message": "您的订阅已激活！您可以无限使用所有功能。",
+        "button": "太棒了！"
+      },
+      "subscriptionStatus": {
+        "title": "订阅状态",
+        "noActiveMessage": "未找到活跃订阅。您将可以使用免费功能。",
+        "button": "确定"
+      },
+      "subscriptionCheck": {
+        "title": "订阅检查",
+        "message": "此 Apple ID 上未找到活跃订阅。请使用购买时使用的 Apple ID 登录。",
+        "howToFix": "如何修复",
+        "howToFixTitle": "如何修复订阅",
+        "howToFixMessage": "1. 前往设置 → App Store\n2. 使用购买时使用的 Apple ID 登录\n3. 返回 Clever 并再次点击 PRO 徽章",
+        "gotIt": "明白了"
+      },
+      "proStatusCheck": {
+        "title": "Pro 状态检查",
+        "message": "无法验证订阅状态。请重试或检查您的网络连接。"
+      },
+      "demoMode": {
+        "title": "演示模式",
+        "message": "Expo Go 中无法进行购买。"
+      },
+      "welcomeToPro": {
+        "title": "欢迎使用 Pro！",
+        "message": "您现在拥有无限访问权限！",
+        "button": "太棒了！"
+      }
+    }
+  },
+  "popular": {
+    "clearSkin": "清洁肌肤",
+    "addHalo": "添加光环",
+    "fixHair": "修复头发",
+    "slimmer": "更苗条",
+    "angelWings": "天使翅膀",
+    "younger": "更年轻",
+    "older": "更年长",
+    "addSmile": "添加微笑",
+    "gardenBackground": "花园背景",
+    "studioBackground": "工作室背景",
+    "softLightsBackground": "柔光背景",
+    "heavenlyBackground": "天堂背景"
+  },
+  "memorial": {
+    "lightRays": "光线",
+    "doveOfPeace": "和平鸽",
+    "etherealGlow": "缥缈光辉",
+    "heavenGates": "天堂之门",
+    "memorialFlowers": "纪念花朵",
+    "cleanBackground": "清洁背景"
+  },
+  "outfits": {
+    "fixClothes": "修复衣物",
+    "changeColor": "更改颜色",
+    "jobInterview": "求职面试",
+    "weddingOutfit": "婚礼服装",
+    "professional": "专业",
+    "casualDay": "休闲日"
+  },
+  "magic": {
+    "waterDamage": {
+      "title": "水损伤",
+      "subtitle": "移除水损伤和污渍"
+    },
+    "clarify": {
+      "title": "澄清",
+      "subtitle": "移除模糊，锐化细节"
+    },
+    "recreate": {
+      "title": "重新创建",
+      "subtitle": "让 Clever 重新创建您的图像"
+    },
+    "colorize": {
+      "title": "着色",
+      "subtitle": "为黑白照片添加颜色"
+    },
+    "descratch": {
+      "title": "去除划痕",
+      "subtitle": "移除划痕和标记"
+    },
+    "brighten": {
+      "title": "增亮",
+      "subtitle": "修复光照和曝光"
+    },
+    "requestFeature": {
+      "title": "请求功能",
+      "prompt": "您希望在 Clever 中看到什么功能？",
+      "thankYouTitle": "谢谢！",
+      "thankYouMessage": "您的功能请求已提交。我们感谢您的反馈！",
+      "button": "太棒了！",
+      "errorTitle": "提交失败",
+      "errorMessage": "无法提交您的请求。请重试。",
+      "errorGeneric": "出了点问题。请重试。"
+    }
+  },
+  "quickAction": {
+    "photoMagic": "照片魔法"
+  },
+  "photoMagic": {
+    "title": "照片魔法",
+    "placeholder": "描述您想要的...",
+    "takePhoto": "拍照",
+    "choosePhoto": "选择照片",
+    "permissionRequired": "需要权限",
+    "permissionMessage": "请允许访问照片以继续。",
+    "photoAccessMessage": "请允许访问照片以继续。",
+    "cameraAccessMessage": "请允许访问相机以继续。"
+  },
+  "quickEdit": {
+    "modes": {
+      "restoration": "修复",
+      "repair": "维修",
+      "unblur": "去模糊",
+      "colorize": "着色",
+      "descratch": "去除划痕",
+      "enlighten": "增亮",
+      "background": "背景",
+      "outfit": "服装",
+      "custom": "自定义",
+      "restoreRepair": "恢复和维修",
+      "waterDamage": "水损伤"
+    },
+    "processing": {
+      "analyzing": "分析照片中...",
+      "processing": "处理中...",
+      "enhancing": "增强细节中...",
+      "complete": "完成",
+      "failed": "失败"
+    },
+    "buttons": {
+      "save": "保存",
+      "share": "分享",
+      "cancel": "取消",
+      "tryAgain": "重试",
+      "process": "处理"
+    },
+    "errors": {
+      "somethingWrong": "出了点问题",
+      "networkError": "网络错误",
+      "tryAgainLater": "请稍后重试"
+    }
+  },
+  "settings": {
+    "title": "设置",
+    "sections": {
+      "account": "账户",
+      "subscription": "订阅",
+      "usage": "使用情况",
+      "support": "支持",
+      "about": "关于"
+    },
+    "items": {
+      "proMember": "Pro 会员",
+      "freeUser": "免费用户",
+      "photosUsed": "已使用照片",
+      "dailyLimit": "每日限额",
+      "lifetimeUsage": "终身使用量",
+      "restorePurchases": "恢复购买",
+      "resetIdentity": "重置身份",
+      "clearCache": "清除缓存",
+      "privacyPolicy": "隐私政策",
+      "termsOfService": "服务条款",
+      "rateUs": "为我们评分",
+      "shareApp": "分享应用",
+      "version": "版本",
+      "language": "语言"
+    },
+    "time": {
+      "availableNow": "现在可用",
+      "hours": "{{hours}}小时{{minutes}}分钟{{seconds}}秒",
+      "minutes": "{{minutes}}分钟{{seconds}}秒",
+      "seconds": "{{seconds}}秒"
+    }
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "欢迎使用 Clever",
+      "subtitle": "用 AI 转换您的照片",
+      "getStarted": "开始",
+      "terms": "继续即表示您同意我们的",
+      "termsOfService": "服务条款",
+      "and": "和",
+      "privacyPolicy": "隐私政策"
+    },
+    "permissions": {
+      "title": "允许访问",
+      "subtitle": "我们需要权限访问您的照片",
+      "photoAccess": "启用照片访问",
+      "cameraAccess": "启用相机访问",
+      "notifications": "启用通知",
+      "continue": "继续"
+    },
+    "features": {
+      "title": "What brings you here?",
+      "customPrompt": "自定义提示",
+      "noneAbove": "以上都不是",
+      "chooseYourOwn": "Choose Your Own",
+      "chooseYourOwnDesc": "Describe what you want to do with your photo",
+      "recreate": "Recreate",
+      "recreateDesc": "Recreation while staying consistent with features",
+      "clearSkin": "Clear Skin",
+      "clearSkinDesc": "Remove acne, blemishes & imperfections",
+      "addSmile": "Add Smile",
+      "addSmileDesc": "Add a natural, authentic smile",
+      "fixHair": "Fix Hair",
+      "fixHairDesc": "Clean up messy or stray hairs",
+      "makeYounger": "Make Younger",
+      "makeYoungerDesc": "Subtle age reduction while keeping identity",
+      "addWings": "Add Angel Wings",
+      "addWingsDesc": "Beautiful wings that match your photo",
+      "waterStainDamage": "Water/Stain Damage",
+      "waterStainDamageDesc": "Remove water damage, stains, and discoloration",
+      "fixMyPhoto": "Fix My Photo",
+      "fixMyPhotoDesc": "Fix tears, scratches, and damage in old photos",
+      "professionalOutfit": "Professional Outfit",
+      "professionalOutfitDesc": "Change to professional business attire",
+      "blurBackground": "Blur Background",
+      "blurBackgroundDesc": "Create professional blurred background effect",
+      "addHalo": "Add Halo",
+      "addHaloDesc": "Subtle glowing halo above head",
+      "lightRays": "Light Rays",
+      "lightRaysDesc": "Add peaceful memorial atmosphere with golden light",
+      "memorialFlowers": "Memorial Flowers",
+      "memorialFlowersDesc": "Cover scene with memorial flowers and petals",
+      "makeSlimmer": "Make Slimmer",
+      "makeSlimmerDesc": "Natural body enhancement",
+      "colorize": "Colorize",
+      "colorizeDesc": "Bring old B&W photos to life with realistic color",
+      "clarify": "Clarify",
+      "clarifyDesc": "Make blurry photos crystal clear",
+      "brighten": "Brighten",
+      "brightenDesc": "Illuminate underexposed images",
+      "beachBackground": "Beach Background",
+      "beachBackgroundDesc": "Beautiful ocean and sand scene",
+      "noneOfAbove": "None of the Above",
+      "noneOfAboveDesc": "Skip and explore the app",
+      "subtitle": "Select what you're ready to do",
+      "continue": "Continue",
+      "customPromptPlaceholder": "What would you like to do with your photo?"
+    },
+    "preview": {
+      "tryNow": "现在试试",
+      "skip": "跳过",
+      "back": "返回",
+      "choosePhoto": "选择一张照片开始",
+      "photoMagic": "Photo Magic",
+      "photoMagicDesc": "Type what you want to edit and watch it happen",
+      "pickPhotoError": "Failed to pick photo. Please try again."
+    },
+    "community": {
+      "title": "加入我们的社区",
+      "subtitle": "在社交媒体上与我们联系"
+    },
+    "setup": {
+      "title": "正在设置您的体验...",
+      "almostReady": "即将就绪..."
+    }
+  },
+  "textEdit": {
+    "prompt": "您想做什么？",
+    "placeholder": "描述您的编辑...",
+    "generate": "生成",
+    "processing": "处理中...",
+    "customTextEdits": "自定义文本编辑",
+    "maxEffectsReached": "已达到最大效果数",
+    "maxEffectsMessage": "为了获得最佳效果，您一次最多可以选择3个效果。请先取消选择一个。"
+  },
+  "restoration": {
+    "processingFailed": "处理失败",
+    "status": {
+      "processing": "处理中...",
+      "completed": "完成！",
+      "failed": "失败",
+      "retry": "重试"
+    },
+    "actions": {
+      "save": "保存",
+      "share": "分享"
+    }
+  },
+  "deviceCarousel": {
+    "allowAccess": "允许访问",
+    "photoLibraryMessage": "要选择照片，请允许访问您的照片库",
+    "openSettings": "打开设置"
+  },
+  "common": {
+    "ok": "确定",
+    "cancel": "取消",
+    "continue": "继续",
+    "back": "返回",
+    "next": "下一步",
+    "done": "完成",
+    "save": "保存",
+    "share": "分享",
+    "delete": "删除",
+    "edit": "编辑",
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "warning": "警告",
+    "info": "信息"
+  }
+}

@@ -1,30 +1,45 @@
-import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { useTranslation } from '@/src/hooks/useTranslation';
 import { ONBOARDING_FEATURES } from '@/utils/onboarding';
-import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { 
-  useAnimatedStyle, 
-  useSharedValue, 
-  withSpring,
-  withDelay,
-  withTiming 
+import * as Haptics from 'expo-haptics';
+import React from 'react';
+import { FlatList, KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withDelay,
+    withSpring,
+    withTiming
 } from 'react-native-reanimated';
-import { OnboardingContainer } from './shared/OnboardingContainer';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OnboardingButton } from './shared/OnboardingButton';
-import { ONBOARDING_COLORS, ONBOARDING_SPACING, ONBOARDING_TYPOGRAPHY, ONBOARDING_BORDER_RADIUS } from './shared/constants';
+import { OnboardingContainer } from './shared/OnboardingContainer';
+import { ONBOARDING_BORDER_RADIUS, ONBOARDING_COLORS, ONBOARDING_SPACING, ONBOARDING_TYPOGRAPHY } from './shared/constants';
 
 interface FeatureSelectionScreenProps {
   onContinue: (selectedFeature: string, customPrompt?: string) => void;
 }
 
 export function FeatureSelectionScreen({ onContinue }: FeatureSelectionScreenProps) {
+  const { t } = useTranslation();
   const [selectedFeature, setSelectedFeature] = React.useState<string | null>(null);
   const [customPrompt, setCustomPrompt] = React.useState<string>('');
   const customInputRef = React.useRef<any>(null);
   const insets = useSafeAreaInsets();
+
+  // Helper function to get translated feature name and description
+  const getTranslatedFeature = (feature: typeof ONBOARDING_FEATURES[0]) => {
+    const translationKey = feature.id.replace(/_/g, '');
+    const nameKey = `onboarding.features.${translationKey}`;
+    const descKey = `onboarding.features.${translationKey}Desc`;
+    
+    return {
+      ...feature,
+      name: t(nameKey) || feature.name,
+      description: t(descKey) || feature.description
+    };
+  };
   
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(20);
@@ -110,7 +125,7 @@ export function FeatureSelectionScreen({ onContinue }: FeatureSelectionScreenPro
           keyExtractor={(item) => item.id}
           renderItem={({ item, index }) => (
             <FeatureCard
-              feature={item}
+              feature={getTranslatedFeature(item)}
               isSelected={selectedFeature === item.id}
               onSelect={() => handleFeatureSelect(item.id)}
               index={index}
@@ -148,7 +163,7 @@ export function FeatureSelectionScreen({ onContinue }: FeatureSelectionScreenPro
                 color: ONBOARDING_COLORS.textPrimary,
                 textAlign: 'center',
               }}>
-                What brings you here?
+                {t('onboarding.features.title')}
               </Text>
               <Text style={{ 
                 fontSize: ONBOARDING_TYPOGRAPHY.base, 
@@ -156,7 +171,7 @@ export function FeatureSelectionScreen({ onContinue }: FeatureSelectionScreenPro
                 textAlign: 'center',
                 marginTop: ONBOARDING_SPACING.xs,
               }}>
-                Select what you're ready to do
+                {t('onboarding.features.subtitle')}
               </Text>
             </View>
           </BlurView>
@@ -183,7 +198,7 @@ export function FeatureSelectionScreen({ onContinue }: FeatureSelectionScreenPro
             }
           ]}>
             <OnboardingButton
-              title="Continue"
+              title={t('onboarding.features.continue')}
               onPress={handleContinue}
               variant="primary"
               size="large"
@@ -362,7 +377,7 @@ const FeatureCard = React.memo<FeatureCardProps>(({ feature, isSelected, onSelec
                 ref={customInputRef}
                 value={customPrompt}
                 onChangeText={setCustomPrompt}
-                placeholder="What would you like to do with your photo?"
+                placeholder={t('onboarding.features.customPromptPlaceholder')}
                 placeholderTextColor={ONBOARDING_COLORS.textMuted}
                 multiline
                 maxLength={150}

@@ -1,4 +1,5 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { useTranslation } from '@/src/hooks/useTranslation';
 import { ONBOARDING_FEATURES } from '@/utils/onboarding';
 import { useFocusEffect } from '@react-navigation/native';
 import { Image as ExpoImage } from 'expo-image';
@@ -7,11 +8,11 @@ import { VideoView, useVideoPlayer } from 'expo-video';
 import React, { useRef } from 'react';
 import { Alert, AppState, Dimensions, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withSpring,
-  withTiming
+    useAnimatedStyle,
+    useSharedValue,
+    withDelay,
+    withSpring,
+    withTiming
 } from 'react-native-reanimated';
 import { OnboardingButton } from './shared/OnboardingButton';
 import { OnboardingContainer } from './shared/OnboardingContainer';
@@ -31,6 +32,7 @@ export function FeaturePreviewScreen({
   onSkip, 
   onPickPhoto 
 }: FeaturePreviewScreenProps) {
+  const { t } = useTranslation();
   const selectedFeature = ONBOARDING_FEATURES.find(f => f.id === selectedFeatureId);
   const isMountedRef = useRef(true);
   
@@ -183,7 +185,7 @@ export function FeaturePreviewScreen({
         });
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to pick photo. Please try again.');
+      Alert.alert(t('common.error'), t('onboarding.preview.pickPhotoError'));
       console.error('Photo picker error:', error);
     }
   };
@@ -224,7 +226,7 @@ export function FeaturePreviewScreen({
               color: '#9CA3AF',
               fontFamily: 'Lexend-Medium' 
             }}>
-              Skip
+              {t('onboarding.preview.skip')}
             </Text>
           </TouchableOpacity>
         </Animated.View>
@@ -241,7 +243,7 @@ export function FeaturePreviewScreen({
             textAlign: 'center',
             marginBottom: 8,
           }}>
-            {selectedFeatureId === 'custom_prompt' ? 'Photo Magic' : selectedFeature.name}
+            {selectedFeatureId === 'custom_prompt' ? t('onboarding.preview.photoMagic') : selectedFeature.name}
           </Text>
           <Text style={{ 
             fontSize: 16, 
@@ -249,7 +251,7 @@ export function FeaturePreviewScreen({
             textAlign: 'center',
             lineHeight: 22,
           }}>
-            {selectedFeatureId === 'custom_prompt' ? 'Type what you want to edit and watch it happen' : selectedFeature.description}
+            {selectedFeatureId === 'custom_prompt' ? t('onboarding.preview.photoMagicDesc') : selectedFeature.description}
           </Text>
         </Animated.View>
 
@@ -303,7 +305,7 @@ export function FeaturePreviewScreen({
           buttonsAnimatedStyle
         ]}>
           <OnboardingButton
-            title="Pick Photo"
+            title={t('onboarding.preview.pickPhoto')}
             onPress={handlePickPhoto}
             variant="primary"
             size="large"
@@ -316,7 +318,7 @@ export function FeaturePreviewScreen({
             textAlign: 'center',
             marginTop: 8,
           }}>
-            Try it with one of your photos
+            {t('onboarding.preview.tryWithPhoto')}
           </Text>
         </Animated.View>
       </View>

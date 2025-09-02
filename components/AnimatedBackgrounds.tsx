@@ -1,6 +1,7 @@
 // Memorial-focused features for passed loved ones and remembrance photos
 import { analyticsService } from '@/services/analytics';
 import { useQuickEditStore } from '@/store/quickEditStore';
+import { useT } from '@/src/hooks/useTranslation';
 import { useFocusEffect } from '@react-navigation/native';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -15,7 +16,7 @@ interface MemorialItem {
   id: string;
   video?: any; // require('...') for videos
   image?: any; // require('...') for images as fallback
-  title: string;
+  titleKey: string; // Translation key for title
   type?: 'video' | 'image';
   memorialPrompt?: string; // The prompt to apply this memorial effect
 }
@@ -24,7 +25,7 @@ interface MemorialItem {
 const DEFAULT_MEMORIAL_ITEMS: MemorialItem[] = [
   {
     id: 'memorial-1',
-    title: 'Light Rays',
+    titleKey: 'memorial.lightRays',
     type: 'video',
     video: require('../assets/videos/memorial/light.mp4'),
     memorialPrompt:
@@ -32,7 +33,7 @@ const DEFAULT_MEMORIAL_ITEMS: MemorialItem[] = [
   },
   {
     id: 'memorial-2',
-    title: 'Dove of Peace',
+    titleKey: 'memorial.doveOfPeace',
     type: 'video',
     video: require('../assets/videos/memorial/dove.mp4'),
     memorialPrompt:
@@ -40,7 +41,7 @@ const DEFAULT_MEMORIAL_ITEMS: MemorialItem[] = [
   },
   {
     id: 'memorial-3',
-    title: 'Ethereal Glow',
+    titleKey: 'memorial.etherealGlow',
     type: 'video',
     video: require('../assets/videos/memorial/glow.mp4'),
     memorialPrompt:
@@ -48,7 +49,7 @@ const DEFAULT_MEMORIAL_ITEMS: MemorialItem[] = [
   },
   {
     id: 'memorial-4',
-    title: 'Heaven Gates',
+    titleKey: 'memorial.heavenGates',
     type: 'video',
     video: require('../assets/videos/memorial/gates.mp4'),
     memorialPrompt:
@@ -56,7 +57,7 @@ const DEFAULT_MEMORIAL_ITEMS: MemorialItem[] = [
   },
   {
     id: 'memorial-5',
-    title: 'Memorial Flowers',
+    titleKey: 'memorial.memorialFlowers',
     type: 'video',
     video: require('../assets/videos/memorial/flowers.mp4'),
     memorialPrompt:
@@ -64,7 +65,7 @@ const DEFAULT_MEMORIAL_ITEMS: MemorialItem[] = [
   },
   {
     id: 'memorial-6',
-    title: 'Clean Background',
+    titleKey: 'memorial.cleanBackground',
     type: 'video',
     video: require('../assets/videos/memorial/remback.mp4'),
     memorialPrompt:
@@ -207,6 +208,7 @@ export function MemorialFeatures({ memorialItems = DEFAULT_MEMORIAL_ITEMS }: { m
   const longestSide = Math.max(width, height);
   const isTabletLike = shortestSide >= 768;
   const isSmallPhone = longestSide <= 700;
+  const t = useT();
   
   // Responsive tile dimensions
   const tileWidth = isTabletLike ? 140 : (isSmallPhone ? 100 : 120);
@@ -215,18 +217,19 @@ export function MemorialFeatures({ memorialItems = DEFAULT_MEMORIAL_ITEMS }: { m
   const router = useRouter();
   const handleMemorialSelect = async (memorialItem: MemorialItem) => {
     // No Pro gating - all memorial features are now free
+    const translatedTitle = t(memorialItem.titleKey);
     
     // PROMPT LOGGING: Track which memorial feature is selected
     console.log('🕊️ MEMORIAL FEATURE SELECTED:', {
       id: memorialItem.id,
-      title: memorialItem.title,
+      title: translatedTitle,
       prompt: memorialItem.memorialPrompt
     });
     
     // Track memorial tile selection
     analyticsService.trackTileUsage({
       category: 'memorial',
-      tileName: memorialItem.title,
+      tileName: translatedTitle,
       tileId: memorialItem.id,
       functionType: 'memorial',
       customPrompt: memorialItem.memorialPrompt,
@@ -237,10 +240,10 @@ export function MemorialFeatures({ memorialItems = DEFAULT_MEMORIAL_ITEMS }: { m
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 1 });
     if (!result.canceled && result.assets[0]) {
       try {
-        useQuickEditStore.getState().openWithImage({ functionType: 'memorial' as any, imageUri: result.assets[0].uri, styleKey: memorialItem.id, styleName: memorialItem.title, customPrompt: memorialItem.memorialPrompt || memorialItem.title });
+        useQuickEditStore.getState().openWithImage({ functionType: 'memorial' as any, imageUri: result.assets[0].uri, styleKey: memorialItem.id, styleName: translatedTitle, customPrompt: memorialItem.memorialPrompt || translatedTitle });
       } catch {
         // fallback: existing flow
-        router.push({ pathname: '/text-edits', params: { imageUri: result.assets[0].uri, prompt: memorialItem.memorialPrompt || memorialItem.title, mode: 'memorial' } });
+        router.push({ pathname: '/text-edits', params: { imageUri: result.assets[0].uri, prompt: memorialItem.memorialPrompt || translatedTitle, mode: 'memorial' } });
       }
     }
   };
@@ -306,7 +309,7 @@ export function MemorialFeatures({ memorialItems = DEFAULT_MEMORIAL_ITEMS }: { m
                     lineHeight: fontSize * 1.2
                   }}
                 >
-                  {item.title}
+                  {t(item.titleKey)}
                 </Text>
               </View>
             </TouchableOpacity>

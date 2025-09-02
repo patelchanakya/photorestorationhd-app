@@ -1,6 +1,7 @@
 // Removed Pro gating - all popular examples are now free
 import { analyticsService } from '@/services/analytics';
 import { useQuickEditStore } from '@/store/quickEditStore';
+import { useT } from '@/src/hooks/useTranslation';
 import { useFocusEffect } from '@react-navigation/native';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -15,7 +16,7 @@ interface PopularItem {
   id: string;
   video?: any; // require('...') for videos
   image?: any; // require('...') for images as fallback
-  title: string;
+  titleKey: string; // Translation key for title
   type?: 'video' | 'image';
   prompt?: string; // The prompt to apply
 }
@@ -24,84 +25,84 @@ interface PopularItem {
 const DEFAULT_POPULAR_ITEMS: PopularItem[] = [
   { 
     id: 'popular-1', 
-    title: 'Clear Skin', 
+    titleKey: 'popular.clearSkin', 
     type: 'video', 
     video: require('../assets/videos/popular/clear-skin.mp4'), 
     prompt: "Remove acne, blemishes, and skin imperfections while keeping natural skin texture, tone, and lighting unchanged." 
   },
   { 
     id: 'popular-2', 
-    title: 'Add Halo', 
+    titleKey: 'popular.addHalo', 
     type: 'video', 
     video: require('../assets/videos/popular/halo.mp4'), 
     prompt: "Add a subtle glowing halo above the subject's head." 
   },
   { 
     id: 'popular-3', 
-    title: 'Fix Hair', 
+    titleKey: 'popular.fixHair', 
     type: 'video', 
     video: require('../assets/videos/popular/fix-hair.mp4'), 
     prompt: "Clean up messy or stray hairs while preserving natural hair texture, style, volume, and keeping hair in place without altering its position on the face." 
   },
   { 
     id: 'popular-4', 
-    title: 'Slimmer', 
+    titleKey: 'popular.slimmer', 
     type: 'video', 
     video: require('../assets/videos/popular/slimmer.mp4'), 
     prompt: "Reduce visible body and facial fat while keeping natural proportions, pose, and facial identity intact. Make changes realistic and balanced without distorting the subject." 
   },
   { 
     id: 'popular-5', 
-    title: 'Angel Wings', 
+    titleKey: 'popular.angelWings', 
     type: 'video', 
     video: require('../assets/videos/popular/angel.mp4'), 
     prompt: "Add realistic wings that match pose, background, and lighting." 
   },
   { 
     id: 'popular-6', 
-    title: 'Younger', 
+    titleKey: 'popular.younger', 
     type: 'video', 
     video: require('../assets/videos/popular/younger.mp4'), 
     prompt: "Make the subject look a bit younger while keeping their identity, facial features, and natural expression unchanged." 
   },
   { 
     id: 'popular-7', 
-    title: 'Older', 
+    titleKey: 'popular.older', 
     type: 'video', 
     video: require('../assets/videos/popular/older.mp4'), 
     prompt: "Make the subject appear slightly older in a natural, age-appropriate way. Preserve facial identity, proportions, and realistic features, adjusting age subtly without exaggeration." 
   },
   { 
     id: 'popular-8', 
-    title: 'Add Smile', 
+    titleKey: 'popular.addSmile', 
     type: 'video', 
     video: require('../assets/videos/popular/smile.mp4'), 
     prompt: "Add a natural, authentic smile while preserving facial identity and features." 
   },
   { 
     id: 'popular-9', 
-    title: 'Garden Background', 
+    titleKey: 'popular.gardenBackground', 
     type: 'image', 
     image: require('../assets/images/backgrounds/thumbnail/garden/garden.jpeg'), 
     prompt: "Replace background with a garden scene - greenery and foliage in natural daylight." 
   },
   { 
     id: 'popular-10', 
-    title: 'Studio Background', 
+    titleKey: 'popular.studioBackground', 
     type: 'image', 
     image: require('../assets/images/backgrounds/thumbnail/studio/studio.jpeg'), 
     prompt: "Replace background with a clean studio backdrop in white or light gray." 
   },
   { 
     id: 'popular-11', 
-    title: 'Soft Lights Background', 
+    titleKey: 'popular.softLightsBackground', 
     type: 'image', 
     image: require('../assets/images/backgrounds/thumbnail/soft-lights/softer.jpg'), 
     prompt: "Replace background with soft bokeh lights for a cinematic look." 
   },
   { 
     id: 'popular-12', 
-    title: 'Heavenly Background', 
+    titleKey: 'popular.heavenlyBackground', 
     type: 'image', 
     image: require('../assets/images/backgrounds/thumbnail/heavenly/heavenly.jpg'), 
     prompt: "Replace background with a bright heavenly sky of soft white clouds and gentle sunbeams." 
@@ -261,6 +262,7 @@ export function PopularExamples({ items = DEFAULT_POPULAR_ITEMS }: { items?: Pop
   const longestSide = Math.max(width, height);
   const isTabletLike = shortestSide >= 768;
   const isSmallPhone = longestSide <= 700;
+  const t = useT();
   
   // Responsive tile dimensions
   const tileWidth = isTabletLike ? 140 : (isSmallPhone ? 100 : 120);
@@ -270,17 +272,19 @@ export function PopularExamples({ items = DEFAULT_POPULAR_ITEMS }: { items?: Pop
   const handlePopularSelect = async (item: PopularItem) => {
     // No Pro gating - all popular examples are now free
     
+    const translatedTitle = t(item.titleKey);
+    
     // PROMPT LOGGING: Track which popular example is selected
     console.log('⭐ POPULAR EXAMPLE SELECTED:', {
       id: item.id,
-      title: item.title,
+      title: translatedTitle,
       prompt: item.prompt
     });
     
     // Track popular tile selection
     analyticsService.trackTileUsage({
       category: 'popular',
-      tileName: item.title,
+      tileName: translatedTitle,
       tileId: item.id,
       functionType: 'custom',
       customPrompt: item.prompt,
@@ -294,12 +298,12 @@ export function PopularExamples({ items = DEFAULT_POPULAR_ITEMS }: { items?: Pop
         useQuickEditStore.getState().openWithImage({ 
           functionType: 'custom' as any, 
           imageUri: result.assets[0].uri, 
-          styleName: item.title, 
-          customPrompt: item.prompt || item.title 
+          styleName: translatedTitle, 
+          customPrompt: item.prompt || translatedTitle 
         });
       } catch {
         // fallback: existing flow
-        router.push({ pathname: '/text-edits', params: { imageUri: result.assets[0].uri, prompt: item.prompt || item.title, mode: 'custom' } });
+        router.push({ pathname: '/text-edits', params: { imageUri: result.assets[0].uri, prompt: item.prompt || translatedTitle, mode: 'custom' } });
       }
     }
   };
@@ -362,7 +366,7 @@ export function PopularExamples({ items = DEFAULT_POPULAR_ITEMS }: { items?: Pop
                     lineHeight: fontSize * 1.2
                   }}
                 >
-                  {item.title}
+                  {t(item.titleKey)}
                 </Text>
               </View>
             </TouchableOpacity>

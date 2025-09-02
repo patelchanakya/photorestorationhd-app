@@ -5,6 +5,20 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import '../global.css';
 
+// Immediate black background injection to prevent white flash at app startup
+if (typeof document !== 'undefined') {
+  // Synchronously inject critical styles before React renders
+  const style = document.createElement('style');
+  style.textContent = `
+    html, body, #root, #app-root, .expo-root {
+      background-color: #000000 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GlobalNotifications } from '@/components/GlobalNotifications';
 import { JobProvider } from '@/contexts/JobContext';
@@ -259,21 +273,27 @@ export default function RootLayout() {
   }, []);
 
   if (!loaded) {
-    // Async font loading only occurs in development.
-    return null;
+    // Show black screen while fonts load to prevent white flash
+    return <View style={{ flex: 1, backgroundColor: '#000000' }} />;
   }
 
   // Always render the main navigation - no conditional loading
 
   return (
-    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+    <SafeAreaProvider initialMetrics={initialWindowMetrics} style={{ flex: 1, backgroundColor: '#000000' }}>
       <View style={{ flex: 1, backgroundColor: '#000000' }}>
         <ErrorBoundary>
           <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#000000' }}>
             <RevenueCatProvider>
               <QueryClientProvider client={queryClient}>
                 <JobProvider>
-                  <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                  <ThemeProvider value={{
+                    ...(colorScheme === 'dark' ? DarkTheme : DefaultTheme),
+                    colors: {
+                      ...(colorScheme === 'dark' ? DarkTheme : DefaultTheme).colors,
+                      background: '#000000',
+                    }
+                  }}>
                     <MainNavigator />
                     <GlobalNotifications />
                     <StatusBar style="auto" />
@@ -299,7 +319,8 @@ function MainNavigator() {
   return (
     <Stack 
       screenOptions={{ 
-        headerShown: false 
+        headerShown: false,
+        contentStyle: { backgroundColor: '#000000' }
       }}
     />
   );

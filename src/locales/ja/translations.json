@@ -1,0 +1,319 @@
+{
+  "app": {
+    "name": "Clever"
+  },
+  "explore": {
+    "header": {
+      "title": "Clever",
+      "pro": "PRO"
+    },
+    "sections": {
+      "popular": "人気",
+      "fixMyPhoto": "写真を修正",
+      "memorial": "記念",
+      "outfits": "服装",
+      "magic": "マジック"
+    },
+    "alerts": {
+      "proMember": {
+        "title": "Proメンバー ✓",
+        "message": "あなたのサブスクリプションはアクティブです！すべての機能に無制限でアクセスできます。",
+        "button": "素晴らしい！"
+      },
+      "subscriptionStatus": {
+        "title": "サブスクリプション状況",
+        "noActiveMessage": "アクティブなサブスクリプションが見つかりません。無料機能にアクセスできます。",
+        "button": "OK"
+      },
+      "subscriptionCheck": {
+        "title": "サブスクリプション確認",
+        "message": "このApple IDにアクティブなサブスクリプションが見つかりません。購入に使用したApple IDでサインインしてください。",
+        "howToFix": "修正方法",
+        "howToFixTitle": "サブスクリプションの修正方法",
+        "howToFixMessage": "1. 設定 → App Store に移動\n2. 購入に使用したApple IDでサインイン\n3. Cleverに戻ってPROバッジを再度タップ",
+        "gotIt": "了解"
+      },
+      "proStatusCheck": {
+        "title": "Proステータス確認",
+        "message": "サブスクリプション状況を確認できません。もう一度お試しいただくか、インターネット接続を確認してください。"
+      },
+      "demoMode": {
+        "title": "デモモード",
+        "message": "Expo Goでは購入は利用できません。"
+      },
+      "welcomeToPro": {
+        "title": "Proへようこそ！",
+        "message": "無制限アクセスを獲得しました！",
+        "button": "最高です！"
+      }
+    }
+  },
+  "popular": {
+    "clearSkin": "クリア肌",
+    "addHalo": "ハローを追加",
+    "fixHair": "髪を修正",
+    "slimmer": "細身に",
+    "angelWings": "天使の翼",
+    "younger": "若く",
+    "older": "年上に",
+    "addSmile": "笑顔を追加",
+    "gardenBackground": "庭の背景",
+    "studioBackground": "スタジオ背景",
+    "softLightsBackground": "ソフトライト背景",
+    "heavenlyBackground": "天国の背景"
+  },
+  "memorial": {
+    "lightRays": "光線",
+    "doveOfPeace": "平和の鳩",
+    "etherealGlow": "幻想的な光",
+    "heavenGates": "天の門",
+    "memorialFlowers": "記念の花",
+    "cleanBackground": "クリーン背景"
+  },
+  "outfits": {
+    "fixClothes": "服を修正",
+    "changeColor": "色を変更",
+    "jobInterview": "就職面接",
+    "weddingOutfit": "ウェディング衣装",
+    "professional": "プロフェッショナル",
+    "casualDay": "カジュアルな日"
+  },
+  "magic": {
+    "waterDamage": {
+      "title": "水害",
+      "subtitle": "水害とシミを除去"
+    },
+    "clarify": {
+      "title": "明瞭化",
+      "subtitle": "ぼかしを除去、詳細を鮮明に"
+    },
+    "recreate": {
+      "title": "再作成",
+      "subtitle": "Cleverにあなたの画像を再作成させる"
+    },
+    "colorize": {
+      "title": "カラー化",
+      "subtitle": "白黒写真に色を追加"
+    },
+    "descratch": {
+      "title": "傷除去",
+      "subtitle": "傷と跡を除去"
+    },
+    "brighten": {
+      "title": "明るく",
+      "subtitle": "照明と露出を修正"
+    },
+    "requestFeature": {
+      "title": "機能をリクエスト",
+      "prompt": "Cleverにどのような機能を希望しますか？",
+      "thankYouTitle": "ありがとうございます！",
+      "thankYouMessage": "機能リクエストが送信されました。フィードバックをありがとうございます！",
+      "button": "素晴らしい！",
+      "errorTitle": "送信失敗",
+      "errorMessage": "リクエストを送信できませんでした。もう一度お試しください。",
+      "errorGeneric": "何かが間違いました。もう一度お試しください。"
+    }
+  },
+  "quickAction": {
+    "photoMagic": "写真マジック"
+  },
+  "photoMagic": {
+    "permissionRequired": "許可が必要です",
+    "photoAccessMessage": "続行するには写真へのアクセスを許可してください。",
+    "cameraAccessMessage": "続行するにはカメラへのアクセスを許可してください。"
+  },
+  "quickEdit": {
+    "modes": {
+      "restoration": "復元",
+      "repair": "修復",
+      "unblur": "ぼかし除去",
+      "colorize": "カラー化",
+      "descratch": "傷除去",
+      "enlighten": "明るく",
+      "background": "背景",
+      "outfit": "衣装",
+      "custom": "カスタム",
+      "restoreRepair": "復元と修復",
+      "waterDamage": "水害"
+    },
+    "processing": {
+      "analyzing": "写真を分析中...",
+      "processing": "処理中...",
+      "enhancing": "詳細を改善中...",
+      "complete": "完了",
+      "failed": "失敗"
+    },
+    "buttons": {
+      "save": "保存",
+      "share": "共有",
+      "cancel": "キャンセル",
+      "tryAgain": "再試行",
+      "process": "処理"
+    },
+    "errors": {
+      "somethingWrong": "何かが間違いました",
+      "networkError": "ネットワークエラー",
+      "tryAgainLater": "後でもう一度お試しください"
+    }
+  },
+  "settings": {
+    "title": "設定",
+    "sections": {
+      "account": "アカウント",
+      "subscription": "サブスクリプション",
+      "usage": "使用状況",
+      "support": "サポート",
+      "about": "について"
+    },
+    "items": {
+      "proMember": "Proメンバー",
+      "freeUser": "無料ユーザー",
+      "photosUsed": "使用済み写真",
+      "dailyLimit": "日次制限",
+      "lifetimeUsage": "生涯使用量",
+      "restorePurchases": "購入を復元",
+      "resetIdentity": "アイデンティティをリセット",
+      "clearCache": "キャッシュをクリア",
+      "privacyPolicy": "プライバシーポリシー",
+      "termsOfService": "利用規約",
+      "rateUs": "評価する",
+      "shareApp": "アプリを共有",
+      "version": "バージョン",
+      "language": "言語"
+    },
+    "time": {
+      "availableNow": "今すぐ利用可能",
+      "hours": "{{hours}}時間{{minutes}}分{{seconds}}秒",
+      "minutes": "{{minutes}}分{{seconds}}秒",
+      "seconds": "{{seconds}}秒"
+    }
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "Cleverへようこそ",
+      "subtitle": "AIで写真を変換",
+      "getStarted": "始める",
+      "terms": "続行することで、当社の",
+      "termsOfService": "利用規約",
+      "and": "と",
+      "privacyPolicy": "プライバシーポリシー"
+    },
+    "permissions": {
+      "title": "アクセス許可",
+      "subtitle": "写真にアクセスするための許可が必要です",
+      "photoAccess": "写真アクセスを有効化",
+      "cameraAccess": "カメラアクセスを有効化",
+      "notifications": "通知を有効化",
+      "continue": "続行"
+    },
+    "features": {
+      "title": "What brings you here?",
+      "customPrompt": "カスタムプロンプト",
+      "noneAbove": "上記以外",
+      "chooseYourOwn": "Choose Your Own",
+      "chooseYourOwnDesc": "Describe what you want to do with your photo",
+      "recreate": "Recreate",
+      "recreateDesc": "Recreation while staying consistent with features",
+      "clearSkin": "Clear Skin",
+      "clearSkinDesc": "Remove acne, blemishes & imperfections",
+      "addSmile": "Add Smile",
+      "addSmileDesc": "Add a natural, authentic smile",
+      "fixHair": "Fix Hair",
+      "fixHairDesc": "Clean up messy or stray hairs",
+      "makeYounger": "Make Younger",
+      "makeYoungerDesc": "Subtle age reduction while keeping identity",
+      "addWings": "Add Angel Wings",
+      "addWingsDesc": "Beautiful wings that match your photo",
+      "waterStainDamage": "Water/Stain Damage",
+      "waterStainDamageDesc": "Remove water damage, stains, and discoloration",
+      "fixMyPhoto": "Fix My Photo",
+      "fixMyPhotoDesc": "Fix tears, scratches, and damage in old photos",
+      "professionalOutfit": "Professional Outfit",
+      "professionalOutfitDesc": "Change to professional business attire",
+      "blurBackground": "Blur Background",
+      "blurBackgroundDesc": "Create professional blurred background effect",
+      "addHalo": "Add Halo",
+      "addHaloDesc": "Subtle glowing halo above head",
+      "lightRays": "Light Rays",
+      "lightRaysDesc": "Add peaceful memorial atmosphere with golden light",
+      "memorialFlowers": "Memorial Flowers",
+      "memorialFlowersDesc": "Cover scene with memorial flowers and petals",
+      "makeSlimmer": "Make Slimmer",
+      "makeSlimmerDesc": "Natural body enhancement",
+      "colorize": "Colorize",
+      "colorizeDesc": "Bring old B&W photos to life with realistic color",
+      "clarify": "Clarify",
+      "clarifyDesc": "Make blurry photos crystal clear",
+      "brighten": "Brighten",
+      "brightenDesc": "Illuminate underexposed images",
+      "beachBackground": "Beach Background",
+      "beachBackgroundDesc": "Beautiful ocean and sand scene",
+      "noneOfAbove": "None of the Above",
+      "noneOfAboveDesc": "Skip and explore the app",
+      "subtitle": "Select what you're ready to do",
+      "continue": "Continue",
+      "customPromptPlaceholder": "What would you like to do with your photo?"
+    },
+    "preview": {
+      "tryNow": "今すぐ試す",
+      "skip": "スキップ",
+      "back": "戻る",
+      "choosePhoto": "開始する写真を選択",
+      "photoMagic": "Photo Magic",
+      "photoMagicDesc": "Type what you want to edit and watch it happen",
+      "pickPhotoError": "Failed to pick photo. Please try again."
+    },
+    "community": {
+      "title": "コミュニティに参加",
+      "subtitle": "ソーシャルメディアで繋がりましょう"
+    },
+    "setup": {
+      "title": "体験をセットアップ中...",
+      "almostReady": "もうすぐ準備完了..."
+    }
+  },
+  "textEdit": {
+    "prompt": "何をしたいですか？",
+    "placeholder": "編集を説明してください...",
+    "generate": "生成",
+    "processing": "処理中...",
+    "customTextEdits": "カスタムテキスト編集",
+    "maxEffectsReached": "最大エフェクト数に達しました",
+    "maxEffectsMessage": "最良の結果を得るために、一度に最大3つのエフェクトを選択できます。まず1つを選択解除してください。"
+  },
+  "restoration": {
+    "processingFailed": "処理に失敗しました",
+    "status": {
+      "processing": "処理中...",
+      "completed": "完了！",
+      "failed": "失敗",
+      "retry": "再試行"
+    },
+    "actions": {
+      "save": "保存",
+      "share": "共有"
+    }
+  },
+  "deviceCarousel": {
+    "allowAccess": "アクセス許可",
+    "photoLibraryMessage": "写真を選択するには、フォトライブラリへのアクセスを許可してください",
+    "openSettings": "設定を開く"
+  },
+  "common": {
+    "ok": "OK",
+    "cancel": "キャンセル",
+    "continue": "続行",
+    "back": "戻る",
+    "next": "次へ",
+    "done": "完了",
+    "save": "保存",
+    "share": "共有",
+    "delete": "削除",
+    "edit": "編集",
+    "loading": "読み込み中...",
+    "error": "エラー",
+    "success": "成功",
+    "warning": "警告",
+    "info": "情報"
+  }
+}

@@ -54,5 +54,5 @@ export default function Index() {
   }
   
   // Show brief black screen while determining route
-  return <View style={{ flex: 1, backgroundColor: '#000' }} />;
+  return <View style={{ flex: 1, backgroundColor: '#000000' }} />;
 }

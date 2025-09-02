@@ -12,6 +12,7 @@ import { presentPaywall, restorePurchasesSecure, validatePremiumAccess } from '@
 import { restorationService } from '@/services/supabase';
 import { useQuickEditStore } from '@/store/quickEditStore';
 import { useAppInitStore } from '@/store/appInitStore';
+import { useT } from '@/src/hooks/useTranslation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import * as ImagePicker from 'expo-image-picker';
@@ -24,6 +25,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 export default function HomeGalleryLikeScreen() {
   const settingsNavLock = React.useRef(false);
   const insets = useSafeAreaInsets();
+  const t = useT();
   const { width, height } = useWindowDimensions();
   const shortestSide = Math.min(width, height);
   const longestSide = Math.max(width, height);
@@ -114,7 +116,7 @@ export default function HomeGalleryLikeScreen() {
       <SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }} edges={['top', 'left', 'right']}>
       {/* Header */}
       <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text style={{ color: '#FFFFFF', fontSize: 26, fontFamily: 'Lexend-Bold', letterSpacing: -0.5 }}>Clever</Text>
+        <Text style={{ color: '#FFFFFF', fontSize: 26, fontFamily: 'Lexend-Bold', letterSpacing: -0.5 }}>{t('app.name')}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <TouchableOpacity 
             onPress={async () => {
@@ -131,9 +133,9 @@ export default function HomeGalleryLikeScreen() {
                   
                   if (hasValidAccess) {
                     Alert.alert(
-                      'Pro Member ✓',
-                      'Your subscription is active! You have unlimited access to all features.',
-                      [{ text: 'Great!' }]
+                      t('explore.alerts.proMember.title'),
+                      t('explore.alerts.proMember.message'),
+                      [{ text: t('explore.alerts.proMember.button') }]
                     );
                   } else {
                     // If validation fails, try restore as fallback
@@ -145,30 +147,30 @@ export default function HomeGalleryLikeScreen() {
                       await refreshCustomerInfo();
                       
                       Alert.alert(
-                        'Pro Member ✓',
-                        'Your subscription is active! You have unlimited access to all features.',
-                        [{ text: 'Great!' }]
+                        t('explore.alerts.proMember.title'),
+                        t('explore.alerts.proMember.message'),
+                        [{ text: t('explore.alerts.proMember.button') }]
                       );
                     } else if (result.success && !result.hasActiveEntitlements) {
                       Alert.alert(
-                        'Subscription Status',
-                        'No active subscription found. You\'ll have access to free features.',
-                        [{ text: 'OK' }]
+                        t('explore.alerts.subscriptionStatus.title'),
+                        t('explore.alerts.subscriptionStatus.noActiveMessage'),
+                        [{ text: t('explore.alerts.subscriptionStatus.button') }]
                       );
                     } else if (result.error === 'cancelled' && result.errorMessage?.includes('Apple ID')) {
                       Alert.alert(
-                        'Subscription Check',
-                        'No active subscription found on this Apple ID. Please sign in with the Apple ID used for purchase.',
+                        t('explore.alerts.subscriptionCheck.title'),
+                        t('explore.alerts.subscriptionCheck.message'),
                         [
-                          { text: 'OK', style: 'default' },
+                          { text: t('common.ok'), style: 'default' },
                           {
-                            text: 'How to Fix',
+                            text: t('explore.alerts.subscriptionCheck.howToFix'),
                             style: 'default',
                             onPress: () => {
                               Alert.alert(
-                                'How to Fix Subscription',
-                                '1. Go to Settings → App Store\n2. Sign in with the Apple ID used for purchase\n3. Return to Clever and tap the PRO badge again',
-                                [{ text: 'Got it', style: 'default' }]
+                                t('explore.alerts.subscriptionCheck.howToFixTitle'),
+                                t('explore.alerts.subscriptionCheck.howToFixMessage'),
+                                [{ text: t('explore.alerts.subscriptionCheck.gotIt'), style: 'default' }]
                               );
                             }
                           }
@@ -176,18 +178,18 @@ export default function HomeGalleryLikeScreen() {
                       );
                     } else {
                       Alert.alert(
-                        'Pro Status Check',
-                        'Unable to verify subscription status. Please try again or check your internet connection.',
-                        [{ text: 'OK' }]
+                        t('explore.alerts.proStatusCheck.title'),
+                        t('explore.alerts.proStatusCheck.message'),
+                        [{ text: t('common.ok') }]
                       );
                     }
                   }
                 } catch (error) {
                   console.error('❌ [SECURITY] Pro icon status check failed:', error);
                   Alert.alert(
-                    'Pro Member',
-                    'You have unlimited access to all features!',
-                    [{ text: 'Great!' }]
+                    t('explore.alerts.proMember.title'),
+                    t('explore.alerts.proMember.message'),
+                    [{ text: t('explore.alerts.proMember.button') }]
                   );
                 }
               } else {
@@ -195,18 +197,18 @@ export default function HomeGalleryLikeScreen() {
                 const isExpoGo = Constants.appOwnership === 'expo';
                 if (isExpoGo) {
                   Alert.alert(
-                    'Demo Mode',
-                    'Purchases are not available in Expo Go.',
-                    [{ text: 'OK' }]
+                    t('explore.alerts.demoMode.title'),
+                    t('explore.alerts.demoMode.message'),
+                    [{ text: t('common.ok') }]
                   );
                   return;
                 }
                 const success = await presentPaywall();
                 if (success) {
                   Alert.alert(
-                    'Welcome to Pro!',
-                    'You now have unlimited access!',
-                    [{ text: 'Awesome!' }]
+                    t('explore.alerts.welcomeToPro.title'),
+                    t('explore.alerts.welcomeToPro.message'),
+                    [{ text: t('explore.alerts.welcomeToPro.button') }]
                   );
                 }
               }
@@ -223,7 +225,7 @@ export default function HomeGalleryLikeScreen() {
               gap: 4
             }}>
             {isPro && <IconSymbol name="checkmark.circle.fill" size={14} color="#f97316" />}
-            <Text style={{ color: isPro ? '#f97316' : '#fff', fontFamily: 'Lexend-SemiBold', fontSize: 12 }}>PRO</Text>
+            <Text style={{ color: isPro ? '#f97316' : '#fff', fontFamily: 'Lexend-SemiBold', fontSize: 12 }}>{t('explore.header.pro')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={async () => {
@@ -246,7 +248,7 @@ export default function HomeGalleryLikeScreen() {
         
         {/* Popular section title */}
         <View style={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>Popular</Text>
+          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>{t('explore.sections.popular')}</Text>
         </View>
         
         {/* Popular examples using outfit assets as placeholders */}
@@ -256,7 +258,7 @@ export default function HomeGalleryLikeScreen() {
 
       {/* Fix My Image section title */}
       <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>Fix My Photo</Text>
+        <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>{t('explore.sections.fixMyPhoto')}</Text>
         <TouchableOpacity
           onPress={async () => {
             // Validate premium access before proceeding
@@ -290,19 +292,19 @@ export default function HomeGalleryLikeScreen() {
 
         {/* Memorial Section */}
         <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>Memorial</Text>
+          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>{t('explore.sections.memorial')}</Text>
         </View>
         <MemorialFeatures />
 
         {/* Outfits Section */}
         <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>Outfits</Text>
+          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>{t('explore.sections.outfits')}</Text>
         </View>
         <AnimatedOutfits />
 
         {/* Other AI Features - Enlighten, etc. */}
         <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>Magic</Text>
+          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>{t('explore.sections.magic')}</Text>
         </View>
         <FeatureCardsList onOpenBackgrounds={() => openQuick('background')} onOpenClothes={() => openQuick('outfit')} />
 

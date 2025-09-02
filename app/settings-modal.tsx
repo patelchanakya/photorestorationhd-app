@@ -1,12 +1,12 @@
-// Removed LanguageSelectionModal - translation system removed
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { photoRestorationKeys } from '@/hooks/usePhotoRestoration';
-// Removed translation system
 import { useRevenueCat } from '@/contexts/RevenueCatContext';
+import { photoRestorationKeys } from '@/hooks/usePhotoRestoration';
 import { usePhotoUsage, type PhotoUsage } from '@/services/photoUsageService';
 import { checkSubscriptionStatus, getAppUserId, presentPaywall, restorePurchasesSecure } from '@/services/revenuecat';
 import { photoStorage } from '@/services/storage';
 import { localStorageHelpers } from '@/services/supabase';
+import { useTranslation } from '@/src/hooks/useTranslation';
+import type { AvailableLanguage } from '@/src/locales/translations';
 import { useCropModalStore } from '@/store/cropModalStore';
 import { useRestorationStore } from '@/store/restorationStore';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
@@ -22,23 +22,24 @@ import * as StoreReview from 'expo-store-review';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  AppState,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  Share,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    AppState,
+    Modal,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    Share,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import Purchases from 'react-native-purchases';
 // Using React Native SafeAreaView to avoid double-insetting
 import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring
 } from 'react-native-reanimated';
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
@@ -56,10 +57,41 @@ export default function SettingsModalScreen() {
   // Local loading states
   const [isRestoring, setIsRestoring] = useState(false);
   const [isResettingIdentity, setIsResettingIdentity] = useState(false);
-  // Removed language modal state
+  const [isLanguageModalVisible, setIsLanguageModalVisible] = useState(false);
   const [revenueCatUserId, setRevenueCatUserId] = useState<string | null>(null);
-  // Removed translation system
   
+  // Translation system
+  const { t, setLanguage, currentLanguage, availableLanguages, languageNames } = useTranslation();
+  
+  // Language flag mappings
+  const languageFlags: Record<AvailableLanguage, string> = {
+    'en-US': '🇺🇸',
+    'ar': '🇸🇦',
+    'hr': '🇭🇷',
+    'da': '🇩🇰',
+    'nl': '🇳🇱',
+    'en-AU': '🇦🇺',
+    'en-CA': '🇨🇦',
+    'en-GB': '🇬🇧',
+    'fi': '🇫🇮',
+    'fr': '🇫🇷',
+    'fr-CA': '🇨🇦',
+    'de': '🇩🇪',
+    'it': '🇮🇹',
+    'ja': '🇯🇵',
+    'ko': '🇰🇷',
+    'no': '🇳🇴',
+    'pl': '🇵🇱',
+    'pt-BR': '🇧🇷',
+    'pt-PT': '🇵🇹',
+    'ru': '🇷🇺',
+    'es-MX': '🇲🇽',
+    'es-ES': '🇪🇸',
+    'sv': '🇸🇪',
+    'tr': '🇹🇷',
+    'uk': '🇺🇦',
+    'zh-CN': '🇨🇳',
+  };
   
   // Ref to track restore operation for cancellation
   const restoreOperationRef = useRef<{ cancelled: boolean }>({ cancelled: false });
@@ -106,7 +138,18 @@ export default function SettingsModalScreen() {
     }, [refetchPhotoUsage, fetchVideoUsageData])
   );
   
-  // Removed language functionality
+  // Language selection handler
+  const handleLanguageSelect = async (language: AvailableLanguage) => {
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await setLanguage(language);
+      setIsLanguageModalVisible(false);
+    } catch (error) {
+      if (__DEV__) {
+        console.error('Error setting language:', error);
+      }
+    }
+  };
 
   // Format time remaining with seconds for live countdown
   const formatTimeWithSeconds = (ms: number): string => {
@@ -799,7 +842,7 @@ Best regards`;
             <IconSymbol name="arrow.left" size={20} color="#fff" />
           </TouchableOpacity>
           <Text style={{ color: 'white', fontSize: 18, fontFamily: 'Lexend-SemiBold' }}>
-            Settings
+            {t('settings.title')}
           </Text>
           <View style={{ width: 32 }} />
         </View>
@@ -817,7 +860,7 @@ Best regards`;
             {/* Subscription Section */}
             <View className="mb-8">
               <Text style={{ color: '#f59e0b', fontSize: 16, fontFamily: 'Lexend-SemiBold', marginBottom: 16 }}>
-                Subscription
+                {t('settings.sections.subscription')}
               </Text>
               
               <View className="bg-white/5 rounded-xl overflow-hidden">
@@ -831,7 +874,7 @@ Best regards`;
                     </View>
                     <View className="flex-1">
                       <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium' }}>
-                        Pro Subscription
+                        {t('settings.items.proMember')}
                       </Text>
                     </View>
                   </View>
@@ -860,7 +903,7 @@ Best regards`;
                     </View>
                     <View className="flex-1">
                       <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium' }}>
-                        {photoUsage.limit === -1 ? 'Photo Restoration (Unlimited)' : 'Photo Restoration'}
+                        {photoUsage.limit === -1 ? t('settings.items.photosUsed') + ' (Unlimited)' : t('settings.items.photosUsed')}
                       </Text>
                       <Text className="text-white/60 text-sm">
                         {photoUsage.planType === 'free' ? 'Tap to refresh' : 'Pro subscription active'}
@@ -903,7 +946,7 @@ Best regards`;
                   </View>
                   <View className="flex-1">
                     <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium' }}>
-                      {isRestoring ? 'Checking with App Store...' : 'Restore Purchases'}
+                      {isRestoring ? 'Checking with App Store...' : t('settings.items.restorePurchases')}
                     </Text>
                     <Text className="text-white/60 text-sm">
                       {isRestoring ? 'Verifying your subscription' : 'Sync your purchases with this device'}
@@ -913,6 +956,37 @@ Best regards`;
                 </TouchableOpacity>
 
 
+              </View>
+            </View>
+            
+            {/* Language Section */}
+            <View className="mb-8">
+              <Text style={{ color: '#f59e0b', fontSize: 16, fontFamily: 'Lexend-SemiBold', marginBottom: 16 }}>
+                {t('settings.items.language')}
+              </Text>
+              
+              <View className="bg-white/5 rounded-xl overflow-hidden">
+                <TouchableOpacity 
+                  className="flex-row items-center p-4"
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setIsLanguageModalVisible(true);
+                  }}
+                >
+                  <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
+                    <Ionicons name="globe" size={18} color="#f97316" />
+                  </View>
+                  <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium', flex: 1 }}>
+                    {t('settings.items.language')}
+                  </Text>
+                  <View className="flex-row items-center">
+                    <Text className="text-xl mr-2">{languageFlags[currentLanguage]}</Text>
+                    <Text className="text-white/60 text-sm">{languageNames[currentLanguage]}</Text>
+                  </View>
+                  <View className="ml-2">
+                    <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
+                  </View>
+                </TouchableOpacity>
               </View>
             </View>
             
@@ -1007,7 +1081,7 @@ Best regards`;
                     <Ionicons name="star" size={18} color="#f97316" />
                   </View>
                   <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium', flex: 1 }}>
-                    Rate Us
+                    {t('settings.items.rateUs')}
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </AnimatedTouchableOpacity>
@@ -1025,46 +1099,13 @@ Best regards`;
                     <Ionicons name="share-social" size={18} color="#f97316" />
                   </View>
                   <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium', flex: 1 }}>
-                    Share App
+                    {t('settings.items.shareApp')}
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </AnimatedTouchableOpacity>
               </View>
             </View>
             
-            {/* Preferences Section */}
-            <View className="mb-8">
-              <Text style={{ color: '#f59e0b', fontSize: 16, fontFamily: 'Lexend-SemiBold', marginBottom: 16 }}>
-                Preferences
-              </Text>
-              
-              <View className="bg-white/5 rounded-xl overflow-hidden">
-                
-                {/* Language */}
-                <TouchableOpacity 
-                  className="flex-row items-center p-4"
-                  onPress={() => Alert.alert('Language', 'Language selection coming soon')}
-                >
-                  <View className="w-9 h-9 bg-amber-500/20 rounded-full items-center justify-center mr-3">
-                    <Ionicons name="globe" size={18} color="#f97316" />
-                  </View>
-                  <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium', flex: 1 }}>
-                    Language
-                  </Text>
-                  <View className="flex-row items-center">
-                    <Text className="text-xl mr-1">🇺🇸</Text>
-                    <Text className="text-white/60 text-sm">English</Text>
-                  </View>
-                  <View className="ml-2">
-                    <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
-                  </View>
-                </TouchableOpacity>
-                
-
-
-
-              </View>
-            </View>
 
             {/* Debug Section - Development Only */}
 
@@ -1087,7 +1128,7 @@ Best regards`;
                     <Ionicons name="lock-closed" size={18} color="#f97316" />
                   </View>
                   <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium', flex: 1 }}>
-                    Privacy Policy
+                    {t('settings.items.privacyPolicy')}
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </TouchableOpacity>
@@ -1101,7 +1142,7 @@ Best regards`;
                     <Ionicons name="document-text" size={18} color="#f97316" />
                   </View>
                   <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium', flex: 1 }}>
-                    Terms of Use
+                    {t('settings.items.termsOfService')}
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </TouchableOpacity>
@@ -1112,7 +1153,7 @@ Best regards`;
             {/* About Section */}
             <View className="mb-0">
               <Text style={{ color: '#f59e0b', fontSize: 16, fontFamily: 'Lexend-SemiBold', marginBottom: 16 }}>
-                About
+                {t('settings.sections.about')}
               </Text>
               
               <View className="bg-white/5 rounded-xl overflow-hidden">
@@ -1124,7 +1165,7 @@ Best regards`;
                   </View>
                   <View className="flex-1">
                     <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium' }}>
-                      Version
+                      {t('settings.items.version')}
                     </Text>
                     <Text className="text-white/60 text-sm">
                       2.0.1
@@ -1137,10 +1178,63 @@ Best regards`;
 
           </View>
           
-          {/* Removed Language Selection Modal - translation system removed */}
-          
-          
         </ScrollView>
+        
+        {/* Language Selection Modal */}
+        <Modal
+          visible={isLanguageModalVisible}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setIsLanguageModalVisible(false)}
+        >
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'flex-end' }}>
+            <View style={{ backgroundColor: '#111111', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '80%' }}>
+              {/* Header */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)' }}>
+                <Text style={{ color: 'white', fontSize: 18, fontFamily: 'Lexend-SemiBold', flex: 1, textAlign: 'center' }}>
+                  {t('settings.items.language')}
+                </Text>
+                <TouchableOpacity 
+                  onPress={() => setIsLanguageModalVisible(false)}
+                  style={{ position: 'absolute', right: 20, width: 30, height: 30, alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <IconSymbol name="xmark" size={18} color="#fff" />
+                </TouchableOpacity>
+              </View>
+              
+              {/* Language List */}
+              <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator={false}>
+                {availableLanguages.map((language) => (
+                  <TouchableOpacity
+                    key={language}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      padding: 16,
+                      borderBottomWidth: 1,
+                      borderBottomColor: 'rgba(255,255,255,0.05)'
+                    }}
+                    onPress={() => handleLanguageSelect(language)}
+                  >
+                    <Text style={{ fontSize: 24, marginRight: 12 }}>{languageFlags[language]}</Text>
+                    <Text style={{ 
+                      color: 'white', 
+                      fontSize: 16, 
+                      fontFamily: 'Lexend-Medium',
+                      flex: 1
+                    }}>
+                      {languageNames[language]}
+                    </Text>
+                    {currentLanguage === language && (
+                      <IconSymbol name="checkmark" size={18} color="#22c55e" />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+        
       </View>
     </SafeAreaView>
   );

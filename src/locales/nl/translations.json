@@ -1,0 +1,324 @@
+{
+  "app": {
+    "name": "Clever"
+  },
+  "explore": {
+    "header": {
+      "title": "Clever",
+      "pro": "PRO"
+    },
+    "sections": {
+      "popular": "Populair",
+      "fixMyPhoto": "Repareer Mijn Foto",
+      "memorial": "Memorial",
+      "outfits": "Kledij",
+      "magic": "Magie"
+    },
+    "alerts": {
+      "proMember": {
+        "title": "Pro Lid ✓",
+        "message": "Je abonnement is actief! Je hebt onbeperkte toegang tot alle functies.",
+        "button": "Geweldig!"
+      },
+      "subscriptionStatus": {
+        "title": "Abonnement Status",
+        "noActiveMessage": "Geen actief abonnement gevonden. Je hebt toegang tot gratis functies.",
+        "button": "OK"
+      },
+      "subscriptionCheck": {
+        "title": "Abonnement Verificatie",
+        "message": "Geen actief abonnement gevonden op deze Apple ID. Log in met de Apple ID die je gebruikt hebt voor de aankoop.",
+        "howToFix": "Hoe Repareren",
+        "howToFixTitle": "Hoe Abonnement Repareren",
+        "howToFixMessage": "1. Ga naar Instellingen → App Store\n2. Log in met de Apple ID die je gebruikt hebt voor de aankoop\n3. Keer terug naar Clever en tik opnieuw op de PRO badge",
+        "gotIt": "Begrepen"
+      },
+      "proStatusCheck": {
+        "title": "Pro Status Verificatie",
+        "message": "Kan abonnement status niet verifiëren. Probeer opnieuw of controleer je internetverbinding."
+      },
+      "demoMode": {
+        "title": "Demo Modus",
+        "message": "Aankopen zijn niet beschikbaar in Expo Go."
+      },
+      "welcomeToPro": {
+        "title": "Welkom bij Pro!",
+        "message": "Je hebt nu onbeperkte toegang!",
+        "button": "Fantastisch!"
+      }
+    }
+  },
+  "popular": {
+    "clearSkin": "Heldere Huid",
+    "addHalo": "Voeg Halo Toe",
+    "fixHair": "Repareer Haar",
+    "slimmer": "Slanker",
+    "angelWings": "Engel Vleugels",
+    "younger": "Jonger",
+    "older": "Ouder",
+    "addSmile": "Voeg Glimlach Toe",
+    "gardenBackground": "Tuin Achtergrond",
+    "studioBackground": "Studio Achtergrond",
+    "softLightsBackground": "Zachte Lichten Achtergrond",
+    "heavenlyBackground": "Hemelse Achtergrond"
+  },
+  "memorial": {
+    "lightRays": "Lichtstralen",
+    "doveOfPeace": "Vredesduif",
+    "etherealGlow": "Etherische Gloed",
+    "heavenGates": "Hemelpoorten",
+    "memorialFlowers": "Herdenkingsbloemen",
+    "cleanBackground": "Schone Achtergrond"
+  },
+  "outfits": {
+    "fixClothes": "Repareer Kleding",
+    "changeColor": "Verander Kleur",
+    "jobInterview": "Sollicitatiegesprek",
+    "weddingOutfit": "Bruiloft Outfit",
+    "professional": "Professioneel",
+    "casualDay": "Casual Dag"
+  },
+  "magic": {
+    "waterDamage": {
+      "title": "Waterschade",
+      "subtitle": "Verwijder waterschade en vlekken"
+    },
+    "clarify": {
+      "title": "Verduidelijken",
+      "subtitle": "Verwijder waas, verscherp details"
+    },
+    "recreate": {
+      "title": "Recreëren",
+      "subtitle": "Laat Clever je afbeelding recreëren"
+    },
+    "colorize": {
+      "title": "Inkleuren",
+      "subtitle": "Voeg kleuren toe aan Z&W foto's"
+    },
+    "descratch": {
+      "title": "Krassen Verwijderen",
+      "subtitle": "Verwijder krassen en markeringen"
+    },
+    "brighten": {
+      "title": "Verheldelen",
+      "subtitle": "Repareer belichting en belichting"
+    },
+    "requestFeature": {
+      "title": "Vraag een Functie",
+      "prompt": "Welke functie zou je graag zien in Clever?",
+      "thankYouTitle": "Dank je wel!",
+      "thankYouMessage": "Je functieverzoek is verzonden. We waarderen je feedback!",
+      "button": "Geweldig!",
+      "errorTitle": "Verzenden Mislukt",
+      "errorMessage": "Kan je verzoek niet verzenden. Probeer opnieuw.",
+      "errorGeneric": "Er ging iets mis. Probeer opnieuw."
+    }
+  },
+  "quickAction": {
+    "photoMagic": "Foto Magie"
+  },
+  "photoMagic": {
+    "title": "Foto Magie",
+    "placeholder": "Beschrijf wat je wilt...",
+    "takePhoto": "Neem Foto",
+    "choosePhoto": "Kies Foto",
+    "permissionRequired": "Toestemming Vereist",
+    "permissionMessage": "Sta toegang tot foto's toe om door te gaan.",
+    "photoAccessMessage": "Sta toegang tot foto's toe om door te gaan.",
+    "cameraAccessMessage": "Sta toegang tot camera toe om door te gaan."
+  },
+  "quickEdit": {
+    "modes": {
+      "restoration": "Restauratie",
+      "repair": "Repareer",
+      "unblur": "Ontwazig",
+      "colorize": "Inkleuren",
+      "descratch": "Krassen Verwijderen",
+      "enlighten": "Verheldelen",
+      "background": "Achtergrond",
+      "outfit": "Outfit",
+      "custom": "Aangepast",
+      "restoreRepair": "Restaureer & Repareer",
+      "waterDamage": "Waterschade"
+    },
+    "processing": {
+      "analyzing": "Foto analyseren...",
+      "processing": "Verwerken...",
+      "enhancing": "Details verbeteren...",
+      "complete": "Voltooid",
+      "failed": "Mislukt"
+    },
+    "buttons": {
+      "save": "Opslaan",
+      "share": "Delen",
+      "cancel": "Annuleren",
+      "tryAgain": "Probeer Opnieuw",
+      "process": "Verwerken"
+    },
+    "errors": {
+      "somethingWrong": "Er ging iets mis",
+      "networkError": "Netwerkfout",
+      "tryAgainLater": "Probeer het later opnieuw"
+    }
+  },
+  "settings": {
+    "title": "Instellingen",
+    "sections": {
+      "account": "Account",
+      "subscription": "Abonnement",
+      "usage": "Gebruik",
+      "support": "Ondersteuning",
+      "about": "Over"
+    },
+    "items": {
+      "proMember": "Pro Lid",
+      "freeUser": "Gratis Gebruiker",
+      "photosUsed": "Foto's Gebruikt",
+      "dailyLimit": "Dagelijkse Limiet",
+      "lifetimeUsage": "Levenslang Gebruik",
+      "restorePurchases": "Herstel Aankopen",
+      "resetIdentity": "Reset Identiteit",
+      "clearCache": "Cache Leegmaken",
+      "privacyPolicy": "Privacybeleid",
+      "termsOfService": "Gebruiksvoorwaarden",
+      "rateUs": "Beoordeel Ons",
+      "shareApp": "Deel App",
+      "version": "Versie",
+      "language": "Taal"
+    },
+    "time": {
+      "availableNow": "Nu beschikbaar",
+      "hours": "{{hours}}u {{minutes}}m {{seconds}}s",
+      "minutes": "{{minutes}}m {{seconds}}s",
+      "seconds": "{{seconds}}s"
+    }
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "Welkom bij Clever",
+      "subtitle": "Transformeer je foto's met AI",
+      "getStarted": "Aan de Slag",
+      "terms": "Door door te gaan ga je akkoord met onze",
+      "termsOfService": "Gebruiksvoorwaarden",
+      "and": "en",
+      "privacyPolicy": "Privacybeleid"
+    },
+    "permissions": {
+      "title": "Sta Toegang Toe",
+      "subtitle": "We hebben toestemming nodig om toegang te krijgen tot je foto's",
+      "photoAccess": "Foto Toegang Inschakelen",
+      "cameraAccess": "Camera Toegang Inschakelen",
+      "notifications": "Meldingen Inschakelen",
+      "continue": "Doorgaan"
+    },
+    "features": {
+      "title": "What brings you here?",
+      "customPrompt": "Aangepast verzoek",
+      "noneAbove": "Geen van bovenstaande",
+      "chooseYourOwn": "Choose Your Own",
+      "chooseYourOwnDesc": "Describe what you want to do with your photo",
+      "recreate": "Recreate",
+      "recreateDesc": "Recreation while staying consistent with features",
+      "clearSkin": "Clear Skin",
+      "clearSkinDesc": "Remove acne, blemishes & imperfections",
+      "addSmile": "Add Smile",
+      "addSmileDesc": "Add a natural, authentic smile",
+      "fixHair": "Fix Hair",
+      "fixHairDesc": "Clean up messy or stray hairs",
+      "makeYounger": "Make Younger",
+      "makeYoungerDesc": "Subtle age reduction while keeping identity",
+      "addWings": "Add Angel Wings",
+      "addWingsDesc": "Beautiful wings that match your photo",
+      "waterStainDamage": "Water/Stain Damage",
+      "waterStainDamageDesc": "Remove water damage, stains, and discoloration",
+      "fixMyPhoto": "Fix My Photo",
+      "fixMyPhotoDesc": "Fix tears, scratches, and damage in old photos",
+      "professionalOutfit": "Professional Outfit",
+      "professionalOutfitDesc": "Change to professional business attire",
+      "blurBackground": "Blur Background",
+      "blurBackgroundDesc": "Create professional blurred background effect",
+      "addHalo": "Add Halo",
+      "addHaloDesc": "Subtle glowing halo above head",
+      "lightRays": "Light Rays",
+      "lightRaysDesc": "Add peaceful memorial atmosphere with golden light",
+      "memorialFlowers": "Memorial Flowers",
+      "memorialFlowersDesc": "Cover scene with memorial flowers and petals",
+      "makeSlimmer": "Make Slimmer",
+      "makeSlimmerDesc": "Natural body enhancement",
+      "colorize": "Colorize",
+      "colorizeDesc": "Bring old B&W photos to life with realistic color",
+      "clarify": "Clarify",
+      "clarifyDesc": "Make blurry photos crystal clear",
+      "brighten": "Brighten",
+      "brightenDesc": "Illuminate underexposed images",
+      "beachBackground": "Beach Background",
+      "beachBackgroundDesc": "Beautiful ocean and sand scene",
+      "noneOfAbove": "None of the Above",
+      "noneOfAboveDesc": "Skip and explore the app",
+      "subtitle": "Select what you're ready to do",
+      "continue": "Continue",
+      "customPromptPlaceholder": "What would you like to do with your photo?"
+    },
+    "preview": {
+      "tryNow": "Probeer het nu",
+      "skip": "Overslaan",
+      "back": "Terug",
+      "choosePhoto": "Kies een foto om te beginnen",
+      "photoMagic": "Photo Magic",
+      "photoMagicDesc": "Type what you want to edit and watch it happen",
+      "pickPhotoError": "Failed to pick photo. Please try again."
+    },
+    "community": {
+      "title": "Word lid van onze community",
+      "subtitle": "Verbind met ons op sociale media"
+    },
+    "setup": {
+      "title": "Je ervaring instellen...",
+      "almostReady": "Bijna klaar..."
+    }
+  },
+  "textEdit": {
+    "prompt": "Wat wil je doen?",
+    "placeholder": "Beschrijf je bewerking...",
+    "generate": "Genereren",
+    "processing": "Verwerken...",
+    "customTextEdits": "Aangepaste tekstbewerkingen",
+    "maxEffectsReached": "Maximale effecten bereikt",
+    "maxEffectsMessage": "Je kunt maximaal 3 effecten tegelijk selecteren voor de beste resultaten. Deselecteer er eerst een."
+  },
+  "restoration": {
+    "processingFailed": "Verwerking mislukt",
+    "status": {
+      "processing": "Verwerken...",
+      "completed": "Voltooid!",
+      "failed": "Mislukt",
+      "retry": "Opnieuw Proberen"
+    },
+    "actions": {
+      "save": "Opslaan",
+      "share": "Delen"
+    }
+  },
+  "deviceCarousel": {
+    "allowAccess": "Sta Toegang Toe",
+    "photoLibraryMessage": "Om foto's te selecteren, sta toegang tot je fotobibliotheek toe",
+    "openSettings": "Instellingen Openen"
+  },
+  "common": {
+    "ok": "OK",
+    "cancel": "Annuleren",
+    "continue": "Doorgaan",
+    "back": "Terug",
+    "next": "Volgende",
+    "done": "Klaar",
+    "save": "Opslaan",
+    "share": "Delen",
+    "delete": "Verwijderen",
+    "edit": "Bewerken",
+    "loading": "Laden...",
+    "error": "Fout",
+    "success": "Succes",
+    "warning": "Waarschuwing",
+    "info": "Informatie"
+  }
+}

@@ -1,0 +1,324 @@
+{
+  "app": {
+    "name": "Clever"
+  },
+  "explore": {
+    "header": {
+      "title": "Clever",
+      "pro": "PRO"
+    },
+    "sections": {
+      "popular": "Popularno",
+      "fixMyPhoto": "Popravi Moju Fotografiju",
+      "memorial": "Spomenik",
+      "outfits": "Odjeća",
+      "magic": "Magija"
+    },
+    "alerts": {
+      "proMember": {
+        "title": "Pro Član ✓",
+        "message": "Vaša pretplata je aktivna! Imate neograničen pristup svim funkcijama.",
+        "button": "Odlično!"
+      },
+      "subscriptionStatus": {
+        "title": "Status Pretplate",
+        "noActiveMessage": "Nije pronađena aktivna pretplata. Imat ćete pristup besplatnim funkcijama.",
+        "button": "OK"
+      },
+      "subscriptionCheck": {
+        "title": "Provjera Pretplate",
+        "message": "Nije pronađena aktivna pretplata na ovom Apple ID-u. Molimo prijavite se s Apple ID-om koji je korišten za kupnju.",
+        "howToFix": "Kako Popraviti",
+        "howToFixTitle": "Kako Popraviti Pretplatu",
+        "howToFixMessage": "1. Idite na Postavke → App Store\n2. Prijavite se s Apple ID-om koji je korišten za kupnju\n3. Vratite se u Clever i dodirnite PRO oznaku ponovno",
+        "gotIt": "Razumijem"
+      },
+      "proStatusCheck": {
+        "title": "Provjera Pro Statusa",
+        "message": "Nije moguće potvrditi status pretplate. Molimo pokušajte ponovno ili provjerite internetsku vezu."
+      },
+      "demoMode": {
+        "title": "Demo Način",
+        "message": "Kupnje nisu dostupne u Expo Go."
+      },
+      "welcomeToPro": {
+        "title": "Dobrodošli u Pro!",
+        "message": "Sada imate neograničen pristup!",
+        "button": "Odlično!"
+      }
+    }
+  },
+  "popular": {
+    "clearSkin": "Čista Koža",
+    "addHalo": "Dodaj Oreol",
+    "fixHair": "Popravi Kosu",
+    "slimmer": "Mršaviji",
+    "angelWings": "Anđeoska Krila",
+    "younger": "Mlađi",
+    "older": "Stariji",
+    "addSmile": "Dodaj Osmijeh",
+    "gardenBackground": "Vrtna Pozadina",
+    "studioBackground": "Studijska Pozadina",
+    "softLightsBackground": "Meka Svjetla Pozadina",
+    "heavenlyBackground": "Nebeska Pozadina"
+  },
+  "memorial": {
+    "lightRays": "Zrake Svjetla",
+    "doveOfPeace": "Golub Mira",
+    "etherealGlow": "Eteričan Sjaj",
+    "heavenGates": "Nebeska Vrata",
+    "memorialFlowers": "Spomen Cvijeće",
+    "cleanBackground": "Čista Pozadina"
+  },
+  "outfits": {
+    "fixClothes": "Popravi Odjeću",
+    "changeColor": "Promijeni Boju",
+    "jobInterview": "Intervju za Posao",
+    "weddingOutfit": "Vjenčana Odjeća",
+    "professional": "Profesionalna",
+    "casualDay": "Ležerni Dan"
+  },
+  "magic": {
+    "waterDamage": {
+      "title": "Oštećenje od Vode",
+      "subtitle": "Ukloni oštećenje od vode i mrlje"
+    },
+    "clarify": {
+      "title": "Razjasni",
+      "subtitle": "Ukloni zamućenost, izoštri detalje"
+    },
+    "recreate": {
+      "title": "Ponovno Stvori",
+      "subtitle": "Dopusti Clever-u da ponovno stvori tvoju sliku"
+    },
+    "colorize": {
+      "title": "Oboji",
+      "subtitle": "Dodaj boje crno-bijelim fotografijama"
+    },
+    "descratch": {
+      "title": "Ukloni Ogrebotine",
+      "subtitle": "Ukloni ogrebotine i oznake"
+    },
+    "brighten": {
+      "title": "Posvijetli",
+      "subtitle": "Popravi osvjetljenje i ekspoziciju"
+    },
+    "requestFeature": {
+      "title": "Zatraži Funkciju",
+      "prompt": "Koju funkciju biste htjeli vidjeti u Clever-u?",
+      "thankYouTitle": "Hvala!",
+      "thankYouMessage": "Vaš zahtjev za funkciju je poslan. Cijenimo vaše povratne informacije!",
+      "button": "Odlično!",
+      "errorTitle": "Slanje Neuspješno",
+      "errorMessage": "Nije moguće poslati vaš zahtjev. Molimo pokušajte ponovno.",
+      "errorGeneric": "Nešto je pošlo po zlu. Molimo pokušajte ponovno."
+    }
+  },
+  "quickAction": {
+    "photoMagic": "Foto Magija"
+  },
+  "photoMagic": {
+    "title": "Foto Magija",
+    "placeholder": "Opišite što želite...",
+    "takePhoto": "Uslikaj",
+    "choosePhoto": "Odaberi Fotografiju",
+    "permissionRequired": "Potrebna Dozvola",
+    "permissionMessage": "Molimo dozvolite pristup fotografijama za nastavak.",
+    "photoAccessMessage": "Molimo dozvolite pristup fotografijama za nastavak.",
+    "cameraAccessMessage": "Molimo dozvolite pristup kameri za nastavak."
+  },
+  "quickEdit": {
+    "modes": {
+      "restoration": "Restauracija",
+      "repair": "Popravak",
+      "unblur": "Ukloni Zamućenost",
+      "colorize": "Oboji",
+      "descratch": "Ukloni Ogrebotine",
+      "enlighten": "Posvijetli",
+      "background": "Pozadina",
+      "outfit": "Odjeća",
+      "custom": "Prilagođeno",
+      "restoreRepair": "Restauriraj i Popravi",
+      "waterDamage": "Oštećenje od Vode"
+    },
+    "processing": {
+      "analyzing": "Analiziranje fotografije...",
+      "processing": "Obrađivanje...",
+      "enhancing": "Poboljšavanje detalja...",
+      "complete": "Završeno",
+      "failed": "Neuspješno"
+    },
+    "buttons": {
+      "save": "Spremi",
+      "share": "Podijeli",
+      "cancel": "Odustani",
+      "tryAgain": "Pokušaj Ponovno",
+      "process": "Obrađuj"
+    },
+    "errors": {
+      "somethingWrong": "Nešto je pošlo po zlu",
+      "networkError": "Mrežna greška",
+      "tryAgainLater": "Molimo pokušajte ponovno kasnije"
+    }
+  },
+  "settings": {
+    "title": "Postavke",
+    "sections": {
+      "account": "Račun",
+      "subscription": "Pretplata",
+      "usage": "Korištenje",
+      "support": "Podrška",
+      "about": "O Aplikaciji"
+    },
+    "items": {
+      "proMember": "Pro Član",
+      "freeUser": "Besplatni Korisnik",
+      "photosUsed": "Korištene Fotografije",
+      "dailyLimit": "Dnevni Limit",
+      "lifetimeUsage": "Korištenje Tijekom Života",
+      "restorePurchases": "Vrati Kupnje",
+      "resetIdentity": "Resetiraj Identitet",
+      "clearCache": "Očisti Cache",
+      "privacyPolicy": "Politika Privatnosti",
+      "termsOfService": "Uvjeti Korištenja",
+      "rateUs": "Ocijeni Nas",
+      "shareApp": "Podijeli Aplikaciju",
+      "version": "Verzija",
+      "language": "Jezik"
+    },
+    "time": {
+      "availableNow": "Dostupno sada",
+      "hours": "{{hours}}s {{minutes}}m {{seconds}}s",
+      "minutes": "{{minutes}}m {{seconds}}s",
+      "seconds": "{{seconds}}s"
+    }
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "Dobrodošli u Clever",
+      "subtitle": "Transformirajte svoje fotografije s AI",
+      "getStarted": "Počni",
+      "terms": "Nastavljajući, slažete se s našim",
+      "termsOfService": "Uvjetima Korištenja",
+      "and": "i",
+      "privacyPolicy": "Politikom Privatnosti"
+    },
+    "permissions": {
+      "title": "Dozvoli Pristup",
+      "subtitle": "Trebamo dozvolu za pristup vašim fotografijama",
+      "photoAccess": "Omogući Pristup Fotografijama",
+      "cameraAccess": "Omogući Pristup Kameri",
+      "notifications": "Omogući Obavještenja",
+      "continue": "Nastavi"
+    },
+    "features": {
+      "title": "What brings you here?",
+      "customPrompt": "Prilagođeni zahtjev",
+      "noneAbove": "Ništa od navedenog",
+      "chooseYourOwn": "Choose Your Own",
+      "chooseYourOwnDesc": "Describe what you want to do with your photo",
+      "recreate": "Recreate",
+      "recreateDesc": "Recreation while staying consistent with features",
+      "clearSkin": "Clear Skin",
+      "clearSkinDesc": "Remove acne, blemishes & imperfections",
+      "addSmile": "Add Smile",
+      "addSmileDesc": "Add a natural, authentic smile",
+      "fixHair": "Fix Hair",
+      "fixHairDesc": "Clean up messy or stray hairs",
+      "makeYounger": "Make Younger",
+      "makeYoungerDesc": "Subtle age reduction while keeping identity",
+      "addWings": "Add Angel Wings",
+      "addWingsDesc": "Beautiful wings that match your photo",
+      "waterStainDamage": "Water/Stain Damage",
+      "waterStainDamageDesc": "Remove water damage, stains, and discoloration",
+      "fixMyPhoto": "Fix My Photo",
+      "fixMyPhotoDesc": "Fix tears, scratches, and damage in old photos",
+      "professionalOutfit": "Professional Outfit",
+      "professionalOutfitDesc": "Change to professional business attire",
+      "blurBackground": "Blur Background",
+      "blurBackgroundDesc": "Create professional blurred background effect",
+      "addHalo": "Add Halo",
+      "addHaloDesc": "Subtle glowing halo above head",
+      "lightRays": "Light Rays",
+      "lightRaysDesc": "Add peaceful memorial atmosphere with golden light",
+      "memorialFlowers": "Memorial Flowers",
+      "memorialFlowersDesc": "Cover scene with memorial flowers and petals",
+      "makeSlimmer": "Make Slimmer",
+      "makeSlimmerDesc": "Natural body enhancement",
+      "colorize": "Colorize",
+      "colorizeDesc": "Bring old B&W photos to life with realistic color",
+      "clarify": "Clarify",
+      "clarifyDesc": "Make blurry photos crystal clear",
+      "brighten": "Brighten",
+      "brightenDesc": "Illuminate underexposed images",
+      "beachBackground": "Beach Background",
+      "beachBackgroundDesc": "Beautiful ocean and sand scene",
+      "noneOfAbove": "None of the Above",
+      "noneOfAboveDesc": "Skip and explore the app",
+      "subtitle": "Select what you're ready to do",
+      "continue": "Continue",
+      "customPromptPlaceholder": "What would you like to do with your photo?"
+    },
+    "preview": {
+      "tryNow": "Pokušaj sada",
+      "skip": "Preskoči",
+      "back": "Natrag",
+      "choosePhoto": "Odaberite fotografiju za početak",
+      "photoMagic": "Photo Magic",
+      "photoMagicDesc": "Type what you want to edit and watch it happen",
+      "pickPhotoError": "Failed to pick photo. Please try again."
+    },
+    "community": {
+      "title": "Pridružite se našoj zajednici",
+      "subtitle": "Povežite se s nama na društvenim mrežama"
+    },
+    "setup": {
+      "title": "Postavljanje vašeg iskustva...",
+      "almostReady": "Gotovo spremno..."
+    }
+  },
+  "textEdit": {
+    "prompt": "Što biste htjeli raditi?",
+    "placeholder": "Opišite svoju izmjenu...",
+    "generate": "Generiraj",
+    "processing": "Obrađivanje...",
+    "customTextEdits": "Prilagođene izmjene teksta",
+    "maxEffectsReached": "Dosegnut maksimalni broj efekata",
+    "maxEffectsMessage": "Možete odabrati do 3 efekta odjednom za najbolje rezultate. Molimo prvo odaberite jedan."
+  },
+  "restoration": {
+    "processingFailed": "Obrađivanje neuspješno",
+    "status": {
+      "processing": "Obrađivanje...",
+      "completed": "Završeno!",
+      "failed": "Neuspješno",
+      "retry": "Pokušaj Ponovno"
+    },
+    "actions": {
+      "save": "Spremi",
+      "share": "Podijeli"
+    }
+  },
+  "deviceCarousel": {
+    "allowAccess": "Dozvoli Pristup",
+    "photoLibraryMessage": "Za odabir fotografija, molimo dozvolite pristup vašoj biblioteci fotografija",
+    "openSettings": "Otvori Postavke"
+  },
+  "common": {
+    "ok": "OK",
+    "cancel": "Odustani",
+    "continue": "Nastavi",
+    "back": "Natrag",
+    "next": "Sljedeće",
+    "done": "Gotovo",
+    "save": "Spremi",
+    "share": "Podijeli",
+    "delete": "Obriši",
+    "edit": "Uredi",
+    "loading": "Učitavanje...",
+    "error": "Greška",
+    "success": "Uspjeh",
+    "warning": "Upozorenje",
+    "info": "Informacija"
+  }
+}

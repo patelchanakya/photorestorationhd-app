@@ -1,21 +1,21 @@
-import React from 'react';
-import { View, Text, ScrollView, Dimensions } from 'react-native';
+import { useTranslation } from '@/src/hooks/useTranslation';
 import { Image as ExpoImage } from 'expo-image';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import Animated, { 
-  useAnimatedStyle, 
-  useAnimatedReaction,
-  useSharedValue, 
-  withSpring,
-  withDelay,
-  withTiming,
-  withRepeat,
-  cancelAnimation,
-  runOnJS
+import React from 'react';
+import { Dimensions, ScrollView, Text, View } from 'react-native';
+import Animated, {
+    cancelAnimation,
+    runOnJS,
+    useAnimatedReaction,
+    useAnimatedStyle,
+    useSharedValue,
+    withDelay,
+    withRepeat,
+    withSpring,
+    withTiming
 } from 'react-native-reanimated';
-import { OnboardingContainer } from './shared/OnboardingContainer';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OnboardingButton } from './shared/OnboardingButton';
+import { OnboardingContainer } from './shared/OnboardingContainer';
 import { ONBOARDING_SPACING } from './shared/constants';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -25,6 +25,7 @@ interface CommunityScreenProps {
 }
 
 export function CommunityScreen({ onContinue }: CommunityScreenProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const intervalRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -245,8 +246,7 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
               lineHeight: 40,
               letterSpacing: -1.0,
             }}>
-              What used to take hours in Photoshop{'\n'}
-              <Text style={{ color: '#FF6B35', fontFamily: 'Lexend-Bold' }}>now takes seconds</Text>
+              {t('onboarding.community.title')}
             </Text>
           </Animated.View>
 
@@ -263,7 +263,7 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
               fontFamily: 'Lexend-Regular',
               letterSpacing: -0.3,
             }}>
-              Become the photo miracle worker everyone needs
+              {t('onboarding.community.subtitle')}
             </Text>
           </Animated.View>
 
@@ -280,7 +280,7 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
             <StatItem
               value={stat1Value}
               suffix=""
-              label="Photos Perfected"
+              label={t('onboarding.community.photosPerfected')}
               isCounting
               isLarge
               glowStyle={counterGlowAnimatedStyle}
@@ -298,9 +298,9 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
           }, 
           buttonAnimatedStyle
         ]}>
-          <OnboardingButton
-            title="Continue"
-            onPress={onContinue}
+                      <OnboardingButton
+              title={t('onboarding.community.continue')}
+              onPress={onContinue}
             variant="primary"
             size="large"
             style={{ width: '100%' }}

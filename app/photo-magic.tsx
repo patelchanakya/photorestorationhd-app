@@ -1,15 +1,17 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { analyticsService } from '@/services/analytics';
+import { useTranslation } from '@/src/hooks/useTranslation';
 import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { VideoView, useVideoPlayer } from 'expo-video';
-import React, { useState, useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Alert, ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function PhotoMagicUploadScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { width, height } = useWindowDimensions();
   const [isSelecting, setIsSelecting] = useState(false);
@@ -70,7 +72,7 @@ export default function PhotoMagicUploadScreen() {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
       
       if (permissionResult.granted === false) {
-        Alert.alert('Permission Required', 'Please allow photo access to continue.');
+        Alert.alert(t('photoMagic.permissionRequired'), t('photoMagic.photoAccessMessage'));
         return;
       }
 
@@ -127,7 +129,7 @@ export default function PhotoMagicUploadScreen() {
       const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
       
       if (permissionResult.granted === false) {
-        Alert.alert('Permission Required', 'Please allow camera access to continue.');
+        Alert.alert(t('photoMagic.permissionRequired'), t('photoMagic.cameraAccessMessage'));
         return;
       }
 

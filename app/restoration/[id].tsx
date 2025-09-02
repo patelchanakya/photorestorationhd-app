@@ -6,6 +6,7 @@ import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 import { type FunctionType } from '@/services/photoGenerationV2';
 import { photoStorage } from '@/services/storage';
 import { restorationService } from '@/services/supabase';
+import { useTranslation } from '@/src/hooks/useTranslation';
 import { useCropModalStore } from '@/store/cropModalStore';
 import { useQuickEditStore } from '@/store/quickEditStore';
 import { useRestorationScreenStore } from '@/store/restorationScreenStore';
@@ -40,6 +41,7 @@ const isSmallDevice = SCREEN_WIDTH < 375;
 const isTinyDevice = SCREEN_HEIGHT < 700;
 
 export default function RestorationScreen() {
+  const { t } = useTranslation();
   const { id, imageUri, functionType, imageSource, customPrompt } = useLocalSearchParams();
   
   // Use Zustand store for all state management
@@ -271,7 +273,7 @@ export default function RestorationScreen() {
       clearProcessingProgress();
       setIsProcessing(false);
       Alert.alert(
-        'Processing Failed',
+        t('restoration.processingFailed'),
         photoRestoration.error?.message || 'Something went wrong. Please try again.',
         [{ text: 'OK' }]
       );

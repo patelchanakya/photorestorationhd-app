@@ -1,0 +1,324 @@
+{
+  "app": {
+    "name": "Clever"
+  },
+  "explore": {
+    "header": {
+      "title": "Clever",
+      "pro": "PRO"
+    },
+    "sections": {
+      "popular": "Populärt",
+      "fixMyPhoto": "Fixa Mitt Foto",
+      "memorial": "Memorial",
+      "outfits": "Kläder",
+      "magic": "Magi"
+    },
+    "alerts": {
+      "proMember": {
+        "title": "Pro-medlem ✓",
+        "message": "Din prenumeration är aktiv! Du har obegränsad åtkomst till alla funktioner.",
+        "button": "Fantastiskt!"
+      },
+      "subscriptionStatus": {
+        "title": "Prenumerationsstatus",
+        "noActiveMessage": "Ingen aktiv prenumeration hittades. Du kommer ha åtkomst till gratisverktygen.",
+        "button": "OK"
+      },
+      "subscriptionCheck": {
+        "title": "Prenumerationskontroll",
+        "message": "Ingen aktiv prenumeration hittades på detta Apple ID. Logga in med Apple ID som användes för köpet.",
+        "howToFix": "Hur man fixar",
+        "howToFixTitle": "Hur man fixar prenumeration",
+        "howToFixMessage": "1. Gå till Inställningar → App Store\n2. Logga in med Apple ID som användes för köpet\n3. Återvänd till Clever och tryck på PRO-märket igen",
+        "gotIt": "Förstått"
+      },
+      "proStatusCheck": {
+        "title": "Pro-statuskontroll",
+        "message": "Kunde inte verifiera prenumerationsstatus. Försök igen eller kontrollera din internetanslutning."
+      },
+      "demoMode": {
+        "title": "Demoläge",
+        "message": "Köp är inte tillgängliga i Expo Go."
+      },
+      "welcomeToPro": {
+        "title": "Välkommen till Pro!",
+        "message": "Nu har du obegränsad åtkomst!",
+        "button": "Fantastiskt!"
+      }
+    }
+  },
+  "popular": {
+    "clearSkin": "Klar hy",
+    "addHalo": "Lägg till gloria",
+    "fixHair": "Fixa hår",
+    "slimmer": "Smalare",
+    "angelWings": "Änglavingar",
+    "younger": "Yngre",
+    "older": "Äldre",
+    "addSmile": "Lägg till leende",
+    "gardenBackground": "Trädgårdsbakgrund",
+    "studioBackground": "Studiobakgrund",
+    "softLightsBackground": "Mjuk belysningsbakgrund",
+    "heavenlyBackground": "Himmelsk bakgrund"
+  },
+  "memorial": {
+    "lightRays": "Ljusstrålar",
+    "doveOfPeace": "Fredens duva",
+    "etherealGlow": "Eterisk glöd",
+    "heavenGates": "Himmelens portar",
+    "memorialFlowers": "Minnesblommor",
+    "cleanBackground": "Ren bakgrund"
+  },
+  "outfits": {
+    "fixClothes": "Fixa kläder",
+    "changeColor": "Ändra färg",
+    "jobInterview": "Arbetsintervju",
+    "weddingOutfit": "Bröllopskläder",
+    "professional": "Professionell",
+    "casualDay": "Avslappnad"
+  },
+  "magic": {
+    "waterDamage": {
+      "title": "Vattenskada",
+      "subtitle": "Ta bort vattenskador och fläckar"
+    },
+    "clarify": {
+      "title": "Förtydliga",
+      "subtitle": "Ta bort oskärpa, förbättra detaljer"
+    },
+    "recreate": {
+      "title": "Återskapa",
+      "subtitle": "Låt Clever återskapa din bild"
+    },
+    "colorize": {
+      "title": "Färglägg",
+      "subtitle": "Lägg till färg till svartvita foton"
+    },
+    "descratch": {
+      "title": "Ta bort repor",
+      "subtitle": "Ta bort repor och märken"
+    },
+    "brighten": {
+      "title": "Ljusa upp",
+      "subtitle": "Fixa belysning och exponering"
+    },
+    "requestFeature": {
+      "title": "Begär funktion",
+      "prompt": "Vilken funktion skulle du vilja se i Clever?",
+      "thankYouTitle": "Tack så mycket!",
+      "thankYouMessage": "Din funktionsbegäran har skickats. Vi uppskattar din feedback!",
+      "button": "Fantastiskt!",
+      "errorTitle": "Misslyckades att skicka",
+      "errorMessage": "Kunde inte skicka din begäran. Försök igen.",
+      "errorGeneric": "Något gick fel. Försök igen."
+    }
+  },
+  "quickAction": {
+    "photoMagic": "Fotomagi"
+  },
+  "photoMagic": {
+    "title": "Fotomagi",
+    "placeholder": "Beskriv vad du vill...",
+    "takePhoto": "Ta foto",
+    "choosePhoto": "Välj foto",
+    "permissionRequired": "Tillstånd krävs",
+    "permissionMessage": "Vänligen tillåt fotoåtkomst för att fortsätta.",
+    "photoAccessMessage": "Vänligen tillåt fotoåtkomst för att fortsätta.",
+    "cameraAccessMessage": "Vänligen tillåt kameråtkomst för att fortsätta."
+  },
+  "quickEdit": {
+    "modes": {
+      "restoration": "Restaurering",
+      "repair": "Reparation",
+      "unblur": "Ta bort oskärpa",
+      "colorize": "Färglägg",
+      "descratch": "Ta bort repor",
+      "enlighten": "Ljusa upp",
+      "background": "Bakgrund",
+      "outfit": "Kläder",
+      "custom": "Anpassad",
+      "restoreRepair": "Restaurera och reparera",
+      "waterDamage": "Vattenskada"
+    },
+    "processing": {
+      "analyzing": "Analyserar foto...",
+      "processing": "Bearbetar...",
+      "enhancing": "Förbättrar detaljer...",
+      "complete": "Klar",
+      "failed": "Misslyckades"
+    },
+    "buttons": {
+      "save": "Spara",
+      "share": "Dela",
+      "cancel": "Avbryt",
+      "tryAgain": "Försök igen",
+      "process": "Bearbeta"
+    },
+    "errors": {
+      "somethingWrong": "Något gick fel",
+      "networkError": "Nätverksfel",
+      "tryAgainLater": "Försök igen senare"
+    }
+  },
+  "settings": {
+    "title": "Inställningar",
+    "sections": {
+      "account": "Konto",
+      "subscription": "Prenumeration",
+      "usage": "Användning",
+      "support": "Support",
+      "about": "Om appen"
+    },
+    "items": {
+      "proMember": "Pro-medlem",
+      "freeUser": "Gratisanvändare",
+      "photosUsed": "Använda foton",
+      "dailyLimit": "Daggräns",
+      "lifetimeUsage": "Livstidsanvändning",
+      "restorePurchases": "Återställ köp",
+      "resetIdentity": "Återställ identitet",
+      "clearCache": "Rensa cache",
+      "privacyPolicy": "Sekretesspolicy",
+      "termsOfService": "Användarvillkor",
+      "rateUs": "Betygsätt oss",
+      "shareApp": "Dela appen",
+      "version": "Version",
+      "language": "Språk"
+    },
+    "time": {
+      "availableNow": "Tillgänglig nu",
+      "hours": "{{hours}}t {{minutes}}m {{seconds}}s",
+      "minutes": "{{minutes}}m {{seconds}}s",
+      "seconds": "{{seconds}}s"
+    }
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "Välkommen till Clever",
+      "subtitle": "Förvandla dina foton med AI",
+      "getStarted": "Kom igång",
+      "terms": "Genom att fortsätta godkänner du våra",
+      "termsOfService": "Användarvillkor",
+      "and": "och",
+      "privacyPolicy": "Sekretesspolicy"
+    },
+    "permissions": {
+      "title": "Tillåt åtkomst",
+      "subtitle": "Vi behöver tillstånd för att komma åt dina foton",
+      "photoAccess": "Aktivera fotoåtkomst",
+      "cameraAccess": "Aktivera kameraåtkomst",
+      "notifications": "Aktivera notifikationer",
+      "continue": "Fortsätt"
+    },
+    "features": {
+      "title": "What brings you here?",
+      "customPrompt": "Anpassad begäran",
+      "noneAbove": "Inget av ovanstående",
+      "chooseYourOwn": "Choose Your Own",
+      "chooseYourOwnDesc": "Describe what you want to do with your photo",
+      "recreate": "Recreate",
+      "recreateDesc": "Recreation while staying consistent with features",
+      "clearSkin": "Clear Skin",
+      "clearSkinDesc": "Remove acne, blemishes & imperfections",
+      "addSmile": "Add Smile",
+      "addSmileDesc": "Add a natural, authentic smile",
+      "fixHair": "Fix Hair",
+      "fixHairDesc": "Clean up messy or stray hairs",
+      "makeYounger": "Make Younger",
+      "makeYoungerDesc": "Subtle age reduction while keeping identity",
+      "addWings": "Add Angel Wings",
+      "addWingsDesc": "Beautiful wings that match your photo",
+      "waterStainDamage": "Water/Stain Damage",
+      "waterStainDamageDesc": "Remove water damage, stains, and discoloration",
+      "fixMyPhoto": "Fix My Photo",
+      "fixMyPhotoDesc": "Fix tears, scratches, and damage in old photos",
+      "professionalOutfit": "Professional Outfit",
+      "professionalOutfitDesc": "Change to professional business attire",
+      "blurBackground": "Blur Background",
+      "blurBackgroundDesc": "Create professional blurred background effect",
+      "addHalo": "Add Halo",
+      "addHaloDesc": "Subtle glowing halo above head",
+      "lightRays": "Light Rays",
+      "lightRaysDesc": "Add peaceful memorial atmosphere with golden light",
+      "memorialFlowers": "Memorial Flowers",
+      "memorialFlowersDesc": "Cover scene with memorial flowers and petals",
+      "makeSlimmer": "Make Slimmer",
+      "makeSlimmerDesc": "Natural body enhancement",
+      "colorize": "Colorize",
+      "colorizeDesc": "Bring old B&W photos to life with realistic color",
+      "clarify": "Clarify",
+      "clarifyDesc": "Make blurry photos crystal clear",
+      "brighten": "Brighten",
+      "brightenDesc": "Illuminate underexposed images",
+      "beachBackground": "Beach Background",
+      "beachBackgroundDesc": "Beautiful ocean and sand scene",
+      "noneOfAbove": "None of the Above",
+      "noneOfAboveDesc": "Skip and explore the app",
+      "subtitle": "Select what you're ready to do",
+      "continue": "Continue",
+      "customPromptPlaceholder": "What would you like to do with your photo?"
+    },
+    "preview": {
+      "tryNow": "Prova nu",
+      "skip": "Hoppa över",
+      "back": "Tillbaka",
+      "choosePhoto": "Välj ett foto för att börja",
+      "photoMagic": "Photo Magic",
+      "photoMagicDesc": "Type what you want to edit and watch it happen",
+      "pickPhotoError": "Failed to pick photo. Please try again."
+    },
+    "community": {
+      "title": "Gå med i vår gemenskap",
+      "subtitle": "Följ oss på sociala medier"
+    },
+    "setup": {
+      "title": "Konfigurerar din upplevelse...",
+      "almostReady": "Nästan klar..."
+    }
+  },
+  "textEdit": {
+    "prompt": "Vad skulle du vilja göra?",
+    "placeholder": "Beskriv din redigering...",
+    "generate": "Generera",
+    "processing": "Bearbetar...",
+    "customTextEdits": "Anpassade textredigeringar",
+    "maxEffectsReached": "Maximala effekter nådda",
+    "maxEffectsMessage": "Du kan välja upp till 3 effekter åt gången för bästa resultat. Avmarkera en först."
+  },
+  "restoration": {
+    "processingFailed": "Bearbetning misslyckades",
+    "status": {
+      "processing": "Bearbetar...",
+      "completed": "Klar!",
+      "failed": "Misslyckades",
+      "retry": "Försök igen"
+    },
+    "actions": {
+      "save": "Spara",
+      "share": "Dela"
+    }
+  },
+  "deviceCarousel": {
+    "allowAccess": "Tillåt åtkomst",
+    "photoLibraryMessage": "För att välja foton, tillåt åtkomst till ditt fotobibliotek",
+    "openSettings": "Öppna inställningar"
+  },
+  "common": {
+    "ok": "OK",
+    "cancel": "Avbryt",
+    "continue": "Fortsätt",
+    "back": "Tillbaka",
+    "next": "Nästa",
+    "done": "Klar",
+    "save": "Spara",
+    "share": "Dela",
+    "delete": "Radera",
+    "edit": "Redigera",
+    "loading": "Laddar...",
+    "error": "Fel",
+    "success": "Framgång",
+    "warning": "Varning",
+    "info": "Information"
+  }
+}

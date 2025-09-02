@@ -1,6 +1,7 @@
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useQuickEditStore } from '@/store/quickEditStore';
+import { useT } from '@/src/hooks/useTranslation';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React from 'react';
@@ -13,8 +14,8 @@ import { analyticsService } from '@/services/analytics';
 
 type CardItem = {
   id: string;
-  title: string;
-  subtitle: string;
+  titleKey: string; // Translation key for title
+  subtitleKey: string; // Translation key for subtitle
   functionType?: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'restore_repair' | 'water_damage';
   styleKey?: string;
   route?: string;
@@ -23,12 +24,12 @@ type CardItem = {
 
 // Poster-style cards inspired by the provided reference
 const CARDS: CardItem[] = [
-  { id: 'fc_water_stain', title: 'Water Damage', subtitle: 'Remove water damage and stains', functionType: 'water_damage', image: require('../assets/images/popular/stain/pop-7.png') },
-  { id: 'fc_enhance', title: 'Clarify', subtitle: 'Remove blur, sharpen details', functionType: 'unblur', image: require('../assets/images/popular/enhance/pop-3.png') },
-  { id: 'fc_recreate', title: 'Recreate', subtitle: 'Let Clever recreate your image', functionType: 'repair', image: require('../assets/images/popular/recreate/pop-5.png') },
-  { id: 'fc_colorize', title: 'Colorize', subtitle: 'Add colors to B&W photos', functionType: 'colorize', image: require('../assets/images/popular/colorize/pop-1.png') },
-  { id: 'fc_descratch', title: 'Descratch', subtitle: 'Remove scratches & marks', functionType: 'descratch', image: require('../assets/images/popular/descratch/pop-2.png') },
-  { id: 'fc_enlighten', title: 'Brighten', subtitle: 'Fix lighting & exposure', functionType: 'enlighten', image: require('../assets/images/popular/brighten/pop-4.png') },
+  { id: 'fc_water_stain', titleKey: 'magic.waterDamage.title', subtitleKey: 'magic.waterDamage.subtitle', functionType: 'water_damage', image: require('../assets/images/popular/stain/pop-7.png') },
+  { id: 'fc_enhance', titleKey: 'magic.clarify.title', subtitleKey: 'magic.clarify.subtitle', functionType: 'unblur', image: require('../assets/images/popular/enhance/pop-3.png') },
+  { id: 'fc_recreate', titleKey: 'magic.recreate.title', subtitleKey: 'magic.recreate.subtitle', functionType: 'repair', image: require('../assets/images/popular/recreate/pop-5.png') },
+  { id: 'fc_colorize', titleKey: 'magic.colorize.title', subtitleKey: 'magic.colorize.subtitle', functionType: 'colorize', image: require('../assets/images/popular/colorize/pop-1.png') },
+  { id: 'fc_descratch', titleKey: 'magic.descratch.title', subtitleKey: 'magic.descratch.subtitle', functionType: 'descratch', image: require('../assets/images/popular/descratch/pop-2.png') },
+  { id: 'fc_enlighten', titleKey: 'magic.brighten.title', subtitleKey: 'magic.brighten.subtitle', functionType: 'enlighten', image: require('../assets/images/popular/brighten/pop-4.png') },
 ];
 
 type FeatureCardsListProps = {
@@ -63,7 +64,9 @@ const FeatureCardBase = ({
 }: { 
   item: CardItem; 
   onPress: (item: CardItem) => void;
-}) => (
+}) => {
+  const t = useT();
+  return (
   <TouchableOpacity
     activeOpacity={0.9}
     onPress={() => onPress(item)}
@@ -93,10 +96,10 @@ const FeatureCardBase = ({
       />
       <View style={{ position: 'absolute', left: 16, right: 56, bottom: 14 }}>
         <Text style={{ color: '#FFFFFF', fontSize: 24, fontFamily: 'Lexend-Bold', letterSpacing: -0.3 }} numberOfLines={1}>
-          {item.title}
+          {t(item.titleKey)}
         </Text>
         <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14, marginTop: 4, lineHeight: 20 }} numberOfLines={2}>
-          {item.subtitle}
+          {t(item.subtitleKey)}
         </Text>
       </View>
       <View style={{ position: 'absolute', right: 12, bottom: 12, width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.12)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }}>
@@ -104,7 +107,8 @@ const FeatureCardBase = ({
       </View>
     </Animated.View>
   </TouchableOpacity>
-);
+  );
+};
 
 const Card = React.memo(FeatureCardBase);
 Card.displayName = 'FeatureCard';
@@ -117,34 +121,35 @@ export function FeatureCardsList({
 }: FeatureCardsListProps) {
   const router = useRouter();
   const { isPro } = useRevenueCat();
+  const t = useT();
 
   // Handle request idea submission
   const handleRequestIdea = React.useCallback(async () => {
     Alert.prompt(
-      'Request a Feature',
-      'What feature would you like to see in Clever?',
+      t('magic.requestFeature.title'),
+      t('magic.requestFeature.prompt'),
       async (text) => {
         if (text && text.trim()) {
           try {
             const result = await featureRequestService.submitRequest(text, undefined, isPro);
             if (result.success) {
               Alert.alert(
-                'Thank You!',
-                'Your feature request has been submitted. We appreciate your feedback!',
-                [{ text: 'Great!' }]
+                t('magic.requestFeature.thankYouTitle'),
+                t('magic.requestFeature.thankYouMessage'),
+                [{ text: t('magic.requestFeature.button') }]
               );
             } else {
               Alert.alert(
-                'Submission Failed',
-                result.error || 'Unable to submit your request. Please try again.',
-                [{ text: 'OK' }]
+                t('magic.requestFeature.errorTitle'),
+                result.error || t('magic.requestFeature.errorMessage'),
+                [{ text: t('common.ok') }]
               );
             }
           } catch (error) {
             Alert.alert(
-              'Error',
-              'Something went wrong. Please try again.',
-              [{ text: 'OK' }]
+              t('common.error'),
+              t('magic.requestFeature.errorGeneric'),
+              [{ text: t('common.ok') }]
             );
           }
         }

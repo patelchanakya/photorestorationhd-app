@@ -1,0 +1,324 @@
+{
+  "app": {
+    "name": "Clever"
+  },
+  "explore": {
+    "header": {
+      "title": "Clever",
+      "pro": "PRO"
+    },
+    "sections": {
+      "popular": "Популярное",
+      "fixMyPhoto": "Исправить Мое Фото",
+      "memorial": "Мемориал",
+      "outfits": "Одежда",
+      "magic": "Магия"
+    },
+    "alerts": {
+      "proMember": {
+        "title": "Pro Участник ✓",
+        "message": "Ваша подписка активна! У вас есть неограниченный доступ ко всем функциям.",
+        "button": "Отлично!"
+      },
+      "subscriptionStatus": {
+        "title": "Статус Подписки",
+        "noActiveMessage": "Активная подписка не найдена. У вас будет доступ к бесплатным функциям.",
+        "button": "OK"
+      },
+      "subscriptionCheck": {
+        "title": "Проверка Подписки",
+        "message": "На этом Apple ID не найдена активная подписка. Войдите с Apple ID, который использовался для покупки.",
+        "howToFix": "Как Исправить",
+        "howToFixTitle": "Как Исправить Подписку",
+        "howToFixMessage": "1. Перейдите в Настройки → App Store\n2. Войдите с Apple ID, который использовался для покупки\n3. Вернитесь в Clever и снова нажмите на значок PRO",
+        "gotIt": "Понятно"
+      },
+      "proStatusCheck": {
+        "title": "Проверка Pro Статуса",
+        "message": "Не удалось проверить статус подписки. Попробуйте еще раз или проверьте подключение к интернету."
+      },
+      "demoMode": {
+        "title": "Демо Режим",
+        "message": "Покупки недоступны в Expo Go."
+      },
+      "welcomeToPro": {
+        "title": "Добро пожаловать в Pro!",
+        "message": "Теперь у вас неограниченный доступ!",
+        "button": "Потрясающе!"
+      }
+    }
+  },
+  "popular": {
+    "clearSkin": "Чистая Кожа",
+    "addHalo": "Добавить Ореол",
+    "fixHair": "Исправить Волосы",
+    "slimmer": "Стройнее",
+    "angelWings": "Крылья Ангела",
+    "younger": "Моложе",
+    "older": "Старше",
+    "addSmile": "Добавить Улыбку",
+    "gardenBackground": "Фон Сада",
+    "studioBackground": "Студийный Фон",
+    "softLightsBackground": "Фон Мягкого Света",
+    "heavenlyBackground": "Небесный Фон"
+  },
+  "memorial": {
+    "lightRays": "Световые Лучи",
+    "doveOfPeace": "Голубь Мира",
+    "etherealGlow": "Эфирное Сияние",
+    "heavenGates": "Врата Рая",
+    "memorialFlowers": "Мемориальные Цветы",
+    "cleanBackground": "Чистый Фон"
+  },
+  "outfits": {
+    "fixClothes": "Исправить Одежду",
+    "changeColor": "Изменить Цвет",
+    "jobInterview": "Собеседование",
+    "weddingOutfit": "Свадебный Наряд",
+    "professional": "Профессиональный",
+    "casualDay": "Повседневный День"
+  },
+  "magic": {
+    "waterDamage": {
+      "title": "Повреждение Водой",
+      "subtitle": "Удалить повреждения от воды и пятна"
+    },
+    "clarify": {
+      "title": "Прояснить",
+      "subtitle": "Убрать размытость, заострить детали"
+    },
+    "recreate": {
+      "title": "Воссоздать",
+      "subtitle": "Пусть Clever воссоздаст ваше изображение"
+    },
+    "colorize": {
+      "title": "Раскрасить",
+      "subtitle": "Добавить цвета к Ч/Б фотографиям"
+    },
+    "descratch": {
+      "title": "Убрать Царапины",
+      "subtitle": "Удалить царапины и отметины"
+    },
+    "brighten": {
+      "title": "Осветлить",
+      "subtitle": "Исправить освещение и экспозицию"
+    },
+    "requestFeature": {
+      "title": "Запросить Функцию",
+      "prompt": "Какую функцию вы хотели бы видеть в Clever?",
+      "thankYouTitle": "Спасибо!",
+      "thankYouMessage": "Ваш запрос функции отправлен. Мы ценим ваши отзывы!",
+      "button": "Отлично!",
+      "errorTitle": "Отправка Не Удалась",
+      "errorMessage": "Не удалось отправить ваш запрос. Попробуйте еще раз.",
+      "errorGeneric": "Что-то пошло не так. Попробуйте еще раз."
+    }
+  },
+  "quickAction": {
+    "photoMagic": "Магия Фото"
+  },
+  "photoMagic": {
+    "title": "Магия Фото",
+    "placeholder": "Опишите, что вы хотите...",
+    "takePhoto": "Сделать Фото",
+    "choosePhoto": "Выбрать Фото",
+    "permissionRequired": "Требуется Разрешение",
+    "permissionMessage": "Разрешите доступ к фотографиям для продолжения.",
+    "photoAccessMessage": "Разрешите доступ к фотографиям для продолжения.",
+    "cameraAccessMessage": "Разрешите доступ к камере для продолжения."
+  },
+  "quickEdit": {
+    "modes": {
+      "restoration": "Восстановление",
+      "repair": "Ремонт",
+      "unblur": "Убрать Размытие",
+      "colorize": "Раскрасить",
+      "descratch": "Убрать Царапины",
+      "enlighten": "Осветлить",
+      "background": "Фон",
+      "outfit": "Наряд",
+      "custom": "Пользовательский",
+      "restoreRepair": "Восстановить и Починить",
+      "waterDamage": "Повреждение Водой"
+    },
+    "processing": {
+      "analyzing": "Анализируем фото...",
+      "processing": "Обрабатываем...",
+      "enhancing": "Улучшаем детали...",
+      "complete": "Завершено",
+      "failed": "Не удалось"
+    },
+    "buttons": {
+      "save": "Сохранить",
+      "share": "Поделиться",
+      "cancel": "Отменить",
+      "tryAgain": "Попробовать Снова",
+      "process": "Обработать"
+    },
+    "errors": {
+      "somethingWrong": "Что-то пошло не так",
+      "networkError": "Ошибка сети",
+      "tryAgainLater": "Попробуйте позже"
+    }
+  },
+  "settings": {
+    "title": "Настройки",
+    "sections": {
+      "account": "Аккаунт",
+      "subscription": "Подписка",
+      "usage": "Использование",
+      "support": "Поддержка",
+      "about": "О Программе"
+    },
+    "items": {
+      "proMember": "Pro Участник",
+      "freeUser": "Бесплатный Пользователь",
+      "photosUsed": "Использовано Фото",
+      "dailyLimit": "Дневной Лимит",
+      "lifetimeUsage": "Общее Использование",
+      "restorePurchases": "Восстановить Покупки",
+      "resetIdentity": "Сбросить Личность",
+      "clearCache": "Очистить Кэш",
+      "privacyPolicy": "Политика Конфиденциальности",
+      "termsOfService": "Условия Обслуживания",
+      "rateUs": "Оценить Нас",
+      "shareApp": "Поделиться Приложением",
+      "version": "Версия",
+      "language": "Язык"
+    },
+    "time": {
+      "availableNow": "Доступно сейчас",
+      "hours": "{{hours}}ч {{minutes}}м {{seconds}}с",
+      "minutes": "{{minutes}}м {{seconds}}с",
+      "seconds": "{{seconds}}с"
+    }
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "Добро пожаловать в Clever",
+      "subtitle": "Преобразуйте свои фотографии с помощью ИИ",
+      "getStarted": "Начать",
+      "terms": "Продолжая, вы соглашаетесь с нашими",
+      "termsOfService": "Условиями Обслуживания",
+      "and": "и",
+      "privacyPolicy": "Политикой Конфиденциальности"
+    },
+    "permissions": {
+      "title": "Разрешить Доступ",
+      "subtitle": "Нам нужно разрешение для доступа к вашим фото",
+      "photoAccess": "Включить Доступ к Фото",
+      "cameraAccess": "Включить Доступ к Камере",
+      "notifications": "Включить Уведомления",
+      "continue": "Продолжить"
+    },
+    "features": {
+      "title": "What brings you here?",
+      "customPrompt": "Пользовательский запрос",
+      "noneAbove": "Ничего из перечисленного",
+      "chooseYourOwn": "Choose Your Own",
+      "chooseYourOwnDesc": "Describe what you want to do with your photo",
+      "recreate": "Recreate",
+      "recreateDesc": "Recreation while staying consistent with features",
+      "clearSkin": "Clear Skin",
+      "clearSkinDesc": "Remove acne, blemishes & imperfections",
+      "addSmile": "Add Smile",
+      "addSmileDesc": "Add a natural, authentic smile",
+      "fixHair": "Fix Hair",
+      "fixHairDesc": "Clean up messy or stray hairs",
+      "makeYounger": "Make Younger",
+      "makeYoungerDesc": "Subtle age reduction while keeping identity",
+      "addWings": "Add Angel Wings",
+      "addWingsDesc": "Beautiful wings that match your photo",
+      "waterStainDamage": "Water/Stain Damage",
+      "waterStainDamageDesc": "Remove water damage, stains, and discoloration",
+      "fixMyPhoto": "Fix My Photo",
+      "fixMyPhotoDesc": "Fix tears, scratches, and damage in old photos",
+      "professionalOutfit": "Professional Outfit",
+      "professionalOutfitDesc": "Change to professional business attire",
+      "blurBackground": "Blur Background",
+      "blurBackgroundDesc": "Create professional blurred background effect",
+      "addHalo": "Add Halo",
+      "addHaloDesc": "Subtle glowing halo above head",
+      "lightRays": "Light Rays",
+      "lightRaysDesc": "Add peaceful memorial atmosphere with golden light",
+      "memorialFlowers": "Memorial Flowers",
+      "memorialFlowersDesc": "Cover scene with memorial flowers and petals",
+      "makeSlimmer": "Make Slimmer",
+      "makeSlimmerDesc": "Natural body enhancement",
+      "colorize": "Colorize",
+      "colorizeDesc": "Bring old B&W photos to life with realistic color",
+      "clarify": "Clarify",
+      "clarifyDesc": "Make blurry photos crystal clear",
+      "brighten": "Brighten",
+      "brightenDesc": "Illuminate underexposed images",
+      "beachBackground": "Beach Background",
+      "beachBackgroundDesc": "Beautiful ocean and sand scene",
+      "noneOfAbove": "None of the Above",
+      "noneOfAboveDesc": "Skip and explore the app",
+      "subtitle": "Select what you're ready to do",
+      "continue": "Continue",
+      "customPromptPlaceholder": "What would you like to do with your photo?"
+    },
+    "preview": {
+      "tryNow": "Попробовать сейчас",
+      "skip": "Пропустить",
+      "back": "Назад",
+      "choosePhoto": "Выберите фото для начала",
+      "photoMagic": "Photo Magic",
+      "photoMagicDesc": "Type what you want to edit and watch it happen",
+      "pickPhotoError": "Failed to pick photo. Please try again."
+    },
+    "community": {
+      "title": "Присоединяйтесь к нашему сообществу",
+      "subtitle": "Подключайтесь к нам в социальных сетях"
+    },
+    "setup": {
+      "title": "Настраиваем ваш опыт...",
+      "almostReady": "Почти готово..."
+    }
+  },
+  "textEdit": {
+    "prompt": "Что бы вы хотели сделать?",
+    "placeholder": "Опишите вашу правку...",
+    "generate": "Сгенерировать",
+    "processing": "Обрабатываем...",
+    "customTextEdits": "Пользовательские текстовые правки",
+    "maxEffectsReached": "Достигнуто максимальное количество эффектов",
+    "maxEffectsMessage": "Вы можете выбрать до 3 эффектов одновременно для лучших результатов. Пожалуйста, сначала снимите выбор с одного."
+  },
+  "restoration": {
+    "processingFailed": "Обработка не удалась",
+    "status": {
+      "processing": "Обрабатываем...",
+      "completed": "Завершено!",
+      "failed": "Не удалось",
+      "retry": "Повторить"
+    },
+    "actions": {
+      "save": "Сохранить",
+      "share": "Поделиться"
+    }
+  },
+  "deviceCarousel": {
+    "allowAccess": "Разрешить Доступ",
+    "photoLibraryMessage": "Для выбора фото разрешите доступ к вашей библиотеке фото",
+    "openSettings": "Открыть Настройки"
+  },
+  "common": {
+    "ok": "OK",
+    "cancel": "Отменить",
+    "continue": "Продолжить",
+    "back": "Назад",
+    "next": "Далее",
+    "done": "Готово",
+    "save": "Сохранить",
+    "share": "Поделиться",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "loading": "Загружается...",
+    "error": "Ошибка",
+    "success": "Успех",
+    "warning": "Предупреждение",
+    "info": "Информация"
+  }
+}

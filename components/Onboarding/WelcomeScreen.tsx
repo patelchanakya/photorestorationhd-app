@@ -1,26 +1,28 @@
-import React from 'react';
-import { View, Text, Linking, Image, Dimensions } from 'react-native';
-import Animated, { 
-  useAnimatedStyle, 
-  useSharedValue, 
-  withSpring,
-  withDelay,
-  withTiming 
-} from 'react-native-reanimated';
-import { OnboardingContainer } from './shared/OnboardingContainer';
-import { OnboardingButton } from './shared/OnboardingButton';
-import { ONBOARDING_COLORS, ONBOARDING_SPACING, ONBOARDING_TYPOGRAPHY } from './shared/constants';
-import { IconSymbol } from '../ui/IconSymbol';
-import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { NetworkErrorModal } from '@/components/NetworkErrorModal';
-import * as ImagePicker from 'expo-image-picker';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { analyticsService } from '@/services/analytics';
+import { useTranslation } from '@/src/hooks/useTranslation';
+import React from 'react';
+import { Dimensions, Image, Linking, Text, View } from 'react-native';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withDelay,
+    withSpring,
+    withTiming
+} from 'react-native-reanimated';
+import { IconSymbol } from '../ui/IconSymbol';
+import { OnboardingButton } from './shared/OnboardingButton';
+import { OnboardingContainer } from './shared/OnboardingContainer';
+import { ONBOARDING_COLORS, ONBOARDING_SPACING, ONBOARDING_TYPOGRAPHY } from './shared/constants';
 
 interface WelcomeScreenProps {
   onContinue: () => void;
 }
 
 export function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
+  const { t } = useTranslation();
+  
   if (__DEV__) {
     console.log('🔥 [WELCOME-SCREEN] Component mounting...');
     console.log('🔥 [WELCOME-SCREEN] Props:', { onContinue: !!onContinue });
@@ -200,7 +202,7 @@ export function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
               textAlign: 'left',
               lineHeight: 52,
             }}>
-              Welcome to
+              {t('onboarding.welcome.title')}
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Text style={{ 
@@ -209,7 +211,7 @@ export function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
                 color: ONBOARDING_COLORS.textPrimary,
                 textAlign: 'left',
               }}>
-                Clever! 
+                {t('onboarding.welcome.appName')}
               </Text>
               <IconSymbol 
                 name="wand.and.stars" 
@@ -230,19 +232,19 @@ export function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
             textAlign: 'left',
             lineHeight: 20,
           }}>
-            By continuing, you accept our{' '}
+            {t('onboarding.welcome.terms')}{' '}
             <Text 
               style={{ color: ONBOARDING_COLORS.accent, textDecorationLine: 'underline' }}
               onPress={openTerms}
             >
-              Terms of Service
+              {t('onboarding.welcome.termsOfService')}
             </Text>
-            {' '}and{' '}
+            {' '}{t('onboarding.welcome.and')}{' '}
             <Text 
               style={{ color: ONBOARDING_COLORS.accent, textDecorationLine: 'underline' }}
               onPress={openPrivacy}
             >
-              Privacy Policy
+              {t('onboarding.welcome.privacyPolicy')}
             </Text>
           </Text>
         </Animated.View>
@@ -250,7 +252,7 @@ export function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
         {/* Get Started Button - positioned at bottom */}
         <Animated.View style={[{ width: '100%' }, buttonAnimatedStyle]}>
           <OnboardingButton
-            title="Get Started >"
+            title={t('onboarding.welcome.getStarted')}
             onPress={handleGetStarted}
             variant="primary"
             size="large"

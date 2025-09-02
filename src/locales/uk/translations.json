@@ -1,0 +1,324 @@
+{
+  "app": {
+    "name": "Clever"
+  },
+  "explore": {
+    "header": {
+      "title": "Clever",
+      "pro": "PRO"
+    },
+    "sections": {
+      "popular": "Популярне",
+      "fixMyPhoto": "Виправити Моє Фото",
+      "memorial": "Меморіал",
+      "outfits": "Одяг",
+      "magic": "Магія"
+    },
+    "alerts": {
+      "proMember": {
+        "title": "Pro Учасник ✓",
+        "message": "Ваша підписка активна! У вас є необмежений доступ до всіх функцій.",
+        "button": "Чудово!"
+      },
+      "subscriptionStatus": {
+        "title": "Статус Підписки",
+        "noActiveMessage": "Активна підписка не знайдена. У вас буде доступ до безкоштовних функцій.",
+        "button": "OK"
+      },
+      "subscriptionCheck": {
+        "title": "Перевірка Підписки",
+        "message": "Активна підписка не знайдена на цьому Apple ID. Будь ласка, увійдіть з Apple ID, який використовувався для покупки.",
+        "howToFix": "Як Виправити",
+        "howToFixTitle": "Як Виправити Підписку",
+        "howToFixMessage": "1. Перейдіть до Налаштування → App Store\n2. Увійдіть з Apple ID, який використовувався для покупки\n3. Поверніться до Clever і натисніть на PRO значок знову",
+        "gotIt": "Зрозуміло"
+      },
+      "proStatusCheck": {
+        "title": "Перевірка Статусу Pro",
+        "message": "Неможливо перевірити статус підписки. Будь ласка, спробуйте знову або перевірте інтернет-з'єднання."
+      },
+      "demoMode": {
+        "title": "Демо Режим",
+        "message": "Покупки недоступні в Expo Go."
+      },
+      "welcomeToPro": {
+        "title": "Ласкаво просимо до Pro!",
+        "message": "Тепер у вас є необмежений доступ!",
+        "button": "Чудово!"
+      }
+    }
+  },
+  "popular": {
+    "clearSkin": "Чиста Шкіра",
+    "addHalo": "Додати Німб",
+    "fixHair": "Виправити Волосся",
+    "slimmer": "Стройніший",
+    "angelWings": "Ангельські Крила",
+    "younger": "Молодший",
+    "older": "Старший",
+    "addSmile": "Додати Посмішку",
+    "gardenBackground": "Садовий Фон",
+    "studioBackground": "Студійний Фон",
+    "softLightsBackground": "М'яке Освітлення Фон",
+    "heavenlyBackground": "Небесний Фон"
+  },
+  "memorial": {
+    "lightRays": "Промені Світла",
+    "doveOfPeace": "Голуб Миру",
+    "etherealGlow": "Ефірне Сяйво",
+    "heavenGates": "Небесні Ворота",
+    "memorialFlowers": "Меморіальні Квіти",
+    "cleanBackground": "Чистий Фон"
+  },
+  "outfits": {
+    "fixClothes": "Виправити Одяг",
+    "changeColor": "Змінити Колір",
+    "jobInterview": "Співбесіда",
+    "weddingOutfit": "Весільний Одяг",
+    "professional": "Професійний",
+    "casualDay": "Повсякденний"
+  },
+  "magic": {
+    "waterDamage": {
+      "title": "Пошкодження Водою",
+      "subtitle": "Видалити пошкодження водою та плями"
+    },
+    "clarify": {
+      "title": "Уточнити",
+      "subtitle": "Видалити розмиття, загострити деталі"
+    },
+    "recreate": {
+      "title": "Відтворити",
+      "subtitle": "Дозвольте Clever відтворити ваше зображення"
+    },
+    "colorize": {
+      "title": "Розфарбувати",
+      "subtitle": "Додати кольори до чорно-білих фото"
+    },
+    "descratch": {
+      "title": "Видалити Подряпини",
+      "subtitle": "Видалити подряпини та позначки"
+    },
+    "brighten": {
+      "title": "Освітлити",
+      "subtitle": "Виправити освітлення та експозицію"
+    },
+    "requestFeature": {
+      "title": "Запросити Функцію",
+      "prompt": "Яку функцію ви хотіли б бачити в Clever?",
+      "thankYouTitle": "Дякуємо!",
+      "thankYouMessage": "Ваш запит на функцію було надіслано. Ми цінуємо ваш відгук!",
+      "button": "Чудово!",
+      "errorTitle": "Надсилання Не Вдалося",
+      "errorMessage": "Неможливо надіслати ваш запит. Будь ласка, спробуйте знову.",
+      "errorGeneric": "Щось пішло не так. Будь ласка, спробуйте знову."
+    }
+  },
+  "quickAction": {
+    "photoMagic": "Фото Магія"
+  },
+  "photoMagic": {
+    "title": "Фото Магія",
+    "placeholder": "Опишіть, що ви хочете...",
+    "takePhoto": "Зробити Фото",
+    "choosePhoto": "Вибрати Фото",
+    "permissionRequired": "Потрібен Дозвіл",
+    "permissionMessage": "Будь ласка, дозвольте доступ до фото для продовження.",
+    "photoAccessMessage": "Будь ласка, дозвольте доступ до фото для продовження.",
+    "cameraAccessMessage": "Будь ласка, дозвольте доступ до камери для продовження."
+  },
+  "quickEdit": {
+    "modes": {
+      "restoration": "Реставрація",
+      "repair": "Ремонт",
+      "unblur": "Розмити",
+      "colorize": "Розфарбувати",
+      "descratch": "Видалити Подряпини",
+      "enlighten": "Освітлити",
+      "background": "Фон",
+      "outfit": "Одяг",
+      "custom": "Користувацький",
+      "restoreRepair": "Відновити та Відремонтувати",
+      "waterDamage": "Пошкодження Водою"
+    },
+    "processing": {
+      "analyzing": "Аналіз фото...",
+      "processing": "Обробка...",
+      "enhancing": "Покращення деталей...",
+      "complete": "Завершено",
+      "failed": "Не вдалося"
+    },
+    "buttons": {
+      "save": "Зберегти",
+      "share": "Поділитися",
+      "cancel": "Скасувати",
+      "tryAgain": "Спробувати Знову",
+      "process": "Обробити"
+    },
+    "errors": {
+      "somethingWrong": "Щось пішло не так",
+      "networkError": "Помилка мережі",
+      "tryAgainLater": "Будь ласка, спробуйте пізніше"
+    }
+  },
+  "settings": {
+    "title": "Налаштування",
+    "sections": {
+      "account": "Акаунт",
+      "subscription": "Підписка",
+      "usage": "Використання",
+      "support": "Підтримка",
+      "about": "Про Додаток"
+    },
+    "items": {
+      "proMember": "Pro Учасник",
+      "freeUser": "Безкоштовний Користувач",
+      "photosUsed": "Використані Фото",
+      "dailyLimit": "Денний Ліміт",
+      "lifetimeUsage": "Використання За Життя",
+      "restorePurchases": "Відновити Покупки",
+      "resetIdentity": "Скинути Ідентичність",
+      "clearCache": "Очистити Кеш",
+      "privacyPolicy": "Політика Конфіденційності",
+      "termsOfService": "Умови Використання",
+      "rateUs": "Оцініть Нас",
+      "shareApp": "Поділитися Додатком",
+      "version": "Версія",
+      "language": "Мова"
+    },
+    "time": {
+      "availableNow": "Доступно зараз",
+      "hours": "{{hours}}г {{minutes}}хв {{seconds}}с",
+      "minutes": "{{minutes}}хв {{seconds}}с",
+      "seconds": "{{seconds}}с"
+    }
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "Ласкаво просимо до Clever",
+      "subtitle": "Перетворюйте свої фото за допомогою ШІ",
+      "getStarted": "Почати",
+      "terms": "Продовжуючи, ви погоджуєтеся з нашими",
+      "termsOfService": "Умовами Використання",
+      "and": "та",
+      "privacyPolicy": "Політикою Конфіденційності"
+    },
+    "permissions": {
+      "title": "Дозволити Доступ",
+      "subtitle": "Нам потрібен дозвіл на доступ до ваших фото",
+      "photoAccess": "Увімкнути Доступ до Фото",
+      "cameraAccess": "Увімкнути Доступ до Камери",
+      "notifications": "Увімкнути Сповіщення",
+      "continue": "Продовжити"
+    },
+    "features": {
+      "title": "What brings you here?",
+      "customPrompt": "Користувацький запит",
+      "noneAbove": "Жодне з вищезазначеного",
+      "chooseYourOwn": "Choose Your Own",
+      "chooseYourOwnDesc": "Describe what you want to do with your photo",
+      "recreate": "Recreate",
+      "recreateDesc": "Recreation while staying consistent with features",
+      "clearSkin": "Clear Skin",
+      "clearSkinDesc": "Remove acne, blemishes & imperfections",
+      "addSmile": "Add Smile",
+      "addSmileDesc": "Add a natural, authentic smile",
+      "fixHair": "Fix Hair",
+      "fixHairDesc": "Clean up messy or stray hairs",
+      "makeYounger": "Make Younger",
+      "makeYoungerDesc": "Subtle age reduction while keeping identity",
+      "addWings": "Add Angel Wings",
+      "addWingsDesc": "Beautiful wings that match your photo",
+      "waterStainDamage": "Water/Stain Damage",
+      "waterStainDamageDesc": "Remove water damage, stains, and discoloration",
+      "fixMyPhoto": "Fix My Photo",
+      "fixMyPhotoDesc": "Fix tears, scratches, and damage in old photos",
+      "professionalOutfit": "Professional Outfit",
+      "professionalOutfitDesc": "Change to professional business attire",
+      "blurBackground": "Blur Background",
+      "blurBackgroundDesc": "Create professional blurred background effect",
+      "addHalo": "Add Halo",
+      "addHaloDesc": "Subtle glowing halo above head",
+      "lightRays": "Light Rays",
+      "lightRaysDesc": "Add peaceful memorial atmosphere with golden light",
+      "memorialFlowers": "Memorial Flowers",
+      "memorialFlowersDesc": "Cover scene with memorial flowers and petals",
+      "makeSlimmer": "Make Slimmer",
+      "makeSlimmerDesc": "Natural body enhancement",
+      "colorize": "Colorize",
+      "colorizeDesc": "Bring old B&W photos to life with realistic color",
+      "clarify": "Clarify",
+      "clarifyDesc": "Make blurry photos crystal clear",
+      "brighten": "Brighten",
+      "brightenDesc": "Illuminate underexposed images",
+      "beachBackground": "Beach Background",
+      "beachBackgroundDesc": "Beautiful ocean and sand scene",
+      "noneOfAbove": "None of the Above",
+      "noneOfAboveDesc": "Skip and explore the app",
+      "subtitle": "Select what you're ready to do",
+      "continue": "Continue",
+      "customPromptPlaceholder": "What would you like to do with your photo?"
+    },
+    "preview": {
+      "tryNow": "Спробувати зараз",
+      "skip": "Пропустити",
+      "back": "Назад",
+      "choosePhoto": "Виберіть фото для початку",
+      "photoMagic": "Photo Magic",
+      "photoMagicDesc": "Type what you want to edit and watch it happen",
+      "pickPhotoError": "Failed to pick photo. Please try again."
+    },
+    "community": {
+      "title": "Приєднуйтеся до нашої спільноти",
+      "subtitle": "Зв'яжіться з нами в соціальних мережах"
+    },
+    "setup": {
+      "title": "Налаштування вашого досвіду...",
+      "almostReady": "Майже готово..."
+    }
+  },
+  "textEdit": {
+    "prompt": "Що б ви хотіли зробити?",
+    "placeholder": "Опишіть ваше редагування...",
+    "generate": "Згенерувати",
+    "processing": "Обробка...",
+    "customTextEdits": "Користувацькі текстові правки",
+    "maxEffectsReached": "Досягнуто максимальну кількість ефектів",
+    "maxEffectsMessage": "Ви можете вибрати до 3 ефектів одночасно для найкращих результатів. Будь ласка, спочатку зніміть позначку з одного."
+  },
+  "restoration": {
+    "processingFailed": "Обробка не вдалася",
+    "status": {
+      "processing": "Обробка...",
+      "completed": "Завершено!",
+      "failed": "Не вдалося",
+      "retry": "Повторити"
+    },
+    "actions": {
+      "save": "Зберегти",
+      "share": "Поділитися"
+    }
+  },
+  "deviceCarousel": {
+    "allowAccess": "Дозволити Доступ",
+    "photoLibraryMessage": "Для вибору фото будь ласка дозвольте доступ до вашої фото бібліотеки",
+    "openSettings": "Відкрити Налаштування"
+  },
+  "common": {
+    "ok": "OK",
+    "cancel": "Скасувати",
+    "continue": "Продовжити",
+    "back": "Назад",
+    "next": "Далі",
+    "done": "Готово",
+    "save": "Зберегти",
+    "share": "Поділитися",
+    "delete": "Видалити",
+    "edit": "Редагувати",
+    "loading": "Завантаження...",
+    "error": "Помилка",
+    "success": "Успіх",
+    "warning": "Попередження",
+    "info": "Інформація"
+  }
+}

@@ -1,6 +1,7 @@
 // Removed Pro gating - all outfits are now free
 import { analyticsService } from '@/services/analytics';
 import { useQuickEditStore } from '@/store/quickEditStore';
+import { useT } from '@/src/hooks/useTranslation';
 import { useFocusEffect } from '@react-navigation/native';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -15,7 +16,7 @@ interface OutfitItem {
   id: string;
   video?: any; // require('...') for videos
   image?: any; // require('...') for images as fallback
-  title: string;
+  titleKey: string; // Translation key for title
   type?: 'video' | 'image';
   outfitPrompt?: string; // The prompt to apply this outfit
 }
@@ -24,42 +25,42 @@ interface OutfitItem {
 const DEFAULT_OUTFITS: OutfitItem[] = [
   { 
     id: 'outfit-1', 
-    title: 'Fix Clothes', 
+    titleKey: 'outfits.fixClothes', 
     type: 'video', 
     video: require('../assets/videos/magic/outfits/thumbnail/fix-clothes/niceclothes.mp4'), 
     outfitPrompt: "Clean ALL clothing completely. Remove ALL stains and dirt from shirt, pants, dress, everything. Keep same colors. Keep same style. Only clean, nothing else changes." 
   },
   { 
     id: 'outfit-2', 
-    title: 'Change Color', 
+    titleKey: 'outfits.changeColor', 
     type: 'video', 
     video: require('../assets/videos/magic/outfits/thumbnail/change-color/colorchange.mp4'), 
     outfitPrompt: "Keep the subject's clothing design, texture, shape, and style exactly the same, but change the color to a random, attractive color that looks natural and flattering. Avoid overly bright or obnoxious colors - choose something stylish and wearable. Make sure the new color appears natural under the existing lighting and shadows. Do not alter the subject's face, hair, background, accessories, or any other aspect of the photo - only change the clothing color." 
   },
   { 
     id: 'outfit-3', 
-    title: 'Job Interview', 
+    titleKey: 'outfits.jobInterview', 
     type: 'video', 
     video: require('../assets/videos/magic/outfits/thumbnail/job-interview/jobinterview.mp4'), 
     outfitPrompt: "Replace the subject's clothing with smart business casual attire suitable for a job interview: a nice blazer with dark jeans or smart trousers, or a professional dress that's approachable and friendly. Use neutral, professional colors that look confident but not intimidating. Keep the subject's face, hairstyle, pose, lighting, and background unchanged. Ensure clothing appears realistic with natural fabric folds and texture." 
   },
   { 
     id: 'outfit-4', 
-    title: 'Wedding Outfit', 
+    titleKey: 'outfits.weddingOutfit', 
     type: 'video', 
     video: require('../assets/videos/magic/outfits/thumbnail/wedding-outfit/outfit-wedding.mp4'), 
     outfitPrompt: "Replace clothing with wedding attire. Preserve exact head position of all subjects, specifically keeping facial features and head positioning the same, along with pose, background, and lighting. Do not alter any other elements of the image." 
   },
   { 
     id: 'outfit-5', 
-    title: 'Professional', 
+    titleKey: 'outfits.professional', 
     type: 'video', 
     video: require('../assets/videos/magic/outfits/thumbnail/formal-wear/professional.mp4'), 
     outfitPrompt: "Replace ALL of the subject's clothing with a complete professional outfit: a well-tailored black suit with white dress shirt and tie for men, or an elegant professional dress or suit for women. This includes replacing shirts, pants, shorts, dresses, skirts - EVERY piece of clothing. Keep the subject's facial features, hairstyle, pose, lighting, and background exactly the same. Ensure the entire outfit is cohesive, properly fitted, and has natural fabric folds and realistic texture under the existing lighting." 
   },
   { 
     id: 'outfit-6', 
-    title: 'Casual Day', 
+    titleKey: 'outfits.casualDay', 
     type: 'video', 
     video: require('../assets/videos/magic/outfits/thumbnail/casual-day/outfit-0.mp4'), 
     outfitPrompt: "Change the subject's clothing to casual, comfortable wear such as a t-shirt and jeans or a relaxed summer outfit. Keep the subject's face, hairstyle, pose, lighting, and background unchanged. Ensure the clothing appears soft, naturally worn, and fits realistically with natural fabric folds and textures." 
@@ -219,6 +220,7 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
   const longestSide = Math.max(width, height);
   const isTabletLike = shortestSide >= 768;
   const isSmallPhone = longestSide <= 700;
+  const t = useT();
   
   // Responsive tile dimensions
   const tileWidth = isTabletLike ? 140 : (isSmallPhone ? 100 : 120);
@@ -227,18 +229,19 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
   const router = useRouter();
   const handleOutfitSelect = async (outfit: OutfitItem) => {
     // No Pro gating - all outfits are now free
+    const translatedTitle = t(outfit.titleKey);
     
     // PROMPT LOGGING: Track which outfit style is selected
     console.log('🎨 OUTFIT STYLE SELECTED:', {
       id: outfit.id,
-      title: outfit.title,
+      title: translatedTitle,
       prompt: outfit.outfitPrompt
     });
     
     // Track outfit tile selection
     analyticsService.trackTileUsage({
       category: 'outfit',
-      tileName: outfit.title,
+      tileName: translatedTitle,
       tileId: outfit.id,
       functionType: 'outfit',
       customPrompt: outfit.outfitPrompt,
@@ -249,10 +252,10 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 1 });
     if (!result.canceled && result.assets[0]) {
       try {
-        useQuickEditStore.getState().openWithImage({ functionType: 'outfit' as any, imageUri: result.assets[0].uri, styleName: outfit.title, customPrompt: outfit.outfitPrompt || outfit.title });
+        useQuickEditStore.getState().openWithImage({ functionType: 'outfit' as any, imageUri: result.assets[0].uri, styleName: translatedTitle, customPrompt: outfit.outfitPrompt || translatedTitle });
       } catch {
         // fallback: existing flow
-        router.push({ pathname: '/text-edits', params: { imageUri: result.assets[0].uri, prompt: outfit.outfitPrompt || outfit.title, mode: 'outfit' } });
+        router.push({ pathname: '/text-edits', params: { imageUri: result.assets[0].uri, prompt: outfit.outfitPrompt || translatedTitle, mode: 'outfit' } });
       }
     }
   };
@@ -316,7 +319,7 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
                     lineHeight: fontSize * 1.2
                   }}
                 >
-                  {item.title}
+                  {t(item.titleKey)}
                 </Text>
               </View>
             </TouchableOpacity>

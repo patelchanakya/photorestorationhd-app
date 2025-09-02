@@ -1,0 +1,327 @@
+{
+  "app": {
+    "name": "Clever"
+  },
+  "explore": {
+    "header": {
+      "title": "Clever",
+      "pro": "PRO"
+    },
+    "sections": {
+      "popular": "Popular",
+      "fixMyPhoto": "Fix My Photo",
+      "memorial": "Memorial",
+      "outfits": "Outfits",
+      "magic": "Magic"
+    },
+    "alerts": {
+      "proMember": {
+        "title": "Pro Member ✓",
+        "message": "Your subscription is active! You have unlimited access to all features.",
+        "button": "Great!"
+      },
+      "subscriptionStatus": {
+        "title": "Subscription Status",
+        "noActiveMessage": "No active subscription found. You'll have access to free features.",
+        "button": "OK"
+      },
+      "subscriptionCheck": {
+        "title": "Subscription Check",
+        "message": "No active subscription found on this Apple ID. Please sign in with the Apple ID used for purchase.",
+        "howToFix": "How to Fix",
+        "howToFixTitle": "How to Fix Subscription",
+        "howToFixMessage": "1. Go to Settings → App Store\n2. Sign in with the Apple ID used for purchase\n3. Return to Clever and tap the PRO badge again",
+        "gotIt": "Got it"
+      },
+      "proStatusCheck": {
+        "title": "Pro Status Check",
+        "message": "Unable to verify subscription status. Please try again or check your internet connection."
+      },
+      "demoMode": {
+        "title": "Demo Mode",
+        "message": "Purchases are not available in Expo Go."
+      },
+      "welcomeToPro": {
+        "title": "Welcome to Pro!",
+        "message": "You now have unlimited access!",
+        "button": "Awesome!"
+      }
+    }
+  },
+  "popular": {
+    "clearSkin": "Clear Skin",
+    "addHalo": "Add Halo",
+    "fixHair": "Fix Hair",
+    "slimmer": "Slimmer",
+    "angelWings": "Angel Wings",
+    "younger": "Younger",
+    "older": "Older",
+    "addSmile": "Add Smile",
+    "gardenBackground": "Garden Background",
+    "studioBackground": "Studio Background",
+    "softLightsBackground": "Soft Lights Background",
+    "heavenlyBackground": "Heavenly Background"
+  },
+  "memorial": {
+    "lightRays": "Light Rays",
+    "doveOfPeace": "Dove of Peace",
+    "etherealGlow": "Ethereal Glow",
+    "heavenGates": "Heaven Gates",
+    "memorialFlowers": "Memorial Flowers",
+    "cleanBackground": "Clean Background"
+  },
+  "outfits": {
+    "fixClothes": "Fix Clothes",
+    "changeColor": "Change Color",
+    "jobInterview": "Job Interview",
+    "weddingOutfit": "Wedding Outfit",
+    "professional": "Professional",
+    "casualDay": "Casual Day"
+  },
+  "magic": {
+    "waterDamage": {
+      "title": "Water Damage",
+      "subtitle": "Remove water damage and stains"
+    },
+    "clarify": {
+      "title": "Clarify",
+      "subtitle": "Remove blur, sharpen details"
+    },
+    "recreate": {
+      "title": "Recreate",
+      "subtitle": "Let Clever recreate your image"
+    },
+    "colorize": {
+      "title": "Colorize",
+      "subtitle": "Add colors to B&W photos"
+    },
+    "descratch": {
+      "title": "Descratch",
+      "subtitle": "Remove scratches & marks"
+    },
+    "brighten": {
+      "title": "Brighten",
+      "subtitle": "Fix lighting & exposure"
+    },
+    "requestFeature": {
+      "title": "Request a Feature",
+      "prompt": "What feature would you like to see in Clever?",
+      "thankYouTitle": "Thank You!",
+      "thankYouMessage": "Your feature request has been submitted. We appreciate your feedback!",
+      "button": "Great!",
+      "errorTitle": "Submission Failed",
+      "errorMessage": "Unable to submit your request. Please try again.",
+      "errorGeneric": "Something went wrong. Please try again."
+    }
+  },
+  "quickAction": {
+    "photoMagic": "Photo Magic"
+  },
+  "photoMagic": {
+    "permissionRequired": "Permission Required",
+    "photoAccessMessage": "Please allow photo access to continue.",
+    "cameraAccessMessage": "Please allow camera access to continue."
+  },
+  "quickEdit": {
+    "modes": {
+      "restoration": "Restoration",
+      "repair": "Repair",
+      "unblur": "Unblur",
+      "colorize": "Colorize",
+      "descratch": "Descratch",
+      "enlighten": "Brighten",
+      "background": "Background",
+      "outfit": "Outfit",
+      "custom": "Custom",
+      "restoreRepair": "Restore & Repair",
+      "waterDamage": "Water Damage"
+    },
+    "processing": {
+      "analyzing": "Analyzing photo...",
+      "processing": "Processing...",
+      "enhancing": "Enhancing details...",
+      "complete": "Complete",
+      "failed": "Failed"
+    },
+    "buttons": {
+      "save": "Save",
+      "share": "Share",
+      "cancel": "Cancel",
+      "tryAgain": "Try Again",
+      "process": "Process"
+    },
+    "errors": {
+      "somethingWrong": "Something went wrong",
+      "networkError": "Network error",
+      "tryAgainLater": "Please try again later"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "sections": {
+      "account": "Account",
+      "subscription": "Subscription",
+      "usage": "Usage",
+      "support": "Support",
+      "about": "About"
+    },
+    "items": {
+      "proMember": "Pro Member",
+      "freeUser": "Free User",
+      "photosUsed": "Photos Used",
+      "dailyLimit": "Daily Limit",
+      "lifetimeUsage": "Lifetime Usage",
+      "restorePurchases": "Restore Purchases",
+      "resetIdentity": "Reset Identity",
+      "clearCache": "Clear Cache",
+      "privacyPolicy": "Privacy Policy",
+      "termsOfService": "Terms of Service",
+      "rateUs": "Rate Us",
+      "shareApp": "Share App",
+      "version": "Version",
+      "language": "Language"
+    },
+    "time": {
+      "availableNow": "Available now",
+      "hours": "{{hours}}h {{minutes}}m {{seconds}}s",
+      "minutes": "{{minutes}}m {{seconds}}s",
+      "seconds": "{{seconds}}s"
+    }
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "Welcome to",
+      "appName": "Clever!",
+      "getStarted": "Get Started >",
+      "terms": "By continuing, you accept our",
+      "termsOfService": "Terms of Service",
+      "and": "and",
+      "privacyPolicy": "Privacy Policy"
+    },
+    "permissions": {
+      "title": "Let's get you\nstarted!",
+      "subtitle": "Allow photo access to get the most out of Clever.",
+      "note": "You can always change this in your device settings",
+      "continue": "Continue",
+      "requestingAccess": "Requesting Access..."
+    },
+    "features": {
+      "title": "What brings you here?",
+      "subtitle": "Select what you're ready to do",
+      "continue": "Continue",
+      "customPromptPlaceholder": "What would you like to do with your photo?",
+      "chooseYourOwn": "Choose Your Own",
+      "chooseYourOwnDesc": "Describe what you want to do with your photo",
+      "recreate": "Recreate",
+      "recreateDesc": "Recreation while staying consistent with features",
+      "clearSkin": "Clear Skin",
+      "clearSkinDesc": "Remove acne, blemishes & imperfections",
+      "addSmile": "Add Smile",
+      "addSmileDesc": "Add a natural, authentic smile",
+      "fixHair": "Fix Hair",
+      "fixHairDesc": "Clean up messy or stray hairs",
+      "makeYounger": "Make Younger",
+      "makeYoungerDesc": "Subtle age reduction while keeping identity",
+      "addWings": "Add Angel Wings",
+      "addWingsDesc": "Beautiful wings that match your photo",
+      "waterStainDamage": "Water/Stain Damage",
+      "waterStainDamageDesc": "Remove water damage, stains, and discoloration",
+      "fixMyPhoto": "Fix My Photo",
+      "fixMyPhotoDesc": "Fix tears, scratches, and damage in old photos",
+      "professionalOutfit": "Professional Outfit",
+      "professionalOutfitDesc": "Change to professional business attire",
+      "blurBackground": "Blur Background",
+      "blurBackgroundDesc": "Create professional blurred background effect",
+      "addHalo": "Add Halo",
+      "addHaloDesc": "Subtle glowing halo above head",
+      "lightRays": "Light Rays",
+      "lightRaysDesc": "Add peaceful memorial atmosphere with golden light",
+      "memorialFlowers": "Memorial Flowers",
+      "memorialFlowersDesc": "Cover scene with memorial flowers and petals",
+      "makeSlimmer": "Make Slimmer",
+      "makeSlimmerDesc": "Natural body enhancement",
+      "colorize": "Colorize",
+      "colorizeDesc": "Bring old B&W photos to life with realistic color",
+      "clarify": "Clarify",
+      "clarifyDesc": "Make blurry photos crystal clear",
+      "brighten": "Brighten",
+      "brightenDesc": "Illuminate underexposed images",
+      "beachBackground": "Beach Background",
+      "beachBackgroundDesc": "Beautiful ocean and sand scene",
+      "noneOfAbove": "None of the Above",
+      "noneOfAboveDesc": "Skip and explore the app"
+    },
+    "preview": {
+      "tryNow": "Try it now",
+      "skip": "Skip",
+      "back": "Back",
+      "choosePhoto": "Choose a photo to get started",
+      "pickPhoto": "Pick Photo",
+      "tryWithPhoto": "Try it with one of your photos",
+      "photoMagic": "Photo Magic",
+      "photoMagicDesc": "Type what you want to edit and watch it happen",
+      "pickPhotoError": "Failed to pick photo. Please try again."
+    },
+    "community": {
+      "title": "What used to take hours in Photoshop\nnow takes seconds",
+      "subtitle": "Become the photo miracle worker everyone needs",
+      "continue": "Continue",
+      "photosPerfected": "Photos Perfected"
+    },
+    "setup": {
+      "title": "Setting up your experience...",
+      "almostReady": "Almost ready...",
+      "settingUp": "Setting things up for you...",
+      "wontTakeLong": "This won't take long",
+      "settingUpSpace": "Setting up your space",
+      "loadingSystems": "Loading systems",
+      "preparingTools": "Preparing your tools",
+      "allSet": "You're all set!",
+      "readyToCreate": "Ready to start creating magic with your photos"
+    }
+  },
+  "textEdit": {
+    "prompt": "What would you like to do?",
+    "placeholder": "Describe your edit...",
+    "generate": "Generate",
+    "processing": "Processing...",
+    "customTextEdits": "Custom text edits",
+    "maxEffectsReached": "Maximum Effects Reached",
+    "maxEffectsMessage": "You can select up to 3 effects at a time for best results. Please deselect one first."
+  },
+  "restoration": {
+    "processingFailed": "Processing Failed",
+    "status": {
+      "processing": "Processing...",
+      "completed": "Completed!",
+      "failed": "Failed",
+      "retry": "Retry"
+    },
+    "actions": {
+      "save": "Save",
+      "share": "Share"
+    }
+  },
+  "deviceCarousel": {
+    "allowAccess": "Allow Access",
+    "photoLibraryMessage": "To select photos, please allow access to your photo library",
+    "openSettings": "Open Settings"
+  },
+  "common": {
+    "ok": "OK",
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "back": "Back",
+    "next": "Next",
+    "done": "Done",
+    "save": "Save",
+    "share": "Share",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning",
+    "info": "Info"
+  }
+}

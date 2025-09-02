@@ -1,0 +1,324 @@
+{
+  "app": {
+    "name": "Clever"
+  },
+  "explore": {
+    "header": {
+      "title": "Clever",
+      "pro": "PRO"
+    },
+    "sections": {
+      "popular": "Suosittu",
+      "fixMyPhoto": "Korjaa Kuvani",
+      "memorial": "Muistomerkki",
+      "outfits": "Asut",
+      "magic": "Taika"
+    },
+    "alerts": {
+      "proMember": {
+        "title": "Pro Jäsen ✓",
+        "message": "Tilauksesi on aktiivinen! Sinulla on rajoittamaton pääsy kaikkiin ominaisuuksiin.",
+        "button": "Hienoa!"
+      },
+      "subscriptionStatus": {
+        "title": "Tilauksen Tila",
+        "noActiveMessage": "Aktiivista tilausta ei löytynyt. Sinulla on pääsy ilmaisiin ominaisuuksiin.",
+        "button": "OK"
+      },
+      "subscriptionCheck": {
+        "title": "Tilauksen Tarkistus",
+        "message": "Aktiivista tilausta ei löytynyt tästä Apple ID:stä. Kirjaudu sisään ostokseen käytetyllä Apple ID:llä.",
+        "howToFix": "Kuinka Korjata",
+        "howToFixTitle": "Kuinka Korjata Tilaus",
+        "howToFixMessage": "1. Siirry Asetukset → App Store\n2. Kirjaudu sisään ostokseen käytetyllä Apple ID:llä\n3. Palaa Cleveriin ja napauta PRO-merkkiä uudelleen",
+        "gotIt": "Selvä"
+      },
+      "proStatusCheck": {
+        "title": "Pro Tilan Tarkistus",
+        "message": "Tilauksen tilaa ei voi vahvistaa. Yritä uudelleen tai tarkista internetyhteytesi."
+      },
+      "demoMode": {
+        "title": "Demo Tila",
+        "message": "Ostokset eivät ole saatavilla Expo Go:ssa."
+      },
+      "welcomeToPro": {
+        "title": "Tervetuloa Pro:hon!",
+        "message": "Sinulla on nyt rajoittamaton pääsy!",
+        "button": "Mahtavaa!"
+      }
+    }
+  },
+  "popular": {
+    "clearSkin": "Kirkas Iho",
+    "addHalo": "Lisää Halo",
+    "fixHair": "Korjaa Hiukset",
+    "slimmer": "Laihempi",
+    "angelWings": "Enkelin Siivet",
+    "younger": "Nuorempi",
+    "older": "Vanhempi",
+    "addSmile": "Lisää Hymy",
+    "gardenBackground": "Puutarha Tausta",
+    "studioBackground": "Studio Tausta",
+    "softLightsBackground": "Pehmeä Valaistus Tausta",
+    "heavenlyBackground": "Taivaallinen Tausta"
+  },
+  "memorial": {
+    "lightRays": "Valonsäteet",
+    "doveOfPeace": "Rauhan Kyyhky",
+    "etherealGlow": "Eteerinen Hohto",
+    "heavenGates": "Taivaan Portit",
+    "memorialFlowers": "Muistomerkki Kukat",
+    "cleanBackground": "Puhdas Tausta"
+  },
+  "outfits": {
+    "fixClothes": "Korjaa Vaatteet",
+    "changeColor": "Vaihda Väri",
+    "jobInterview": "Työhaastattelu",
+    "weddingOutfit": "Hääasu",
+    "professional": "Ammattimainen",
+    "casualDay": "Rentopäivä"
+  },
+  "magic": {
+    "waterDamage": {
+      "title": "Vesivahinko",
+      "subtitle": "Poista vesivahinko ja tahrat"
+    },
+    "clarify": {
+      "title": "Selvennä",
+      "subtitle": "Poista sumeus, teroita yksityiskohdat"
+    },
+    "recreate": {
+      "title": "Luo Uudelleen",
+      "subtitle": "Anna Cleverin luoda kuvasi uudelleen"
+    },
+    "colorize": {
+      "title": "Värjää",
+      "subtitle": "Lisää värejä mustavalkoisiin kuvat"
+    },
+    "descratch": {
+      "title": "Poista Naarmut",
+      "subtitle": "Poista naarmut ja merkit"
+    },
+    "brighten": {
+      "title": "Kirkasta",
+      "subtitle": "Korjaa valaistus ja ekspositio"
+    },
+    "requestFeature": {
+      "title": "Pyydä Ominaisuutta",
+      "prompt": "Minkä ominaisuuden haluaisit nähdä Cleverissa?",
+      "thankYouTitle": "Kiitos!",
+      "thankYouMessage": "Ominaisuuspyyntösi on lähetetty. Arvostamme palautettasi!",
+      "button": "Hienoa!",
+      "errorTitle": "Lähetys Epäonnistui",
+      "errorMessage": "Pyyntöäsi ei voi lähettää. Yritä uudelleen.",
+      "errorGeneric": "Jotain meni pieleen. Yritä uudelleen."
+    }
+  },
+  "quickAction": {
+    "photoMagic": "Kuvan Taika"
+  },
+  "photoMagic": {
+    "title": "Kuvan Taika",
+    "placeholder": "Kuvaile mitä haluat...",
+    "takePhoto": "Ota Kuva",
+    "choosePhoto": "Valitse Kuva",
+    "permissionRequired": "Lupa Vaaditaan",
+    "permissionMessage": "Salli kuvien käyttö jatkaaksesi.",
+    "photoAccessMessage": "Salli kuvien käyttö jatkaaksesi.",
+    "cameraAccessMessage": "Salli kameran käyttö jatkaaksesi."
+  },
+  "quickEdit": {
+    "modes": {
+      "restoration": "Restaurointi",
+      "repair": "Korjaus",
+      "unblur": "Poista Sumuus",
+      "colorize": "Värjää",
+      "descratch": "Poista Naarmut",
+      "enlighten": "Kirkasta",
+      "background": "Tausta",
+      "outfit": "Asu",
+      "custom": "Mukautettu",
+      "restoreRepair": "Restauroi ja Korjaa",
+      "waterDamage": "Vesivahinko"
+    },
+    "processing": {
+      "analyzing": "Analysoidaan kuvaa...",
+      "processing": "Käsitellään...",
+      "enhancing": "Parannetaan yksityiskohtia...",
+      "complete": "Valmis",
+      "failed": "Epäonnistui"
+    },
+    "buttons": {
+      "save": "Tallenna",
+      "share": "Jaa",
+      "cancel": "Peruuta",
+      "tryAgain": "Yritä Uudelleen",
+      "process": "Käsittele"
+    },
+    "errors": {
+      "somethingWrong": "Jotain meni pieleen",
+      "networkError": "Verkkovirhe",
+      "tryAgainLater": "Yritä myöhemmin uudelleen"
+    }
+  },
+  "settings": {
+    "title": "Asetukset",
+    "sections": {
+      "account": "Tili",
+      "subscription": "Tilaus",
+      "usage": "Käyttö",
+      "support": "Tuki",
+      "about": "Tietoja"
+    },
+    "items": {
+      "proMember": "Pro Jäsen",
+      "freeUser": "Ilmainen Käyttäjä",
+      "photosUsed": "Käytetyt Kuvat",
+      "dailyLimit": "Päivittäinen Raja",
+      "lifetimeUsage": "Elinkaaren Käyttö",
+      "restorePurchases": "Palauta Ostokset",
+      "resetIdentity": "Nollaa Identiteetti",
+      "clearCache": "Tyhjennä Välimuisti",
+      "privacyPolicy": "Tietosuojakäytäntö",
+      "termsOfService": "Käyttöehdot",
+      "rateUs": "Arvioi Meidät",
+      "shareApp": "Jaa Sovellus",
+      "version": "Versio",
+      "language": "Kieli"
+    },
+    "time": {
+      "availableNow": "Saatavana nyt",
+      "hours": "{{hours}}t {{minutes}}m {{seconds}}s",
+      "minutes": "{{minutes}}m {{seconds}}s",
+      "seconds": "{{seconds}}s"
+    }
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "Tervetuloa Cleveriin",
+      "subtitle": "Muunna kuvasi tekoälyllä",
+      "getStarted": "Aloita",
+      "terms": "Jatkamalla hyväksyt",
+      "termsOfService": "Käyttöehdot",
+      "and": "ja",
+      "privacyPolicy": "Tietosuojakäytäntö"
+    },
+    "permissions": {
+      "title": "Salli Pääsy",
+      "subtitle": "Tarvitsemme luvan päästä käsiksi kuvihisi",
+      "photoAccess": "Ota Kuvien Käyttö Käyttöön",
+      "cameraAccess": "Ota Kameran Käyttö Käyttöön",
+      "notifications": "Ota Ilmoitukset Käyttöön",
+      "continue": "Jatka"
+    },
+    "features": {
+      "title": "What brings you here?",
+      "customPrompt": "Mukautettu pyyntö",
+      "noneAbove": "Mikään yllä olevista",
+      "chooseYourOwn": "Choose Your Own",
+      "chooseYourOwnDesc": "Describe what you want to do with your photo",
+      "recreate": "Recreate",
+      "recreateDesc": "Recreation while staying consistent with features",
+      "clearSkin": "Clear Skin",
+      "clearSkinDesc": "Remove acne, blemishes & imperfections",
+      "addSmile": "Add Smile",
+      "addSmileDesc": "Add a natural, authentic smile",
+      "fixHair": "Fix Hair",
+      "fixHairDesc": "Clean up messy or stray hairs",
+      "makeYounger": "Make Younger",
+      "makeYoungerDesc": "Subtle age reduction while keeping identity",
+      "addWings": "Add Angel Wings",
+      "addWingsDesc": "Beautiful wings that match your photo",
+      "waterStainDamage": "Water/Stain Damage",
+      "waterStainDamageDesc": "Remove water damage, stains, and discoloration",
+      "fixMyPhoto": "Fix My Photo",
+      "fixMyPhotoDesc": "Fix tears, scratches, and damage in old photos",
+      "professionalOutfit": "Professional Outfit",
+      "professionalOutfitDesc": "Change to professional business attire",
+      "blurBackground": "Blur Background",
+      "blurBackgroundDesc": "Create professional blurred background effect",
+      "addHalo": "Add Halo",
+      "addHaloDesc": "Subtle glowing halo above head",
+      "lightRays": "Light Rays",
+      "lightRaysDesc": "Add peaceful memorial atmosphere with golden light",
+      "memorialFlowers": "Memorial Flowers",
+      "memorialFlowersDesc": "Cover scene with memorial flowers and petals",
+      "makeSlimmer": "Make Slimmer",
+      "makeSlimmerDesc": "Natural body enhancement",
+      "colorize": "Colorize",
+      "colorizeDesc": "Bring old B&W photos to life with realistic color",
+      "clarify": "Clarify",
+      "clarifyDesc": "Make blurry photos crystal clear",
+      "brighten": "Brighten",
+      "brightenDesc": "Illuminate underexposed images",
+      "beachBackground": "Beach Background",
+      "beachBackgroundDesc": "Beautiful ocean and sand scene",
+      "noneOfAbove": "None of the Above",
+      "noneOfAboveDesc": "Skip and explore the app",
+      "subtitle": "Select what you're ready to do",
+      "continue": "Continue",
+      "customPromptPlaceholder": "What would you like to do with your photo?"
+    },
+    "preview": {
+      "tryNow": "Kokeile nyt",
+      "skip": "Ohita",
+      "back": "Takaisin",
+      "choosePhoto": "Valitse kuva aloittaaksesi",
+      "photoMagic": "Photo Magic",
+      "photoMagicDesc": "Type what you want to edit and watch it happen",
+      "pickPhotoError": "Failed to pick photo. Please try again."
+    },
+    "community": {
+      "title": "Liity yhteisöömme",
+      "subtitle": "Ota yhteyttä sosiaalisessa mediassa"
+    },
+    "setup": {
+      "title": "Määritetään kokemustasi...",
+      "almostReady": "Melkein valmis..."
+    }
+  },
+  "textEdit": {
+    "prompt": "Mitä haluaisit tehdä?",
+    "placeholder": "Kuvaile muokkauksesi...",
+    "generate": "Generoi",
+    "processing": "Käsitellään...",
+    "customTextEdits": "Mukautetut tekstimuokkaukset",
+    "maxEffectsReached": "Maksimimäärä efektejä saavutettu",
+    "maxEffectsMessage": "Voit valita enintään 3 efektiä kerrallaan parhaiden tulosten saamiseksi. Poista valinta yhdestä ensin."
+  },
+  "restoration": {
+    "processingFailed": "Käsittely epäonnistui",
+    "status": {
+      "processing": "Käsitellään...",
+      "completed": "Valmis!",
+      "failed": "Epäonnistui",
+      "retry": "Yritä Uudelleen"
+    },
+    "actions": {
+      "save": "Tallenna",
+      "share": "Jaa"
+    }
+  },
+  "deviceCarousel": {
+    "allowAccess": "Salli Pääsy",
+    "photoLibraryMessage": "Valitaksesi kuvia, salli pääsy kuvakirjastoon",
+    "openSettings": "Avaa Asetukset"
+  },
+  "common": {
+    "ok": "OK",
+    "cancel": "Peruuta",
+    "continue": "Jatka",
+    "back": "Takaisin",
+    "next": "Seuraava",
+    "done": "Valmis",
+    "save": "Tallenna",
+    "share": "Jaa",
+    "delete": "Poista",
+    "edit": "Muokkaa",
+    "loading": "Ladataan...",
+    "error": "Virhe",
+    "success": "Onnistui",
+    "warning": "Varoitus",
+    "info": "Tiedot"
+  }
+}

@@ -3,6 +3,7 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 import { usePhotoUsage } from '@/services/photoUsageService';
 import { presentPaywall, validatePremiumAccess } from '@/services/revenuecat';
+import { useTranslation } from '@/src/hooks/useTranslation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -19,6 +20,7 @@ import { PresetCard } from '@/components/PhotoMagic/PresetCard';
 import { analyticsService } from '@/services/analytics';
 
 export default function TextEditsScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
@@ -322,8 +324,8 @@ useEffect(() => {
       // If trying to select and already at max (3), prevent it
       if (!already && prev.length >= 3) {
         Alert.alert(
-          'Maximum Effects Reached',
-          'You can select up to 3 effects at a time for best results. Please deselect one first.',
+          t('textEdit.maxEffectsReached'),
+          t('textEdit.maxEffectsMessage'),
           [{ text: 'OK' }]
         );
         return prev;

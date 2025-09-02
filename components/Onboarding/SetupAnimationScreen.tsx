@@ -1,15 +1,14 @@
-import React from 'react';
-import { View, Text } from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import Animated, { 
-  useAnimatedStyle, 
-  useSharedValue, 
-  withSpring,
-  withDelay,
-  withTiming,
-  withSequence,
-  withRepeat,
-  runOnJS 
+import { useTranslation } from '@/src/hooks/useTranslation';
+import React from 'react';
+import { Text, View } from 'react-native';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withRepeat,
+    withSequence,
+    withSpring,
+    withTiming
 } from 'react-native-reanimated';
 import { OnboardingContainer } from './shared/OnboardingContainer';
 
@@ -26,22 +25,23 @@ interface SetupStep {
 const SETUP_STEPS: SetupStep[] = [
   {
     id: 'profile',
-    title: 'Setting up your space',
+    title: '', // Will be translated in component
     icon: 'person.circle'
   },
   {
     id: 'models',
-    title: 'Loading systems',
+    title: '', // Will be translated in component
     icon: 'brain.head.profile'
   },
   {
     id: 'workspace',
-    title: 'Preparing your tools',
+    title: '', // Will be translated in component
     icon: 'slider.horizontal.3'
   }
 ];
 
 export function SetupAnimationScreen({ onComplete }: SetupAnimationScreenProps) {
+  const { t } = useTranslation();
   const [currentStep, setCurrentStep] = React.useState(0);
   const [allComplete, setAllComplete] = React.useState(false);
 
@@ -127,14 +127,14 @@ export function SetupAnimationScreen({ onComplete }: SetupAnimationScreenProps) 
                 textAlign: 'center',
                 marginBottom: 8,
               }}>
-                Setting things up for you...
+                {t('onboarding.setup.settingUp')}
               </Text>
               <Text style={{ 
                 fontSize: 18, 
                 color: '#9CA3AF',
                 textAlign: 'center',
               }}>
-                This won't take long
+                {t('onboarding.setup.wontTakeLong')}
               </Text>
             </Animated.View>
 
@@ -183,7 +183,7 @@ export function SetupAnimationScreen({ onComplete }: SetupAnimationScreenProps) 
               textAlign: 'center',
               marginBottom: 16,
             }}>
-              You're all set!
+              {t('onboarding.setup.allSet')}
             </Text>
             
             <Text style={{ 
@@ -192,7 +192,7 @@ export function SetupAnimationScreen({ onComplete }: SetupAnimationScreenProps) 
               textAlign: 'center',
               lineHeight: 24,
             }}>
-              Ready to start creating magic with your photos
+              {t('onboarding.setup.readyToCreate')}
             </Text>
           </Animated.View>
         )}
@@ -209,6 +209,7 @@ interface SetupStepItemProps {
 }
 
 function SetupStepItem({ step, isActive, isCompleted, isUpcoming }: SetupStepItemProps) {
+  const { t } = useTranslation();
   const containerOpacity = useSharedValue(isUpcoming ? 0.3 : 1);
   const iconScale = useSharedValue(1);
   const checkmarkOpacity = useSharedValue(0);
@@ -216,6 +217,19 @@ function SetupStepItem({ step, isActive, isCompleted, isUpcoming }: SetupStepIte
   const loadingRotation = useSharedValue(0);
   const dotScale = useSharedValue(1);
   const dotOpacity = useSharedValue(1);
+
+  const getTranslatedTitle = (stepId: string) => {
+    switch (stepId) {
+      case 'profile':
+        return t('onboarding.setup.settingUpSpace');
+      case 'models':
+        return t('onboarding.setup.loadingSystems');
+      case 'workspace':
+        return t('onboarding.setup.preparingTools');
+      default:
+        return step.title;
+    }
+  };
 
   React.useEffect(() => {
     if (isActive) {
@@ -371,7 +385,7 @@ function SetupStepItem({ step, isActive, isCompleted, isUpcoming }: SetupStepIte
               ? '#FACC15' 
               : '#9CA3AF',
         }}>
-          {step.title}
+          {getTranslatedTitle(step.id)}
         </Text>
       </View>
 

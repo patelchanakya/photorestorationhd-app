@@ -1,28 +1,28 @@
-import React from 'react';
-import { View, Text, Platform, Linking, Alert } from 'react-native';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import * as ImagePicker from 'expo-image-picker';
-import * as Application from 'expo-application';
-import Animated, { 
-  useAnimatedStyle, 
-  useSharedValue, 
-  withSpring,
-  withDelay,
-  withTiming,
-  withRepeat,
-  withSequence 
-} from 'react-native-reanimated';
-import { OnboardingContainer } from './shared/OnboardingContainer';
-import { OnboardingButton } from './shared/OnboardingButton';
-import { ONBOARDING_COLORS, ONBOARDING_SPACING, ONBOARDING_TYPOGRAPHY, ONBOARDING_SHADOWS } from './shared/constants';
 import { analyticsService } from '@/services/analytics';
 import { permissionsService } from '@/services/permissions';
+import { useTranslation } from '@/src/hooks/useTranslation';
+import * as ImagePicker from 'expo-image-picker';
+import React from 'react';
+import { Text, View } from 'react-native';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withDelay,
+    withRepeat,
+    withSequence,
+    withSpring,
+    withTiming
+} from 'react-native-reanimated';
+import { OnboardingButton } from './shared/OnboardingButton';
+import { OnboardingContainer } from './shared/OnboardingContainer';
+import { ONBOARDING_COLORS, ONBOARDING_SPACING, ONBOARDING_TYPOGRAPHY } from './shared/constants';
 
 interface PermissionsScreenProps {
   onContinue: () => void;
 }
 
 export function PermissionsScreen({ onContinue }: PermissionsScreenProps) {
+  const { t } = useTranslation();
   const [isRequesting, setIsRequesting] = React.useState(false);
   
   const iconScale = useSharedValue(0.8);
@@ -164,7 +164,7 @@ export function PermissionsScreen({ onContinue }: PermissionsScreenProps) {
             textAlign: 'left',
             lineHeight: 52,
           }}>
-            Let's get you{'\n'}started!
+            {t('onboarding.permissions.title')}
           </Text>
         </Animated.View>
 
@@ -179,7 +179,7 @@ export function PermissionsScreen({ onContinue }: PermissionsScreenProps) {
             textAlign: 'left',
             lineHeight: 26,
           }}>
-            Allow photo access to get the most out of Clever.
+            {t('onboarding.permissions.subtitle')}
           </Text>
         </Animated.View>
 
@@ -195,14 +195,14 @@ export function PermissionsScreen({ onContinue }: PermissionsScreenProps) {
             lineHeight: 20,
             fontStyle: 'italic',
           }}>
-            You can always change this in your device settings
+            {t('onboarding.permissions.note')}
           </Text>
         </Animated.View>
 
         {/* Continue Button */}
         <Animated.View style={[{ width: '100%' }, buttonAnimatedStyle]}>
           <OnboardingButton
-            title={isRequesting ? 'Requesting Access...' : 'Continue'}
+            title={isRequesting ? t('onboarding.permissions.requestingAccess') : t('onboarding.permissions.continue')}
             onPress={handleContinue}
             variant="primary"
             size="large"

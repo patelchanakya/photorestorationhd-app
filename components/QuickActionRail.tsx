@@ -1,20 +1,21 @@
-import { BlurView } from 'expo-blur';
+import { useT } from '@/src/hooks/useTranslation';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, withRepeat, withTiming, interpolate } from 'react-native-reanimated';
+import { Text, TouchableOpacity, View } from 'react-native';
+import Animated, { interpolate, useAnimatedStyle, useSharedValue, withRepeat, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconSymbol } from './ui/IconSymbol';
 
-const ACTIONS: { route: string; label: string; icon: string }[] = [
-  { route: '/photo-magic', label: 'Photo Magic', icon: 'wand.and.stars' },
+const ACTIONS: { route: string; labelKey: string; icon: string }[] = [
+  { route: '/photo-magic', labelKey: 'quickAction.photoMagic', icon: 'wand.and.stars' },
 ];
 
 export function QuickActionRail() {
   const router = useRouter();
   const [busy, setBusy] = React.useState(false);
   const insets = useSafeAreaInsets();
+  const t = useT();
   
   // Animation values
   const buttonScale = useSharedValue(1);
@@ -169,8 +170,8 @@ export function QuickActionRail() {
                 </View>
                 <View style={{ marginLeft: 12, flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={{ color: '#FFFFFF', fontFamily: 'Lexend-SemiBold', fontSize: 15, letterSpacing: 0.2 }}>{a.label}</Text>
-                    {a.label === 'Photo Magic' && (
+                    <Text style={{ color: '#FFFFFF', fontFamily: 'Lexend-SemiBold', fontSize: 15, letterSpacing: 0.2 }}>{t(a.labelKey)}</Text>
+                    {a.labelKey === 'quickAction.photoMagic' && (
                       <Animated.View
                         style={[
                           badgeAnimatedStyle,
@@ -197,7 +198,7 @@ export function QuickActionRail() {
                       </Animated.View>
                     )}
                   </View>
-                  <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: 1 }}>Custom text edits</Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: 1 }}>{t('textEdit.customTextEdits')}</Text>
                 </View>
               </View>
               <View style={{ 

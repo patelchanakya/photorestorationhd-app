@@ -1,0 +1,317 @@
+{
+  "app": {
+    "name": "Clever"
+  },
+  "explore": {
+    "header": {
+      "title": "Clever",
+      "pro": "PRO"
+    },
+    "sections": {
+      "popular": "Popüler",
+      "fixMyPhoto": "Fotoğrafımı Düzelt",
+      "memorial": "Anıt",
+      "outfits": "Kıyafetler",
+      "magic": "Sihir"
+    },
+    "alerts": {
+      "proMember": {
+        "title": "Pro Üye ✓",
+        "message": "Aboneliğiniz aktif! Tüm özelliklere sınırsız erişiminiz var.",
+        "button": "Harika!"
+      },
+      "subscriptionStatus": {
+        "title": "Abonelik Durumu",
+        "noActiveMessage": "Aktif abonelik bulunamadı. Ücretsiz özelliklere erişiminiz olacak.",
+        "button": "Tamam"
+      },
+      "subscriptionCheck": {
+        "title": "Abonelik Kontrolü",
+        "message": "Bu Apple ID'de aktif abonelik bulunamadı. Lütfen satın alma için kullanılan Apple ID ile giriş yapın.",
+        "howToFix": "Nasıl Düzeltilir",
+        "howToFixTitle": "Abonelik Nasıl Düzeltilir",
+        "howToFixMessage": "1. Ayarlar → App Store'a gidin\n2. Satın alma için kullanılan Apple ID ile giriş yapın\n3. Clever'a dönün ve PRO rozetini tekrar dokunun",
+        "gotIt": "Anladım"
+      },
+      "proStatusCheck": {
+        "title": "Pro Durum Kontrolü",
+        "message": "Abonelik durumu doğrulanamıyor. Lütfen tekrar deneyin veya internet bağlantınızı kontrol edin."
+      },
+      "demoMode": {
+        "title": "Demo Modu",
+        "message": "Expo Go'da satın almalar mevcut değil."
+      },
+      "welcomeToPro": {
+        "title": "Pro'ya Hoş Geldiniz!",
+        "message": "Artık sınırsız erişiminiz var!",
+        "button": "Mükemmel!"
+      }
+    }
+  },
+  "popular": {
+    "clearSkin": "Temiz Cilt",
+    "addHalo": "Hale Ekle",
+    "fixHair": "Saçı Düzelt",
+    "slimmer": "Daha İnce",
+    "angelWings": "Melek Kanatları",
+    "younger": "Daha Genç",
+    "older": "Daha Yaşlı",
+    "addSmile": "Gülümseme Ekle",
+    "gardenBackground": "Bahçe Arka Planı",
+    "studioBackground": "Stüdyo Arka Planı",
+    "softLightsBackground": "Yumuşak Işıklar Arka Planı",
+    "heavenlyBackground": "Cennet Arka Planı"
+  },
+  "memorial": {
+    "lightRays": "Işık Işınları",
+    "doveOfPeace": "Barış Güvercini",
+    "etherealGlow": "Eterik Parıltı",
+    "heavenGates": "Cennet Kapıları",
+    "memorialFlowers": "Anıt Çiçekleri",
+    "cleanBackground": "Temiz Arka Plan"
+  },
+  "outfits": {
+    "fixClothes": "Kıyafetleri Düzelt",
+    "changeColor": "Rengi Değiştir",
+    "jobInterview": "İş Görüşmesi",
+    "weddingOutfit": "Düğün Kıyafeti",
+    "professional": "Profesyonel",
+    "casualDay": "Günlük"
+  },
+  "magic": {
+    "waterDamage": {
+      "title": "Su Hasarı",
+      "subtitle": "Su hasarını ve lekeleri kaldır"
+    },
+    "clarify": {
+      "title": "Netleştir",
+      "subtitle": "Bulanıklığı kaldır, detayları keskinleştir"
+    },
+    "recreate": {
+      "title": "Yeniden Oluştur",
+      "subtitle": "Clever'ın görüntünüzü yeniden oluşturmasına izin verin"
+    },
+    "colorize": {
+      "title": "Renklendir",
+      "subtitle": "Siyah beyaz fotoğraflara renk ekle"
+    },
+    "descratch": {
+      "title": "Çizikleri Kaldır",
+      "subtitle": "Çizikleri ve işaretleri kaldır"
+    },
+    "brighten": {
+      "title": "Aydınlat",
+      "subtitle": "Işıklandırmayı ve pozlamayı düzelt"
+    },
+    "requestFeature": {
+      "title": "Özellik İste",
+      "prompt": "Clever'da hangi özelliği görmek istersiniz?",
+      "thankYouTitle": "Teşekkürler!",
+      "thankYouMessage": "Özellik isteğiniz gönderildi. Geri bildiriminizi takdir ediyoruz!",
+      "button": "Harika!",
+      "errorTitle": "Gönderim Başarısız",
+      "errorMessage": "İsteğiniz gönderilemedi. Lütfen tekrar deneyin.",
+      "errorGeneric": "Bir şeyler ters gitti. Lütfen tekrar deneyin."
+    }
+  },
+  "quickAction": {
+    "photoMagic": "Fotoğraf Sihri"
+  },
+  "photoMagic": {
+    "permissionRequired": "İzin Gerekli",
+    "photoAccessMessage": "Devam etmek için lütfen fotoğraf erişimine izin verin.",
+    "cameraAccessMessage": "Devam etmek için lütfen kamera erişimine izin verin."
+  },
+  "quickEdit": {
+    "modes": {
+      "restoration": "Restorasyon",
+      "repair": "Onarım",
+      "unblur": "Netleştir",
+      "colorize": "Renklendir",
+      "descratch": "Çizikleri Kaldır",
+      "enlighten": "Aydınlat",
+      "background": "Arka Plan",
+      "outfit": "Kıyafet",
+      "custom": "Özel",
+      "restoreRepair": "Restore Et ve Onar",
+      "waterDamage": "Su Hasarı"
+    },
+    "processing": {
+      "analyzing": "Fotoğraf analiz ediliyor...",
+      "processing": "İşleniyor...",
+      "enhancing": "Detaylar geliştiriliyor...",
+      "complete": "Tamamlandı",
+      "failed": "Başarısız"
+    },
+    "buttons": {
+      "save": "Kaydet",
+      "share": "Paylaş",
+      "cancel": "İptal",
+      "tryAgain": "Tekrar Dene",
+      "process": "İşle"
+    },
+    "errors": {
+      "somethingWrong": "Bir şeyler ters gitti",
+      "networkError": "Ağ hatası",
+      "tryAgainLater": "Lütfen daha sonra tekrar deneyin"
+    }
+  },
+  "settings": {
+    "title": "Ayarlar",
+    "sections": {
+      "account": "Hesap",
+      "subscription": "Abonelik",
+      "usage": "Kullanım",
+      "support": "Destek",
+      "about": "Hakkında"
+    },
+    "items": {
+      "proMember": "Pro Üye",
+      "freeUser": "Ücretsiz Kullanıcı",
+      "photosUsed": "Kullanılan Fotoğraflar",
+      "dailyLimit": "Günlük Limit",
+      "lifetimeUsage": "Yaşam Boyu Kullanım",
+      "restorePurchases": "Satın Alımları Geri Yükle",
+      "resetIdentity": "Kimliği Sıfırla",
+      "clearCache": "Önbelleği Temizle",
+      "privacyPolicy": "Gizlilik Politikası",
+      "termsOfService": "Hizmet Şartları",
+      "rateUs": "Bizi Değerlendirin",
+      "shareApp": "Uygulamayı Paylaş",
+      "version": "Sürüm",
+      "language": "Dil"
+    },
+    "time": {
+      "availableNow": "Şimdi mevcut",
+      "hours": "{{hours}}s {{minutes}}d {{seconds}}sn",
+      "minutes": "{{minutes}}d {{seconds}}sn",
+      "seconds": "{{seconds}}sn"
+    }
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "Hoş Geldiniz",
+      "appName": "Clever!",
+      "getStarted": "Başlayın >",
+      "terms": "Devam ederek kabul ediyorsunuz",
+      "termsOfService": "Hizmet Şartları",
+      "and": "ve",
+      "privacyPolicy": "Gizlilik Politikası"
+    },
+    "permissions": {
+      "title": "Hadi başlayalım!",
+      "subtitle": "Clever'dan en iyi şekilde yararlanmak için fotoğraf erişimine izin verin.",
+      "note": "Bunu her zaman cihaz ayarlarınızdan değiştirebilirsiniz",
+      "continue": "Devam Et",
+      "requestingAccess": "Erişim İsteniyor..."
+    },
+    "features": {
+      "title": "Sizi buraya getiren nedir?",
+      "subtitle": "Yapmaya hazır olduğunuz şeyi seçin",
+      "continue": "Devam Et",
+      "customPromptPlaceholder": "Fotoğrafınızla ne yapmak istersiniz?",
+      "chooseYourOwn": "Choose Your Own",
+      "chooseYourOwnDesc": "Describe what you want to do with your photo",
+      "recreate": "Recreate",
+      "recreateDesc": "Recreation while staying consistent with features",
+      "clearSkin": "Clear Skin",
+      "clearSkinDesc": "Remove acne, blemishes & imperfections",
+      "addSmile": "Add Smile",
+      "addSmileDesc": "Add a natural, authentic smile",
+      "fixHair": "Fix Hair",
+      "fixHairDesc": "Clean up messy or stray hairs",
+      "makeYounger": "Make Younger",
+      "makeYoungerDesc": "Subtle age reduction while keeping identity",
+      "addWings": "Add Angel Wings",
+      "addWingsDesc": "Beautiful wings that match your photo",
+      "waterStainDamage": "Water/Stain Damage",
+      "waterStainDamageDesc": "Remove water damage, stains, and discoloration",
+      "fixMyPhoto": "Fix My Photo",
+      "fixMyPhotoDesc": "Fix tears, scratches, and damage in old photos",
+      "professionalOutfit": "Professional Outfit",
+      "professionalOutfitDesc": "Change to professional business attire",
+      "blurBackground": "Blur Background",
+      "blurBackgroundDesc": "Create professional blurred background effect",
+      "addHalo": "Add Halo",
+      "addHaloDesc": "Subtle glowing halo above head",
+      "lightRays": "Light Rays",
+      "lightRaysDesc": "Add peaceful memorial atmosphere with golden light",
+      "memorialFlowers": "Memorial Flowers",
+      "memorialFlowersDesc": "Cover scene with memorial flowers and petals",
+      "makeSlimmer": "Make Slimmer",
+      "makeSlimmerDesc": "Natural body enhancement",
+      "colorize": "Colorize",
+      "colorizeDesc": "Bring old B&W photos to life with realistic color",
+      "clarify": "Clarify",
+      "clarifyDesc": "Make blurry photos crystal clear",
+      "brighten": "Brighten",
+      "brightenDesc": "Illuminate underexposed images",
+      "beachBackground": "Beach Background",
+      "beachBackgroundDesc": "Beautiful ocean and sand scene",
+      "noneOfAbove": "None of the Above",
+      "noneOfAboveDesc": "Skip and explore the app"
+    },
+    "preview": {
+      "tryNow": "Şimdi dene",
+      "skip": "Atla",
+      "back": "Geri",
+      "choosePhoto": "Başlamak için bir fotoğraf seçin",
+      "photoMagic": "Photo Magic",
+      "photoMagicDesc": "Type what you want to edit and watch it happen",
+      "pickPhotoError": "Failed to pick photo. Please try again."
+    },
+    "community": {
+      "title": "Topluluğumuza katılın",
+      "subtitle": "Sosyal medyada bizimle bağlantı kurun",
+      "continue": "Devam Et"
+    },
+    "setup": {
+      "title": "Deneyiminizi ayarlıyoruz...",
+      "almostReady": "Neredeyse hazır..."
+    }
+  },
+  "textEdit": {
+    "prompt": "Ne yapmak istersiniz?",
+    "placeholder": "Düzenlemenizi açıklayın...",
+    "generate": "Oluştur",
+    "processing": "İşleniyor...",
+    "customTextEdits": "Özel metin düzenlemeleri",
+    "maxEffectsReached": "Maksimum Efekt Sayısına Ulaşıldı",
+    "maxEffectsMessage": "En iyi sonuçlar için aynı anda en fazla 3 efekt seçebilirsiniz. Lütfen önce birini seçimi kaldırın."
+  },
+  "restoration": {
+    "processingFailed": "İşleme Başarısız",
+    "status": {
+      "processing": "İşleniyor...",
+      "completed": "Tamamlandı!",
+      "failed": "Başarısız",
+      "retry": "Tekrar Dene"
+    },
+    "actions": {
+      "save": "Kaydet",
+      "share": "Paylaş"
+    }
+  },
+  "deviceCarousel": {
+    "allowAccess": "Erişime İzin Ver",
+    "photoLibraryMessage": "Fotoğraf seçmek için lütfen fotoğraf kütüphanenize erişime izin verin",
+    "openSettings": "Ayarları Aç"
+  },
+  "common": {
+    "ok": "Tamam",
+    "cancel": "İptal",
+    "continue": "Devam Et",
+    "back": "Geri",
+    "next": "İleri",
+    "done": "Bitti",
+    "save": "Kaydet",
+    "share": "Paylaş",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "loading": "Yükleniyor...",
+    "error": "Hata",
+    "success": "Başarılı",
+    "warning": "Uyarı",
+    "info": "Bilgi"
+  }
+}
