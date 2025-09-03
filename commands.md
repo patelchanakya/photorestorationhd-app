@@ -29,12 +29,13 @@ npx eas submit --platform ios
 # Metro cache issues
 npx expo start --clear
 
-# Build failures
+# Build failures - full clean
+rm -rf ~/.expo
+rm -rf ~/Library/Developer/Xcode/DerivedData
+rm -rf node_modules
+rm -rf .expo
 npx expo prebuild --clean
-rm -rf node_modules && npm install
-
-# Skip eager bundling (local build fix)
-EAS_LOCAL_BUILD_SKIP_EAGER_BUNDLE=1 npx eas build --platform ios --profile production --local
+npm install
 ```
 
 ## 📱 Development Workflows
@@ -128,10 +129,14 @@ npx eas build --platform ios --profile development
 
 ### "Build failed with Metro error"
 ```bash
+# Full clean process
+rm -rf ~/.expo
+rm -rf ~/Library/Developer/Xcode/DerivedData
+rm -rf node_modules
+rm -rf .expo
 npx expo prebuild --clean
-npx expo start --clear
-# Retry with:
-EAS_LOCAL_BUILD_SKIP_EAGER_BUNDLE=1 npx eas build --platform ios --profile production --local
+npm install
+npx eas build --platform ios --profile production --local
 ```
 
 ### "Out of free build credits"

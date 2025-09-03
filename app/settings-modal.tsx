@@ -703,7 +703,7 @@ I need help with Clever.
 
 SUPPORT ID: ${supportId}
 Device: ${Platform.OS} ${Platform.Version}
-App Version: 1.0.5
+App Version: 2.0.2
 
 Please include the Support ID above in your message so we can assist you quickly.
 
@@ -1168,7 +1168,7 @@ Best regards`;
                       {t('settings.items.version')}
                     </Text>
                     <Text className="text-white/60 text-sm">
-                      2.0.1
+                      2.0.2
                     </Text>
                   </View>
                 </View>
