@@ -222,9 +222,9 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
   const isSmallPhone = longestSide <= 700;
   const t = useT();
   
-  // Responsive tile dimensions
-  const tileWidth = isTabletLike ? 140 : (isSmallPhone ? 100 : 120);
-  const fontSize = isTabletLike ? 16 : (isSmallPhone ? 12 : 14);
+  // Responsive tile dimensions - optimized for text visibility and mobile/tablet experience
+  const tileWidth = isTabletLike ? 105 : (isSmallPhone ? 90 : 105);
+  const fontSize = isTabletLike ? 13 : (isSmallPhone ? 11 : 12);
   
   const router = useRouter();
   const handleOutfitSelect = async (outfit: OutfitItem) => {
@@ -308,15 +308,16 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
               />
               
               {/* Bottom label - removed PRO badge */}
-              <View style={{ position: 'absolute', left: 10, right: 10, bottom: 10 }}>
+              <View style={{ position: 'absolute', left: 6, right: 6, bottom: 6, minHeight: 36, justifyContent: 'flex-end' }}>
                 <Text 
-                  numberOfLines={2}
-                  ellipsizeMode="tail"
+                  adjustsFontSizeToFit={true}
+                  minimumFontScale={0.7}
                   style={{ 
                     color: '#FFFFFF', 
                     fontFamily: 'Lexend-SemiBold', 
                     fontSize: fontSize,
-                    lineHeight: fontSize * 1.2
+                    lineHeight: fontSize * 1.2,
+                    textAlign: 'center'
                   }}
                 >
                   {t(item.titleKey)}

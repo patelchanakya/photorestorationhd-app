@@ -25,38 +25,6 @@ interface MemorialItem {
 const DEFAULT_MEMORIAL_ITEMS: MemorialItem[] = [
   {
     id: 'memorial-1',
-    titleKey: 'memorial.lightRays',
-    type: 'video',
-    video: require('../assets/videos/memorial/light.mp4'),
-    memorialPrompt:
-      "Add divine light rays shining down from above, creating a heavenly and spiritual atmosphere perfect for memorial photos. The rays should emanate from above and create a peaceful, uplifting effect."
-  },
-  {
-    id: 'memorial-2',
-    titleKey: 'memorial.doveOfPeace',
-    type: 'video',
-    video: require('../assets/videos/memorial/dove.mp4'),
-    memorialPrompt:
-      "Add a white dove symbolizing peace, hope, and the Holy Spirit. Position it gracefully in the background or near the subject, perfect for memorial and remembrance photos."
-  },
-  {
-    id: 'memorial-3',
-    titleKey: 'memorial.etherealGlow',
-    type: 'video',
-    video: require('../assets/videos/memorial/glow.mp4'),
-    memorialPrompt:
-      "Add a soft, ethereal glow around the subject creating a peaceful and spiritual memorial atmosphere. The glow should be gentle and respectful, not overwhelming."
-  },
-  {
-    id: 'memorial-4',
-    titleKey: 'memorial.heavenGates',
-    type: 'video',
-    video: require('../assets/videos/memorial/gates.mp4'),
-    memorialPrompt:
-      "Add subtle heavenly gate elements in the background for a spiritual and comforting memorial effect. The gates should be elegant and not dominate the photo."
-  },
-  {
-    id: 'memorial-5',
     titleKey: 'memorial.memorialFlowers',
     type: 'video',
     video: require('../assets/videos/memorial/flowers.mp4'),
@@ -64,12 +32,44 @@ const DEFAULT_MEMORIAL_ITEMS: MemorialItem[] = [
       "Add beautiful memorial flowers like lilies, roses, or white flowers around the photo border or background, symbolizing love, remembrance, and peace."
   },
   {
-    id: 'memorial-6',
+    id: 'memorial-2',
+    titleKey: 'memorial.heavenGates',
+    type: 'video',
+    video: require('../assets/videos/memorial/gates.mp4'),
+    memorialPrompt:
+      "Add subtle heavenly gate elements in the background for a spiritual and comforting memorial effect. The gates should be elegant and not dominate the photo."
+  },
+  {
+    id: 'memorial-3',
     titleKey: 'memorial.cleanBackground',
     type: 'video',
     video: require('../assets/videos/memorial/remback.mp4'),
     memorialPrompt:
       "Remove or clean up the background for a clean, professional memorial display that focuses attention on your loved one. Perfect for memorial services and displays."
+  },
+  {
+    id: 'memorial-4',
+    titleKey: 'memorial.lightRays',
+    type: 'video',
+    video: require('../assets/videos/memorial/light.mp4'),
+    memorialPrompt:
+      "Add divine light rays shining down from above, creating a heavenly and spiritual atmosphere perfect for memorial photos. The rays should emanate from above and create a peaceful, uplifting effect."
+  },
+  {
+    id: 'memorial-5',
+    titleKey: 'memorial.doveOfPeace',
+    type: 'video',
+    video: require('../assets/videos/memorial/dove.mp4'),
+    memorialPrompt:
+      "Add a white dove symbolizing peace, hope, and the Holy Spirit. Position it gracefully in the background or near the subject, perfect for memorial and remembrance photos."
+  },
+  {
+    id: 'memorial-6',
+    titleKey: 'memorial.etherealGlow',
+    type: 'video',
+    video: require('../assets/videos/memorial/glow.mp4'),
+    memorialPrompt:
+      "Add a soft, ethereal glow around the subject creating a peaceful and spiritual memorial atmosphere. The glow should be gentle and respectful, not overwhelming."
   }
 ];
 
@@ -210,9 +210,9 @@ export function MemorialFeatures({ memorialItems = DEFAULT_MEMORIAL_ITEMS }: { m
   const isSmallPhone = longestSide <= 700;
   const t = useT();
   
-  // Responsive tile dimensions
-  const tileWidth = isTabletLike ? 140 : (isSmallPhone ? 100 : 120);
-  const fontSize = isTabletLike ? 16 : (isSmallPhone ? 12 : 14);
+  // Responsive tile dimensions - optimized for text visibility and mobile/tablet experience
+  const tileWidth = isTabletLike ? 105 : (isSmallPhone ? 90 : 105);
+  const fontSize = isTabletLike ? 13 : (isSmallPhone ? 11 : 12);
   
   const router = useRouter();
   const handleMemorialSelect = async (memorialItem: MemorialItem) => {
@@ -298,15 +298,16 @@ export function MemorialFeatures({ memorialItems = DEFAULT_MEMORIAL_ITEMS }: { m
               />
               
               {/* Bottom label */}
-              <View style={{ position: 'absolute', left: 10, right: 10, bottom: 10 }}>
+              <View style={{ position: 'absolute', left: 6, right: 6, bottom: 6, minHeight: 36, justifyContent: 'flex-end' }}>
                 <Text 
-                  numberOfLines={2}
-                  ellipsizeMode="tail"
+                  adjustsFontSizeToFit={true}
+                  minimumFontScale={0.7}
                   style={{ 
                     color: '#FFFFFF', 
                     fontFamily: 'Lexend-SemiBold', 
                     fontSize: fontSize,
-                    lineHeight: fontSize * 1.2
+                    lineHeight: fontSize * 1.2,
+                    textAlign: 'center'
                   }}
                 >
                   {t(item.titleKey)}

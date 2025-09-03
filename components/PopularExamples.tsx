@@ -25,24 +25,24 @@ interface PopularItem {
 const DEFAULT_POPULAR_ITEMS: PopularItem[] = [
   { 
     id: 'popular-1', 
-    titleKey: 'popular.clearSkin', 
+    titleKey: 'popular.addSmile', 
     type: 'video', 
-    video: require('../assets/videos/popular/clear-skin.mp4'), 
-    prompt: "Remove acne, blemishes, and skin imperfections while keeping natural skin texture, tone, and lighting unchanged." 
+    video: require('../assets/videos/popular/smile.mp4'), 
+    prompt: "Add a natural, authentic smile while preserving facial identity and features." 
   },
   { 
     id: 'popular-2', 
+    titleKey: 'popular.openEyes', 
+    type: 'video', 
+    video: require('../assets/videos/popular/open-eyes.mp4'), 
+    prompt: "open my eyes" 
+  },
+  { 
+    id: 'popular-3', 
     titleKey: 'popular.addHalo', 
     type: 'video', 
     video: require('../assets/videos/popular/halo.mp4'), 
     prompt: "Add a subtle glowing halo above the subject's head." 
-  },
-  { 
-    id: 'popular-3', 
-    titleKey: 'popular.fixHair', 
-    type: 'video', 
-    video: require('../assets/videos/popular/fix-hair.mp4'), 
-    prompt: "Clean up messy or stray hairs while preserving natural hair texture, style, volume, and keeping hair in place without altering its position on the face." 
   },
   { 
     id: 'popular-4', 
@@ -53,55 +53,62 @@ const DEFAULT_POPULAR_ITEMS: PopularItem[] = [
   },
   { 
     id: 'popular-5', 
+    titleKey: 'popular.clearSkin', 
+    type: 'video', 
+    video: require('../assets/videos/popular/clear-skin.mp4'), 
+    prompt: "Remove acne, blemishes, and skin imperfections while keeping natural skin texture, tone, and lighting unchanged." 
+  },
+  { 
+    id: 'popular-6', 
+    titleKey: 'popular.fixHair', 
+    type: 'video', 
+    video: require('../assets/videos/popular/fix-hair.mp4'), 
+    prompt: "Clean up messy or stray hairs while preserving natural hair texture, style, volume, and keeping hair in place without altering its position on the face." 
+  },
+  { 
+    id: 'popular-7', 
     titleKey: 'popular.angelWings', 
     type: 'video', 
     video: require('../assets/videos/popular/angel.mp4'), 
     prompt: "Add realistic wings that match pose, background, and lighting." 
   },
   { 
-    id: 'popular-6', 
+    id: 'popular-8', 
     titleKey: 'popular.younger', 
     type: 'video', 
     video: require('../assets/videos/popular/younger.mp4'), 
     prompt: "Make the subject look a bit younger while keeping their identity, facial features, and natural expression unchanged." 
   },
   { 
-    id: 'popular-7', 
+    id: 'popular-9', 
     titleKey: 'popular.older', 
     type: 'video', 
     video: require('../assets/videos/popular/older.mp4'), 
     prompt: "Make the subject appear slightly older in a natural, age-appropriate way. Preserve facial identity, proportions, and realistic features, adjusting age subtly without exaggeration." 
   },
   { 
-    id: 'popular-8', 
-    titleKey: 'popular.addSmile', 
-    type: 'video', 
-    video: require('../assets/videos/popular/smile.mp4'), 
-    prompt: "Add a natural, authentic smile while preserving facial identity and features." 
-  },
-  { 
-    id: 'popular-9', 
+    id: 'popular-10', 
     titleKey: 'popular.gardenBackground', 
     type: 'image', 
     image: require('../assets/images/backgrounds/thumbnail/garden/garden.jpeg'), 
     prompt: "Replace background with a garden scene - greenery and foliage in natural daylight." 
   },
   { 
-    id: 'popular-10', 
+    id: 'popular-11', 
     titleKey: 'popular.studioBackground', 
     type: 'image', 
     image: require('../assets/images/backgrounds/thumbnail/studio/studio.jpeg'), 
     prompt: "Replace background with a clean studio backdrop in white or light gray." 
   },
   { 
-    id: 'popular-11', 
+    id: 'popular-12', 
     titleKey: 'popular.softLightsBackground', 
     type: 'image', 
     image: require('../assets/images/backgrounds/thumbnail/soft-lights/softer.jpg'), 
     prompt: "Replace background with soft bokeh lights for a cinematic look." 
   },
   { 
-    id: 'popular-12', 
+    id: 'popular-13', 
     titleKey: 'popular.heavenlyBackground', 
     type: 'image', 
     image: require('../assets/images/backgrounds/thumbnail/heavenly/heavenly.jpg'), 
@@ -264,9 +271,9 @@ export function PopularExamples({ items = DEFAULT_POPULAR_ITEMS }: { items?: Pop
   const isSmallPhone = longestSide <= 700;
   const t = useT();
   
-  // Responsive tile dimensions
-  const tileWidth = isTabletLike ? 140 : (isSmallPhone ? 100 : 120);
-  const fontSize = isTabletLike ? 16 : (isSmallPhone ? 12 : 14);
+  // Responsive tile dimensions - optimized for text visibility and mobile/tablet experience
+  const tileWidth = isTabletLike ? 105 : (isSmallPhone ? 90 : 105);
+  const fontSize = isTabletLike ? 13 : (isSmallPhone ? 11 : 12);
   
   const router = useRouter();
   const handlePopularSelect = async (item: PopularItem) => {
@@ -355,15 +362,16 @@ export function PopularExamples({ items = DEFAULT_POPULAR_ITEMS }: { items?: Pop
               />
               
               {/* Bottom label - removed PRO badge */}
-              <View style={{ position: 'absolute', left: 10, right: 10, bottom: 10 }}>
+              <View style={{ position: 'absolute', left: 6, right: 6, bottom: 6, minHeight: 36, justifyContent: 'flex-end' }}>
                 <Text 
-                  numberOfLines={2}
-                  ellipsizeMode="tail"
+                  adjustsFontSizeToFit={true}
+                  minimumFontScale={0.7}
                   style={{ 
                     color: '#FFFFFF', 
                     fontFamily: 'Lexend-SemiBold', 
                     fontSize: fontSize,
-                    lineHeight: fontSize * 1.2
+                    lineHeight: fontSize * 1.2,
+                    textAlign: 'center'
                   }}
                 >
                   {t(item.titleKey)}

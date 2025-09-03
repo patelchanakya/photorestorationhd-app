@@ -66,11 +66,19 @@ const SECTIONS: SectionConfig[] = [
 ];
 
 export function StyleCollections() {
-  const { width: SCREEN_WIDTH } = Dimensions.get('window');
+  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+  const shortestSide = Math.min(SCREEN_WIDTH, SCREEN_HEIGHT);
+  const longestSide = Math.max(SCREEN_WIDTH, SCREEN_HEIGHT);
+  const isTabletLike = shortestSide >= 768;
+  const isSmallPhone = longestSide <= 700;
+  
   const H_PADDING = 12; // matches container padding
   const GAP = 10; // gap between tiles
   const PEEK = 36; // visible part of 3rd tile to hint scroll
-  const TILE_WIDTH = Math.max(140, Math.floor((SCREEN_WIDTH - H_PADDING * 2 - GAP - PEEK) / 2));
+  
+  // Responsive tile sizing - optimized for text visibility and mobile/tablet experience
+  const baseTileWidth = isTabletLike ? 130 : (isSmallPhone ? 110 : 120);
+  const TILE_WIDTH = Math.max(baseTileWidth, Math.floor((SCREEN_WIDTH - H_PADDING * 2 - GAP - PEEK) / 2));
   const TILE_HEIGHT = Math.round(TILE_WIDTH * 1.2);
 
   const openPicker = async (styleKey: string) => {
@@ -94,10 +102,36 @@ export function StyleCollections() {
     >
       <ExpoImage source={item.image} style={{ width: '100%', height: '100%' }} contentFit="contain" transition={0} />
       <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 52, backgroundColor: 'rgba(0,0,0,0.5)' }} />
-      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 12, paddingVertical: 10 }}>
-        <Text style={{ color: '#EAEAEA', fontSize: 15, fontFamily: 'Lexend-Black', letterSpacing: -0.2 }} numberOfLines={1}>{item.title}</Text>
+      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 8, paddingVertical: 6, minHeight: 44, justifyContent: 'flex-end' }}>
+        <Text 
+          style={{ 
+            color: '#EAEAEA', 
+            fontSize: isTabletLike ? 13 : (isSmallPhone ? 11 : 12), 
+            fontFamily: 'Lexend-Black', 
+            letterSpacing: -0.2,
+            textAlign: 'center',
+            lineHeight: isTabletLike ? 15 : (isSmallPhone ? 13 : 14)
+          }} 
+          adjustsFontSizeToFit={true}
+          minimumFontScale={0.6}
+        >
+          {item.title}
+        </Text>
         {!!item.subtitle && (
-          <Text style={{ color: '#BFC3CF', fontSize: 12, fontFamily: 'Lexend-Medium' }} numberOfLines={1}>{item.subtitle}</Text>
+          <Text 
+            style={{ 
+              color: '#BFC3CF', 
+              fontSize: isTabletLike ? 10 : (isSmallPhone ? 9 : 10), 
+              fontFamily: 'Lexend-Medium',
+              textAlign: 'center',
+              marginTop: 2,
+              lineHeight: isTabletLike ? 12 : (isSmallPhone ? 11 : 12)
+            }} 
+            adjustsFontSizeToFit={true}
+            minimumFontScale={0.6}
+          >
+            {item.subtitle}
+          </Text>
         )}
       </View>
     </TouchableOpacity>
