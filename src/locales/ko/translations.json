@@ -12,7 +12,13 @@
       "fixMyPhoto": "내 사진 복구",
       "memorial": "추모",
       "outfits": "의상",
-      "magic": "매직"
+      "magic": "매직",
+      "waterDamage": "물 손상",
+      "clarify": "명확하게",
+      "recreate": "다시 만들기",
+      "colorize": "색칠하기",
+      "descratch": "스크래치 제거",
+      "brighten": "밝게 하기"
     },
     "alerts": {
       "proMember": {

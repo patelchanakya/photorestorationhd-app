@@ -12,7 +12,13 @@
       "fixMyPhoto": "Arreglar Mi Foto",
       "memorial": "Memorial",
       "outfits": "Atuendos",
-      "magic": "Magia"
+      "magic": "Magia",
+      "waterDamage": "Daños por Agua",
+      "clarify": "Aclarar",
+      "recreate": "Recrear",
+      "colorize": "Colorear",
+      "descratch": "Quitar Rayones",
+      "brighten": "Aclarar"
     },
     "alerts": {
       "proMember": {

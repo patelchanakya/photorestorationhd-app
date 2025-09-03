@@ -118,7 +118,7 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
 
         // Start loading video
         try {
-          if (videoPlayer.status !== 'idle' && isMountedRef.current) {
+          if (isMountedRef.current) {
             videoPlayer.play();
           }
         } catch (error) {
@@ -203,7 +203,7 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
         // Play onboarding video
         setTimeout(() => {
           try {
-            if (onloadingVideoPlayer.status !== 'idle' && isMountedRef.current) {
+            if (isMountedRef.current) {
               onloadingVideoPlayer.play();
             }
           } catch (error) {
@@ -344,7 +344,7 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
   // Wait for RevenueCat Context Provider to finish loading subscription data
   const waitForRevenueCatContext = async () => {
     const startTime = Date.now();
-    const timeout = 3000; // Reduced to 3 seconds for even faster startup
+    const maxWaitTime = 2000; // Maximum 2 seconds - never block app indefinitely
     
     if (__DEV__) {
       console.log('⏳ Waiting for RevenueCat Context to load subscription data...');
@@ -356,14 +356,14 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
       getCurrentSubscriptionTransactionInfo().catch(() => {});
     }
 
-    // Wait for RevenueCat Context to finish loading
-    while (isLoading && (Date.now() - startTime < timeout)) {
-      await new Promise(resolve => setTimeout(resolve, 250)); // Slightly increased for efficiency
+    // Deterministic wait with safety fallback - best practice for production apps
+    while (isLoading && (Date.now() - startTime < maxWaitTime)) {
+      await new Promise(resolve => setTimeout(resolve, 100)); // Check every 100ms
     }
 
     if (__DEV__) {
       if (isLoading) {
-        console.log('⚠️ RevenueCat Context loading timed out after 3s - continuing with app startup');
+        console.log('⚠️ RevenueCat Context loading timed out after 2s - continuing app startup (safe fallback)');
       } else {
         console.log('✅ RevenueCat Context ready with subscription data');
       }

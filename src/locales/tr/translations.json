@@ -12,7 +12,13 @@
       "fixMyPhoto": "Fotoğrafımı Düzelt",
       "memorial": "Anıt",
       "outfits": "Kıyafetler",
-      "magic": "Sihir"
+      "magic": "Sihir",
+      "waterDamage": "Su Hasarı",
+      "clarify": "Netileştir",
+      "recreate": "Yeniden Oluştur",
+      "colorize": "Renklendir",
+      "descratch": "Çizikleri Kaldır",
+      "brighten": "Parlat"
     },
     "alerts": {
       "proMember": {

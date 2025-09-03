@@ -12,7 +12,13 @@
       "fixMyPhoto": "Fixa Mitt Foto",
       "memorial": "Memorial",
       "outfits": "Kläder",
-      "magic": "Magi"
+      "magic": "Magi",
+      "waterDamage": "Vattenskada",
+      "clarify": "Förtydliga",
+      "recreate": "Återskapa",
+      "colorize": "Färglägga",
+      "descratch": "Ta Bort Rep",
+      "brighten": "Ljusa Upp"
     },
     "alerts": {
       "proMember": {

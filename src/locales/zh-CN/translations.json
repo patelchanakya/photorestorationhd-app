@@ -12,7 +12,13 @@
       "fixMyPhoto": "修复我的照片",
       "memorial": "纪念",
       "outfits": "服装",
-      "magic": "魔法"
+      "magic": "魔法",
+      "waterDamage": "水损害",
+      "clarify": "清晰化",
+      "recreate": "重新创建",
+      "colorize": "上色",
+      "descratch": "去划痕",
+      "brighten": "增亮"
     },
     "alerts": {
       "proMember": {

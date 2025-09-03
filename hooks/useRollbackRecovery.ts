@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 import { rollbackService } from '../services/rollbackService';
 import NetInfo from '@react-native-community/netinfo';
@@ -53,13 +53,17 @@ export function useRollbackRecovery() {
  */
 export function useAutoRollbackRecovery() {
   const { processRollbacks } = useRollbackRecovery();
+  const hasRunInitialRecovery = useRef(false);
 
   useEffect(() => {
-    // Run rollback recovery on mount (app launch)
-    if (__DEV__) {
-      console.log('🚀 [ROLLBACK] Starting rollback recovery on app launch');
+    // Run rollback recovery on mount (app launch) - but only once
+    if (!hasRunInitialRecovery.current) {
+      if (__DEV__) {
+        console.log('🚀 [ROLLBACK] Starting rollback recovery on app launch');
+      }
+      hasRunInitialRecovery.current = true;
+      processRollbacks();
     }
-    processRollbacks();
   }, [processRollbacks]);
 
   useEffect(() => {
@@ -107,10 +111,13 @@ export function useAutoRollbackRecovery() {
           console.log('🌐 [ROLLBACK] Network available - triggering rollback recovery');
         }
         
-        // Process immediately when network becomes available
-        setTimeout(() => {
-          processRollbacks();
-        }, 1000);
+        // Only process immediately if we haven't run initial recovery yet
+        // Prevents double execution during app startup
+        if (hasRunInitialRecovery.current) {
+          setTimeout(() => {
+            processRollbacks();
+          }, 1000);
+        }
 
         // Set up periodic processing if not already active
         if (!intervalId) {

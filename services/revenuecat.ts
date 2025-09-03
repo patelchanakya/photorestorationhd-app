@@ -469,18 +469,25 @@ export const presentPaywall = async (): Promise<boolean> => {
       // Fetch offerings and use specific "defaultv4" offering
       // Get fresh offerings for paywall presentation
       const offerings = await Purchases.getOfferings();
-      const defaultv4Offering = offerings.all['defaultv4'];
       
-      if (defaultv4Offering) {
+      // Use current offering for experiments, fallback to defaultv4
+      const currentOffering = offerings.current;
+      const fallbackOffering = offerings.all['defaultv4'];
+      
+      if (currentOffering) {
         if (__DEV__) {
-          console.log('🎯 Using defaultv4 offering (with trial toggle paywall):', defaultv4Offering);
+          console.log('🎯 Using current offering for experiments:', currentOffering.identifier);
         }
-        paywallResult = await RevenueCatUI.presentPaywall({ offering: defaultv4Offering });
+        paywallResult = await RevenueCatUI.presentPaywall({ offering: currentOffering });
+      } else if (fallbackOffering) {
+        if (__DEV__) {
+          console.log('🔄 No current offering, using defaultv4 fallback');
+        }
+        paywallResult = await RevenueCatUI.presentPaywall({ offering: fallbackOffering });
       } else {
         if (__DEV__) {
-          console.log('⚠️ defaultv4 offering not found, using default');
+          console.log('⚠️ No current or defaultv4 offering found, using default');
           console.log('📋 Available offerings:', Object.keys(offerings.all));
-          console.log('📋 Current offering:', offerings.current?.identifier);
         }
         paywallResult = await RevenueCatUI.presentPaywall();
       }

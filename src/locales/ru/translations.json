@@ -12,7 +12,13 @@
       "fixMyPhoto": "Исправить Мое Фото",
       "memorial": "Мемориал",
       "outfits": "Одежда",
-      "magic": "Магия"
+      "magic": "Магия",
+      "waterDamage": "Повреждение Водой",
+      "clarify": "Осветлить",
+      "recreate": "Воссоздать",
+      "colorize": "Раскрасить",
+      "descratch": "Убрать Царапины",
+      "brighten": "Осветлить"
     },
     "alerts": {
       "proMember": {

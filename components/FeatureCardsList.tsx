@@ -171,12 +171,14 @@ export function FeatureCardsList({
       return;
     }
     const functionType = item.functionType ?? 'restoration';
+    const translatedTitle = t(item.titleKey);
+    const translatedSubtitle = t(item.subtitleKey);
     
     // PROMPT LOGGING: Track which feature card is selected
     console.log('🎯 FEATURE CARD SELECTED:', {
       id: item.id,
-      title: item.title,
-      subtitle: item.subtitle,
+      title: translatedTitle,
+      subtitle: translatedSubtitle,
       functionType: functionType,
       styleKey: item.styleKey
     });
@@ -184,7 +186,7 @@ export function FeatureCardsList({
     // Track feature tile selection
     analyticsService.trackTileUsage({
       category: 'feature',
-      tileName: item.title,
+      tileName: translatedTitle,
       tileId: item.id,
       functionType: functionType,
       styleKey: item.styleKey,
@@ -200,10 +202,10 @@ export function FeatureCardsList({
     });
     if (!result.canceled && result.assets[0]) {
       try {
-        useQuickEditStore.getState().openWithImage({ functionType, imageUri: result.assets[0].uri, styleKey: item.styleKey, styleName: item.title });
+        useQuickEditStore.getState().openWithImage({ functionType, imageUri: result.assets[0].uri, styleKey: item.styleKey, styleName: translatedTitle });
       } catch {}
     }
-  }, [onOpenBackgrounds, onOpenClothes, router]);
+  }, [onOpenBackgrounds, onOpenClothes, router, t]);
 
   return (
     <View style={{ paddingTop: 8, paddingBottom: 24 }}>

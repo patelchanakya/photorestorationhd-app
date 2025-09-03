@@ -12,7 +12,13 @@
       "fixMyPhoto": "Reparer Mitt Bilde",
       "memorial": "Memorial",
       "outfits": "Antrekk",
-      "magic": "Magi"
+      "magic": "Magi",
+      "waterDamage": "Vannskade",
+      "clarify": "Klargjøre",
+      "recreate": "Gjenskape",
+      "colorize": "Fargelegge",
+      "descratch": "Fjerne Riper",
+      "brighten": "Lyse Opp"
     },
     "alerts": {
       "proMember": {

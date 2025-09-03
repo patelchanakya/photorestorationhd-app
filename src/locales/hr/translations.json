@@ -12,7 +12,13 @@
       "fixMyPhoto": "Popravi Moju Fotografiju",
       "memorial": "Spomenik",
       "outfits": "Odjeća",
-      "magic": "Magija"
+      "magic": "Magija",
+      "waterDamage": "Oštećenje Vodom",
+      "clarify": "Razjasniti",
+      "recreate": "Ponovno Stvoriti",
+      "colorize": "Obojiti",
+      "descratch": "Ukloni Ogrebotine",
+      "brighten": "Osvijetliti"
     },
     "alerts": {
       "proMember": {

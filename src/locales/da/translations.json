@@ -12,7 +12,13 @@
       "fixMyPhoto": "Ret Mit Foto",
       "memorial": "Mindesmærke",
       "outfits": "Tøj",
-      "magic": "Magi"
+      "magic": "Magi",
+      "waterDamage": "Vandskade",
+      "clarify": "Tydeliggør",
+      "recreate": "Genskab",
+      "colorize": "Farvelæg",
+      "descratch": "Fjern Ridser",
+      "brighten": "Gør Lysere"
     },
     "alerts": {
       "proMember": {

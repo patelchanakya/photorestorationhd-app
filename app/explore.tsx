@@ -2,6 +2,7 @@ import { MemorialFeatures } from '@/components/AnimatedBackgrounds';
 import { AnimatedOutfits } from '@/components/AnimatedOutfits';
 import { DeviceTwoRowCarousel } from '@/components/DeviceTwoRowCarousel';
 import { FeatureCardsList } from '@/components/FeatureCardsList';
+import { NavigationPills } from '@/components/NavigationPills';
 import { PopularExamples } from '@/components/PopularExamples';
 import { QuickActionRail } from '@/components/QuickActionRail';
 import { QuickEditSheet } from '@/components/QuickEditSheet';
@@ -10,10 +11,9 @@ import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import { analyticsService } from '@/services/analytics';
 import { presentPaywall, restorePurchasesSecure, validatePremiumAccess } from '@/services/revenuecat';
 import { restorationService } from '@/services/supabase';
-import { useQuickEditStore } from '@/store/quickEditStore';
-import { useAppInitStore } from '@/store/appInitStore';
 import { useT } from '@/src/hooks/useTranslation';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAppInitStore } from '@/store/appInitStore';
+import { useQuickEditStore } from '@/store/quickEditStore';
 import Constants from 'expo-constants';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
@@ -34,6 +34,42 @@ export default function HomeGalleryLikeScreen() {
   const railApproxHeight = isSmallPhone ? 58 : 86;
   const basePadding = isTabletLike ? 154 : (isSmallPhone ? 45 : 112); // Reduced by ~30%
   const bottomPadding = Math.max(basePadding, (insets?.bottom || 0) + railApproxHeight);
+
+  // Refs for each section to enable smooth scrolling
+  const scrollViewRef = React.useRef<ScrollView>(null);
+  const popularSectionRef = React.useRef<View>(null);
+  const fixMyPhotoSectionRef = React.useRef<View>(null);
+  const memorialSectionRef = React.useRef<View>(null);
+  const outfitsSectionRef = React.useRef<View>(null);
+  const magicSectionRef = React.useRef<View>(null);
+
+  // Track active section for pill highlighting
+  const [activeSectionId, setActiveSectionId] = React.useState<string>('popular');
+  
+  // Store section positions for reliable scrolling
+  const [sectionPositions, setSectionPositions] = React.useState<Record<string, number>>({});
+
+  const scrollToSection = (sectionId: string) => {
+    setActiveSectionId(sectionId);
+    
+    let position = sectionPositions[sectionId === 'magic' ? 'magic' : sectionId];
+    
+    // For individual magic features, calculate offset within magic section
+    if (['waterDamage', 'clarify', 'recreate', 'colorize', 'descratch', 'brighten'].includes(sectionId)) {
+      const magicPosition = sectionPositions['magic'];
+      if (magicPosition !== undefined) {
+        // Card height: 240px, margin: 14px = 254px per card
+        const cardHeight = 254;
+        const featureOrder = ['waterDamage', 'clarify', 'recreate', 'colorize', 'descratch', 'brighten'];
+        const featureIndex = featureOrder.indexOf(sectionId);
+        position = magicPosition + (featureIndex * cardHeight);
+      }
+    }
+    
+    if (position !== undefined) {
+      scrollViewRef.current?.scrollTo({ y: Math.max(0, position - 100), animated: true });
+    }
+  };
   const openQuick = (functionType: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'background' | 'outfit' | 'custom' | 'restore_repair' | 'water_damage', styleKey?: string | null) => {
     try {
       useQuickEditStore.getState().open({ functionType, styleKey: styleKey ?? null });
@@ -243,11 +279,35 @@ export default function HomeGalleryLikeScreen() {
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomPadding }}>
+      {/* Navigation Pills */}
+      <NavigationPills
+        activeSectionId={activeSectionId}
+        sections={[
+          { id: 'memorial', titleKey: 'explore.sections.memorial', onPress: () => scrollToSection('memorial') },
+          { id: 'colorize', titleKey: 'explore.sections.colorize', onPress: () => scrollToSection('colorize') },
+          { id: 'waterDamage', titleKey: 'explore.sections.waterDamage', onPress: () => scrollToSection('waterDamage') },
+          { id: 'descratch', titleKey: 'explore.sections.descratch', onPress: () => scrollToSection('descratch') },
+          { id: 'brighten', titleKey: 'explore.sections.brighten', onPress: () => scrollToSection('brighten') },
+          { id: 'recreate', titleKey: 'explore.sections.recreate', onPress: () => scrollToSection('recreate') },
+          { id: 'clarify', titleKey: 'explore.sections.clarify', onPress: () => scrollToSection('clarify') },
+          { id: 'outfits', titleKey: 'explore.sections.outfits', onPress: () => scrollToSection('outfits') },
+          { id: 'popular', titleKey: 'explore.sections.popular', onPress: () => scrollToSection('popular') },
+          { id: 'fixMyPhoto', titleKey: 'explore.sections.fixMyPhoto', onPress: () => scrollToSection('fixMyPhoto') },
+        ]}
+      />
+
+      <ScrollView ref={scrollViewRef} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomPadding }}>
         
         
         {/* Popular section title */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <View 
+          ref={popularSectionRef} 
+          onLayout={(event) => {
+            const y = event.nativeEvent.layout.y;
+            setSectionPositions(prev => ({ ...prev, popular: y }));
+          }}
+          style={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+        >
           <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>{t('explore.sections.popular')}</Text>
         </View>
         
@@ -257,7 +317,14 @@ export default function HomeGalleryLikeScreen() {
 {/* BackToLife feature removed */}
 
       {/* Fix My Image section title */}
-      <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+      <View 
+        ref={fixMyPhotoSectionRef} 
+        onLayout={(event) => {
+          const y = event.nativeEvent.layout.y;
+          setSectionPositions(prev => ({ ...prev, fixMyPhoto: y }));
+        }}
+        style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+      >
         <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>{t('explore.sections.fixMyPhoto')}</Text>
         <TouchableOpacity
           onPress={async () => {
@@ -291,21 +358,43 @@ export default function HomeGalleryLikeScreen() {
 
 
         {/* Memorial Section */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <View 
+          ref={memorialSectionRef} 
+          onLayout={(event) => {
+            const y = event.nativeEvent.layout.y;
+            setSectionPositions(prev => ({ ...prev, memorial: y }));
+          }}
+          style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+        >
           <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>{t('explore.sections.memorial')}</Text>
         </View>
         <MemorialFeatures />
 
         {/* Outfits Section */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <View 
+          ref={outfitsSectionRef} 
+          onLayout={(event) => {
+            const y = event.nativeEvent.layout.y;
+            setSectionPositions(prev => ({ ...prev, outfits: y }));
+          }}
+          style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+        >
           <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>{t('explore.sections.outfits')}</Text>
         </View>
         <AnimatedOutfits />
 
-        {/* Other AI Features - Enlighten, etc. */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        {/* Magic Section */}
+        <View 
+          ref={magicSectionRef} 
+          onLayout={(event) => {
+            const y = event.nativeEvent.layout.y;
+            setSectionPositions(prev => ({ ...prev, magic: y }));
+          }}
+          style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+        >
           <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>{t('explore.sections.magic')}</Text>
         </View>
+
         <FeatureCardsList onOpenBackgrounds={() => openQuick('background')} onOpenClothes={() => openQuick('outfit')} />
 
       </ScrollView>

@@ -39,10 +39,10 @@ const DEFAULT_OUTFITS: OutfitItem[] = [
   },
   { 
     id: 'outfit-3', 
-    titleKey: 'outfits.jobInterview', 
+    titleKey: 'outfits.casualDay', 
     type: 'video', 
-    video: require('../assets/videos/magic/outfits/thumbnail/job-interview/jobinterview.mp4'), 
-    outfitPrompt: "Replace the subject's clothing with smart business casual attire suitable for a job interview: a nice blazer with dark jeans or smart trousers, or a professional dress that's approachable and friendly. Use neutral, professional colors that look confident but not intimidating. Keep the subject's face, hairstyle, pose, lighting, and background unchanged. Ensure clothing appears realistic with natural fabric folds and texture." 
+    video: require('../assets/videos/magic/outfits/thumbnail/casual-day/outfit-0.mp4'), 
+    outfitPrompt: "Change the subject's clothing to casual, comfortable wear such as a t-shirt and jeans or a relaxed summer outfit. Keep the subject's face, hairstyle, pose, lighting, and background unchanged. Ensure the clothing appears soft, naturally worn, and fits realistically with natural fabric folds and textures." 
   },
   { 
     id: 'outfit-4', 
@@ -60,10 +60,10 @@ const DEFAULT_OUTFITS: OutfitItem[] = [
   },
   { 
     id: 'outfit-6', 
-    titleKey: 'outfits.casualDay', 
+    titleKey: 'outfits.jobInterview', 
     type: 'video', 
-    video: require('../assets/videos/magic/outfits/thumbnail/casual-day/outfit-0.mp4'), 
-    outfitPrompt: "Change the subject's clothing to casual, comfortable wear such as a t-shirt and jeans or a relaxed summer outfit. Keep the subject's face, hairstyle, pose, lighting, and background unchanged. Ensure the clothing appears soft, naturally worn, and fits realistically with natural fabric folds and textures." 
+    video: require('../assets/videos/magic/outfits/thumbnail/job-interview/jobinterview.mp4'), 
+    outfitPrompt: "Replace the subject's clothing with smart business casual attire suitable for a job interview: a nice blazer with dark jeans or smart trousers, or a professional dress that's approachable and friendly. Use neutral, professional colors that look confident but not intimidating. Keep the subject's face, hairstyle, pose, lighting, and background unchanged. Ensure clothing appears realistic with natural fabric folds and texture." 
   }
 ];
 

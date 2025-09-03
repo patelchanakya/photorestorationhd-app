@@ -12,7 +12,13 @@
       "fixMyPhoto": "Repareer Mijn Foto",
       "memorial": "Memorial",
       "outfits": "Kledij",
-      "magic": "Magie"
+      "magic": "Magie",
+      "waterDamage": "Waterschade",
+      "clarify": "Verduidelijken",
+      "recreate": "Herstellen",
+      "colorize": "Inkleuren",
+      "descratch": "Krassen Verwijderen",
+      "brighten": "Verlichten"
     },
     "alerts": {
       "proMember": {

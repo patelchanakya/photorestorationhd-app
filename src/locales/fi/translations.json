@@ -12,7 +12,13 @@
       "fixMyPhoto": "Korjaa Kuvani",
       "memorial": "Muistomerkki",
       "outfits": "Asut",
-      "magic": "Taika"
+      "magic": "Taika",
+      "waterDamage": "Vesivahinko",
+      "clarify": "Selkeytä",
+      "recreate": "Luo Uudelleen",
+      "colorize": "Värjää",
+      "descratch": "Poista Naarmut",
+      "brighten": "Kirkasta"
     },
     "alerts": {
       "proMember": {

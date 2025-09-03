@@ -12,7 +12,13 @@
       "fixMyPhoto": "إصلاح صورتي",
       "memorial": "التذكاري",
       "outfits": "الملابس",
-      "magic": "السحر"
+      "magic": "السحر",
+      "waterDamage": "أضرار المياه",
+      "clarify": "توضيح",
+      "recreate": "إعادة إنشاء",
+      "colorize": "تلوين",
+      "descratch": "إزالة الخدوش",
+      "brighten": "إضاءة"
     },
     "alerts": {
       "proMember": {

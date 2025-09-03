@@ -1,9 +1,26 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { router, Stack } from 'expo-router';
+import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import '../global.css';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { GlobalNotifications } from '@/components/GlobalNotifications';
+import { JobProvider } from '@/contexts/JobContext';
+import { RevenueCatProvider } from '@/contexts/RevenueCatContext';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { useAutoRollbackRecovery } from '@/hooks/useRollbackRecovery';
+import { AppState, AppStateStatus, Dimensions, LogBox, Platform, View } from 'react-native';
+import Purchases, { LOG_LEVEL } from 'react-native-purchases';
+import { clarityService } from '@/services/clarityService';
+import * as Clarity from '@microsoft/react-native-clarity';
+import NetInfo from '@react-native-community/netinfo';
+import { QueryClient, QueryClientProvider, focusManager, onlineManager } from '@tanstack/react-query';
+import Constants from 'expo-constants';
+import { Image as ExpoImage } from 'expo-image';
+import React, { useEffect, useRef } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 
 // Immediate black background injection to prevent white flash at app startup
 if (typeof document !== 'undefined') {
@@ -18,28 +35,6 @@ if (typeof document !== 'undefined') {
   `;
   document.head.appendChild(style);
 }
-
-import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { GlobalNotifications } from '@/components/GlobalNotifications';
-import { JobProvider } from '@/contexts/JobContext';
-import { RevenueCatProvider } from '@/contexts/RevenueCatContext';
-import { useColorScheme } from '@/hooks/useColorScheme';
-import { useAutoRollbackRecovery } from '@/hooks/useRollbackRecovery';
-import { AppState, AppStateStatus, Dimensions, LogBox, Platform, View } from 'react-native';
-import Purchases, { LOG_LEVEL } from 'react-native-purchases';
-// Removed LanguageProvider - translations system removed
-// useSubscriptionStore removed - using RevenueCat Context Provider instead
-import { clarityService } from '@/services/clarityService';
-import { useQuickEditStore } from '@/store/quickEditStore';
-import * as Clarity from '@microsoft/react-native-clarity';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import NetInfo from '@react-native-community/netinfo';
-import { QueryClient, QueryClientProvider, focusManager, onlineManager } from '@tanstack/react-query';
-import Constants from 'expo-constants';
-import { Image as ExpoImage } from 'expo-image';
-import React, { useEffect } from 'react';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 
 // Configure LogBox for production
 if (!__DEV__) {
@@ -164,26 +159,8 @@ export default function RootLayout() {
   // Configure RevenueCat and Clarity immediately on app start - following official SDK docs pattern
   useEffect(() => {
     const initializeServices = async () => {
-      // Initialize Microsoft Clarity
-      try {
-        const isExpoGo = Constants.appOwnership === 'expo';
-        
-        if (!isExpoGo) {
-          await Clarity.initialize('t2eqsax833', {
-            logLevel: __DEV__ ? Clarity.LogLevel.Verbose : Clarity.LogLevel.None,
-          });
-          
-          if (__DEV__) {
-            console.log('✅ Microsoft Clarity initialized');
-          }
-        } else if (__DEV__) {
-          console.log('⚠️ Microsoft Clarity is not available in Expo Go');
-        }
-      } catch (error) {
-        if (__DEV__) {
-          console.error('❌ Microsoft Clarity initialization failed:', error);
-        }
-      }
+      // Initialize Microsoft Clarity via service (prevents double initialization)
+      await clarityService.initialize();
       
       // Set initial app context for Clarity
       try {
@@ -312,8 +289,11 @@ function MainNavigator() {
   // Auto-rollback recovery for failed usage charges
   useAutoRollbackRecovery();
   
-  if (__DEV__) {
-    console.log('🔥 [MAIN-NAVIGATOR] Rendering Stack Navigator');
+  // Reduced logging noise - only log first render
+  const hasLoggedRef = React.useRef(false);
+  if (__DEV__ && !hasLoggedRef.current) {
+    console.log('🔥 [MAIN-NAVIGATOR] Stack Navigator initialized');
+    hasLoggedRef.current = true;
   }
 
   return (
