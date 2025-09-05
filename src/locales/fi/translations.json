@@ -367,6 +367,7 @@
     "error": "Virhe",
     "success": "Onnistui",
     "warning": "Varoitus",
-    "info": "Tiedot"
+    "info": "Tiedot",
+    "saved": "Tallennettu"
   }
 }

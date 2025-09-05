@@ -368,6 +368,7 @@
     "error": "오류",
     "success": "성공",
     "warning": "경고",
-    "info": "정보"
+    "info": "정보",
+    "saved": "저장됨"
   }
 }

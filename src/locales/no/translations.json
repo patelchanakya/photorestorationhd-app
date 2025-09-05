@@ -368,6 +368,7 @@
     "error": "Feil",
     "success": "Suksess",
     "warning": "Advarsel",
-    "info": "Informasjon"
+    "info": "Informasjon",
+    "saved": "Lagret"
   }
 }

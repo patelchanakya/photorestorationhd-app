@@ -367,6 +367,7 @@
     "error": "Fout",
     "success": "Succes",
     "warning": "Waarschuwing",
-    "info": "Informatie"
+    "info": "Informatie",
+    "saved": "Opgeslagen"
   }
 }

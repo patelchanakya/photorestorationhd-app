@@ -370,6 +370,7 @@
     "error": "Erreur",
     "success": "Succès",
     "warning": "Attention",
-    "info": "Information"
+    "info": "Information",
+    "saved": "Enregistré"
   }
 }

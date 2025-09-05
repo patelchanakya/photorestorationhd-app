@@ -367,6 +367,7 @@
     "error": "Errore",
     "success": "Successo",
     "warning": "Attenzione",
-    "info": "Info"
+    "info": "Info",
+    "saved": "Salvato"
   }
 }

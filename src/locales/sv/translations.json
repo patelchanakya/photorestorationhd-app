@@ -368,6 +368,7 @@
     "error": "Fel",
     "success": "Framgång",
     "warning": "Varning",
-    "info": "Information"
+    "info": "Information",
+    "saved": "Sparad"
   }
 }

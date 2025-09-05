@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Modal } from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { useTranslation } from '@/src/hooks/useTranslation';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -23,6 +24,7 @@ export interface SavingModalRef {
 }
 
 export const SavingModal = React.forwardRef<SavingModalRef, SavingModalProps>(function SavingModal({ visible, onComplete }, ref) {
+  const { t } = useTranslation();
   const iconScale = useSharedValue(1);
   const modalOpacity = useSharedValue(0);
 
@@ -93,7 +95,7 @@ export const SavingModal = React.forwardRef<SavingModalRef, SavingModalProps>(fu
             <IconSymbol name="square.and.arrow.down" size={20} color="#f97316" />
           </Animated.View>
           <Text className="text-white text-sm font-medium ml-3">
-            Saving
+            {t('common.saved')}
           </Text>
         </Animated.View>
       </View>

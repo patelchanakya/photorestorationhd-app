@@ -360,6 +360,7 @@
     "error": "Hata",
     "success": "Başarılı",
     "warning": "Uyarı",
-    "info": "Bilgi"
+    "info": "Bilgi",
+    "saved": "Kaydedildi"
   }
 }

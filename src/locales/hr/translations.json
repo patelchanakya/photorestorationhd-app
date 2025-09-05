@@ -367,6 +367,7 @@
     "error": "Greška",
     "success": "Uspjeh",
     "warning": "Upozorenje",
-    "info": "Informacija"
+    "info": "Informacija",
+    "saved": "Spremljeno"
   }
 }

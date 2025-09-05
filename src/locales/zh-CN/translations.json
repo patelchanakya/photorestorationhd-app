@@ -368,6 +368,7 @@
     "error": "错误",
     "success": "成功",
     "warning": "警告",
-    "info": "信息"
+    "info": "信息",
+    "saved": "已保存"
   }
 }

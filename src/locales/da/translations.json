@@ -367,6 +367,7 @@
     "error": "Fejl",
     "success": "Succes",
     "warning": "Advarsel",
-    "info": "Info"
+    "info": "Info",
+    "saved": "Gemt"
   }
 }
