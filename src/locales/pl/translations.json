@@ -96,7 +96,7 @@
     },
     "recreate": {
       "title": "Odtwórz",
-      "subtitle": "Pozwól Clever odtworzyć twój obraz"
+      "subtitle": "Możesz pominąć, jeśli wolisz"
     },
     "colorize": {
       "title": "Koloruj",
@@ -202,7 +202,8 @@
   },
   "onboarding": {
     "welcome": {
-      "title": "Witaj w Clever",
+      "title": "Witaj w",
+      "appName": "Clever!",
       "subtitle": "Przekształć swoje zdjęcia dzięki AI",
       "getStarted": "Zacznij",
       "terms": "Kontynuując, zgadzasz się z naszymi",
@@ -211,8 +212,8 @@
       "privacyPolicy": "Polityką Prywatności"
     },
     "permissions": {
-      "title": "Pozwól na Dostęp",
-      "subtitle": "Potrzebujemy uprawnienia do dostępu do twoich zdjęć",
+      "title": "Pozwól na Dostęp do Zdjęć",
+      "subtitle": "Możesz pominąć, jeśli wolisz",
       "photoAccess": "Włącz Dostęp do Zdjęć",
       "cameraAccess": "Włącz Dostęp do Kamery",
       "notifications": "Włącz Powiadomienia",

@@ -211,8 +211,8 @@
       "privacyPolicy": "Politikom Privatnosti"
     },
     "permissions": {
-      "title": "Dozvoli Pristup",
-      "subtitle": "Trebamo dozvolu za pristup vašim fotografijama",
+      "title": "Dozvoli Pristup Fotografijama",
+      "subtitle": "Možete preskočiti ovo ako želite",
       "photoAccess": "Omogući Pristup Fotografijama",
       "cameraAccess": "Omogući Pristup Kameri",
       "notifications": "Omogući Obavještenja",

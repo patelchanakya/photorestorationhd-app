@@ -185,6 +185,7 @@ class TranslationManager {
       return key;
     }
 
+
     // Replace parameters if provided
     if (params) {
       let result = translation;

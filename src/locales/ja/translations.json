@@ -197,7 +197,8 @@
   },
   "onboarding": {
     "welcome": {
-      "title": "Cleverへようこそ",
+      "title": "ようこそ",
+      "appName": "Clever!",
       "subtitle": "AIで写真を変換",
       "getStarted": "始める",
       "terms": "続行することで、当社の",
@@ -206,8 +207,8 @@
       "privacyPolicy": "プライバシーポリシー"
     },
     "permissions": {
-      "title": "アクセス許可",
-      "subtitle": "写真にアクセスするための許可が必要です",
+      "title": "写真アクセス許可",
+      "subtitle": "必要に応じてスキップできます",
       "photoAccess": "写真アクセスを有効化",
       "cameraAccess": "カメラアクセスを有効化",
       "notifications": "通知を有効化",

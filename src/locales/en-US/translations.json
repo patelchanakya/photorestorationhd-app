@@ -207,7 +207,7 @@
     },
     "permissions": {
       "title": "Let's get you\nstarted!",
-      "subtitle": "Allow photo access to get the most out of Clever.",
+      "subtitle": "You can skip this if you prefer",
       "note": "You can always change this in your device settings",
       "continue": "Continue",
       "requestingAccess": "Requesting Access..."

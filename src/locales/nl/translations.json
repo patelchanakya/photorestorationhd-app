@@ -202,7 +202,8 @@
   },
   "onboarding": {
     "welcome": {
-      "title": "Welkom bij Clever",
+      "title": "Welkom bij",
+      "appName": "Clever!",
       "subtitle": "Transformeer je foto's met AI",
       "getStarted": "Aan de Slag",
       "terms": "Door door te gaan ga je akkoord met onze",
@@ -211,8 +212,8 @@
       "privacyPolicy": "Privacybeleid"
     },
     "permissions": {
-      "title": "Sta Toegang Toe",
-      "subtitle": "We hebben toestemming nodig om toegang te krijgen tot je foto's",
+      "title": "Sta Foto Toegang Toe",
+      "subtitle": "Je kunt dit overslaan als je dat wilt",
       "photoAccess": "Foto Toegang Inschakelen",
       "cameraAccess": "Camera Toegang Inschakelen",
       "notifications": "Meldingen Inschakelen",

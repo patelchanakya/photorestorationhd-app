@@ -170,7 +170,7 @@ export function PermissionsScreen({ onContinue }: PermissionsScreenProps) {
 
         {/* Body Text */}
         <Animated.View style={[
-          { marginBottom: ONBOARDING_SPACING.lg }, 
+          { marginBottom: ONBOARDING_SPACING.xl }, 
           bodyAnimatedStyle
         ]}>
           <Text style={{ 
@@ -179,27 +179,11 @@ export function PermissionsScreen({ onContinue }: PermissionsScreenProps) {
             textAlign: 'left',
             lineHeight: 26,
           }}>
-            {t('onboarding.permissions.subtitle')}
+{t('onboarding.permissions.subtitle')}
           </Text>
         </Animated.View>
 
-        {/* Helper Note */}
-        <Animated.View style={[
-          { marginBottom: ONBOARDING_SPACING.lg }, 
-          noteAnimatedStyle
-        ]}>
-          <Text style={{ 
-            fontSize: ONBOARDING_TYPOGRAPHY.sm, 
-            color: ONBOARDING_COLORS.textDisabled,
-            textAlign: 'left',
-            lineHeight: 20,
-            fontStyle: 'italic',
-          }}>
-            {t('onboarding.permissions.note')}
-          </Text>
-        </Animated.View>
-
-        {/* Continue Button */}
+        {/* Buttons */}
         <Animated.View style={[{ width: '100%' }, buttonAnimatedStyle]}>
           <OnboardingButton
             title={isRequesting ? t('onboarding.permissions.requestingAccess') : t('onboarding.permissions.continue')}
@@ -207,6 +191,14 @@ export function PermissionsScreen({ onContinue }: PermissionsScreenProps) {
             variant="primary"
             size="large"
             disabled={isRequesting}
+            style={{ width: '100%', marginBottom: ONBOARDING_SPACING.md }}
+          />
+          
+          <OnboardingButton
+            title="Skip"
+            onPress={() => onContinue()}
+            variant="secondary"
+            size="large"
             style={{ width: '100%' }}
           />
         </Animated.View>

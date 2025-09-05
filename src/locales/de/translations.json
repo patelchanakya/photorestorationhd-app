@@ -212,7 +212,7 @@
     },
     "permissions": {
       "title": "Lassen Sie uns beginnen!",
-      "subtitle": "Erlauben Sie Foto-Zugriff, um das Beste aus Clever herauszuholen.",
+      "subtitle": "Sie können dies überspringen, wenn Sie möchten",
       "note": "Sie können dies jederzeit in den Geräteeinstellungen ändern",
       "continue": "Fortfahren",
       "requestingAccess": "Zugriff wird angefordert..."

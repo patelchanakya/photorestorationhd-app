@@ -88,27 +88,27 @@
   "magic": {
     "waterDamage": {
       "title": "Water Damage",
-      "subtitle": "You can skip this if you prefer"
+      "subtitle": "Remove water damage and stains"
     },
     "clarify": {
       "title": "Clarify",
-      "subtitle": "You can skip this if you prefer"
+      "subtitle": "Remove blur, sharpen details"
     },
     "recreate": {
       "title": "Recreate",
-      "subtitle": "You can skip this if you prefer"
+      "subtitle": "Let Clever recreate your image"
     },
     "colorize": {
       "title": "Colourise",
-      "subtitle": "You can skip this if you prefer"
+      "subtitle": "Add colours to B&W photos"
     },
     "descratch": {
       "title": "Descratch",
-      "subtitle": "You can skip this if you prefer"
+      "subtitle": "Remove scratches & marks"
     },
     "brighten": {
       "title": "Brighten",
-      "subtitle": "You can skip this if you prefer"
+      "subtitle": "Fix lighting & exposure"
     },
     "requestFeature": {
       "title": "Request a Feature",
@@ -204,7 +204,7 @@
     "welcome": {
       "title": "Welcome to",
       "appName": "Clever!",
-      "subtitle": "You can skip this if you prefer",
+      "subtitle": "Transform your photos with AI",
       "getStarted": "Get Started",
       "terms": "By continuing, you agree to our",
       "termsOfService": "Terms of Service",
@@ -212,8 +212,8 @@
       "privacyPolicy": "Privacy Policy"
     },
     "permissions": {
-      "title": "Allow Photo Access",
-      "subtitle": "You can skip this if you prefer",
+      "title": "Allow Access",
+      "subtitle": "We need permission to access your photos",
       "photoAccess": "Enable Photo Access",
       "cameraAccess": "Enable Camera Access",
       "notifications": "Enable Notifications",
@@ -263,7 +263,7 @@
       "beachBackgroundDesc": "Beautiful ocean and sand scene",
       "noneOfAbove": "None of the Above",
       "noneOfAboveDesc": "Skip and explore the app",
-      "subtitle": "You can skip this if you prefer",
+      "subtitle": "Select what you're ready to do",
       "continue": "Continue",
       "customPromptPlaceholder": "What would you like to do with your photo?",
       "customprompt": "Choose Your Own",
@@ -316,7 +316,7 @@
     },
     "community": {
       "title": "Join our community",
-      "subtitle": "You can skip this if you prefer",
+      "subtitle": "Connect with us on social media",
       "followFacebook": "Follow us on Facebook"
     },
     "setup": {

@@ -202,7 +202,8 @@
   },
   "onboarding": {
     "welcome": {
-      "title": "欢迎使用 Clever",
+      "title": "欢迎使用",
+      "appName": "Clever!",
       "subtitle": "用 AI 转换您的照片",
       "getStarted": "开始",
       "terms": "继续即表示您同意我们的",
@@ -211,8 +212,8 @@
       "privacyPolicy": "隐私政策"
     },
     "permissions": {
-      "title": "允许访问",
-      "subtitle": "我们需要权限访问您的照片",
+      "title": "允许照片访问",
+      "subtitle": "如果您愿意，可以跳过此步骤",
       "photoAccess": "启用照片访问",
       "cameraAccess": "启用相机访问",
       "notifications": "启用通知",

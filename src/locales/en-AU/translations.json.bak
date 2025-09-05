@@ -16,7 +16,7 @@
       "waterDamage": "Water Damage",
       "clarify": "Clarify",
       "recreate": "Recreate",
-      "colorize": "Colorise",
+      "colorize": "Colorize",
       "descratch": "Descratch",
       "brighten": "Brighten"
     },
@@ -24,7 +24,7 @@
       "proMember": {
         "title": "Pro Member ✓",
         "message": "Your subscription is active! You have unlimited access to all features.",
-        "button": "Brilliant!"
+        "button": "Great!"
       },
       "subscriptionStatus": {
         "title": "Subscription Status",
@@ -50,7 +50,7 @@
       "welcomeToPro": {
         "title": "Welcome to Pro!",
         "message": "You now have unlimited access!",
-        "button": "Brilliant!"
+        "button": "Awesome!"
       }
     }
   },
@@ -79,7 +79,7 @@
   },
   "outfits": {
     "fixClothes": "Fix Clothes",
-    "changeColor": "Change Colour",
+    "changeColor": "Change Color",
     "jobInterview": "Job Interview",
     "weddingOutfit": "Wedding Outfit",
     "professional": "Professional",
@@ -88,34 +88,34 @@
   "magic": {
     "waterDamage": {
       "title": "Water Damage",
-      "subtitle": "You can skip this if you prefer"
+      "subtitle": "Remove water damage and stains"
     },
     "clarify": {
       "title": "Clarify",
-      "subtitle": "You can skip this if you prefer"
+      "subtitle": "Remove blur, sharpen details"
     },
     "recreate": {
       "title": "Recreate",
-      "subtitle": "You can skip this if you prefer"
+      "subtitle": "Let Clever recreate your image"
     },
     "colorize": {
-      "title": "Colourise",
-      "subtitle": "You can skip this if you prefer"
+      "title": "Colorize",
+      "subtitle": "Add colors to B&W photos"
     },
     "descratch": {
       "title": "Descratch",
-      "subtitle": "You can skip this if you prefer"
+      "subtitle": "Remove scratches & marks"
     },
     "brighten": {
       "title": "Brighten",
-      "subtitle": "You can skip this if you prefer"
+      "subtitle": "Fix lighting & exposure"
     },
     "requestFeature": {
       "title": "Request a Feature",
       "prompt": "What feature would you like to see in Clever?",
       "thankYouTitle": "Thank You!",
       "thankYouMessage": "Your feature request has been submitted. We appreciate your feedback!",
-      "button": "Brilliant!",
+      "button": "Great!",
       "errorTitle": "Submission Failed",
       "errorMessage": "Unable to submit your request. Please try again.",
       "errorGeneric": "Something went wrong. Please try again."
@@ -139,7 +139,7 @@
       "restoration": "Restoration",
       "repair": "Repair",
       "unblur": "Unblur",
-      "colorize": "Colourise",
+      "colorize": "Colorize",
       "descratch": "Descratch",
       "enlighten": "Brighten",
       "background": "Background",
@@ -149,7 +149,7 @@
       "waterDamage": "Water Damage"
     },
     "processing": {
-      "analyzing": "Analysing photo...",
+      "analyzing": "Analyzing photo...",
       "processing": "Processing...",
       "enhancing": "Enhancing details...",
       "complete": "Complete",
@@ -204,7 +204,7 @@
     "welcome": {
       "title": "Welcome to",
       "appName": "Clever!",
-      "subtitle": "You can skip this if you prefer",
+      "subtitle": "Transform your photos with AI",
       "getStarted": "Get Started",
       "terms": "By continuing, you agree to our",
       "termsOfService": "Terms of Service",
@@ -212,8 +212,8 @@
       "privacyPolicy": "Privacy Policy"
     },
     "permissions": {
-      "title": "Allow Photo Access",
-      "subtitle": "You can skip this if you prefer",
+      "title": "Allow Access",
+      "subtitle": "We need permission to access your photos",
       "photoAccess": "Enable Photo Access",
       "cameraAccess": "Enable Camera Access",
       "notifications": "Enable Notifications",
@@ -263,7 +263,7 @@
       "beachBackgroundDesc": "Beautiful ocean and sand scene",
       "noneOfAbove": "None of the Above",
       "noneOfAboveDesc": "Skip and explore the app",
-      "subtitle": "You can skip this if you prefer",
+      "subtitle": "Select what you're ready to do",
       "continue": "Continue",
       "customPromptPlaceholder": "What would you like to do with your photo?",
       "customprompt": "Choose Your Own",
@@ -316,7 +316,7 @@
     },
     "community": {
       "title": "Join our community",
-      "subtitle": "You can skip this if you prefer",
+      "subtitle": "Connect with us on social media",
       "followFacebook": "Follow us on Facebook"
     },
     "setup": {

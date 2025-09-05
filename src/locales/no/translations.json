@@ -202,7 +202,8 @@
   },
   "onboarding": {
     "welcome": {
-      "title": "Velkommen til Clever",
+      "title": "Velkommen til",
+      "appName": "Clever!",
       "subtitle": "Transformer bildene dine med AI",
       "getStarted": "Kom i gang",
       "terms": "Ved å fortsette godtar du våre",
@@ -211,8 +212,8 @@
       "privacyPolicy": "Personvernerklæring"
     },
     "permissions": {
-      "title": "Tillat tilgang",
-      "subtitle": "Vi trenger tillatelse for å få tilgang til bildene dine",
+      "title": "Tillat tilgang til bilder",
+      "subtitle": "Du kan hoppe over dette hvis du foretrækker",
       "photoAccess": "Aktiver bildetilgang",
       "cameraAccess": "Aktiver kameratilgang",
       "notifications": "Aktiver varsler",

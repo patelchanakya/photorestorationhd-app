@@ -69,13 +69,7 @@ export default function PhotoMagicUploadScreen() {
     setIsSelecting(true);
 
     try {
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
-      if (permissionResult.granted === false) {
-        Alert.alert(t('photoMagic.permissionRequired'), t('photoMagic.photoAccessMessage'));
-        return;
-      }
-
+      // Launch photo picker - works with limited access even if permissions denied
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         allowsEditing: false,

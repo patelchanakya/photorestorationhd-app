@@ -207,7 +207,7 @@
     },
     "permissions": {
       "title": "Hadi başlayalım!",
-      "subtitle": "Clever'dan en iyi şekilde yararlanmak için fotoğraf erişimine izin verin.",
+      "subtitle": "İsterseniz bu adımı atlayabilirsiniz",
       "note": "Bunu her zaman cihaz ayarlarınızdan değiştirebilirsiniz",
       "continue": "Devam Et",
       "requestingAccess": "Erişim İsteniyor..."

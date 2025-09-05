@@ -202,7 +202,8 @@
   },
   "onboarding": {
     "welcome": {
-      "title": "Clever에 오신 것을 환영합니다",
+      "title": "에 오신 것을 환영합니다",
+      "appName": "Clever!",
       "subtitle": "AI로 사진을 변환하세요",
       "getStarted": "시작하기",
       "terms": "계속하면 다음에 동의하게 됩니다",
@@ -211,8 +212,8 @@
       "privacyPolicy": "개인정보 보호정책"
     },
     "permissions": {
-      "title": "액세스 허용",
-      "subtitle": "사진에 액세스할 수 있는 권한이 필요합니다",
+      "title": "사진 액세스 허용",
+      "subtitle": "원하신다면 이 단계를 건너뛸 수 있습니다",
       "photoAccess": "사진 액세스 활성화",
       "cameraAccess": "카메라 액세스 활성화",
       "notifications": "알림 활성화",

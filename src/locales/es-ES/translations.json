@@ -212,7 +212,7 @@
     },
     "permissions": {
       "title": "¡Empecemos!",
-      "subtitle": "Permite el acceso a fotos para aprovechar al máximo Clever.",
+      "subtitle": "Puedes omitir esto si prefieres",
       "note": "Siempre puedes cambiar esto en la configuración de tu dispositivo",
       "continue": "Continuar",
       "requestingAccess": "Solicitando Acceso..."

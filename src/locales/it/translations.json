@@ -202,7 +202,8 @@
   },
   "onboarding": {
     "welcome": {
-      "title": "Benvenuto in Clever",
+      "title": "Benvenuto in",
+      "appName": "Clever!",
       "subtitle": "Trasforma le tue foto con l'IA",
       "getStarted": "Inizia",
       "terms": "Continuando, accetti i nostri",
@@ -211,8 +212,8 @@
       "privacyPolicy": "Politica Privacy"
     },
     "permissions": {
-      "title": "Consenti Accesso",
-      "subtitle": "Abbiamo bisogno del permesso per accedere alle tue foto",
+      "title": "Consenti Accesso alle Foto",
+      "subtitle": "Puoi saltare questo se preferisci",
       "photoAccess": "Abilita Accesso Foto",
       "cameraAccess": "Abilita Accesso Fotocamera",
       "notifications": "Abilita Notifiche",

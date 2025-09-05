@@ -211,8 +211,8 @@
       "privacyPolicy": "Tietosuojakäytäntö"
     },
     "permissions": {
-      "title": "Salli Pääsy",
-      "subtitle": "Tarvitsemme luvan päästä käsiksi kuvihisi",
+      "title": "Salli Kuviin Pääsy",
+      "subtitle": "Voit ohittaa tämän jos haluat",
       "photoAccess": "Ota Kuvien Käyttö Käyttöön",
       "cameraAccess": "Ota Kameran Käyttö Käyttöön",
       "notifications": "Ota Ilmoitukset Käyttöön",

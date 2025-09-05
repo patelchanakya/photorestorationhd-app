@@ -211,8 +211,8 @@
       "privacyPolicy": "Politique de Confidentialité"
     },
     "permissions": {
-      "title": "Autoriser l'Accès",
-      "subtitle": "Nous avons besoin de permission pour accéder à vos photos",
+      "title": "Autoriser l'Accès Photo",
+      "subtitle": "Vous pouvez ignorer cela si vous préférez",
       "photoAccess": "Activer Accès Photos",
       "cameraAccess": "Activer Accès Caméra",
       "notifications": "Activer Notifications",

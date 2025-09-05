@@ -18,11 +18,7 @@ export function ModeChips() {
 
   const openPicker = async (mode: Mode) => {
     try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        return;
-      }
+      // Launch photo picker - works with limited access even if permissions denied
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         allowsEditing: false,
