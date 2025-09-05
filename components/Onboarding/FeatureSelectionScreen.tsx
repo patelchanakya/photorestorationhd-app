@@ -132,6 +132,7 @@ export function FeatureSelectionScreen({ onContinue }: FeatureSelectionScreenPro
               customPrompt={customPrompt}
               setCustomPrompt={setCustomPrompt}
               customInputRef={item.isCustomPrompt ? customInputRef : undefined}
+              t={t}
             />
           )}
           showsVerticalScrollIndicator={false}
@@ -223,9 +224,10 @@ interface FeatureCardProps {
   customPrompt: string;
   setCustomPrompt: (prompt: string) => void;
   customInputRef?: React.RefObject<any>;
+  t: (key: string) => string;
 }
 
-const FeatureCard = React.memo<FeatureCardProps>(({ feature, isSelected, onSelect, index, customPrompt, setCustomPrompt, customInputRef }) => {
+const FeatureCard = React.memo<FeatureCardProps>(({ feature, isSelected, onSelect, index, customPrompt, setCustomPrompt, customInputRef, t }) => {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(20);

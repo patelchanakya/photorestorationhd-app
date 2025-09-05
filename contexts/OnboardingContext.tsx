@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { onboardingTrackingService } from '@/services/onboardingTracking';
 import { onboardingUtils } from '@/utils/onboarding';
-import { Platform } from 'react-native';
 import * as Device from 'expo-device';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 
 export type OnboardingScreen = 'welcome' | 'permissions' | 'features' | 'preview' | 'community' | 'setup';
 

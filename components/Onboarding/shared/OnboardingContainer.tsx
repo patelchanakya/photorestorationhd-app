@@ -6,7 +6,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-na
 import { ONBOARDING_COLORS } from './constants';
 
 interface OnboardingContainerProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   style?: ViewStyle;
   showGradient?: boolean;
 }

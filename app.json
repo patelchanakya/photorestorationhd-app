@@ -2,7 +2,7 @@
   "expo": {
     "name": "Clever",
     "slug": "photorestorationhd-app",
-    "version": "2.0.2",
+    "version": "2.0.3",
     "sdkVersion": "53.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -21,7 +21,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.chanakyap.photorestorationhdapp",
-      "buildNumber": "49",
+      "buildNumber": "50",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSPhotoLibraryAddUsageDescription": "This app needs access to your photo library to save restored photos.",
@@ -81,9 +81,19 @@
         "projectId": "1e1e5fa5-1114-4591-9765-2534344ca453"
       }
     },
-    "runtimeVersion": "2.0.2",
+    "runtimeVersion": "2.0.3",
     "updates": {
       "url": "https://u.expo.dev/1e1e5fa5-1114-4591-9765-2534344ca453"
+    },
+    "android": {
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_MEDIA_LOCATION"
+      ],
+      "package": "com.chanakyap.photorestorationhdapp"
     }
   }
 }

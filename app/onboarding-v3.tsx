@@ -1,19 +1,19 @@
-import React from 'react';
-import { useRouter } from 'expo-router';
+import { CommunityScreen } from '@/components/Onboarding/CommunityScreen';
+import { FeaturePreviewScreen } from '@/components/Onboarding/FeaturePreviewScreen';
+import { FeatureSelectionScreen } from '@/components/Onboarding/FeatureSelectionScreen';
+import { PermissionsScreen } from '@/components/Onboarding/PermissionsScreen';
+import { SetupAnimationScreen } from '@/components/Onboarding/SetupAnimationScreen';
+import { WelcomeScreen } from '@/components/Onboarding/WelcomeScreen';
+import { OnboardingProvider, useOnboardingContext } from '@/contexts/OnboardingContext';
+import { useOnboardingTracking } from '@/hooks/useOnboardingTracking';
+import { onboardingTrackingService } from '@/services/onboardingTracking';
+import { permissionsService } from '@/services/permissions';
 import { presentPaywall } from '@/services/revenuecat';
 import { useQuickEditStore } from '@/store/quickEditStore';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { OnboardingProvider, useOnboardingContext } from '@/contexts/OnboardingContext';
 import { ONBOARDING_FEATURES } from '@/utils/onboarding';
-import { onboardingTrackingService } from '@/services/onboardingTracking';
-import { useOnboardingTracking } from '@/hooks/useOnboardingTracking';
-import { WelcomeScreen } from '@/components/Onboarding/WelcomeScreen';
-import { PermissionsScreen } from '@/components/Onboarding/PermissionsScreen';
-import { FeatureSelectionScreen } from '@/components/Onboarding/FeatureSelectionScreen';
-import { FeaturePreviewScreen } from '@/components/Onboarding/FeaturePreviewScreen';
-import { CommunityScreen } from '@/components/Onboarding/CommunityScreen';
-import { SetupAnimationScreen } from '@/components/Onboarding/SetupAnimationScreen';
-import { permissionsService } from '@/services/permissions';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import React from 'react';
 
 const FEATURE_MODE_MAP: Record<string, string> = {
   // Special Options
