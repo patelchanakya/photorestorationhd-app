@@ -166,12 +166,12 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
   // Skip Option (Last)
   {
     id: 'none_above',
-    name: 'None of the Above',
+    name: 'Explore App',
     description: 'Skip and explore the app',
     icon: 'arrow.right',
     mapsTo: 'skip',
     isSkip: true,
-    gradient: ['#6b7280', '#9ca3af']
+    gradient: ['#3b82f6', '#60a5fa']
   }
 ];
 

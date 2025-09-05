@@ -224,7 +224,7 @@
       "requestingAccess": "Requesting Access..."
     },
     "features": {
-      "title": "What brings you here?",
+      "title": "What do you want to try?",
       "subtitle": "Select what you're ready to do",
       "continue": "Continue",
       "selectOption": "Choose your feature",
@@ -270,7 +270,7 @@
       "brightenDesc": "Illuminate underexposed images",
       "beachBackground": "Beach Background",
       "beachBackgroundDesc": "Beautiful ocean and sand scene",
-      "noneOfAbove": "None of the Above",
+      "noneOfAbove": "Explore App",
       "noneOfAboveDesc": "Skip and explore the app",
       "clearskin": "Clear Skin",
       "clearskinDesc": "Remove acne, blemishes & imperfections",
@@ -306,7 +306,7 @@
       "brightenphotosDesc": "Illuminate underexposed images",
       "beachbackground": "Beach Background",
       "beachbackgroundDesc": "Beautiful ocean and sand scene",
-      "noneabove": "None of the Above",
+      "noneabove": "Explore App",
       "noneaboveDesc": "Skip and explore the app"
     },
     "preview": {

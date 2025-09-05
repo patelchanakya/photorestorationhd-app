@@ -19,6 +19,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OnboardingButton } from './shared/OnboardingButton';
 import { OnboardingContainer } from './shared/OnboardingContainer';
+import { FeatureTileGrid } from './FeatureTileGrid';
 import { ONBOARDING_BORDER_RADIUS, ONBOARDING_COLORS, ONBOARDING_SPACING, ONBOARDING_TYPOGRAPHY } from './shared/constants';
 
 interface FeatureSelectionScreenProps {
@@ -36,18 +37,6 @@ export const FeatureSelectionScreen = React.memo(function FeatureSelectionScreen
   const screenStartTime = React.useRef<number>(Date.now());
   const featureSelectionStartTime = React.useRef<number | null>(null);
 
-  // Helper function to get translated feature name and description
-  const getTranslatedFeature = (feature: typeof ONBOARDING_FEATURES[0]) => {
-    const translationKey = feature.id.replace(/_/g, '');
-    const nameKey = `onboarding.features.${translationKey}`;
-    const descKey = `onboarding.features.${translationKey}Desc`;
-    
-    return {
-      ...feature,
-      name: t(nameKey) || feature.name,
-      description: t(descKey) || feature.description
-    };
-  };
   
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(20);
@@ -222,7 +211,13 @@ export const FeatureSelectionScreen = React.memo(function FeatureSelectionScreen
       return selectText !== 'onboarding.features.selectOption' ? selectText : 'Choose your feature';
     }
     
-    const feature = getTranslatedFeature(ONBOARDING_FEATURES.find(f => f.id === selectedFeature)!);
+    const feature = ONBOARDING_FEATURES.find(f => f.id === selectedFeature);
+    
+    // Special case for "none_above" - show "Explore App"
+    if (selectedFeature === 'none_above') {
+      return 'Explore App →';
+    }
+    
     const startWithText = t('onboarding.features.startWith');
     const startWith = startWithText !== 'onboarding.features.startWith' ? startWithText : 'Start with';
     
@@ -230,7 +225,11 @@ export const FeatureSelectionScreen = React.memo(function FeatureSelectionScreen
       return `${startWith} Custom Prompt →`;
     }
     
-    return `${startWith} ${feature.name} →`;
+    const translationKey = feature?.id.replace(/_/g, '');
+    const nameKey = `onboarding.features.${translationKey}`;
+    const featureName = t(nameKey) || feature?.name || 'Feature';
+    
+    return `${startWith} ${featureName} →`;
   };
 
   return (
@@ -239,28 +238,14 @@ export const FeatureSelectionScreen = React.memo(function FeatureSelectionScreen
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View style={{ flex: 1 }}>
-        {/* Feature List - Full Screen */}
-        <FlatList
-          data={ONBOARDING_FEATURES}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item, index }) => (
-            <FeatureCard
-              feature={getTranslatedFeature(item)}
-              isSelected={selectedFeature === item.id}
-              onSelect={() => handleFeatureSelect(item.id)}
-              index={index}
-              customPrompt={customPrompt}
-              setCustomPrompt={setCustomPrompt}
-              customInputRef={item.isCustomPrompt ? customInputRef : undefined}
-              t={t}
-            />
-          )}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ 
-            paddingTop: insets.top + 80, // Reduced spacing above list
-            paddingBottom: 120, 
-          }}
+        <View style={{ flex: 1, paddingTop: insets.top + 80, paddingBottom: 120 }}>
+        {/* Feature Tile Grid */}
+        <FeatureTileGrid
+          selectedFeature={selectedFeature}
+          onFeatureSelect={handleFeatureSelect}
+          customPrompt={customPrompt}
+          setCustomPrompt={setCustomPrompt}
+          customInputRef={customInputRef}
         />
 
         {/* Fixed Blurred Header - Flush with Top */}
@@ -325,259 +310,3 @@ export const FeatureSelectionScreen = React.memo(function FeatureSelectionScreen
     </OnboardingContainer>
   );
 });
-
-interface FeatureCardProps {
-  feature: typeof ONBOARDING_FEATURES[0];
-  isSelected: boolean;
-  onSelect: () => void;
-  index: number;
-  customPrompt: string;
-  setCustomPrompt: (prompt: string) => void;
-  customInputRef?: React.RefObject<any>;
-  t: (key: string) => string;
-}
-
-const FeatureCard = React.memo<FeatureCardProps>(({ feature, isSelected, onSelect, index, customPrompt, setCustomPrompt, customInputRef, t }) => {
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(20);
-  const backgroundColor = useSharedValue(0);
-  const flashOpacity = useSharedValue(0);
-  
-  // Only create input animation values for custom prompt cards
-  const inputHeight = feature.isCustomPrompt ? useSharedValue(0) : null;
-  const inputOpacity = feature.isCustomPrompt ? useSharedValue(0) : null;
-
-  React.useEffect(() => {
-    // Faster wave entrance animation
-    const delay = index * 10; // Reduced from 25ms to 10ms
-    opacity.value = withDelay(delay + 50, withTiming(1, { duration: 250 })); // Reduced from 150ms to 50ms
-    translateY.value = withDelay(delay + 50, withSpring(0, { damping: 12, stiffness: 250 }));
-  }, [index]);
-
-  React.useEffect(() => {
-    backgroundColor.value = withTiming(isSelected ? 1 : 0, { duration: 200 });
-    
-    // Scale up slightly when selected for better visual feedback
-    if (isSelected) {
-      scale.value = withSpring(1.02, { damping: 15, stiffness: 200 });
-      
-      // Flash effect when first selected
-      flashOpacity.value = withSequence(
-        withTiming(0.4, { duration: 100 }),
-        withTiming(0, { duration: 300 })
-      );
-    } else {
-      scale.value = withSpring(1, { damping: 15, stiffness: 200 });
-      flashOpacity.value = withTiming(0, { duration: 100 });
-    }
-    
-    // Only handle expansion animations if this is actually a custom prompt card
-    if (feature.isCustomPrompt && inputHeight && inputOpacity) {
-      if (isSelected) {
-        // Smooth expansion with consistent timing
-        inputOpacity.value = withTiming(1, { duration: 200 });
-        inputHeight.value = withTiming(90, { duration: 200 });
-      } else {
-        // Fast, smooth collapse to prevent jumping
-        inputOpacity.value = withTiming(0, { duration: 100 });
-        inputHeight.value = withTiming(0, { duration: 100 });
-      }
-    }
-  }, [isSelected]);
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: opacity.value,
-      transform: [{ translateY: translateY.value }, { scale: scale.value }],
-      backgroundColor: isSelected ? ONBOARDING_COLORS.accentBackground : ONBOARDING_COLORS.cardBackground,
-      shadowColor: ONBOARDING_COLORS.accent,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: isSelected ? 0.3 : 0,
-      shadowRadius: isSelected ? 8 : 0,
-      elevation: isSelected ? 4 : 0,
-    };
-  });
-
-  const handlePressIn = () => {
-    scale.value = withSpring(0.96, { damping: 15, stiffness: 300 });
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 12, stiffness: 250 });
-  };
-
-  const inputAnimatedStyle = feature.isCustomPrompt && inputHeight && inputOpacity 
-    ? useAnimatedStyle(() => ({
-        height: inputHeight.value,
-        opacity: inputOpacity.value,
-      }))
-    : null;
-
-  const flashAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: flashOpacity.value,
-  }));
-
-  return (
-    <TouchableOpacity
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      onPress={onSelect}
-      activeOpacity={1}
-      style={{ 
-        marginBottom: 1, 
-        marginHorizontal: ONBOARDING_SPACING.lg,
-      }}
-    >
-      <Animated.View 
-        style={[
-          {
-            padding: ONBOARDING_SPACING.lg,
-            borderLeftWidth: isSelected ? 4 : 0,
-            borderLeftColor: isSelected ? ONBOARDING_COLORS.accent : 'transparent',
-            borderRightWidth: isSelected ? 1 : 0,
-            borderTopWidth: isSelected ? 1 : 0,
-            borderBottomWidth: isSelected ? 1 : 1,
-            borderRightColor: isSelected ? ONBOARDING_COLORS.borderActive : 'transparent',
-            borderTopColor: isSelected ? ONBOARDING_COLORS.borderActive : 'transparent',
-            borderBottomColor: isSelected ? ONBOARDING_COLORS.borderActive : 'rgba(255, 255, 255, 0.08)',
-            borderRadius: isSelected ? ONBOARDING_BORDER_RADIUS.md : 0,
-            marginHorizontal: isSelected ? ONBOARDING_SPACING.xs : 0,
-            paddingLeft: isSelected ? ONBOARDING_SPACING.lg - 4 : ONBOARDING_SPACING.lg,
-            position: 'relative',
-          },
-          animatedStyle
-        ]}
-      >
-        {/* Flash overlay for selection feedback */}
-        <Animated.View
-          style={[
-            {
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: ONBOARDING_COLORS.accent,
-              borderRadius: isSelected ? ONBOARDING_BORDER_RADIUS.md : 0,
-              pointerEvents: 'none',
-            },
-            flashAnimatedStyle
-          ]}
-        />
-        {/* Main Content Row */}
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          {/* Icon */}
-          <View style={{
-            width: 40,
-            alignItems: 'center',
-            marginRight: ONBOARDING_SPACING.lg
-          }}>
-            <IconSymbol 
-              name={feature.icon as any} 
-              size={24} 
-              color={isSelected ? ONBOARDING_COLORS.accent : ONBOARDING_COLORS.textMuted}
-            />
-          </View>
-          
-          {/* Text Content */}
-          <View style={{ flex: 1 }}>
-            <Text style={{ 
-              fontSize: ONBOARDING_TYPOGRAPHY.base, 
-              fontFamily: 'Lexend-SemiBold', 
-              color: isSelected ? ONBOARDING_COLORS.textPrimary : ONBOARDING_COLORS.textSecondary,
-              marginBottom: ONBOARDING_SPACING.xs,
-            }}>
-              {feature.name}
-            </Text>
-            <Text style={{ 
-              fontSize: ONBOARDING_TYPOGRAPHY.sm, 
-              color: isSelected ? ONBOARDING_COLORS.accent : ONBOARDING_COLORS.textMuted,
-              lineHeight: 18,
-            }}>
-              {feature.description}
-            </Text>
-          </View>
-          
-          {/* Selection Indicator - Always reserve space */}
-          <View style={{
-            marginLeft: ONBOARDING_SPACING.sm,
-            width: 20,
-            alignItems: 'center'
-          }}>
-            {isSelected && (
-              <IconSymbol 
-                name="checkmark" 
-                size={20} 
-                color={ONBOARDING_COLORS.accent}
-              />
-            )}
-          </View>
-        </View>
-        
-        {/* Expandable Custom Prompt Input */}
-        {feature.isCustomPrompt && (
-          <Animated.View style={[
-            {
-              marginTop: ONBOARDING_SPACING.sm,
-              overflow: 'hidden',
-            },
-            inputAnimatedStyle || {}
-          ]}>
-            <View style={{
-              backgroundColor: 'rgba(0, 0, 0, 0.2)',
-              borderRadius: ONBOARDING_BORDER_RADIUS.md,
-              padding: ONBOARDING_SPACING.sm,
-              borderWidth: 1,
-              borderColor: 'rgba(250, 204, 21, 0.2)',
-            }}>
-              <TextInput
-                ref={customInputRef}
-                value={customPrompt}
-                onChangeText={(text) => {
-                  setCustomPrompt(text);
-                  // Track custom prompt typing (fire and forget)
-                  if (text.length > 0 && customPrompt.length === 0) {
-                    analyticsService.track('onboarding_custom_prompt_started_typing', {
-                      onboarding_version: 'v3'
-                    });
-                  }
-                }}
-                onBlur={() => {
-                  // Track custom prompt input blur with length (fire and forget)
-                  if (customPrompt.trim().length > 0) {
-                    analyticsService.track('onboarding_custom_prompt_input_blur', {
-                      prompt_length: customPrompt.trim().length.toString(),
-                      onboarding_version: 'v3'
-                    });
-                  }
-                }}
-                placeholder={t('onboarding.features.customPromptPlaceholder')}
-                placeholderTextColor={ONBOARDING_COLORS.textMuted}
-                multiline
-                maxLength={150}
-                style={{
-                  color: ONBOARDING_COLORS.textPrimary,
-                  fontSize: ONBOARDING_TYPOGRAPHY.sm,
-                  minHeight: 40,
-                  textAlignVertical: 'top',
-                }}
-                returnKeyType="done"
-                blurOnSubmit={true}
-              />
-              <Text style={{ 
-                fontSize: ONBOARDING_TYPOGRAPHY.xs,
-                color: ONBOARDING_COLORS.textDisabled,
-                textAlign: 'right',
-                marginTop: ONBOARDING_SPACING.xs,
-              }}>
-                {customPrompt.length}/150
-              </Text>
-            </View>
-          </Animated.View>
-        )}
-      </Animated.View>
-    </TouchableOpacity>
-  );
-});
-

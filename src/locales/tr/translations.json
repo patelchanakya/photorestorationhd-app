@@ -257,7 +257,7 @@
       "brightenDesc": "Illuminate underexposed images",
       "beachBackground": "Beach Background",
       "beachBackgroundDesc": "Beautiful ocean and sand scene",
-      "noneOfAbove": "None of the Above",
+      "noneOfAbove": "Explore App",
       "noneOfAboveDesc": "Skip and explore the app",
       "customprompt": "Choose Your Own",
       "custompromptDesc": "Describe what you want to do with your photo",
@@ -295,7 +295,7 @@
       "brightenphotosDesc": "Illuminate underexposed images",
       "beachbackground": "Beach Background",
       "beachbackgroundDesc": "Beautiful ocean and sand scene",
-      "noneabove": "None of the Above",
+      "noneabove": "Explore App",
       "noneaboveDesc": "Skip and explore the app"
     },
     "preview": {

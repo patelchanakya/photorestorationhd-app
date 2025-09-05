@@ -5,7 +5,7 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { Dimensions, Text, View } from 'react-native';
+import { Dimensions, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
     interpolate,
     useAnimatedStyle,
@@ -16,6 +16,7 @@ import Animated, {
     withSpring,
     withTiming
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OnboardingButton } from './shared/OnboardingButton';
 import { OnboardingContainer } from './shared/OnboardingContainer';
 import { PhotoGridBackground } from './shared/PhotoGridBackground';
@@ -28,9 +29,11 @@ interface PermissionsScreenProps {
 export const PermissionsScreen = React.memo(function PermissionsScreen({ onContinue }: PermissionsScreenProps) {
   const { t } = useTranslation();
   const [isRequesting, setIsRequesting] = React.useState(false);
+  const insets = useSafeAreaInsets();
   
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
   
+  const headerOpacity = useSharedValue(0);
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(20);
   const bodyOpacity = useSharedValue(0);
@@ -55,6 +58,8 @@ export const PermissionsScreen = React.memo(function PermissionsScreen({ onConti
     );
     
     // Faster animations with reduced stagger
+    headerOpacity.value = withTiming(1, { duration: 200 });
+    
     titleOpacity.value = withDelay(100, withTiming(1, { duration: 300 }));
     titleTranslateY.value = withDelay(100, withSpring(0, { damping: 15, stiffness: 200 }));
     
@@ -70,6 +75,10 @@ export const PermissionsScreen = React.memo(function PermissionsScreen({ onConti
     };
   });
 
+  const headerAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: headerOpacity.value,
+  }));
+
   const titleAnimatedStyle = useAnimatedStyle(() => ({
     opacity: titleOpacity.value,
     transform: [{ translateY: titleTranslateY.value }],
@@ -83,6 +92,14 @@ export const PermissionsScreen = React.memo(function PermissionsScreen({ onConti
   const buttonAnimatedStyle = useAnimatedStyle(() => ({
     opacity: buttonOpacity.value,
   }));
+
+  const handleSkip = () => {
+    // Track permission skip (fire and forget)
+    analyticsService.track('onboarding_permission_skipped', {
+      onboarding_version: 'v3'
+    });
+    onContinue();
+  };
 
   const handleContinue = async () => {
     setIsRequesting(true);
@@ -145,17 +162,46 @@ export const PermissionsScreen = React.memo(function PermissionsScreen({ onConti
 
   return (
     <OnboardingContainer>
-
       {/* Photo grid background */}
       <PhotoGridBackground width={screenWidth} height={screenHeight} />
 
-      {/* Content positioned lower on screen */}
-      <View style={{ 
-        flex: 1,
-        justifyContent: 'flex-end',
-        paddingHorizontal: ONBOARDING_SPACING.xxl,
-        paddingBottom: ONBOARDING_SPACING.huge, // Match other screens
-      }}>
+      <View style={{ flex: 1 }}>
+        {/* Header with Skip button */}
+        <Animated.View style={[
+          { 
+            flexDirection: 'row', 
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+            paddingHorizontal: 24,
+            paddingVertical: 16,
+          },
+          headerAnimatedStyle
+        ]}>
+          <TouchableOpacity 
+            onPress={handleSkip}
+            style={{ 
+              padding: 12,
+              minWidth: 60,
+              alignItems: 'center' 
+            }}
+          >
+            <Text style={{ 
+              fontSize: 16,
+              color: '#9CA3AF',
+              fontFamily: 'Lexend-Medium' 
+            }}>
+              Skip
+            </Text>
+          </TouchableOpacity>
+        </Animated.View>
+
+        {/* Content positioned lower on screen */}
+        <View style={{ 
+          flex: 1,
+          justifyContent: 'flex-end',
+          paddingHorizontal: ONBOARDING_SPACING.xxl,
+          paddingBottom: ONBOARDING_SPACING.huge, // Match other screens
+        }}>
         {/* Title */}
         <Animated.View style={[
           { 
@@ -196,27 +242,8 @@ export const PermissionsScreen = React.memo(function PermissionsScreen({ onConti
           </Text>
         </Animated.View>
 
-        {/* Buttons */}
+        {/* Continue Button */}
         <Animated.View style={[{ width: '100%' }, buttonAnimatedStyle]}>
-          <OnboardingButton
-            title="Skip"
-            onPress={() => {
-              // Track permission skip (fire and forget)
-              analyticsService.track('onboarding_permission_skipped', {
-                onboarding_version: 'v3'
-              });
-              onContinue();
-            }}
-            variant="secondary"
-            size="large"
-            style={{ 
-              width: '100%',
-              backgroundColor: 'transparent',
-              borderWidth: 0,
-              marginBottom: ONBOARDING_SPACING.md,
-            }}
-          />
-          
           <LinearGradient
             colors={[ONBOARDING_COLORS.accent, ONBOARDING_COLORS.accentDark]}
             style={{
@@ -236,6 +263,7 @@ export const PermissionsScreen = React.memo(function PermissionsScreen({ onConti
             />
           </LinearGradient>
         </Animated.View>
+        </View>
       </View>
     </OnboardingContainer>
   );
