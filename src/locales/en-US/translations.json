@@ -350,6 +350,7 @@
     }
   },
   "textEdit": {
+    "customTextEdits": "Custom text edits",
     "maxEffectsReached": "Maximum Effects Reached",
     "maxEffectsMessage": "You can apply up to 3 effects at once"
   },
