@@ -10,6 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 // Removed heavy blur to reduce memory/CPU
 import { ProUpgradeModal } from '@/components/ProUpgradeModal';
+import { PhotoLimitModal } from '@/components/PhotoLimitModal';
 import { SavingModal, SavingModalRef } from '@/components/SavingModal';
 import { analyticsService } from '@/services/analytics';
 import { BlurView } from 'expo-blur';
@@ -63,6 +64,7 @@ export function QuickEditSheet() {
   const [mediaLoading, setMediaLoading] = React.useState(false);
   const [imageError, setImageError] = React.useState(false);
   const [isLimitError, setIsLimitError] = React.useState(false);
+  const [showPhotoLimitModal, setShowPhotoLimitModal] = React.useState(false);
   const [showSavingModal, setShowSavingModal] = React.useState(false);
   const savingModalRef = React.useRef<SavingModalRef>(null);
   // Progress-based loading copy (no cycling back)
@@ -423,8 +425,11 @@ export function QuickEditSheet() {
       
       // Override technical error messages with user-friendly ones
       if (errorMsg.includes('PHOTO_LIMIT_EXCEEDED') || e?.code === 'PHOTO_LIMIT_EXCEEDED') {
-        errorMsg = 'You\'ve reached your free photo limit. Tap here to upgrade to Pro for unlimited edits!';
+        // Show the photo limit modal instead of inline error
+        setShowPhotoLimitModal(true);
         setIsLimitError(true);
+        // Don't set error message as we're showing modal instead
+        return;
       } else if (errorMsg.includes('Unable to verify photo limits') || 
           errorMsg.includes('Servers are loaded') ||
           errorMsg.includes('Unable to process photo')) {
@@ -669,22 +674,9 @@ export function QuickEditSheet() {
                 </View>
               )}
 
-              {/* Error Message */}
-              {stage === 'error' && (
-                <TouchableOpacity 
-                  onPress={isLimitError ? () => {
-                    presentPaywall().then((success) => {
-                      if (success) {
-                        // Reset error state and retry
-                        setIsLimitError(false);
-                        setStage('preview');
-                        setTimeout(() => handleUpload(), 100);
-                      }
-                    });
-                  } : undefined}
-                  activeOpacity={isLimitError ? 0.8 : 1}
-                  style={{ marginTop: 12, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, backgroundColor: 'rgba(239,68,68,0.1)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)' }}
-                >
+              {/* Error Message - only for non-limit errors */}
+              {stage === 'error' && !isLimitError && (
+                <View style={{ marginTop: 12, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, backgroundColor: 'rgba(239,68,68,0.1)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)' }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                     <IconSymbol name="exclamationmark.triangle.fill" size={16} color="#EF4444" />
                     <Text style={{ color: '#EF4444', fontFamily: 'Lexend-SemiBold', fontSize: 14 }}>Error</Text>
@@ -692,7 +684,7 @@ export function QuickEditSheet() {
                   <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, lineHeight: 18 }}>
                     {errorMessage}
                   </Text>
-                </TouchableOpacity>
+                </View>
               )}
 
               {/* Actions */}
@@ -732,7 +724,7 @@ export function QuickEditSheet() {
                     </TouchableOpacity>
                   </>
                 )}
-                {stage === 'error' && (
+                {stage === 'error' && !isLimitError && (
                   <>
                     <TouchableOpacity onPress={() => setStage('preview')} style={{ paddingHorizontal: 22, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' }}>
                       <Text style={{ color: '#fff', fontFamily: 'Lexend-SemiBold' }}>Back</Text>
@@ -748,6 +740,12 @@ export function QuickEditSheet() {
                       </View>
                     </TouchableOpacity>
                   </>
+                )}
+                {/* Back button for limit errors */}
+                {stage === 'error' && isLimitError && (
+                  <TouchableOpacity onPress={() => { setStage('preview'); setIsLimitError(false); }} style={{ flex: 1, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ color: '#fff', fontFamily: 'Lexend-SemiBold' }}>Back</Text>
+                  </TouchableOpacity>
                 )}
                 {stage === 'done' && (
                   imageError ? (
@@ -829,6 +827,22 @@ export function QuickEditSheet() {
           setTimeout(() => {
             handleUpload();
           }, 0);
+        }}
+      />
+      
+      {/* Photo Limit Modal */}
+      <PhotoLimitModal 
+        visible={showPhotoLimitModal}
+        onClose={() => {
+          setShowPhotoLimitModal(false);
+          setIsLimitError(false);
+          setStage('preview');
+        }}
+        onTrialStart={() => {
+          // Reset error state and retry upload
+          setIsLimitError(false);
+          setStage('preview');
+          setTimeout(() => handleUpload(), 100);
         }}
       />
       
