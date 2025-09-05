@@ -37,25 +37,6 @@ type FeatureCardsListProps = {
   onOpenClothes?: () => void;
 };
 
-// Helper: choose icon per function type
-function getFunctionIcon(functionType?: CardItem['functionType']): string {
-  switch (functionType) {
-    case 'restoration':
-      return 'wand.and.stars';
-    case 'repair':
-      return 'wrench.and.screwdriver';
-    case 'descratch':
-      return 'bandage';
-    case 'unblur':
-      return 'sparkles';
-    case 'colorize':
-      return 'paintpalette';
-    case 'enlighten':
-      return 'sun.max';
-    default:
-      return 'photo.on.rectangle';
-  }
-}
 
 // Memoize individual card to prevent re-renders
 const FeatureCardBase = ({ 
@@ -66,16 +47,45 @@ const FeatureCardBase = ({
   onPress: (item: CardItem) => void;
 }) => {
   const t = useT();
+  const scaleValue = React.useRef(new Animated.Value(1)).current;
+  
+  const handlePressIn = () => {
+    try { Haptics.selectionAsync(); } catch {}
+    Animated.timing(scaleValue, {
+      toValue: 0.97,
+      duration: 100,
+      useNativeDriver: true
+    }).start();
+  };
+  
+  const handlePressOut = () => {
+    Animated.timing(scaleValue, {
+      toValue: 1,
+      duration: 100,
+      useNativeDriver: true
+    }).start();
+  };
+  
   return (
   <TouchableOpacity
     activeOpacity={0.9}
     onPress={() => onPress(item)}
-    onPressIn={() => {
-      try { Haptics.selectionAsync(); } catch {}
-    }}
+    onPressIn={handlePressIn}
+    onPressOut={handlePressOut}
     style={{ marginHorizontal: 16, marginBottom: 14 }}
   >
-    <Animated.View style={{ height: 240, borderRadius: 22, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.10)' }}>
+    <Animated.View style={{ 
+      height: 260, 
+      borderRadius: 24, 
+      overflow: 'hidden', 
+      borderWidth: 1, 
+      borderColor: 'rgba(255,255,255,0.12)',
+      shadowColor: 'rgba(0,0,0,0.4)',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 1,
+      shadowRadius: 8,
+      transform: [{ scale: scaleValue }]
+    }}>
       <ExpoImage 
         source={item.image} 
         style={{ width: '100%', height: '100%' }} 
@@ -85,25 +95,82 @@ const FeatureCardBase = ({
         placeholderContentFit="cover"
         transition={0} // Disable transition to prevent flash
       />
-      {/* Subtle top vignette to improve title contrast */}
+      {/* Enhanced top gradient for superior text contrast */}
       <LinearGradient
-        colors={[ 'rgba(0,0,0,0.12)', 'transparent' ]}
-        style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '20%' }}
+        colors={[ 'rgba(0,0,0,0.85)', 'rgba(0,0,0,0.4)', 'transparent' ]}
+        locations={[0, 0.6, 1]}
+        style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '45%' }}
       />
+      {/* Bottom gradient for action bar */}
       <LinearGradient
-        colors={[ 'rgba(0,0,0,0.05)', 'rgba(0,0,0,0.65)' ]}
-        style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '55%' }}
+        colors={[ 'transparent', 'rgba(0,0,0,0.8)' ]}
+        style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '30%' }}
       />
-      <View style={{ position: 'absolute', left: 16, right: 56, bottom: 14 }}>
-        <Text style={{ color: '#FFFFFF', fontSize: 24, fontFamily: 'Lexend-Bold', letterSpacing: -0.3 }} numberOfLines={1}>
+      
+      {/* Enhanced title and subtitle with better readability */}
+      <View style={{ position: 'absolute', left: 18, right: 18, top: 18 }}>
+        <Text style={{ 
+          color: '#FFFFFF', 
+          fontSize: 23, 
+          fontFamily: 'Lexend-Bold', 
+          letterSpacing: -0.4,
+          textShadowColor: 'rgba(0,0,0,0.8)',
+          textShadowOffset: { width: 0, height: 1 },
+          textShadowRadius: 3,
+          marginBottom: 4
+        }} numberOfLines={1}>
           {t(item.titleKey)}
         </Text>
-        <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14, marginTop: 4, lineHeight: 20 }} numberOfLines={2}>
+        <Text style={{ 
+          color: 'rgba(255,255,255,0.95)', 
+          fontSize: 14, 
+          fontFamily: 'Lexend-Medium',
+          lineHeight: 20,
+          textShadowColor: 'rgba(0,0,0,0.7)',
+          textShadowOffset: { width: 0, height: 1 },
+          textShadowRadius: 2,
+          letterSpacing: -0.1
+        }} numberOfLines={2}>
           {t(item.subtitleKey)}
         </Text>
       </View>
-      <View style={{ position: 'absolute', right: 12, bottom: 12, width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.12)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }}>
-        <IconSymbol name={getFunctionIcon(item.functionType) as any} size={16} color={'#FFFFFF'} />
+      
+      {/* Refined bottom action bar with enhanced visual appeal */}
+      <View style={{ position: 'absolute', left: 18, right: 18, bottom: 18 }}>
+        <View style={{ 
+          flexDirection: 'row', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          backgroundColor: 'rgba(255,255,255,0.18)', 
+          paddingHorizontal: 18, 
+          paddingVertical: 12, 
+          borderRadius: 14,
+          borderWidth: 1.5,
+          borderColor: 'rgba(255,255,255,0.25)',
+          shadowColor: 'rgba(0,0,0,0.3)',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 1,
+          shadowRadius: 4
+        }}>
+          <Text style={{ 
+            color: '#FFFFFF', 
+            fontSize: 15, 
+            fontFamily: 'Lexend-SemiBold', 
+            marginRight: 10,
+            letterSpacing: -0.2,
+            textShadowColor: 'rgba(0,0,0,0.5)',
+            textShadowOffset: { width: 0, height: 1 },
+            textShadowRadius: 2
+          }}>
+            Tap to select photo
+          </Text>
+          <IconSymbol name="arrow.right" size={17} color={'#FFFFFF'} style={{ 
+            shadowColor: 'rgba(0,0,0,0.5)',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 1,
+            shadowRadius: 2
+          }} />
+        </View>
       </View>
     </Animated.View>
   </TouchableOpacity>
@@ -131,7 +198,7 @@ export function FeatureCardsList({
       async (text) => {
         if (text && text.trim()) {
           try {
-            const result = await featureRequestService.submitRequest(text, undefined, isPro);
+            const result = await featureRequestService.submitRequest(text, undefined, isPro, 'feature');
             if (result.success) {
               Alert.alert(
                 t('magic.requestFeature.thankYouTitle'),
@@ -157,6 +224,43 @@ export function FeatureCardsList({
       'plain-text',
       '',
       'Describe your feature idea here...'
+    );
+  }, [isPro]);
+
+  // Handle bug report submission
+  const handleBugReport = React.useCallback(async () => {
+    Alert.prompt(
+      t('magic.reportBug.title'),
+      t('magic.reportBug.prompt'),
+      async (text) => {
+        if (text && text.trim()) {
+          try {
+            const result = await featureRequestService.submitRequest(text, undefined, isPro, 'bug');
+            if (result.success) {
+              Alert.alert(
+                t('magic.reportBug.thankYouTitle'),
+                t('magic.reportBug.thankYouMessage'),
+                [{ text: t('magic.reportBug.button') }]
+              );
+            } else {
+              Alert.alert(
+                t('magic.reportBug.errorTitle'),
+                result.error || t('magic.reportBug.errorMessage'),
+                [{ text: t('common.ok') }]
+              );
+            }
+          } catch (error) {
+            Alert.alert(
+              t('common.error'),
+              t('magic.reportBug.errorGeneric'),
+              [{ text: t('common.ok') }]
+            );
+          }
+        }
+      },
+      'plain-text',
+      '',
+      'Describe the bug you encountered...'
     );
   }, [isPro]);
 
@@ -216,80 +320,162 @@ export function FeatureCardsList({
         <Card key={c.id} item={c} onPress={handlePress} />
       ))}
       
-      {/* Request your idea card */}
-      <TouchableOpacity
-        activeOpacity={0.9}
-        onPress={handleRequestIdea}
-        style={{ marginHorizontal: 16, marginBottom: 14 }}
-      >
-        <View style={{ 
-          height: 180, 
-          borderRadius: 22, 
-          overflow: 'hidden', 
-          borderWidth: 1.5, 
-          borderColor: 'rgba(255,255,255,0.18)',
-          backgroundColor: 'rgba(255,255,255,0.06)',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <LinearGradient
-            colors={["rgba(255,255,255,0.06)", "transparent"]}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 0.6 }}
-            style={{ position: 'absolute', inset: 0 }}
-          />
-          
-          <View style={{ alignItems: 'center', marginBottom: 12 }}>
-            <View style={{
-              width: 50,
-              height: 50,
-              borderRadius: 25,
-              backgroundColor: 'rgba(255,255,255,0.12)',
-              borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.2)',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: 12
-            }}>
-              <IconSymbol name="lightbulb" size={24} color="#F59E0B" />
-            </View>
-            <Text style={{ 
-              color: '#F59E0B', 
-              fontSize: 20, 
-              fontFamily: 'Lexend-Bold', 
-              letterSpacing: -0.3,
-              marginBottom: 6
-            }}>
-              Request your idea
-            </Text>
-            <Text style={{ 
-              color: 'rgba(255,255,255,0.7)', 
-              fontSize: 13,
-              textAlign: 'center',
-              paddingHorizontal: 40
-            }}>
-              Have a feature in mind? Let us know!
-            </Text>
-          </View>
-          
-          <View style={{
-            backgroundColor: 'rgba(255,255,255,0.12)',
-            borderRadius: 14,
-            paddingHorizontal: 16,
-            paddingVertical: 8,
-            flexDirection: 'row',
+      {/* Request your idea & Report bug side-by-side cards */}
+      <View style={{ flexDirection: 'row', marginHorizontal: 16, marginBottom: 14, gap: 12 }}>
+        {/* Request your idea card - smaller */}
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={handleRequestIdea}
+          style={{ flex: 1 }}
+        >
+          <View style={{ 
+            height: 140, 
+            borderRadius: 18, 
+            overflow: 'hidden', 
+            borderWidth: 1.5, 
+            borderColor: 'rgba(255,255,255,0.18)',
+            backgroundColor: 'rgba(255,255,255,0.06)',
             alignItems: 'center',
-            gap: 6,
-            borderWidth: 1,
-            borderColor: 'rgba(255,255,255,0.18)'
+            justifyContent: 'center',
+            paddingHorizontal: 12
           }}>
-            <IconSymbol name="envelope" size={14} color="#F59E0B" />
-            <Text style={{ color: '#F59E0B', fontSize: 13, fontFamily: 'Lexend-SemiBold' }}>
-              Send Request
-            </Text>
+            <LinearGradient
+              colors={["rgba(255,255,255,0.06)", "transparent"]}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 0.6 }}
+              style={{ position: 'absolute', inset: 0 }}
+            />
+            
+            <View style={{ alignItems: 'center' }}>
+              <View style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: 'rgba(255,255,255,0.12)',
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.2)',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 10
+              }}>
+                <IconSymbol name="lightbulb" size={20} color="#D4A574" />
+              </View>
+              <Text style={{ 
+                color: '#D4A574', 
+                fontSize: 16, 
+                fontFamily: 'Lexend-Bold', 
+                letterSpacing: -0.2,
+                marginBottom: 4,
+                textAlign: 'center'
+              }}>
+                Request Idea
+              </Text>
+              <Text style={{ 
+                color: 'rgba(255,255,255,0.7)', 
+                fontSize: 11,
+                textAlign: 'center',
+                marginBottom: 8
+              }}>
+                Share your feature idea
+              </Text>
+              
+              <View style={{
+                backgroundColor: 'rgba(255,255,255,0.12)',
+                borderRadius: 12,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 4,
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.18)'
+              }}>
+                <IconSymbol name="envelope" size={12} color="#D4A574" />
+                <Text style={{ color: '#D4A574', fontSize: 11, fontFamily: 'Lexend-SemiBold' }}>
+                  Send
+                </Text>
+              </View>
+            </View>
           </View>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+
+        {/* Report bug card - smaller */}
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={handleBugReport}
+          style={{ flex: 1 }}
+        >
+          <View style={{ 
+            height: 140, 
+            borderRadius: 18, 
+            overflow: 'hidden', 
+            borderWidth: 1.5, 
+            borderColor: 'rgba(255,255,255,0.18)',
+            backgroundColor: 'rgba(255,255,255,0.06)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingHorizontal: 12
+          }}>
+            <LinearGradient
+              colors={["rgba(255,255,255,0.06)", "transparent"]}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 0.6 }}
+              style={{ position: 'absolute', inset: 0 }}
+            />
+            
+            <View style={{ alignItems: 'center' }}>
+              <View style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: 'rgba(255,255,255,0.12)',
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.2)',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 10
+              }}>
+                <IconSymbol name="ant" size={20} color="#C1A28A" />
+              </View>
+              <Text style={{ 
+                color: '#C1A28A', 
+                fontSize: 16, 
+                fontFamily: 'Lexend-Bold', 
+                letterSpacing: -0.2,
+                marginBottom: 4,
+                textAlign: 'center'
+              }}>
+                Report Bug
+              </Text>
+              <Text style={{ 
+                color: 'rgba(255,255,255,0.7)', 
+                fontSize: 11,
+                textAlign: 'center',
+                marginBottom: 8
+              }}>
+                Found an issue? Tell us
+              </Text>
+              
+              <View style={{
+                backgroundColor: 'rgba(255,255,255,0.12)',
+                borderRadius: 12,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 4,
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.18)'
+              }}>
+                <IconSymbol name="exclamationmark.triangle" size={12} color="#C1A28A" />
+                <Text style={{ color: '#C1A28A', fontSize: 11, fontFamily: 'Lexend-SemiBold' }}>
+                  Report
+                </Text>
+              </View>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }

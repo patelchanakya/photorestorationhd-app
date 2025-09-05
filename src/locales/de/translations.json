@@ -160,7 +160,8 @@
       "share": "Teilen",
       "cancel": "Abbrechen",
       "tryAgain": "Erneut versuchen",
-      "process": "Verarbeiten"
+      "process": "Verarbeiten",
+      "view": "Anzeigen"
     },
     "errors": {
       "somethingWrong": "Etwas ist schief gelaufen",

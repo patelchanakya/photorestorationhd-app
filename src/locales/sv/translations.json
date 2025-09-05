@@ -160,7 +160,8 @@
       "share": "Dela",
       "cancel": "Avbryt",
       "tryAgain": "Försök igen",
-      "process": "Bearbeta"
+      "process": "Bearbeta",
+      "view": "Visa"
     },
     "errors": {
       "somethingWrong": "Något gick fel",

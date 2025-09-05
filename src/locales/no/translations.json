@@ -160,7 +160,8 @@
       "share": "Del",
       "cancel": "Avbryt",
       "tryAgain": "Prøv igjen",
-      "process": "Behandle"
+      "process": "Behandle",
+      "view": "Vis"
     },
     "errors": {
       "somethingWrong": "Noe gikk galt",

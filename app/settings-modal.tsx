@@ -4,6 +4,7 @@ import { photoRestorationKeys } from '@/hooks/usePhotoRestoration';
 import { analyticsService } from '@/services/analytics';
 import { usePhotoUsage, type PhotoUsage } from '@/services/photoUsageService';
 import { checkSubscriptionStatus, getAppUserId, presentPaywall, restorePurchasesSecure } from '@/services/revenuecat';
+import { getUnifiedTrackingId } from '@/services/trackingIds';
 import { photoStorage } from '@/services/storage';
 import { localStorageHelpers } from '@/services/supabase';
 import { useTranslation } from '@/src/hooks/useTranslation';
@@ -735,25 +736,40 @@ export default function SettingsModalScreen() {
       });
 
       const subject = 'Clever - Support Request';
-      // Clean up the RevenueCat ID to show only the unique part
+      // Get unified tracking ID (same as used in photo/video tracking)
       let supportId = 'Loading...';
-      if (revenueCatUserId) {
-        // Remove the $RCAnonymousID: prefix if present, otherwise use full ID
-        supportId = revenueCatUserId.replace('$RCAnonymousID:', '') || revenueCatUserId;
+      try {
+        const trackingId = await getUnifiedTrackingId('photo');
+        if (trackingId) {
+          // Clean up the tracking ID - remove prefixes for cleaner support ID
+          supportId = trackingId
+            .replace('$RCAnonymousID:', '')
+            .replace('orig:', '')
+            .replace('store:', '')
+            .replace('fallback:', '');
+        } else if (revenueCatUserId) {
+          // Fallback to cleaned RevenueCat ID if tracking service fails
+          supportId = revenueCatUserId.replace('$RCAnonymousID:', '') || revenueCatUserId;
+        }
+      } catch (error) {
+        console.error('Failed to get unified tracking ID for support:', error);
+        if (revenueCatUserId) {
+          supportId = revenueCatUserId.replace('$RCAnonymousID:', '') || revenueCatUserId;
+        }
       }
       
       const body = `Hi there,
 
 I need help with Clever.
 
+Issue Description:
+[Please describe your issue here]
+
 SUPPORT ID: ${supportId}
 Device: ${Platform.OS} ${Platform.Version}
 App Version: 2.0.2
 
 Please include the Support ID above in your message so we can assist you quickly.
-
-Issue Description:
-[Please describe your issue here]
 
 Best regards`;
 

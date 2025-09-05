@@ -155,7 +155,8 @@
       "share": "Paylaş",
       "cancel": "İptal",
       "tryAgain": "Tekrar Dene",
-      "process": "İşle"
+      "process": "İşle",
+      "view": "Görüntüle"
     },
     "errors": {
       "somethingWrong": "Bir şeyler ters gitti",

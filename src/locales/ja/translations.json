@@ -155,7 +155,8 @@
       "share": "共有",
       "cancel": "キャンセル",
       "tryAgain": "再試行",
-      "process": "処理"
+      "process": "処理",
+      "view": "表示"
     },
     "errors": {
       "somethingWrong": "何かが間違いました",

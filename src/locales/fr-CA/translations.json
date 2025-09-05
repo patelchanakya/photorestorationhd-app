@@ -160,7 +160,8 @@
       "share": "Partager",
       "cancel": "Annuler",
       "tryAgain": "Réessayer",
-      "process": "Traiter"
+      "process": "Traiter",
+      "view": "Voir"
     },
     "errors": {
       "somethingWrong": "Quelque chose s'est mal passé",

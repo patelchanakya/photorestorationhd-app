@@ -296,25 +296,30 @@ export function MemorialFeatures({ memorialItems = DEFAULT_MEMORIAL_ITEMS }: { m
                 <View style={{ width: '100%', height: '100%', backgroundColor: '#000000' }} />
               )}
               
-              {/* Gradient overlay */}
+              {/* Enhanced gradient overlay for better text contrast */}
               <LinearGradient
-                colors={["transparent", "rgba(0,0,0,0.3)", "rgba(0,0,0,0.85)"]}
-                start={{ x: 0.5, y: 0.3 }}
+                colors={["transparent", "rgba(0,0,0,0.4)", "rgba(0,0,0,0.9)"]}
+                locations={[0, 0.6, 1]}
+                start={{ x: 0.5, y: 0.2 }}
                 end={{ x: 0.5, y: 1 }}
                 style={{ position: 'absolute', inset: 0 as any }}
               />
               
-              {/* Bottom label */}
-              <View style={{ position: 'absolute', left: 6, right: 6, bottom: 6, minHeight: 36, justifyContent: 'flex-end' }}>
+              {/* Enhanced bottom label with text shadows */}
+              <View style={{ position: 'absolute', left: 8, right: 8, bottom: 8, minHeight: 38, justifyContent: 'flex-end' }}>
                 <Text 
                   adjustsFontSizeToFit={true}
                   minimumFontScale={0.7}
                   style={{ 
                     color: '#FFFFFF', 
-                    fontFamily: 'Lexend-SemiBold', 
-                    fontSize: fontSize,
-                    lineHeight: fontSize * 1.2,
-                    textAlign: 'center'
+                    fontFamily: 'Lexend-Bold', 
+                    fontSize: fontSize + 1,
+                    lineHeight: (fontSize + 1) * 1.3,
+                    textAlign: 'center',
+                    textShadowColor: 'rgba(0,0,0,0.8)',
+                    textShadowOffset: { width: 0, height: 1 },
+                    textShadowRadius: 3,
+                    letterSpacing: -0.2
                   }}
                 >
                   {t(item.titleKey)}

@@ -17,6 +17,7 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
+import * as Sharing from 'expo-sharing';
 import * as StoreReview from 'expo-store-review';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -24,6 +25,7 @@ import {
     ActivityIndicator,
     Alert,
     Dimensions,
+    Linking,
     Platform,
     SafeAreaView,
     ScrollView,
@@ -345,7 +347,7 @@ export default function RestorationScreen() {
       await clearActivePrediction();
       
     } catch (err: any) {
-      console.error('Failed to save photo to camera roll:', err);
+      console.error('Save failed, attempting fallback to share:', err);
       
       // Hide modal on error
       setShowSavingModal(false);
@@ -353,35 +355,96 @@ export default function RestorationScreen() {
       // Error feedback
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       
-      // Check if it's a permission or Expo Go error
-      if (err.message?.includes('NSPhotoLibraryAddUsageDescription') || 
-          err.message?.includes('Expo Go')) {
+      // Check if it's a permission error and show helpful dialog
+      if (err.message?.includes('Photo library access denied') || err.message?.includes('permission')) {
         Alert.alert(
-          'Expo Go Limitation', 
-          'Saving to camera roll is not available in Expo Go. Please use the Share button to save your photo, or test in a development build.',
+          'Photo Access Required',
+          'To save photos, please allow access to your photo library in Settings > Privacy & Security > Photos.',
           [
-            { text: 'Use Share Instead', onPress: handleShare },
-            { text: 'Cancel', style: 'cancel' }
-          ]
-        );
-      } else if (err.message?.includes('permission')) {
-        Alert.alert(
-          'Permission Required', 
-          err.message || 'Please enable photo library permissions in Settings.',
-          [
-            { text: 'Try Share Instead', onPress: handleShare },
+            { 
+              text: 'Open Settings', 
+              onPress: () => {
+                if (Platform.OS === 'ios') {
+                  Linking.openURL('app-settings:');
+                }
+              }
+            },
+            { 
+              text: 'Share Instead', 
+              onPress: () => {
+                // Auto-trigger share as fallback
+                handleShare();
+              }
+            },
             { text: 'Cancel', style: 'cancel' }
           ]
         );
       } else {
-        Alert.alert(
-          'Save Failed',
-          `Failed to save photo to camera roll: ${err.message || 'Unknown error'}`,
-          [
-            { text: 'Try Share Instead', onPress: handleShare },
-            { text: 'Cancel', style: 'cancel' }
-          ]
-        );
+        // For other errors, auto-fallback to share
+        try {
+          if (__DEV__) {
+            console.log('🔄 Auto-fallback: Attempting share with URI:', restoredUri);
+          }
+          
+          // Check if sharing is available
+          const isAvailable = await Sharing.isAvailableAsync();
+          if (!isAvailable) {
+            throw new Error('Sharing is not available on this device');
+          }
+          
+          if (__DEV__) {
+            console.log('✅ Sharing is available, opening share sheet...');
+          }
+          
+          // Use expo-sharing directly with local file
+          await Sharing.shareAsync(restoredUri, {
+            mimeType: 'image/jpeg',
+            dialogTitle: 'Save your restored photo',
+          });
+          
+          // Clear active prediction state since user accessed the result
+          await clearActivePrediction();
+          
+          if (__DEV__) {
+            console.log('✅ Share sheet opened successfully as fallback');
+          }
+          
+        } catch (shareError: any) {
+          console.error('Expo-sharing failed, trying React Native Share:', shareError);
+          
+          // Fallback to React Native Share with remote URL
+          try {
+            const shareUrl = restoration?.replicate_url || restoredUri;
+            
+            if (__DEV__) {
+              console.log('🔄 Trying React Native Share with URL:', shareUrl);
+            }
+            
+            const shareResult = await Share.share({
+              url: shareUrl,
+              message: 'Check out my restored photo!',
+            });
+            
+            if (__DEV__) {
+              console.log('📤 React Native Share result:', shareResult);
+            }
+            
+            await clearActivePrediction();
+            
+          } catch (rnShareError: any) {
+            console.error('Both share methods failed:', rnShareError);
+            
+            // Show a simple error with option to try again
+            Alert.alert(
+              'Unable to Share', 
+              'Please try the Share button instead, or check your device settings.',
+              [
+                { text: 'Try Share Button', onPress: handleShare },
+                { text: 'OK', style: 'cancel' }
+              ]
+            );
+          }
+        }
       }
     }
   };
@@ -390,16 +453,51 @@ export default function RestorationScreen() {
     if (!restoration || !restoredUri) return;
 
     try {
-      await Share.share({
-        url: restoredUri,
-        message: 'Check out my restored photo!',
+      // Check if sharing is available
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (!isAvailable) {
+        throw new Error('Sharing is not available on this device');
+      }
+      
+      if (__DEV__) {
+        console.log('✅ Manual share - sharing is available, opening share sheet...');
+      }
+      
+      // Use expo-sharing directly with local file
+      await Sharing.shareAsync(restoredUri, {
+        mimeType: 'image/jpeg',
+        dialogTitle: 'Share your restored photo',
       });
       
       // Clear active prediction state since user has shared the result
       await clearActivePrediction();
-    } catch (error) {
-      console.error('Failed to share photo:', error);
-      Alert.alert('Error', 'Failed to share photo');
+      
+    } catch (error: any) {
+      console.error('Expo-sharing failed, trying React Native Share:', error);
+      
+      // Fallback to React Native Share with remote URL
+      try {
+        const shareUrl = restoration?.replicate_url || restoredUri;
+        
+        if (__DEV__) {
+          console.log('🔄 Manual share trying React Native Share with URL:', shareUrl);
+        }
+        
+        const shareResult = await Share.share({
+          url: shareUrl,
+          message: 'Check out my restored photo!',
+        });
+        
+        if (__DEV__) {
+          console.log('📤 Manual React Native Share result:', shareResult);
+        }
+        
+        await clearActivePrediction();
+        
+      } catch (rnShareError: any) {
+        console.error('Both share methods failed:', rnShareError);
+        Alert.alert('Share Failed', 'Unable to share photo. Please try again.');
+      }
     }
   };
 
@@ -594,8 +692,10 @@ export default function RestorationScreen() {
   if (__DEV__) {
     console.log('🖼️ Original URI:', originalUri);
     console.log('🖼️ Restored URI:', restoredUri);
-    console.log('🔗 Using Replicate URL:', isUsingReplicateUrl);
+    console.log('🔗 Replicate URL:', restoration?.replicate_url || 'Not available');
+    console.log('🎥 Video Replicate URL:', restoration?.video_replicate_url || 'Not available');
     console.log('📁 Local files ready:', restoration?.local_files_ready);
+    console.log('🔗 Using Replicate URL:', isUsingReplicateUrl ? 'Yes' : 'No');
   }
 
   return (
@@ -700,6 +800,31 @@ export default function RestorationScreen() {
             {/* Primary Actions - 70/30 split */}
             <View style={{ paddingBottom: isTinyDevice ? 16 : 24 }}>
               <View className="flex-row" style={{ gap: 8 }}>
+                {/* Share Button - 30% width */}
+                <TouchableOpacity
+                  style={{
+                    flex: 3,
+                    height: 56,
+                    borderRadius: 28,
+                    backgroundColor: 'rgba(255,255,255,0.1)',
+                    borderWidth: 1,
+                    borderColor: 'rgba(255,255,255,0.2)',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  onPress={handleShare}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{
+                    color: '#fff',
+                    fontSize: 16,
+                    fontWeight: '600',
+                    letterSpacing: 0.3
+                  }}>
+                    Share
+                  </Text>
+                </TouchableOpacity>
+
                 {/* Save Button - 70% width */}
                 <TouchableOpacity
                   style={{
@@ -741,31 +866,6 @@ export default function RestorationScreen() {
                     letterSpacing: 0.3
                   }}>
                     Save to Photos
-                  </Text>
-                </TouchableOpacity>
-
-                {/* Share Button - 30% width */}
-                <TouchableOpacity
-                  style={{
-                    flex: 3,
-                    height: 56,
-                    borderRadius: 28,
-                    backgroundColor: 'rgba(255,255,255,0.1)',
-                    borderWidth: 1,
-                    borderColor: 'rgba(255,255,255,0.2)',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                  onPress={handleShare}
-                  activeOpacity={0.7}
-                >
-                  <Text style={{
-                    color: '#fff',
-                    fontSize: 16,
-                    fontWeight: '600',
-                    letterSpacing: 0.3
-                  }}>
-                    Share
                   </Text>
                 </TouchableOpacity>
               </View>

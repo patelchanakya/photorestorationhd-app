@@ -280,21 +280,40 @@ class PhotoStorage {
         throw new Error('Video file not found. Please try again.');
       }
 
-      // Check/request permissions
-      let { status } = await MediaLibrary.getPermissionsAsync();
-      if (status !== 'granted') {
-        const permission = await MediaLibrary.requestPermissionsAsync();
-        if (permission.status !== 'granted') {
-          throw new Error('Camera roll access denied. Please enable permissions in Settings.');
+              // Check and request photo library permissions for video
+        if (__DEV__) {
+          console.log('🔍 Checking photo library permissions for video...');
         }
-        status = permission.status;
-      }
+        
+        let { status } = await MediaLibrary.getPermissionsAsync();
+        if (__DEV__) {
+          console.log('📱 Current permission status:', status);
+        }
+        
+        // Request permission if not granted
+        if (status !== 'granted') {
+          if (__DEV__) {
+            console.log('🔄 Requesting photo library permissions...');
+          }
+          const permissionResult = await MediaLibrary.requestPermissionsAsync();
+          status = permissionResult.status;
+          if (__DEV__) {
+            console.log('📱 New permission status:', status);
+          }
+        }
+        
+        if (status !== 'granted') {
+          if (__DEV__) {
+            console.log('❌ Permission denied:', status);
+          }
+          throw new Error('Photo library access denied. Please enable in iPhone Settings > Privacy & Security > Photos.');
+        }
 
-      // Save to camera roll
-      const asset = await MediaLibrary.createAssetAsync(uri);
+      // Save to camera roll using saveToLibraryAsync (requires less permissions)
+      await MediaLibrary.saveToLibraryAsync(uri);
       
       if (__DEV__) {
-        console.log('✅ Video exported to camera roll successfully:', asset.uri);
+        console.log('✅ Video exported to camera roll successfully');
       }
       
     } catch (error) {
@@ -371,35 +390,34 @@ class PhotoStorage {
         console.log('✅ File exists, size:', fileInfo.size);
       }
 
-      // First check if we already have permissions
-      if (__DEV__) {
-        console.log('🔍 Checking existing permissions...');
-      }
-      const { status: existingStatus } = await MediaLibrary.getPermissionsAsync();
-      if (__DEV__) {
-        console.log('📱 Existing permission status:', existingStatus);
-      }
-      
-      let finalStatus = existingStatus;
-      
-      // Only request if we don't have permissions
-      if (existingStatus !== 'granted') {
+              // Check and request photo library permissions
         if (__DEV__) {
-          console.log('🔄 Requesting photo library permissions...');
+          console.log('🔍 Checking photo library permissions...');
         }
-        const { status: newStatus } = await MediaLibrary.requestPermissionsAsync();
-        finalStatus = newStatus;
+        
+        let { status } = await MediaLibrary.getPermissionsAsync();
         if (__DEV__) {
-          console.log('📱 New permission status:', finalStatus);
+          console.log('📱 Current permission status:', status);
         }
-      }
-      
-      if (finalStatus !== 'granted') {
-        if (__DEV__) {
-          console.error('❌ Permission denied:', finalStatus);
+        
+        // Request permission if not granted
+        if (status !== 'granted') {
+          if (__DEV__) {
+            console.log('🔄 Requesting photo library permissions...');
+          }
+          const permissionResult = await MediaLibrary.requestPermissionsAsync();
+          status = permissionResult.status;
+          if (__DEV__) {
+            console.log('📱 New permission status:', status);
+          }
         }
-        throw new Error('Camera roll permission not granted. Please enable photo library access in iPhone Settings > Privacy & Security > Photos.');
-      }
+        
+        if (status !== 'granted') {
+          if (__DEV__) {
+            console.log('❌ Permission denied:', status);
+          }
+          throw new Error('Photo library access denied. Please enable in iPhone Settings > Privacy & Security > Photos.');
+        }
       
       if (__DEV__) {
         console.log('🔄 Processing image with ImageManipulator...');
@@ -433,19 +451,12 @@ class PhotoStorage {
       }
       
       if (__DEV__) {
-        console.log('🔄 Creating asset in photo library...');
+        console.log('🔄 Saving to photo library using saveToLibraryAsync...');
       }
-      // Save the processed image to library (will have current timestamp)
-      const asset = await MediaLibrary.createAssetAsync(processedImage.uri);
+      // Use saveToLibraryAsync which only requires write permission (iOS 11+)
+      await MediaLibrary.saveToLibraryAsync(processedImage.uri);
       if (__DEV__) {
-        console.log('📱 Asset created:', asset?.id);
-      }
-      
-      if (!asset) {
-        if (__DEV__) {
-          console.error('❌ Failed to create asset - asset is null');
-        }
-        throw new Error('Failed to save photo to library');
+        console.log('📱 Photo saved to library successfully');
       }
       
       if (__DEV__) {

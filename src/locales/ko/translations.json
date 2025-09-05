@@ -160,7 +160,8 @@
       "share": "공유",
       "cancel": "취소",
       "tryAgain": "다시 시도",
-      "process": "처리"
+      "process": "처리",
+      "view": "보기"
     },
     "errors": {
       "somethingWrong": "문제가 발생했습니다",

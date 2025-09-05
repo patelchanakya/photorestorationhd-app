@@ -160,7 +160,8 @@
       "share": "分享",
       "cancel": "取消",
       "tryAgain": "重试",
-      "process": "处理"
+      "process": "处理",
+      "view": "查看"
     },
     "errors": {
       "somethingWrong": "出了点问题",

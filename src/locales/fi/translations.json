@@ -145,6 +145,7 @@
       "background": "Tausta",
       "outfit": "Asu",
       "custom": "Mukautettu",
+      "view": "Näytä",
       "restoreRepair": "Restauroi ja Korjaa",
       "waterDamage": "Vesivahinko"
     },

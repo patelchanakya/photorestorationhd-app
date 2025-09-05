@@ -119,6 +119,16 @@
       "errorTitle": "Submission Failed",
       "errorMessage": "Unable to submit your request. Please try again.",
       "errorGeneric": "Something went wrong. Please try again."
+    },
+    "reportBug": {
+      "title": "Report a Bug",
+      "prompt": "Please describe the bug you encountered:",
+      "thankYouTitle": "Bug Report Received!",
+      "thankYouMessage": "Thank you for reporting this bug. We'll investigate and fix it as soon as possible.",
+      "button": "Thanks!",
+      "errorTitle": "Report Failed",
+      "errorMessage": "Unable to submit your bug report. Please try again.",
+      "errorGeneric": "Something went wrong. Please try again."
     }
   },
   "quickAction": {
@@ -155,7 +165,8 @@
       "share": "Share",
       "cancel": "Cancel",
       "tryAgain": "Try Again",
-      "process": "Process"
+      "process": "Process",
+      "view": "View"
     },
     "errors": {
       "somethingWrong": "Something went wrong",

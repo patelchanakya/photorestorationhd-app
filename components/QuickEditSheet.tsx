@@ -4,6 +4,7 @@ import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 import { useSavePhoto } from '@/hooks/useSavePhoto';
 import { presentPaywall } from '@/services/revenuecat';
 import { useQuickEditStore } from '@/store/quickEditStore';
+import { useTranslation } from '@/src/hooks/useTranslation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image as ExpoImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -37,6 +38,7 @@ const { height } = Dimensions.get('window');
 export function QuickEditSheet() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const {
     visible,
     stage,
@@ -596,22 +598,45 @@ export function QuickEditSheet() {
                 <View style={{ height: MEDIA_HEIGHT, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' }}>
                   {(stage === 'done' ? restoredImageUri : selectedImageUri) ? (
                     !imageError ? (
-                      <ExpoImage 
-                        source={{ uri: (stage === 'done' && restoredImageUri) ? restoredImageUri : (selectedImageUri as string) }} 
-                        style={{ width: '100%', height: '100%' }} 
-                        contentFit="contain" 
-                        cachePolicy="memory"
-                        allowDownscaling
-                        transition={0}
-                        onLoadStart={() => setMediaLoading(true)}
-                        onLoadEnd={() => setMediaLoading(false)}
-                        onError={() => {
-                          if (stage === 'done' && restoredImageUri) {
-                            console.log('🚨 [QUICK-EDIT] Recovered image URL failed to load, likely expired');
-                            setImageError(true);
-                          }
-                        }}
-                      />
+                      stage === 'done' && restoredImageUri ? (
+                        <TouchableOpacity 
+                          onPress={handleView}
+                          activeOpacity={0.8}
+                          style={{ width: '100%', height: '100%' }}
+                        >
+                          <ExpoImage 
+                            source={{ uri: restoredImageUri }} 
+                            style={{ width: '100%', height: '100%' }} 
+                            contentFit="contain" 
+                            cachePolicy="memory"
+                            allowDownscaling
+                            transition={0}
+                            onLoadStart={() => setMediaLoading(true)}
+                            onLoadEnd={() => setMediaLoading(false)}
+                            onError={() => {
+                              console.log('🚨 [QUICK-EDIT] Recovered image URL failed to load, likely expired');
+                              setImageError(true);
+                            }}
+                          />
+                        </TouchableOpacity>
+                      ) : (
+                        <ExpoImage 
+                          source={{ uri: selectedImageUri as string }} 
+                          style={{ width: '100%', height: '100%' }} 
+                          contentFit="contain" 
+                          cachePolicy="memory"
+                          allowDownscaling
+                          transition={0}
+                          onLoadStart={() => setMediaLoading(true)}
+                          onLoadEnd={() => setMediaLoading(false)}
+                          onError={() => {
+                            if (stage === 'done' && restoredImageUri) {
+                              console.log('🚨 [QUICK-EDIT] Recovered image URL failed to load, likely expired');
+                              setImageError(true);
+                            }
+                          }}
+                        />
+                      )
                     ) : (
                       <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
                         <IconSymbol name="exclamationmark.triangle" size={32} color="#ef4444" />
@@ -801,7 +826,7 @@ export function QuickEditSheet() {
                       <TouchableOpacity onPress={handleView} style={{ flex: 1, height: 56, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', minWidth: 120 }}>
                         <LinearGradient colors={['#F59E0B', '#F59E0B']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
                         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                          <Text style={{ color: '#0B0B0F', fontWeight: '900', fontSize: 16 }}>View</Text>
+                          <Text style={{ color: '#0B0B0F', fontWeight: '900', fontSize: 16 }}>{t('quickEdit.buttons.view')}</Text>
                         </View>
                       </TouchableOpacity>
                     </>

@@ -160,7 +160,8 @@
       "share": "Share",
       "cancel": "Cancel",
       "tryAgain": "Try Again",
-      "process": "Process"
+      "process": "Process",
+      "view": "View"
     },
     "errors": {
       "somethingWrong": "Something went wrong",

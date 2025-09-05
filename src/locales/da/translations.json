@@ -145,6 +145,7 @@
       "background": "Baggrund",
       "outfit": "Tøj",
       "custom": "Brugerdefineret",
+      "view": "Vis",
       "restoreRepair": "Restaurer og Reparer",
       "waterDamage": "Vandskade"
     },

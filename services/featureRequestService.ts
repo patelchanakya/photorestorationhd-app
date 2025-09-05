@@ -11,6 +11,7 @@ export interface FeatureRequest {
   app_version?: string;
   platform?: string;
   is_pro_user?: boolean;
+  request_type?: 'feature' | 'bug';
   status?: string;
   created_at?: string;
 }
@@ -19,7 +20,8 @@ export const featureRequestService = {
   async submitRequest(
     requestText: string, 
     userEmail?: string, 
-    isProUser?: boolean
+    isProUser?: boolean,
+    requestType?: 'feature' | 'bug'
   ): Promise<{ success: boolean; error?: string }> {
     try {
       if (!requestText.trim()) {
@@ -35,6 +37,7 @@ export const featureRequestService = {
           app_version: Constants.expoConfig?.version || 'unknown',
           platform: Platform.OS,
           is_pro_user: isProUser || false,
+          request_type: requestType || 'feature',
           status: 'pending'
         })
         .select()

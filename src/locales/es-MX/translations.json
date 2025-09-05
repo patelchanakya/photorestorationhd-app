@@ -145,6 +145,7 @@
       "background": "Fondo",
       "outfit": "Atuendo",
       "custom": "Personalizado",
+      "view": "Ver",
       "restoreRepair": "Restaurar y Reparar",
       "waterDamage": "Daño por Agua"
     },

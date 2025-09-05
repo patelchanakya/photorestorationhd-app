@@ -160,7 +160,8 @@
       "share": "Condividi",
       "cancel": "Annulla",
       "tryAgain": "Riprova",
-      "process": "Elabora"
+      "process": "Elabora",
+      "view": "Visualizza"
     },
     "errors": {
       "somethingWrong": "Qualcosa è andato storto",
