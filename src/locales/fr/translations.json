@@ -221,6 +221,8 @@
       "title": "Qu'est-ce qui vous amène ici?",
       "subtitle": "Sélectionnez ce que vous êtes prêt à faire",
       "continue": "Continuer",
+      "selectOption": "Choisissez votre fonction",
+      "startWith": "Commencer avec",
       "customPromptPlaceholder": "Que souhaitez-vous faire avec votre photo?",
       "chooseYourOwn": "Choose Your Own",
       "chooseYourOwnDesc": "Describe what you want to do with your photo",

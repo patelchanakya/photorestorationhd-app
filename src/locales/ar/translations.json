@@ -216,6 +216,8 @@
       "title": "ما الذي أتى بك هنا؟",
       "subtitle": "اختر ما أنت مستعد لفعله",
       "continue": "متابعة",
+      "selectOption": "اختر ميزتك",
+      "startWith": "ابدأ مع",
       "customPromptPlaceholder": "ماذا تريد أن تفعل بصورتك؟",
       "chooseYourOwn": "Choose Your Own",
       "chooseYourOwnDesc": "Describe what you want to do with your photo",

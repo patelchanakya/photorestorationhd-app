@@ -20,7 +20,7 @@ interface WelcomeScreenProps {
   onContinue: () => void;
 }
 
-export function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
+export const WelcomeScreen = React.memo(function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
   const { t } = useTranslation();
   
   if (__DEV__) {
@@ -60,14 +60,14 @@ export function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
       console.log('🔥 [WELCOME-SCREEN] Starting animations...');
     }
     
-    // Stagger the animations for a smooth entrance
-    titleOpacity.value = withDelay(200, withTiming(1, { duration: 600 }));
-    titleTranslateY.value = withDelay(200, withSpring(0, { damping: 15, stiffness: 200 }));
+    // Faster animations for snappier feel
+    titleOpacity.value = withDelay(100, withTiming(1, { duration: 300 }));
+    titleTranslateY.value = withDelay(100, withSpring(0, { damping: 15, stiffness: 200 }));
     
-    legalOpacity.value = withDelay(400, withTiming(1, { duration: 400 }));
+    legalOpacity.value = withDelay(200, withTiming(1, { duration: 250 }));
     
-    buttonOpacity.value = withDelay(600, withTiming(1, { duration: 400 }));
-    buttonScale.value = withDelay(600, withSpring(1, { damping: 15, stiffness: 200 }));
+    buttonOpacity.value = withDelay(300, withTiming(1, { duration: 250 }));
+    buttonScale.value = withDelay(300, withSpring(1, { damping: 15, stiffness: 200 }));
     
     if (__DEV__) {
       console.log('🔥 [WELCOME-SCREEN] Animations initiated');
@@ -270,4 +270,4 @@ export function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
       </View>
     </OnboardingContainer>
   );
-}
+});

@@ -3,12 +3,15 @@ import { useTranslation } from '@/src/hooks/useTranslation';
 import { ONBOARDING_FEATURES } from '@/utils/onboarding';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
+import { Image } from 'expo-image';
 import React from 'react';
 import { FlatList, KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Animated, {
     useAnimatedStyle,
     useSharedValue,
     withDelay,
+    withRepeat,
+    withSequence,
     withSpring,
     withTiming
 } from 'react-native-reanimated';
@@ -21,7 +24,7 @@ interface FeatureSelectionScreenProps {
   onContinue: (selectedFeature: string, customPrompt?: string) => void;
 }
 
-export function FeatureSelectionScreen({ onContinue }: FeatureSelectionScreenProps) {
+export const FeatureSelectionScreen = React.memo(function FeatureSelectionScreen({ onContinue }: FeatureSelectionScreenProps) {
   const { t } = useTranslation();
   const [selectedFeature, setSelectedFeature] = React.useState<string | null>(null);
   const [customPrompt, setCustomPrompt] = React.useState<string>('');
@@ -46,12 +49,36 @@ export function FeatureSelectionScreen({ onContinue }: FeatureSelectionScreenPro
   const buttonOpacity = useSharedValue(0);
   const buttonTranslateY = useSharedValue(100);
   const buttonScale = useSharedValue(0.9);
+  const buttonGlow = useSharedValue(0);
 
   React.useEffect(() => {
-    // Title animation
-    titleOpacity.value = withDelay(100, withTiming(1, { duration: 500 }));
-    titleTranslateY.value = withDelay(100, withSpring(0, { damping: 15, stiffness: 200 }));
+    // Faster title animation
+    titleOpacity.value = withDelay(50, withTiming(1, { duration: 300 }));
+    titleTranslateY.value = withDelay(50, withSpring(0, { damping: 15, stiffness: 200 }));
+    
+    // Initialize button as visible immediately
+    buttonOpacity.value = withDelay(100, withTiming(1, { duration: 200 }));
+    buttonTranslateY.value = withDelay(100, withSpring(0, { damping: 15, stiffness: 200 }));
+    buttonScale.value = withDelay(100, withSpring(0.98, { damping: 15, stiffness: 200 }));
+
+    // Preload preview media assets for faster navigation
+    preloadPreviewAssets();
   }, []);
+
+  const preloadPreviewAssets = () => {
+    // Preload key image assets that are likely to be selected
+    const priorityImages = [
+      require('../../assets/images/popular/colorize/pop-1.png'),
+      require('../../assets/images/popular/enhance/pop-3.png'),
+      require('../../assets/images/backgrounds/thumbnail/beach/beach.jpeg'),
+    ];
+
+    priorityImages.forEach(imageSource => {
+      Image.prefetch(imageSource).catch(() => {
+        // Silent fail for preloading
+      });
+    });
+  };
 
   React.useEffect(() => {
     const isCustomPromptSelected = selectedFeature === 'custom_prompt';
@@ -61,16 +88,31 @@ export function FeatureSelectionScreen({ onContinue }: FeatureSelectionScreenPro
       setCustomPrompt('');
     }
     
-    // Button slides up with bounce when feature is selected
+    // Button is always visible - animate between enabled/disabled states
     const canContinue = selectedFeature && (!isCustomPromptSelected || customPrompt.trim().length > 0);
+    
+    // Always keep button visible with full opacity
+    buttonOpacity.value = withTiming(1, { duration: 250 });
+    buttonTranslateY.value = withSpring(0, { damping: 15, stiffness: 200 });
+    
+    // Scale up with bounce when enabled, slight scale down when disabled
     if (canContinue) {
-      buttonOpacity.value = withTiming(1, { duration: 250 });
-      buttonTranslateY.value = withSpring(0, { damping: 15, stiffness: 200 });
-      buttonScale.value = withSpring(1, { damping: 12, stiffness: 250 });
+      buttonScale.value = withSpring(1.02, { damping: 12, stiffness: 250 });
+      
+      // Start pulsing glow animation when enabled
+      buttonGlow.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 1200 }),
+          withTiming(0.3, { duration: 1200 })
+        ),
+        -1,
+        false
+      );
     } else {
-      buttonOpacity.value = withTiming(0, { duration: 150 });
-      buttonTranslateY.value = withTiming(100, { duration: 150 });
-      buttonScale.value = withTiming(0.9, { duration: 150 });
+      buttonScale.value = withSpring(0.98, { damping: 15, stiffness: 200 });
+      
+      // Stop pulsing when disabled
+      buttonGlow.value = withTiming(0, { duration: 300 });
     }
   }, [selectedFeature, customPrompt]);
 
@@ -85,12 +127,15 @@ export function FeatureSelectionScreen({ onContinue }: FeatureSelectionScreenPro
       { translateY: buttonTranslateY.value },
       { scale: buttonScale.value }
     ],
+    shadowOpacity: 0.4 + (buttonGlow.value * 0.3), // Increase shadow opacity when glowing
+    shadowRadius: 16 + (buttonGlow.value * 8), // Increase shadow radius when glowing
   }));
 
 
   const handleFeatureSelect = (featureId: string) => {
     try {
-      Haptics.selectionAsync();
+      // Stronger haptic feedback for better user awareness
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {}
     setSelectedFeature(featureId);
     
@@ -110,6 +155,24 @@ export function FeatureSelectionScreen({ onContinue }: FeatureSelectionScreenPro
       const isCustom = selectedFeature === 'custom_prompt';
       onContinue(selectedFeature, isCustom ? customPrompt.trim() : undefined);
     }
+  };
+
+  // Get descriptive button text based on selection
+  const getButtonText = () => {
+    if (!selectedFeature || (selectedFeature === 'custom_prompt' && customPrompt.trim().length === 0)) {
+      const selectText = t('onboarding.features.selectOption');
+      return selectText !== 'onboarding.features.selectOption' ? selectText : 'Choose your feature';
+    }
+    
+    const feature = getTranslatedFeature(ONBOARDING_FEATURES.find(f => f.id === selectedFeature)!);
+    const startWithText = t('onboarding.features.startWith');
+    const startWith = startWithText !== 'onboarding.features.startWith' ? startWithText : 'Start with';
+    
+    if (selectedFeature === 'custom_prompt') {
+      return `${startWith} Custom Prompt →`;
+    }
+    
+    return `${startWith} ${feature.name} →`;
   };
 
   return (
@@ -137,7 +200,7 @@ export function FeatureSelectionScreen({ onContinue }: FeatureSelectionScreenPro
           )}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ 
-            paddingTop: insets.top + 120, // Safe area + header height
+            paddingTop: insets.top + 80, // Reduced spacing above list
             paddingBottom: 120, 
           }}
         />
@@ -153,8 +216,8 @@ export function FeatureSelectionScreen({ onContinue }: FeatureSelectionScreenPro
           <BlurView intensity={25} tint="dark" style={{ overflow: 'hidden' }}>
             <View style={{
               alignItems: 'center', 
-              paddingTop: insets.top + ONBOARDING_SPACING.xxxl, // Safe area + content padding
-              paddingBottom: ONBOARDING_SPACING.lg,
+              paddingTop: insets.top + ONBOARDING_SPACING.lg, // Reduced top padding
+              paddingBottom: ONBOARDING_SPACING.sm, // Reduced bottom padding
               paddingHorizontal: ONBOARDING_SPACING.lg,
               backgroundColor: 'rgba(0, 0, 0, 0.75)', // More opacity for text visibility
             }}>
@@ -166,55 +229,44 @@ export function FeatureSelectionScreen({ onContinue }: FeatureSelectionScreenPro
               }}>
                 {t('onboarding.features.title')}
               </Text>
-              <Text style={{ 
-                fontSize: ONBOARDING_TYPOGRAPHY.base, 
-                color: ONBOARDING_COLORS.textMuted,
-                textAlign: 'center',
-                marginTop: ONBOARDING_SPACING.xs,
-              }}>
-                {t('onboarding.features.subtitle')}
-              </Text>
             </View>
           </BlurView>
         </Animated.View>
 
 
-        {/* Continue Button - Floating Action Style */}
-        {selectedFeature && (selectedFeature !== 'custom_prompt' || customPrompt.trim().length > 0) && (
-          <Animated.View style={[
-            {
-              position: 'absolute',
-              bottom: ONBOARDING_SPACING.huge,
-              left: ONBOARDING_SPACING.lg,
-              right: ONBOARDING_SPACING.lg,
-              transform: [{ translateY: 0 }],
-            },
-            buttonAnimatedStyle,
-            {
-              shadowColor: ONBOARDING_COLORS.accent,
-              shadowOffset: { width: 0, height: 8 },
-              shadowOpacity: 0.4,
-              shadowRadius: 16,
-              elevation: 12,
-            }
-          ]}>
-            <OnboardingButton
-              title={t('onboarding.features.continue')}
-              onPress={handleContinue}
-              variant="primary"
-              size="large"
-              style={{ 
-                width: '100%',
-                transform: [{ scale: 1.02 }]
-              }}
-            />
-          </Animated.View>
-        )}
+        {/* Continue Button - Always Visible */}
+        <Animated.View style={[
+          {
+            position: 'absolute',
+            bottom: ONBOARDING_SPACING.huge,
+            left: ONBOARDING_SPACING.lg,
+            right: ONBOARDING_SPACING.lg,
+            transform: [{ translateY: 0 }],
+          },
+          buttonAnimatedStyle,
+          {
+            shadowColor: ONBOARDING_COLORS.accent,
+            shadowOffset: { width: 0, height: 8 },
+            elevation: 12,
+          }
+        ]}>
+          <OnboardingButton
+            title={getButtonText()}
+            onPress={handleContinue}
+            variant="primary"
+            size="large"
+            disabled={!selectedFeature || (selectedFeature === 'custom_prompt' && customPrompt.trim().length === 0)}
+            style={{ 
+              width: '100%',
+              transform: [{ scale: 1.02 }]
+            }}
+          />
+        </Animated.View>
         </View>
       </KeyboardAvoidingView>
     </OnboardingContainer>
   );
-}
+});
 
 interface FeatureCardProps {
   feature: typeof ONBOARDING_FEATURES[0];
@@ -232,21 +284,35 @@ const FeatureCard = React.memo<FeatureCardProps>(({ feature, isSelected, onSelec
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(20);
   const backgroundColor = useSharedValue(0);
+  const flashOpacity = useSharedValue(0);
   
   // Only create input animation values for custom prompt cards
   const inputHeight = feature.isCustomPrompt ? useSharedValue(0) : null;
   const inputOpacity = feature.isCustomPrompt ? useSharedValue(0) : null;
 
   React.useEffect(() => {
-    // Wave entrance animation - alternating from sides
-    const delay = index * 25;
-    const fromLeft = index % 2 === 0;
-    opacity.value = withDelay(delay + 150, withTiming(1, { duration: 400 }));
-    translateY.value = withDelay(delay + 150, withSpring(0, { damping: 12, stiffness: 250 }));
+    // Faster wave entrance animation
+    const delay = index * 10; // Reduced from 25ms to 10ms
+    opacity.value = withDelay(delay + 50, withTiming(1, { duration: 250 })); // Reduced from 150ms to 50ms
+    translateY.value = withDelay(delay + 50, withSpring(0, { damping: 12, stiffness: 250 }));
   }, [index]);
 
   React.useEffect(() => {
     backgroundColor.value = withTiming(isSelected ? 1 : 0, { duration: 200 });
+    
+    // Scale up slightly when selected for better visual feedback
+    if (isSelected) {
+      scale.value = withSpring(1.02, { damping: 15, stiffness: 200 });
+      
+      // Flash effect when first selected
+      flashOpacity.value = withSequence(
+        withTiming(0.4, { duration: 100 }),
+        withTiming(0, { duration: 300 })
+      );
+    } else {
+      scale.value = withSpring(1, { damping: 15, stiffness: 200 });
+      flashOpacity.value = withTiming(0, { duration: 100 });
+    }
     
     // Only handle expansion animations if this is actually a custom prompt card
     if (feature.isCustomPrompt && inputHeight && inputOpacity) {
@@ -266,7 +332,12 @@ const FeatureCard = React.memo<FeatureCardProps>(({ feature, isSelected, onSelec
     return {
       opacity: opacity.value,
       transform: [{ translateY: translateY.value }, { scale: scale.value }],
-      backgroundColor: ONBOARDING_COLORS.cardBackground,
+      backgroundColor: isSelected ? ONBOARDING_COLORS.accentBackground : ONBOARDING_COLORS.cardBackground,
+      shadowColor: ONBOARDING_COLORS.accent,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isSelected ? 0.3 : 0,
+      shadowRadius: isSelected ? 8 : 0,
+      elevation: isSelected ? 4 : 0,
     };
   });
 
@@ -285,6 +356,10 @@ const FeatureCard = React.memo<FeatureCardProps>(({ feature, isSelected, onSelec
       }))
     : null;
 
+  const flashAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: flashOpacity.value,
+  }));
+
   return (
     <TouchableOpacity
       onPressIn={handlePressIn}
@@ -300,15 +375,38 @@ const FeatureCard = React.memo<FeatureCardProps>(({ feature, isSelected, onSelec
         style={[
           {
             padding: ONBOARDING_SPACING.lg,
-            borderBottomWidth: 1,
-            borderBottomColor: 'rgba(255, 255, 255, 0.08)',
-            borderLeftWidth: isSelected ? 3 : 0,
+            borderLeftWidth: isSelected ? 4 : 0,
             borderLeftColor: isSelected ? ONBOARDING_COLORS.accent : 'transparent',
-            paddingLeft: isSelected ? ONBOARDING_SPACING.lg - 3 : ONBOARDING_SPACING.lg,
+            borderRightWidth: isSelected ? 1 : 0,
+            borderTopWidth: isSelected ? 1 : 0,
+            borderBottomWidth: isSelected ? 1 : 1,
+            borderRightColor: isSelected ? ONBOARDING_COLORS.borderActive : 'transparent',
+            borderTopColor: isSelected ? ONBOARDING_COLORS.borderActive : 'transparent',
+            borderBottomColor: isSelected ? ONBOARDING_COLORS.borderActive : 'rgba(255, 255, 255, 0.08)',
+            borderRadius: isSelected ? ONBOARDING_BORDER_RADIUS.md : 0,
+            marginHorizontal: isSelected ? ONBOARDING_SPACING.xs : 0,
+            paddingLeft: isSelected ? ONBOARDING_SPACING.lg - 4 : ONBOARDING_SPACING.lg,
+            position: 'relative',
           },
           animatedStyle
         ]}
       >
+        {/* Flash overlay for selection feedback */}
+        <Animated.View
+          style={[
+            {
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: ONBOARDING_COLORS.accent,
+              borderRadius: isSelected ? ONBOARDING_BORDER_RADIUS.md : 0,
+              pointerEvents: 'none',
+            },
+            flashAnimatedStyle
+          ]}
+        />
         {/* Main Content Row */}
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           {/* Icon */}

@@ -26,7 +26,7 @@ interface FeaturePreviewScreenProps {
   onPickPhoto: (photo: { uri: string; width: number; height: number }) => void;
 }
 
-export function FeaturePreviewScreen({ 
+export const FeaturePreviewScreen = React.memo(function FeaturePreviewScreen({ 
   selectedFeatureId, 
   onBack, 
   onSkip, 
@@ -83,26 +83,26 @@ export function FeaturePreviewScreen({
   React.useEffect(() => {
     // If "none_above" is selected, automatically skip to community screen
     if (selectedFeatureId === 'none_above') {
-      // Small delay to show the selection briefly
+      // Immediate transition for faster flow
       setTimeout(() => {
         onSkip();
-      }, 800);
+      }, 100);
       return;
     }
 
-    // Header animation
-    headerOpacity.value = withTiming(1, { duration: 300 });
+    // Faster header animation
+    headerOpacity.value = withTiming(1, { duration: 200 });
     
-    // Title animation
-    titleOpacity.value = withDelay(200, withTiming(1, { duration: 500 }));
-    titleTranslateY.value = withDelay(200, withSpring(0, { damping: 15, stiffness: 200 }));
+    // Faster title animation
+    titleOpacity.value = withDelay(100, withTiming(1, { duration: 300 }));
+    titleTranslateY.value = withDelay(100, withSpring(0, { damping: 15, stiffness: 200 }));
     
-    // Preview animation
-    previewOpacity.value = withDelay(400, withTiming(1, { duration: 500 }));
-    previewScale.value = withDelay(400, withSpring(1, { damping: 15, stiffness: 200 }));
+    // Faster preview animation
+    previewOpacity.value = withDelay(200, withTiming(1, { duration: 300 }));
+    previewScale.value = withDelay(200, withSpring(1, { damping: 15, stiffness: 200 }));
     
-    // Buttons animation
-    buttonsOpacity.value = withDelay(500, withTiming(1, { duration: 400 }));
+    // Faster buttons animation
+    buttonsOpacity.value = withDelay(300, withTiming(1, { duration: 250 }));
   }, [selectedFeatureId, onSkip]);
 
   // Handle app state changes (backgrounding/foregrounding)
@@ -324,7 +324,7 @@ export function FeaturePreviewScreen({
       </View>
     </OnboardingContainer>
   );
-}
+});
 
 // Map features to their preview media (video or image)
 interface PreviewMedia {

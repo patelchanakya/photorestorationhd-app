@@ -145,25 +145,26 @@ export function OnboardingProvider({ children, initialScreen = 'welcome' }: Onbo
       console.log('🧭 [Context] Navigating from', previousScreen, 'to', screen, `(${timeSpent}s)`);
     }
     
-    // Track completion of previous step
-    try {
-      await onboardingTrackingService.trackStepProgress({
+    // Navigate immediately for instant transitions
+    setCurrentScreen(screen);
+    screenStartTimes.current[screen] = now;
+    
+    // Track in background without blocking navigation
+    Promise.all([
+      onboardingTrackingService.trackStepProgress({
         stepName: previousScreen,
         status: 'completed',
         timeSpentSeconds: timeSpent
-      });
-      
-      // Track start of new step
-      screenStartTimes.current[screen] = now;
-      await onboardingTrackingService.trackStepProgress({
+      }),
+      onboardingTrackingService.trackStepProgress({
         stepName: screen,
         status: 'viewed'
-      });
-    } catch (error) {
-      console.error('Failed to track navigation:', error);
-    }
-    
-    setCurrentScreen(screen);
+      })
+    ]).catch(error => {
+      if (__DEV__) {
+        console.error('Background tracking failed:', error);
+      }
+    });
   }, [currentScreen]);
 
   const updateOnboardingState = useCallback((updates: Partial<OnboardingState>) => {
@@ -181,19 +182,20 @@ export function OnboardingProvider({ children, initialScreen = 'welcome' }: Onbo
       console.log('✅ [Context] Feature selected:', featureId);
     }
     
-    // Track feature selection
-    try {
-      await onboardingTrackingService.trackFeatureInteraction({
-        featureId,
-        interactionType: 'selected',
-        featureMetadata: { step: 'feature_selection' }
-      });
-    } catch (error) {
-      console.error('Failed to track feature selection:', error);
-    }
-    
+    // Update state and navigate immediately
     updateOnboardingState({ selectedFeature: featureId });
     await navigateToScreen('preview');
+    
+    // Track in background
+    onboardingTrackingService.trackFeatureInteraction({
+      featureId,
+      interactionType: 'selected',
+      featureMetadata: { step: 'feature_selection' }
+    }).catch(error => {
+      if (__DEV__) {
+        console.error('Background feature tracking failed:', error);
+      }
+    });
   }, [updateOnboardingState, navigateToScreen]);
 
   const pickPhoto = useCallback(async (photo: { uri: string; width: number; height: number }) => {

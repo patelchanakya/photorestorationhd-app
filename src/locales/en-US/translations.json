@@ -216,6 +216,8 @@
       "title": "What brings you here?",
       "subtitle": "Select what you're ready to do",
       "continue": "Continue",
+      "selectOption": "Choose your feature",
+      "startWith": "Start with",
       "customPromptPlaceholder": "What would you like to do with your photo?",
       "chooseYourOwn": "Choose Your Own",
       "chooseYourOwnDesc": "Describe what you want to do with your photo",

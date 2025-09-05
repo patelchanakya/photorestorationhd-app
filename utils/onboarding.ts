@@ -100,14 +100,6 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
     gradient: ['#0ea5e9', '#3b82f6']
   },
   {
-    id: 'restore_repair',
-    name: 'Fix My Photo',
-    description: 'Fix tears, scratches, and damage in old photos',
-    icon: 'bandage',
-    mapsTo: 'restoration',
-    gradient: ['#10b981', '#34d399']
-  },
-  {
     id: 'professional_outfit',
     name: 'Professional Outfit',
     description: 'Change to professional business attire',
@@ -135,19 +127,10 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
     gradient: ['#fbbf24', '#f59e0b']
   },
   {
-    id: 'light_rays',
-    name: 'Light Rays',
-    description: 'Add peaceful memorial atmosphere with golden light',
-    icon: 'sun.max.fill',
-    mapsTo: 'memorial',
-    styleKey: 'memorial-1',
-    gradient: ['#fbbf24', '#f59e0b']
-  },
-  {
     id: 'memorial_flowers',
     name: 'Memorial Flowers',
     description: 'Cover scene with memorial flowers and petals',
-    icon: 'leaf.fill',
+    icon: 'heart.fill',
     mapsTo: 'memorial',
     styleKey: 'memorial-5',
     gradient: ['#f472b6', '#fb7185']
@@ -178,25 +161,7 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
     mapsTo: 'unblur',
     gradient: ['#059669', '#10b981']
   },
-  {
-    id: 'brighten_photos',
-    name: 'Brighten',
-    description: 'Illuminate underexposed images',
-    icon: 'sun.max.fill',
-    mapsTo: 'enlighten',
-    gradient: ['#f59e0b', '#fbbf24']
-  },
 
-  // Most Popular Templates
-  {
-    id: 'beach_background',
-    name: 'Beach Background',
-    description: 'Beautiful ocean and sand scene',
-    icon: 'water.waves',
-    mapsTo: 'background',
-    styleKey: 'bg-6',
-    gradient: ['#0ea5e9', '#38bdf8']
-  },
   
   // Skip Option (Last)
   {

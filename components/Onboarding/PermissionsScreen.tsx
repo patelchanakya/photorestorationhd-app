@@ -25,7 +25,7 @@ interface PermissionsScreenProps {
   onContinue: () => void;
 }
 
-export function PermissionsScreen({ onContinue }: PermissionsScreenProps) {
+export const PermissionsScreen = React.memo(function PermissionsScreen({ onContinue }: PermissionsScreenProps) {
   const { t } = useTranslation();
   const [isRequesting, setIsRequesting] = React.useState(false);
   
@@ -54,14 +54,14 @@ export function PermissionsScreen({ onContinue }: PermissionsScreenProps) {
       true
     );
     
-    // Text animations with stagger
-    titleOpacity.value = withDelay(200, withTiming(1, { duration: 500 }));
-    titleTranslateY.value = withDelay(200, withSpring(0, { damping: 15, stiffness: 200 }));
+    // Faster animations with reduced stagger
+    titleOpacity.value = withDelay(100, withTiming(1, { duration: 300 }));
+    titleTranslateY.value = withDelay(100, withSpring(0, { damping: 15, stiffness: 200 }));
     
-    bodyOpacity.value = withDelay(400, withTiming(1, { duration: 500 }));
-    bodyTranslateY.value = withDelay(400, withSpring(0, { damping: 15, stiffness: 200 }));
+    bodyOpacity.value = withDelay(150, withTiming(1, { duration: 300 }));
+    bodyTranslateY.value = withDelay(150, withSpring(0, { damping: 15, stiffness: 200 }));
     
-    buttonOpacity.value = withDelay(600, withTiming(1, { duration: 400 }));
+    buttonOpacity.value = withDelay(200, withTiming(1, { duration: 250 }));
   }, []);
 
   const backgroundAnimatedStyle = useAnimatedStyle(() => {
@@ -214,4 +214,4 @@ export function PermissionsScreen({ onContinue }: PermissionsScreenProps) {
       </View>
     </OnboardingContainer>
   );
-}
+});
