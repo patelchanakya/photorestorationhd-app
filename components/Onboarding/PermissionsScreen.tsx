@@ -1,10 +1,13 @@
 import { analyticsService } from '@/services/analytics';
 import { permissionsService } from '@/services/permissions';
 import { useTranslation } from '@/src/hooks/useTranslation';
+import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { Text, View } from 'react-native';
+import { Dimensions, Text, View } from 'react-native';
 import Animated, {
+    interpolate,
     useAnimatedStyle,
     useSharedValue,
     withDelay,
@@ -15,6 +18,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { OnboardingButton } from './shared/OnboardingButton';
 import { OnboardingContainer } from './shared/OnboardingContainer';
+import { PhotoGridBackground } from './shared/PhotoGridBackground';
 import { ONBOARDING_COLORS, ONBOARDING_SPACING, ONBOARDING_TYPOGRAPHY } from './shared/constants';
 
 interface PermissionsScreenProps {
@@ -25,14 +29,14 @@ export function PermissionsScreen({ onContinue }: PermissionsScreenProps) {
   const { t } = useTranslation();
   const [isRequesting, setIsRequesting] = React.useState(false);
   
-  const iconScale = useSharedValue(0.8);
-  const iconOpacity = useSharedValue(0);
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+  
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(20);
   const bodyOpacity = useSharedValue(0);
   const bodyTranslateY = useSharedValue(15);
-  const noteOpacity = useSharedValue(0);
   const buttonOpacity = useSharedValue(0);
+  const backgroundAnimation = useSharedValue(0);
 
   React.useEffect(() => {
     // Track screen view
@@ -40,40 +44,31 @@ export function PermissionsScreen({ onContinue }: PermissionsScreenProps) {
       onboarding_version: 'v3'
     });
     
-    // Icon bounce animation
-    iconOpacity.value = withDelay(100, withTiming(1, { duration: 300 }));
-    iconScale.value = withDelay(100, withSequence(
-      withSpring(1.2, { damping: 12, stiffness: 200 }),
-      withSpring(1, { damping: 15, stiffness: 250 })
-    ));
-    
-    // Add gentle floating animation to icon
-    setTimeout(() => {
-      iconScale.value = withRepeat(
-        withSequence(
-          withTiming(1.05, { duration: 2000 }),
-          withTiming(1, { duration: 2000 })
-        ),
-        -1,
-        true
-      );
-    }, 1000);
+    // Background gradient animation
+    backgroundAnimation.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 3000 }),
+        withTiming(0, { duration: 3000 })
+      ),
+      -1,
+      true
+    );
     
     // Text animations with stagger
-    titleOpacity.value = withDelay(300, withTiming(1, { duration: 500 }));
-    titleTranslateY.value = withDelay(300, withSpring(0, { damping: 15, stiffness: 200 }));
+    titleOpacity.value = withDelay(200, withTiming(1, { duration: 500 }));
+    titleTranslateY.value = withDelay(200, withSpring(0, { damping: 15, stiffness: 200 }));
     
-    bodyOpacity.value = withDelay(500, withTiming(1, { duration: 500 }));
-    bodyTranslateY.value = withDelay(500, withSpring(0, { damping: 15, stiffness: 200 }));
+    bodyOpacity.value = withDelay(400, withTiming(1, { duration: 500 }));
+    bodyTranslateY.value = withDelay(400, withSpring(0, { damping: 15, stiffness: 200 }));
     
-    noteOpacity.value = withDelay(700, withTiming(1, { duration: 400 }));
-    buttonOpacity.value = withDelay(900, withTiming(1, { duration: 400 }));
+    buttonOpacity.value = withDelay(600, withTiming(1, { duration: 400 }));
   }, []);
 
-  const iconAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: iconOpacity.value,
-    transform: [{ scale: iconScale.value }],
-  }));
+  const backgroundAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: 1,
+    };
+  });
 
   const titleAnimatedStyle = useAnimatedStyle(() => ({
     opacity: titleOpacity.value,
@@ -85,16 +80,15 @@ export function PermissionsScreen({ onContinue }: PermissionsScreenProps) {
     transform: [{ translateY: bodyTranslateY.value }],
   }));
 
-  const noteAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: noteOpacity.value,
-  }));
-
   const buttonAnimatedStyle = useAnimatedStyle(() => ({
     opacity: buttonOpacity.value,
   }));
 
   const handleContinue = async () => {
     setIsRequesting(true);
+    
+    // Add haptic feedback
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
     try {
       if (__DEV__) {
@@ -109,6 +103,11 @@ export function PermissionsScreen({ onContinue }: PermissionsScreenProps) {
         console.log('📸 [Permissions] Permission result:', permissionResult.status);
       }
       
+      // Update permission state based on result
+      if (permissionResult.status === 'granted') {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      
       // Immediately update the permissions service state so it's available in explore screen
       permissionsService.updatePermissionState('mediaLibrary', permissionResult.status as any);
       
@@ -118,38 +117,27 @@ export function PermissionsScreen({ onContinue }: PermissionsScreenProps) {
       }
     }
     
-    // Always continue regardless of permission result
-    // The app will handle missing permissions when the user tries to pick photos
-    setIsRequesting(false);
-    onContinue();
+    // Small delay to show success state
+    setTimeout(() => {
+      setIsRequesting(false);
+      onContinue();
+    }, 500);
   };
 
   return (
     <OnboardingContainer>
+
+      {/* Photo grid background */}
+      <PhotoGridBackground width={screenWidth} height={screenHeight} />
+
+      {/* Content positioned lower on screen */}
       <View style={{ 
         flex: 1,
+        justifyContent: 'flex-end',
         paddingHorizontal: ONBOARDING_SPACING.xxl,
-        paddingBottom: ONBOARDING_SPACING.huge,
+        paddingBottom: ONBOARDING_SPACING.huge, // Match other screens
       }}>
-        {/* Spacer to position content */}
-        <View style={{ flex: 0.3 }} />
-
-        {/* Hero Icon - top section */}
-        <View style={{ 
-          flex: 1.8,
-          justifyContent: 'center',
-          alignItems: 'center',
-          marginBottom: ONBOARDING_SPACING.xl
-        }}>
-          <Animated.View style={iconAnimatedStyle}>
-            <Text style={{ fontSize: 140 }}>📸</Text>
-          </Animated.View>
-        </View>
-
-        {/* Spacer to push title to lower portion */}
-        <View style={{ flex: 0.4 }} />
-
-        {/* Title - positioned in lower portion */}
+        {/* Title */}
         <Animated.View style={[
           { 
             alignItems: 'flex-start',
@@ -163,6 +151,9 @@ export function PermissionsScreen({ onContinue }: PermissionsScreenProps) {
             color: ONBOARDING_COLORS.textPrimary,
             textAlign: 'left',
             lineHeight: 52,
+            textShadowColor: 'rgba(0, 0, 0, 0.8)',
+            textShadowOffset: { width: 0, height: 2 },
+            textShadowRadius: 4,
           }}>
             {t('onboarding.permissions.title')}
           </Text>
@@ -175,31 +166,49 @@ export function PermissionsScreen({ onContinue }: PermissionsScreenProps) {
         ]}>
           <Text style={{ 
             fontSize: ONBOARDING_TYPOGRAPHY.lg, 
-            color: ONBOARDING_COLORS.textMuted,
+            color: ONBOARDING_COLORS.textSecondary,
             textAlign: 'left',
             lineHeight: 26,
+            textShadowColor: 'rgba(0, 0, 0, 0.6)',
+            textShadowOffset: { width: 0, height: 1 },
+            textShadowRadius: 3,
           }}>
-{t('onboarding.permissions.subtitle')}
+            {t('onboarding.permissions.subtitle')}
           </Text>
         </Animated.View>
 
         {/* Buttons */}
         <Animated.View style={[{ width: '100%' }, buttonAnimatedStyle]}>
-          <OnboardingButton
-            title={isRequesting ? t('onboarding.permissions.requestingAccess') : t('onboarding.permissions.continue')}
-            onPress={handleContinue}
-            variant="primary"
-            size="large"
-            disabled={isRequesting}
-            style={{ width: '100%', marginBottom: ONBOARDING_SPACING.md }}
-          />
+          <LinearGradient
+            colors={[ONBOARDING_COLORS.accent, ONBOARDING_COLORS.accentDark]}
+            style={{
+              borderRadius: 16,
+              marginBottom: ONBOARDING_SPACING.md,
+            }}
+          >
+            <OnboardingButton
+              title={isRequesting ? t('onboarding.permissions.requestingAccess') : t('onboarding.permissions.continue')}
+              onPress={handleContinue}
+              variant="primary"
+              size="large"
+              disabled={isRequesting}
+              style={{ 
+                width: '100%', 
+                backgroundColor: 'transparent',
+              }}
+            />
+          </LinearGradient>
           
           <OnboardingButton
             title="Skip"
             onPress={() => onContinue()}
             variant="secondary"
             size="large"
-            style={{ width: '100%' }}
+            style={{ 
+              width: '100%',
+              backgroundColor: 'transparent',
+              borderWidth: 0,
+            }}
           />
         </Animated.View>
       </View>
