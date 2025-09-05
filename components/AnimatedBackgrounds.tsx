@@ -237,7 +237,14 @@ export function MemorialFeatures({ memorialItems = DEFAULT_MEMORIAL_ITEMS }: { m
     });
     
     // Launch image picker then open Quick Edit sheet in background mode
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 1 });
+    const result = await ImagePicker.launchImageLibraryAsync({ 
+      mediaTypes: ['images'], 
+      allowsEditing: false, 
+      quality: 1,
+      presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
+      preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.CURRENT,
+      exif: false
+    });
     if (!result.canceled && result.assets[0]) {
       try {
         useQuickEditStore.getState().openWithImage({ functionType: 'memorial' as any, imageUri: result.assets[0].uri, styleKey: memorialItem.id, styleName: translatedTitle, customPrompt: memorialItem.memorialPrompt || translatedTitle });

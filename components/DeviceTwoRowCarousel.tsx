@@ -169,7 +169,13 @@ export function DeviceTwoRowCarousel({ functionType }: DeviceTwoRowCarouselProps
           </TouchableOpacity>
           <TouchableOpacity
             onPress={async () => {
-              const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
+              const result = await ImagePicker.launchImageLibraryAsync({ 
+                mediaTypes: ['images'], 
+                quality: 1,
+                presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
+                preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.CURRENT,
+                exif: false
+              });
               if (!result.canceled && result.assets[0]) {
                 useQuickEditStore.getState().openWithImage({ 
                   functionType: functionType as any, 

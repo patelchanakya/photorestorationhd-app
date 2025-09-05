@@ -119,7 +119,10 @@ const StyleSheetBase = ({ type, onClose }: StyleSheetProps) => {
     const result = await ImagePicker.launchImageLibraryAsync({ 
       mediaTypes: ['images'], 
       allowsEditing: false, 
-      quality: 1 
+      quality: 1,
+      presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
+      preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.CURRENT,
+      exif: false
     });
     
     if (!result.canceled && result.assets[0]) {

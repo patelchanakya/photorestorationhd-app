@@ -249,7 +249,14 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
     });
     
     // Launch image picker then open Quick Edit sheet in outfit mode
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 1 });
+    const result = await ImagePicker.launchImageLibraryAsync({ 
+      mediaTypes: ['images'], 
+      allowsEditing: false, 
+      quality: 1,
+      presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
+      preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.CURRENT,
+      exif: false
+    });
     if (!result.canceled && result.assets[0]) {
       try {
         useQuickEditStore.getState().openWithImage({ functionType: 'outfit' as any, imageUri: result.assets[0].uri, styleName: translatedTitle, customPrompt: outfit.outfitPrompt || translatedTitle });

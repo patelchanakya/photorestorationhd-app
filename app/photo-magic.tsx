@@ -75,6 +75,9 @@ export default function PhotoMagicUploadScreen() {
         allowsEditing: false,
         quality: 1,
         allowsMultipleSelection: false,
+        presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
+        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.CURRENT,
+        exif: false,
       });
 
       if (!result.canceled && result.assets?.[0]) {
@@ -130,6 +133,8 @@ export default function PhotoMagicUploadScreen() {
       const result = await ImagePicker.launchCameraAsync({
         allowsEditing: false,
         quality: 1,
+        presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
+        exif: false,
       });
 
       if (!result.canceled && result.assets?.[0]) {

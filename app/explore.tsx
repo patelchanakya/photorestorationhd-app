@@ -335,7 +335,14 @@ export default function HomeGalleryLikeScreen() {
             }
             
             // Launch image picker - no permission check needed on iOS 11+
-            const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 1 });
+            const result = await ImagePicker.launchImageLibraryAsync({ 
+              mediaTypes: ['images'], 
+              allowsEditing: false, 
+              quality: 1,
+              presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
+              preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.CURRENT,
+              exif: false
+            });
             if (!result.canceled && result.assets[0]) {
               useQuickEditStore.getState().openWithImage({ 
                 functionType: 'restore_repair', 

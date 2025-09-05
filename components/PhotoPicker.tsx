@@ -1,5 +1,6 @@
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
+import * as Haptics from 'expo-haptics';
 import { useQuickEditStore } from '@/store/quickEditStore';
 import React, { useState } from 'react';
 import {
@@ -34,13 +35,15 @@ const PhotoPickerComponent = ({ onPhotoSelected, isProcessing = false, functionT
     if (type === 'camera') {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       return status === 'granted';
-    } else {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      return status === 'granted';
     }
+    // Gallery doesn't need permission check on iOS 11+ - PHPickerViewController handles it automatically
+    return true;
   };
 
   const pickImage = async (source: 'camera' | 'gallery') => {
+    try { 
+      await Haptics.selectionAsync(); 
+    } catch {}
     let result;
     
     if (source === 'camera') {
@@ -59,6 +62,8 @@ const PhotoPickerComponent = ({ onPhotoSelected, isProcessing = false, functionT
         mediaTypes: 'images',
         allowsEditing: false,
         quality: 1,
+        presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
+        exif: false,
       });
     } else {
       // Gallery doesn't need permission check on iOS 11+ - PHPickerViewController handles it
@@ -66,6 +71,9 @@ const PhotoPickerComponent = ({ onPhotoSelected, isProcessing = false, functionT
         mediaTypes: 'images',
         allowsEditing: false,
         quality: 1,
+        presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
+        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.CURRENT,
+        exif: false,
       });
     }
 

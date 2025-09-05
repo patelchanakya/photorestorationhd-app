@@ -299,7 +299,14 @@ export function PopularExamples({ items = DEFAULT_POPULAR_ITEMS }: { items?: Pop
     });
     
     // Launch image picker then open Quick Edit sheet in custom mode
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 1 });
+    const result = await ImagePicker.launchImageLibraryAsync({ 
+      mediaTypes: ['images'], 
+      allowsEditing: false, 
+      quality: 1,
+      presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
+      preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.CURRENT,
+      exif: false
+    });
     if (!result.canceled && result.assets[0]) {
       try {
         useQuickEditStore.getState().openWithImage({ 

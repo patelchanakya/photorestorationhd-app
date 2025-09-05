@@ -44,29 +44,15 @@ export function ImageSelector({ selectedImage, onImageSelected, disabled = false
     try {
       console.log('📸 Opening image picker...');
       
-      const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      console.log('📸 Permission status:', res.status);
-      
-      if (res.status !== 'granted') {
-        console.log('📸 Permission not granted, requesting again...');
-        const secondAttempt = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        console.log('📸 Second permission attempt:', secondAttempt.status);
-        
-        if (secondAttempt.status !== 'granted') {
-          console.log('📸 Permission still not granted');
-          Alert.alert(
-            'Photo Access Required',
-            'To select photos, please allow access to your photo library in Settings.',
-            [{ text: 'OK' }]
-          );
-          return;
-        }
-      }
+      // iOS 11+ doesn't need permission check - PHPickerViewController handles it automatically
       
       const result = await ImagePicker.launchImageLibraryAsync({ 
         mediaTypes: ['images'], 
         allowsEditing: false, 
-        quality: 1 
+        quality: 1,
+        presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
+        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.CURRENT,
+        exif: false
       });
       
       console.log('📸 Picker result:', result);

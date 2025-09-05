@@ -83,7 +83,14 @@ export function StyleCollections() {
 
   const openPicker = async (styleKey: string) => {
     // No permission check needed on iOS 11+ - PHPickerViewController handles privacy
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 1 });
+    const result = await ImagePicker.launchImageLibraryAsync({ 
+      mediaTypes: ['images'], 
+      allowsEditing: false, 
+      quality: 1,
+      presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
+      preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.CURRENT,
+      exif: false
+    });
     if (!result.canceled && result.assets[0]) {
       const uri = result.assets[0].uri;
       useQuickEditStore.getState().openWithImage({ 

@@ -216,7 +216,13 @@ export function QuickEditSheet() {
   const handlePick = async () => {
     try { Haptics.selectionAsync(); } catch {}
     // Launch image picker - no permission check needed on iOS 11+
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
+    const result = await ImagePicker.launchImageLibraryAsync({ 
+      mediaTypes: ['images'], 
+      quality: 1,
+      presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
+      preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.CURRENT,
+      exif: false
+    });
     if (!result.canceled && result.assets[0]) {
       setMediaLoading(true);
       setSelectedImage(result.assets[0].uri);

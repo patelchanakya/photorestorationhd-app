@@ -23,6 +23,9 @@ export function ModeChips() {
         mediaTypes: ['images'],
         allowsEditing: false,
         quality: 1,
+        presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
+        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.CURRENT,
+        exif: false,
       });
       if (!result.canceled && result.assets[0]) {
         const uri = result.assets[0].uri;

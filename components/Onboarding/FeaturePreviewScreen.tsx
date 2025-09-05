@@ -174,6 +174,9 @@ export const FeaturePreviewScreen = React.memo(function FeaturePreviewScreen({
         mediaTypes: ['images'],
         allowsEditing: false,
         quality: 1,
+        presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
+        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.CURRENT,
+        exif: false,
       });
 
       if (!result.canceled && result.assets[0]) {
