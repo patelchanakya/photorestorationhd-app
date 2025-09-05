@@ -1,8 +1,9 @@
 // Memorial-focused features for passed loved ones and remembrance photos
 import { analyticsService } from '@/services/analytics';
-import { useQuickEditStore } from '@/store/quickEditStore';
 import { useT } from '@/src/hooks/useTranslation';
+import { useQuickEditStore } from '@/store/quickEditStore';
 import { useFocusEffect } from '@react-navigation/native';
+import { useEvent } from 'expo';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -73,11 +74,12 @@ const DEFAULT_MEMORIAL_ITEMS: MemorialItem[] = [
   }
 ];
 
-// VideoView component with player hook - optimized for performance
+// VideoView component with reliable playback recovery
 const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) => {
   // Deterministic values based on index for visual variety
   const videoIndex = index || 0;
   const isMountedRef = useRef(true);
+  const shouldBePlayingRef = useRef(false);
   
   const playbackRate = React.useMemo(() => {
     // Normal playback speeds
@@ -95,11 +97,26 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
       player.loop = true;
       player.muted = true;
       player.playbackRate = playbackRate;
-      // Don't auto-play, wait for explicit play call
     } catch (error) {
       console.error('AnimatedBackgrounds video player init error:', error);
     }
   });
+
+  // Monitor playback status with expo's useEvent hook
+  const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
+
+  // Auto-recovery: restart video if it should be playing but isn't
+  React.useEffect(() => {
+    if (!isPlaying && shouldBePlayingRef.current && isMountedRef.current) {
+      try {
+        if (player && player.status !== 'idle') {
+          player.play();
+        }
+      } catch (error) {
+        // Ignore recovery errors
+      }
+    }
+  }, [isPlaying, player]);
 
   // Cleanup video player on unmount
   React.useEffect(() => {
@@ -107,6 +124,7 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
     
     return () => {
       isMountedRef.current = false;
+      shouldBePlayingRef.current = false;
       
       try {
         if (player) {
@@ -124,25 +142,23 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
     };
   }, []);
 
-  // Start playback with staggered timing and seek to initial position
+  // Initial playback setup with staggered timing
   React.useEffect(() => {
     if (!player) return;
     
-    let playTimer: any;
-    
-    // Seek to initial position then start playing
-    playTimer = setTimeout(() => {
+    const playTimer = setTimeout(() => {
       if (!isMountedRef.current) return;
       
       try {
         if (player.status !== 'idle') {
           player.currentTime = initialSeek;
           player.play();
+          shouldBePlayingRef.current = true;
         }
       } catch (error) {
-        // Ignore playback errors
+        // Ignore initial play errors
       }
-    }, videoIndex * 150); // Staggered start for visual variety
+    }, videoIndex * 150);
     
     return () => clearTimeout(playTimer);
   }, [player, videoIndex, initialSeek]);
@@ -150,16 +166,14 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
   // Handle app state changes (backgrounding/foregrounding)
   React.useEffect(() => {
     const handleAppStateChange = (nextAppState: string) => {
-      if (nextAppState === 'active' && isMountedRef.current) {
-        // Resume video playback when app returns to foreground
+      if (nextAppState === 'active' && shouldBePlayingRef.current && isMountedRef.current) {
         try {
           if (player && !player.playing && player.status !== 'idle') {
-            // Small delay to let the app settle
             setTimeout(() => {
               if (isMountedRef.current) {
                 player.play();
               }
-            }, 100 + videoIndex * 50); // Staggered resume
+            }, 100 + videoIndex * 50);
           }
         } catch (error) {
           // Ignore resume errors
@@ -174,17 +188,18 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
   // Handle navigation focus (returning to screen)
   useFocusEffect(
     React.useCallback(() => {
-      // Resume playback when screen comes into focus
-      try {
-        if (player && !player.playing && player.status !== 'idle' && isMountedRef.current) {
-          setTimeout(() => {
-            if (isMountedRef.current) {
-              player.play();
-            }
-          }, 100 + videoIndex * 50);
+      if (shouldBePlayingRef.current && isMountedRef.current) {
+        try {
+          if (player && !player.playing && player.status !== 'idle') {
+            setTimeout(() => {
+              if (isMountedRef.current) {
+                player.play();
+              }
+            }, 100 + videoIndex * 50);
+          }
+        } catch (error) {
+          // Ignore focus resume errors
         }
-      } catch (error) {
-        // Ignore focus resume errors
       }
     }, [player, videoIndex])
   );
@@ -306,7 +321,15 @@ export function MemorialFeatures({ memorialItems = DEFAULT_MEMORIAL_ITEMS }: { m
               />
               
               {/* Enhanced bottom label with text shadows */}
-              <View style={{ position: 'absolute', left: 8, right: 8, bottom: 8, minHeight: 38, justifyContent: 'flex-end' }}>
+              <View style={{ 
+                position: 'absolute', 
+                left: 8, 
+                right: 8, 
+                bottom: 8, 
+                minHeight: 38, 
+                justifyContent: 'flex-end',
+                backgroundColor: 'transparent' // Add solid background for shadow efficiency
+              }}>
                 <Text 
                   adjustsFontSizeToFit={true}
                   minimumFontScale={0.7}

@@ -87,6 +87,7 @@ export function CircularProgress({
     cancelAnimation(glowOpacity);
     cancelAnimation(iconScale);
     cancelAnimation(containerFloat);
+    cancelAnimation(animatedProgress);
     glowOpacity.value = 0.4;
     iconScale.value = 1;
     containerFloat.value = 0;

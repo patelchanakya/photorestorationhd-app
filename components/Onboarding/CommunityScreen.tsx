@@ -1,7 +1,7 @@
+import { analyticsService } from '@/services/analytics';
 import { useTranslation } from '@/src/hooks/useTranslation';
 import { Image as ExpoImage } from 'expo-image';
 import * as WebBrowser from 'expo-web-browser';
-import { analyticsService } from '@/services/analytics';
 import React from 'react';
 import { Dimensions, ScrollView, Text, View } from 'react-native';
 import { PanGestureHandler } from 'react-native-gesture-handler';
@@ -153,22 +153,32 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
     // Start continuous increment with glow effect
     timeoutRef.current = setTimeout(() => {
       intervalRef.current = setInterval(() => {
-        stat1Value.value = stat1Value.value + 1;
-        // Trigger glow effect on each increment
-        counterGlow.value = withTiming(1, { duration: 200 }, () => {
-          counterGlow.value = withTiming(0, { duration: 800 });
-        });
+        // Check if component is still mounted before updating values
+        if (intervalRef.current) {
+          stat1Value.value = stat1Value.value + 1;
+          // Trigger glow effect on each increment
+          counterGlow.value = withTiming(1, { duration: 200 }, () => {
+            if (intervalRef.current) {
+              counterGlow.value = withTiming(0, { duration: 800 });
+            }
+          });
+        }
       }, 1500) as any; // Slower increment for better UX
     }, 3000) as any;
 
     // Cleanup function
     return () => {
+      // Clear timeouts and intervals first
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
+      
+      // Cancel all animations
       cancelAnimation(stat1Value);
       cancelAnimation(stat2Value);
       cancelAnimation(stat3Value);
@@ -187,8 +197,12 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
       cancelAnimation(backgroundTranslateY);
       cancelAnimation(customOpacity);
       cancelAnimation(customTranslateY);
+      
+      // Reset values to prevent further updates
+      stat1Value.value = 10532;
+      counterGlow.value = 0;
     };
-  }, [backgroundPulse, statsBgPulse, heroOpacity, heroScale, heroGlow, photo1Rotate, photo2Rotate, photo3Rotate, titleOpacity, titleTranslateY, bodyOpacity, bodyTranslateY, statsOpacity, statsScale, buttonOpacity, stat1Value, stat2Value, stat3Value, counterGlow, benefitsOpacity, benefitsTranslateY, showcaseHeaderOpacity, showcaseHeaderTranslateY, memorialOpacity, memorialTranslateY, recreateOpacity, recreateTranslateY, backgroundOpacity, backgroundTranslateY, customOpacity, customTranslateY]);
+  }, [backgroundPulse, statsBgPulse, heroOpacity, heroScale, heroGlow, photo1Rotate, photo2Rotate, photo3Rotate, titleOpacity, titleTranslateY, bodyOpacity, bodyTranslateY, statsOpacity, statsScale, buttonOpacity, stat1Value, stat2Value, stat3Value, counterGlow, benefitsOpacity, benefitsTranslateY, showcaseHeaderOpacity, showcaseHeaderTranslateY, memorialOpacity, memorialTranslateY, recreateOpacity, recreateTranslateY, backgroundOpacity, backgroundTranslateY, customOpacity, customTranslateY, screenHeight]);
 
   // Background animated style
   const backgroundAnimatedStyle = useAnimatedStyle(() => ({
@@ -208,10 +222,6 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
     transform: [{ translateY: titleTranslateY.value }],
   }));
 
-  const bodyAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: bodyOpacity.value,
-    transform: [{ translateY: bodyTranslateY.value }],
-  }));
 
 
   const buttonAnimatedStyle = useAnimatedStyle(() => ({

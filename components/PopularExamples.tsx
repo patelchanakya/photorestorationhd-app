@@ -1,8 +1,9 @@
 // Removed Pro gating - all popular examples are now free
 import { analyticsService } from '@/services/analytics';
-import { useQuickEditStore } from '@/store/quickEditStore';
 import { useT } from '@/src/hooks/useTranslation';
+import { useQuickEditStore } from '@/store/quickEditStore';
 import { useFocusEffect } from '@react-navigation/native';
+import { useEvent } from 'expo';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -116,11 +117,12 @@ const DEFAULT_POPULAR_ITEMS: PopularItem[] = [
   }
 ];
 
-// VideoView component with smooth desynchronization for visual comfort
+// VideoView component with reliable playback recovery
 const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) => {
   // Deterministic values based on index for visual variety
   const videoIndex = index || 0;
   const isMountedRef = useRef(true);
+  const shouldBePlayingRef = useRef(false);
   
   const playbackRate = React.useMemo(() => {
     // Normal playback speeds
@@ -138,11 +140,26 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
       player.loop = true;
       player.muted = true;
       player.playbackRate = playbackRate;
-      // Don't auto-play, wait for effect
     } catch (error) {
       console.error('PopularExamples video player init error:', error);
     }
   });
+
+  // Monitor playback status with expo's useEvent hook
+  const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
+
+  // Auto-recovery: restart video if it should be playing but isn't
+  React.useEffect(() => {
+    if (!isPlaying && shouldBePlayingRef.current && isMountedRef.current) {
+      try {
+        if (player && player.status !== 'idle') {
+          player.play();
+        }
+      } catch (error) {
+        // Ignore recovery errors
+      }
+    }
+  }, [isPlaying, player]);
 
   // Cleanup video player on unmount
   React.useEffect(() => {
@@ -150,6 +167,7 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
     
     return () => {
       isMountedRef.current = false;
+      shouldBePlayingRef.current = false;
       
       try {
         if (player) {
@@ -167,33 +185,26 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
     };
   }, []);
 
+  // Initial playback setup with staggered timing
   React.useEffect(() => {
     if (!player) return;
     
-    // Stagger start times more dramatically for visual comfort
-    const baseDelay = videoIndex * 250; // 250ms between each video
-    const randomOffset = Math.random() * 300; // 0-300ms random variation
+    // Stagger start times for visual variety
+    const baseDelay = videoIndex * 250;
+    const randomOffset = Math.random() * 300;
     const totalDelay = baseDelay + randomOffset;
     
     const playTimer = setTimeout(() => {
       if (!isMountedRef.current) return;
       
-      // Seek to different starting points to break up synchronization
       try {
         if (player.status !== 'idle') {
           player.currentTime = initialSeek;
-        }
-      } catch (e) {
-        // Ignore seek errors on initial load
-      }
-      
-      // Start playing with the varied playback rate
-      try {
-        if (!player.playing && player.status !== 'idle') {
           player.play();
+          shouldBePlayingRef.current = true;
         }
       } catch (e) {
-        // Ignore play errors
+        // Ignore initial play errors
       }
     }, totalDelay);
     
@@ -203,11 +214,9 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
   // Handle app state changes (backgrounding/foregrounding)
   React.useEffect(() => {
     const handleAppStateChange = (nextAppState: string) => {
-      if (nextAppState === 'active' && isMountedRef.current) {
-        // Resume video playback when app returns to foreground
+      if (nextAppState === 'active' && shouldBePlayingRef.current && isMountedRef.current) {
         try {
           if (player && !player.playing && player.status !== 'idle') {
-            // Small delay to let the app settle
             setTimeout(() => {
               if (isMountedRef.current) {
                 player.play();
@@ -227,23 +236,19 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
   // Handle navigation focus (returning to screen)
   useFocusEffect(
     React.useCallback(() => {
-      // Resume playback when screen comes into focus
-      try {
-        if (player && !player.playing && player.status !== 'idle' && isMountedRef.current) {
-          setTimeout(() => {
-            if (isMountedRef.current) {
-              player.play();
-            }
-          }, 100 + videoIndex * 50);
+      if (shouldBePlayingRef.current && isMountedRef.current) {
+        try {
+          if (player && !player.playing && player.status !== 'idle') {
+            setTimeout(() => {
+              if (isMountedRef.current) {
+                player.play();
+              }
+            }, 100 + videoIndex * 50);
+          }
+        } catch (error) {
+          // Ignore focus resume errors
         }
-      } catch (error) {
-        // Ignore focus resume errors
       }
-      
-      return () => {
-        // Optional: pause when leaving screen
-        // if (player && player.playing) player.pause();
-      };
     }, [player, videoIndex])
   );
 
@@ -370,7 +375,15 @@ export function PopularExamples({ items = DEFAULT_POPULAR_ITEMS }: { items?: Pop
               />
               
               {/* Enhanced bottom label with text shadows */}
-              <View style={{ position: 'absolute', left: 8, right: 8, bottom: 8, minHeight: 38, justifyContent: 'flex-end' }}>
+              <View style={{ 
+                position: 'absolute', 
+                left: 8, 
+                right: 8, 
+                bottom: 8, 
+                minHeight: 38, 
+                justifyContent: 'flex-end',
+                backgroundColor: 'transparent' // Add solid background for shadow efficiency
+              }}>
                 <Text 
                   adjustsFontSizeToFit={true}
                   minimumFontScale={0.7}

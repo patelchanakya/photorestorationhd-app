@@ -1,16 +1,16 @@
+import { useRevenueCat } from '@/contexts/RevenueCatContext';
+import { analyticsService } from '@/services/analytics';
+import { featureRequestService } from '@/services/featureRequestService';
+import { useT } from '@/src/hooks/useTranslation';
+import { useQuickEditStore } from '@/store/quickEditStore';
+import * as Haptics from 'expo-haptics';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { useQuickEditStore } from '@/store/quickEditStore';
-import { useT } from '@/src/hooks/useTranslation';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Alert, Text, TouchableOpacity, View, Animated } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import { Alert, Animated, Text, TouchableOpacity, View } from 'react-native';
 import { IconSymbol } from './ui/IconSymbol';
-import { featureRequestService } from '@/services/featureRequestService';
-import { useRevenueCat } from '@/contexts/RevenueCatContext';
-import { analyticsService } from '@/services/analytics';
 
 type CardItem = {
   id: string;
@@ -78,12 +78,7 @@ const FeatureCardBase = ({
       height: 260, 
       borderRadius: 24, 
       overflow: 'hidden', 
-      borderWidth: 1, 
-      borderColor: 'rgba(255,255,255,0.12)',
-      shadowColor: 'rgba(0,0,0,0.4)',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 1,
-      shadowRadius: 8,
+      backgroundColor: 'transparent',
       transform: [{ scale: scaleValue }]
     }}>
       <ExpoImage 
@@ -108,7 +103,13 @@ const FeatureCardBase = ({
       />
       
       {/* Enhanced title and subtitle with better readability */}
-      <View style={{ position: 'absolute', left: 18, right: 18, top: 18 }}>
+      <View style={{ 
+        position: 'absolute', 
+        left: 18, 
+        right: 18, 
+        top: 18,
+        backgroundColor: 'transparent' // Add solid background for shadow efficiency
+      }}>
         <Text style={{ 
           color: '#FFFFFF', 
           fontSize: 23, 
@@ -136,21 +137,21 @@ const FeatureCardBase = ({
       </View>
       
       {/* Refined bottom action bar with enhanced visual appeal */}
-      <View style={{ position: 'absolute', left: 18, right: 18, bottom: 18 }}>
+      <View style={{ 
+        position: 'absolute', 
+        left: 18, 
+        right: 18, 
+        bottom: 18,
+        backgroundColor: 'transparent' // Add solid background for shadow efficiency
+      }}>
         <View style={{ 
           flexDirection: 'row', 
           alignItems: 'center', 
           justifyContent: 'center',
-          backgroundColor: 'rgba(255,255,255,0.18)', 
+          backgroundColor: 'transparent', 
           paddingHorizontal: 18, 
           paddingVertical: 12, 
-          borderRadius: 14,
-          borderWidth: 1.5,
-          borderColor: 'rgba(255,255,255,0.25)',
-          shadowColor: 'rgba(0,0,0,0.3)',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 1,
-          shadowRadius: 4
+          borderRadius: 14
         }}>
           <Text style={{ 
             color: '#FFFFFF', 
@@ -164,12 +165,7 @@ const FeatureCardBase = ({
           }}>
             Tap to select photo
           </Text>
-          <IconSymbol name="arrow.right" size={17} color={'#FFFFFF'} style={{ 
-            shadowColor: 'rgba(0,0,0,0.5)',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 1,
-            shadowRadius: 2
-          }} />
+          <IconSymbol name="arrow.right" size={17} color={'#FFFFFF'} />
         </View>
       </View>
     </Animated.View>
