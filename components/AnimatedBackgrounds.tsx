@@ -82,8 +82,8 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
   const shouldBePlayingRef = useRef(false);
   
   const playbackRate = React.useMemo(() => {
-    // Normal playback speeds
-    const rates = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0];
+    // Faster playback speeds for better looping
+    const rates = [1.1, 1.2, 1.0, 1.3, 1.1, 1.2];
     return rates[videoIndex % rates.length];
   }, [videoIndex]);
   

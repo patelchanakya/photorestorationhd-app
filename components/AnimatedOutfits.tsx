@@ -76,8 +76,8 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
   const shouldBePlayingRef = useRef(false);
   
   const playbackRate = React.useMemo(() => {
-    // Slower playback speeds (0.5x to 0.8x) for gentle, easy-on-eyes movement
-    const rates = [0.5, 0.6, 0.7, 0.55, 0.65, 0.75];
+    // Faster playback speeds for better looping
+    const rates = [1.1, 1.0, 1.2, 1.1, 1.3, 1.2];
     return rates[videoIndex % rates.length];
   }, [videoIndex]);
   
@@ -136,15 +136,11 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
     };
   }, []);
 
-  // Initial playback setup with staggered timing
+  // Initial playback setup with consistent timing
   React.useEffect(() => {
     if (!player) return;
     
-    // Stagger start times for visual variety
-    const baseDelay = videoIndex * 250;
-    const randomOffset = Math.random() * 300;
-    const totalDelay = baseDelay + randomOffset;
-    
+    // Consistent staggered timing without random offset
     const playTimer = setTimeout(() => {
       if (!isMountedRef.current) return;
       
@@ -157,7 +153,7 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
       } catch (e) {
         // Ignore initial play errors
       }
-    }, totalDelay);
+    }, videoIndex * 150); // Consistent 150ms delay per video
     
     return () => clearTimeout(playTimer);
   }, [player, videoIndex, initialSeek]);
