@@ -2,6 +2,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { useQuickEditStore } from '@/store/quickEditStore';
+import { analyticsService } from '@/services/analytics';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
@@ -50,12 +51,24 @@ const PhotoPickerComponent = ({ onPhotoSelected, isProcessing = false, functionT
       // Camera still needs explicit permission
       const hasPermission = await requestPermissions(source);
       if (!hasPermission) {
+        // Track camera permission denied (fire and forget)
+        analyticsService.track('photo_picker_permission_denied', {
+          permission_type: 'camera',
+          function_type: functionType
+        });
+        
         Alert.alert(
           'Camera Permission Required',
           'Please grant camera permission to use this feature.',
           [{ text: 'OK' }]
         );
         return;
+      } else {
+        // Track camera permission granted (fire and forget)
+        analyticsService.track('photo_picker_permission_granted', {
+          permission_type: 'camera',
+          function_type: functionType
+        });
       }
       
       result = await ImagePicker.launchCameraAsync({
@@ -79,10 +92,23 @@ const PhotoPickerComponent = ({ onPhotoSelected, isProcessing = false, functionT
 
     if (!result.canceled && result.assets[0]) {
       const uri = result.assets[0].uri;
+      
+      // Track successful image selection (fire and forget)
+      analyticsService.track('photo_picker_image_selected', {
+        source: source,
+        function_type: functionType
+      });
+      
       // Use QuickEditSheet with image already selected
       useQuickEditStore.getState().openWithImage({ 
         functionType: functionType as any, 
         imageUri: uri 
+      });
+    } else if (result.canceled) {
+      // Track image picker cancelled (fire and forget)
+      analyticsService.track('photo_picker_cancelled', {
+        source: source,
+        function_type: functionType
       });
     }
   };

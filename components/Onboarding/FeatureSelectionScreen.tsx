@@ -1,6 +1,7 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useTranslation } from '@/src/hooks/useTranslation';
 import { ONBOARDING_FEATURES } from '@/utils/onboarding';
+import { analyticsService } from '@/services/analytics';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
@@ -30,6 +31,10 @@ export const FeatureSelectionScreen = React.memo(function FeatureSelectionScreen
   const [customPrompt, setCustomPrompt] = React.useState<string>('');
   const customInputRef = React.useRef<any>(null);
   const insets = useSafeAreaInsets();
+  
+  // Track feature selection timing
+  const screenStartTime = React.useRef<number>(Date.now());
+  const featureSelectionStartTime = React.useRef<number | null>(null);
 
   // Helper function to get translated feature name and description
   const getTranslatedFeature = (feature: typeof ONBOARDING_FEATURES[0]) => {
@@ -52,6 +57,12 @@ export const FeatureSelectionScreen = React.memo(function FeatureSelectionScreen
   const buttonGlow = useSharedValue(0);
 
   React.useEffect(() => {
+    // Track screen view (fire and forget)
+    analyticsService.trackScreenView('onboarding_feature_selection', {
+      onboarding_version: 'v3',
+      feature_count: ONBOARDING_FEATURES.length.toString()
+    });
+
     // Faster title animation
     titleOpacity.value = withDelay(50, withTiming(1, { duration: 300 }));
     titleTranslateY.value = withDelay(50, withSpring(0, { damping: 15, stiffness: 200 }));
@@ -137,10 +148,37 @@ export const FeatureSelectionScreen = React.memo(function FeatureSelectionScreen
       // Stronger haptic feedback for better user awareness
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {}
+
+    // Track feature selection with timing (fire and forget)
+    const timeSpent = featureSelectionStartTime.current 
+      ? Date.now() - featureSelectionStartTime.current 
+      : Date.now() - screenStartTime.current;
+    
+    analyticsService.track('onboarding_feature_selected', {
+      feature_id: featureId,
+      feature_type: featureId === 'custom_prompt' ? 'custom' : 'preset',
+      time_spent_ms: timeSpent.toString(),
+      onboarding_version: 'v3'
+    });
+
+    // Track first selection timing
+    if (!featureSelectionStartTime.current) {
+      featureSelectionStartTime.current = Date.now();
+      analyticsService.track('onboarding_first_feature_interaction', {
+        time_to_first_interaction_ms: timeSpent.toString(),
+        onboarding_version: 'v3'
+      });
+    }
+
     setSelectedFeature(featureId);
     
     // Auto-focus TextInput when custom_prompt is selected
     if (featureId === 'custom_prompt') {
+      // Track custom prompt selection (fire and forget)
+      analyticsService.track('onboarding_custom_prompt_selected', {
+        onboarding_version: 'v3'
+      });
+      
       // Add a small delay to allow the expansion animation to start
       setTimeout(() => {
         if (customInputRef.current) {
@@ -153,6 +191,26 @@ export const FeatureSelectionScreen = React.memo(function FeatureSelectionScreen
   const handleContinue = () => {
     if (selectedFeature) {
       const isCustom = selectedFeature === 'custom_prompt';
+      const totalTimeSpent = Date.now() - screenStartTime.current;
+      
+      // Track feature selection completion (fire and forget)
+      analyticsService.track('onboarding_feature_selection_completed', {
+        selected_feature: selectedFeature,
+        feature_type: isCustom ? 'custom' : 'preset',
+        has_custom_prompt: isCustom ? 'true' : 'false',
+        custom_prompt_length: isCustom ? customPrompt.trim().length.toString() : '0',
+        total_time_spent_ms: totalTimeSpent.toString(),
+        onboarding_version: 'v3'
+      });
+
+      if (isCustom && customPrompt.trim()) {
+        // Track custom prompt usage (fire and forget)
+        analyticsService.track('onboarding_custom_prompt_used', {
+          prompt_length: customPrompt.trim().length.toString(),
+          onboarding_version: 'v3'
+        });
+      }
+
       onContinue(selectedFeature, isCustom ? customPrompt.trim() : undefined);
     }
   };
@@ -476,7 +534,24 @@ const FeatureCard = React.memo<FeatureCardProps>(({ feature, isSelected, onSelec
               <TextInput
                 ref={customInputRef}
                 value={customPrompt}
-                onChangeText={setCustomPrompt}
+                onChangeText={(text) => {
+                  setCustomPrompt(text);
+                  // Track custom prompt typing (fire and forget)
+                  if (text.length > 0 && customPrompt.length === 0) {
+                    analyticsService.track('onboarding_custom_prompt_started_typing', {
+                      onboarding_version: 'v3'
+                    });
+                  }
+                }}
+                onBlur={() => {
+                  // Track custom prompt input blur with length (fire and forget)
+                  if (customPrompt.trim().length > 0) {
+                    analyticsService.track('onboarding_custom_prompt_input_blur', {
+                      prompt_length: customPrompt.trim().length.toString(),
+                      onboarding_version: 'v3'
+                    });
+                  }
+                }}
                 placeholder={t('onboarding.features.customPromptPlaceholder')}
                 placeholderTextColor={ONBOARDING_COLORS.textMuted}
                 multiline

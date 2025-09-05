@@ -1,6 +1,7 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import { photoRestorationKeys } from '@/hooks/usePhotoRestoration';
+import { analyticsService } from '@/services/analytics';
 import { usePhotoUsage, type PhotoUsage } from '@/services/photoUsageService';
 import { checkSubscriptionStatus, getAppUserId, presentPaywall, restorePurchasesSecure } from '@/services/revenuecat';
 import { photoStorage } from '@/services/storage';
@@ -130,17 +131,30 @@ export default function SettingsModalScreen() {
     fetchVideoUsageData();
   }, [fetchVideoUsageData]);
 
-  // Refetch usage data when settings modal gets focus (after video generation)
+  // Track screen view and refetch usage data when settings modal gets focus
   useFocusEffect(
     useCallback(() => {
+      // Track screen view (fire and forget)
+      analyticsService.trackScreenView('settings_modal', {
+        is_pro: isPro ? 'true' : 'false',
+        platform: Platform.OS
+      });
+      
       refetchPhotoUsage();
       fetchVideoUsageData();
-    }, [refetchPhotoUsage, fetchVideoUsageData])
+    }, [refetchPhotoUsage, fetchVideoUsageData, isPro])
   );
   
   // Language selection handler
   const handleLanguageSelect = async (language: AvailableLanguage) => {
     try {
+      // Track language change (fire and forget)
+      analyticsService.track('settings_language_changed', {
+        from_language: currentLanguage,
+        to_language: language,
+        is_pro: isPro ? 'true' : 'false'
+      });
+
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       await setLanguage(language);
       setIsLanguageModalVisible(false);
@@ -148,6 +162,13 @@ export default function SettingsModalScreen() {
       if (__DEV__) {
         console.error('Error setting language:', error);
       }
+      
+      // Track language change error (fire and forget)
+      analyticsService.track('settings_language_change_error', {
+        error: error?.toString() || 'unknown_error',
+        target_language: language,
+        is_pro: isPro ? 'true' : 'false'
+      });
     }
   };
 
@@ -355,6 +376,12 @@ export default function SettingsModalScreen() {
         return;
       }
 
+      // Track restore purchases attempt (fire and forget)
+      analyticsService.track('settings_restore_purchases_attempted', {
+        is_pro: isPro ? 'true' : 'false',
+        platform: Platform.OS
+      });
+
       // Add haptic feedback
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       
@@ -381,6 +408,12 @@ export default function SettingsModalScreen() {
         if (result.hasActiveEntitlements) {
           console.log('✅ [SECURITY] Restore successful - subscription confirmed by Apple');
           
+          // Track successful restore (fire and forget)
+          analyticsService.track('settings_restore_purchases_success', {
+            had_active_entitlements: 'true',
+            platform: Platform.OS
+          });
+          
           // Refresh context to update UI state
           await refreshCustomerInfo();
           
@@ -391,6 +424,12 @@ export default function SettingsModalScreen() {
           );
         } else {
           console.log('ℹ️ [SECURITY] Restore completed but no active subscriptions found');
+          
+          // Track no purchases found (fire and forget)
+          analyticsService.track('settings_restore_purchases_no_entitlements', {
+            platform: Platform.OS
+          });
+          
           Alert.alert(
             'No Purchases Found',
 'No previous purchases found on this account.',
@@ -597,6 +636,12 @@ export default function SettingsModalScreen() {
   // Animated social media button handler
   const handleSocialMediaPress = async (platform: keyof typeof socialMediaUrls, scaleValue: any) => {
     try {
+      // Track social media click (fire and forget)
+      analyticsService.track('settings_social_media_clicked', {
+        platform: platform,
+        is_pro: isPro ? 'true' : 'false'
+      });
+
       // Haptic feedback
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       

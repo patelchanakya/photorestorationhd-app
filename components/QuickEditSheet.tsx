@@ -116,6 +116,16 @@ export function QuickEditSheet() {
     if (stage === 'loading' && !forceClose) {
       return;
     }
+
+    // Track sheet dismissal (fire and forget)
+    analyticsService.track('quick_edit_sheet_dismissed', {
+      function_type: functionType || 'unknown',
+      style_key: styleKey || 'none',
+      stage: stage,
+      force_close: forceClose ? 'true' : 'false',
+      had_result: restoredImageUri ? 'true' : 'false'
+    });
+
     try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
     
     // Clear active prediction state when dismissing the sheet
@@ -164,6 +174,14 @@ export function QuickEditSheet() {
   // Additional check when sheet becomes visible
   React.useEffect(() => {
     if (visible) {
+      // Track sheet opening (fire and forget)
+      analyticsService.trackScreenView('quick_edit_sheet', {
+        function_type: functionType || 'unknown',
+        style_key: styleKey || 'none',
+        stage: stage,
+        has_selected_image: selectedImageUri ? 'true' : 'false'
+      });
+
       // Reset image error state when sheet becomes visible
       setImageError(false);
       
@@ -181,7 +199,7 @@ export function QuickEditSheet() {
       
       checkActiveWork();
     }
-  }, [visible]);
+  }, [visible, functionType, styleKey, stage, selectedImageUri]);
 
   React.useEffect(() => {
     // Mount and animate in
@@ -215,6 +233,14 @@ export function QuickEditSheet() {
 
   const handlePick = async () => {
     try { Haptics.selectionAsync(); } catch {}
+    
+    // Track image picker launch (fire and forget)
+    analyticsService.track('quick_edit_image_picker_launched', {
+      function_type: functionType || 'unknown',
+      style_key: styleKey || 'none',
+      source: 'gallery'
+    });
+
     // Launch image picker - no permission check needed on iOS 11+
     const result = await ImagePicker.launchImageLibraryAsync({ 
       mediaTypes: ['images'], 
@@ -223,15 +249,35 @@ export function QuickEditSheet() {
       preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.CURRENT,
       exif: false
     });
+    
     if (!result.canceled && result.assets[0]) {
+      // Track image selection success (fire and forget)
+      analyticsService.track('quick_edit_image_selected', {
+        function_type: functionType || 'unknown',
+        style_key: styleKey || 'none',
+        source: 'gallery'
+      });
+      
       setMediaLoading(true);
       setSelectedImage(result.assets[0].uri);
+    } else {
+      // Track image picker cancelled (fire and forget)
+      analyticsService.track('quick_edit_image_picker_cancelled', {
+        function_type: functionType || 'unknown',
+        source: 'gallery'
+      });
     }
   };
 
   const handleCrop = () => {
     try { Haptics.selectionAsync(); } catch {}
     if (!selectedImageUri) return;
+
+    // Track crop action (fire and forget)
+    analyticsService.track('quick_edit_crop_started', {
+      function_type: functionType || 'unknown',
+      style_key: styleKey || 'none'
+    });
     hasAppliedCropRef.current = false;
     setIsCropping(true);
   };
@@ -422,6 +468,14 @@ export function QuickEditSheet() {
 
   const handleSave = async () => {
     if (!restoredId || !restoredImageUri) return;
+
+    // Track save attempt (fire and forget)
+    analyticsService.track('quick_edit_save_started', {
+      function_type: functionType || 'unknown',
+      style_key: styleKey || 'none',
+      restoration_id: restoredId
+    });
+
     // Tap animation
     saveButtonScale.value = withTiming(0.96, { duration: 90 }, () => {
       saveButtonScale.value = withTiming(1, { duration: 120 });
@@ -432,6 +486,13 @@ export function QuickEditSheet() {
     
     savePhotoMutation.mutate({ imageUri: restoredImageUri }, {
       onSuccess: async () => {
+        // Track save success (fire and forget)
+        analyticsService.track('quick_edit_save_success', {
+          function_type: functionType || 'unknown',
+          style_key: styleKey || 'none',
+          restoration_id: restoredId
+        });
+
         // Clear active prediction state since user has saved the result
         await AsyncStorage.removeItem('activePredictionId');
         
@@ -449,6 +510,15 @@ export function QuickEditSheet() {
       },
       onError: (error) => {
         console.error('Save failed:', error);
+        
+        // Track save error (fire and forget)
+        analyticsService.track('quick_edit_save_error', {
+          function_type: functionType || 'unknown',
+          style_key: styleKey || 'none',
+          restoration_id: restoredId,
+          error: error?.toString() || 'unknown_error'
+        });
+
         // Hide saving modal on error
         setShowSavingModal(false);
         // Reset button animation on error
@@ -459,6 +529,13 @@ export function QuickEditSheet() {
 
   const handleView = async () => {
     if (!restoredId) return;
+
+    // Track view result (fire and forget)
+    analyticsService.track('quick_edit_view_result', {
+      function_type: functionType || 'unknown',
+      style_key: styleKey || 'none',
+      restoration_id: restoredId
+    });
     
     // Clear active prediction state since user is viewing the result
     await AsyncStorage.removeItem('activePredictionId');

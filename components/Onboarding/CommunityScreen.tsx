@@ -1,6 +1,7 @@
 import { useTranslation } from '@/src/hooks/useTranslation';
 import { Image as ExpoImage } from 'expo-image';
 import * as WebBrowser from 'expo-web-browser';
+import { analyticsService } from '@/services/analytics';
 import React from 'react';
 import { Dimensions, ScrollView, Text, View } from 'react-native';
 import { PanGestureHandler } from 'react-native-gesture-handler';
@@ -77,6 +78,12 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
 
   // @ts-ignore
   React.useEffect(() => {
+    // Track screen view (fire and forget)
+    analyticsService.trackScreenView('onboarding_community', {
+      onboarding_version: 'v3',
+      screen_height: screenHeight.toString()
+    });
+
     // Background pulse animation - continuous subtle effect
     backgroundPulse.value = withRepeat(
       withTiming(1, { duration: 4000 }),
@@ -449,7 +456,14 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
               return (
                 <OnboardingButton
                   title={title}
-                  onPress={() => WebBrowser.openBrowserAsync('https://www.facebook.com/photorestorationhd/')}
+                  onPress={() => {
+                    // Track Facebook follow click (fire and forget)
+                    analyticsService.track('onboarding_facebook_follow_clicked', {
+                      screen: 'community',
+                      onboarding_version: 'v3'
+                    });
+                    WebBrowser.openBrowserAsync('https://www.facebook.com/photorestorationhd/');
+                  }}
                   variant="secondary"
                   size="large"
                   style={{ 
@@ -463,7 +477,13 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
             })()}
             <OnboardingButton
               title={t('onboarding.community.continue')}
-              onPress={onContinue}
+              onPress={() => {
+                // Track continue from community screen (fire and forget)
+                analyticsService.track('onboarding_community_continue_clicked', {
+                  onboarding_version: 'v3'
+                });
+                onContinue();
+              }}
               variant="primary"
               size="large"
               style={{ 

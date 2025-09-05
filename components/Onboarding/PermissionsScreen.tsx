@@ -103,9 +103,28 @@ export const PermissionsScreen = React.memo(function PermissionsScreen({ onConti
         console.log('📸 [Permissions] Permission result:', permissionResult.status);
       }
       
+      // Track permission result (fire and forget)
+      analyticsService.track('onboarding_permission_result', {
+        permission_type: 'photo_library',
+        status: permissionResult.status,
+        onboarding_version: 'v3'
+      });
+
       // Update permission state based on result
       if (permissionResult.status === 'granted') {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        // Track permission granted (fire and forget)
+        analyticsService.track('onboarding_permission_granted', {
+          permission_type: 'photo_library',
+          onboarding_version: 'v3'
+        });
+      } else {
+        // Track permission denied (fire and forget)
+        analyticsService.track('onboarding_permission_denied', {
+          permission_type: 'photo_library',
+          status: permissionResult.status,
+          onboarding_version: 'v3'
+        });
       }
       
       // Immediately update the permissions service state so it's available in explore screen
@@ -181,7 +200,13 @@ export const PermissionsScreen = React.memo(function PermissionsScreen({ onConti
         <Animated.View style={[{ width: '100%' }, buttonAnimatedStyle]}>
           <OnboardingButton
             title="Skip"
-            onPress={() => onContinue()}
+            onPress={() => {
+              // Track permission skip (fire and forget)
+              analyticsService.track('onboarding_permission_skipped', {
+                onboarding_version: 'v3'
+              });
+              onContinue();
+            }}
             variant="secondary"
             size="large"
             style={{ 

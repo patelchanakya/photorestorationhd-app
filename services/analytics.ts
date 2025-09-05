@@ -139,6 +139,59 @@ class AnalyticsService {
     }
   }
 
+  // Global error tracking
+  trackError(errorType: 'app_crash' | 'network_error' | 'permission_error' | 'api_error' | 'rendering_error' | 'memory_error', errorMessage: string, errorContext?: Record<string, any>) {
+    try {
+      // Send to Clarity (fire and forget)
+      clarityService.sendCustomEvent('app_error_occurred');
+      clarityService.setCustomTag('error_type', errorType);
+      clarityService.setCustomTag('error_message', errorMessage.substring(0, 100)); // Truncate for privacy
+      
+      // Add context as tags
+      if (errorContext) {
+        Object.entries(errorContext).forEach(([key, value]) => {
+          clarityService.setCustomTag(`error_${key}`, String(value).substring(0, 50));
+        });
+      }
+      
+      if (__DEV__) {
+        console.log(`📊 Analytics: Error tracked - ${errorType}: ${errorMessage}`);
+      }
+    } catch (trackingError) {
+      // Silent fail for analytics tracking errors
+      if (__DEV__) {
+        console.warn('📊 Analytics: Failed to track error:', trackingError);
+      }
+    }
+  }
+
+  // Performance tracking
+  trackPerformanceMetric(metricName: string, value: number, unit: 'ms' | 'bytes' | 'count' = 'ms', metadata?: Record<string, any>) {
+    try {
+      // Send to Clarity (fire and forget)
+      clarityService.sendCustomEvent('performance_metric');
+      clarityService.setCustomTag('metric_name', metricName);
+      clarityService.setCustomTag('metric_value', value.toString());
+      clarityService.setCustomTag('metric_unit', unit);
+      
+      // Add metadata as tags
+      if (metadata) {
+        Object.entries(metadata).forEach(([key, value]) => {
+          clarityService.setCustomTag(`perf_${key}`, String(value));
+        });
+      }
+      
+      if (__DEV__) {
+        console.log(`📊 Analytics: Performance metric - ${metricName}: ${value}${unit}`);
+      }
+    } catch (trackingError) {
+      // Silent fail for analytics tracking errors
+      if (__DEV__) {
+        console.warn('📊 Analytics: Failed to track performance metric:', trackingError);
+      }
+    }
+  }
+
   // Cleanup
   destroy() {
     // Clarity doesn't need explicit cleanup, but we can pause it

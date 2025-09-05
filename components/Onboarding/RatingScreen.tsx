@@ -2,6 +2,7 @@ import { useTranslation } from '@/src/hooks/useTranslation';
 import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
 import * as StoreReview from 'expo-store-review';
+import { analyticsService } from '@/services/analytics';
 import React from 'react';
 import { Platform, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,13 +18,32 @@ export function RatingScreen({ onContinue }: RatingScreenProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
+  React.useEffect(() => {
+    // Track screen view (fire and forget)
+    analyticsService.trackScreenView('onboarding_rating', {
+      onboarding_version: 'v3',
+      platform: Platform.OS
+    });
+  }, []);
+
   const requestReview = async () => {
     try {
+      // Track rating button click (fire and forget)
+      analyticsService.track('onboarding_rating_request_clicked', {
+        onboarding_version: 'v3',
+        platform: Platform.OS
+      });
+
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
       const isAvailable = await StoreReview.isAvailableAsync();
       if (isAvailable) {
         await StoreReview.requestReview();
+        // Track rating modal shown (fire and forget)
+        analyticsService.track('onboarding_rating_modal_shown', {
+          method: 'native_modal',
+          platform: Platform.OS
+        });
       } else {
         const appStoreUrl = Platform.select({
           ios: 'https://apps.apple.com/app/photo-restoration-hd/id6748838784?action=write-review',
@@ -34,11 +54,20 @@ export function RatingScreen({ onContinue }: RatingScreenProps) {
           const canOpen = await Linking.canOpenURL(appStoreUrl);
           if (canOpen) {
             await Linking.openURL(appStoreUrl);
+            // Track external store opened (fire and forget)
+            analyticsService.track('onboarding_rating_store_opened', {
+              method: 'external_store',
+              platform: Platform.OS
+            });
           }
         }
       }
     } catch (error) {
-      // Silent fail - continue
+      // Track rating error (fire and forget)
+      analyticsService.track('onboarding_rating_error', {
+        error: error?.toString() || 'unknown_error',
+        platform: Platform.OS
+      });
     } finally {
       // Always advance after attempting rating (completed or canceled)
       onContinue();
@@ -49,7 +78,16 @@ export function RatingScreen({ onContinue }: RatingScreenProps) {
     <OnboardingContainer>
       {/* Header with Skip */}
       <View style={{ paddingHorizontal: ONBOARDING_SPACING.xxl, paddingTop: 8, flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' }}>
-        <TouchableOpacity onPress={onContinue} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <TouchableOpacity 
+          onPress={() => {
+            // Track rating skip (fire and forget)
+            analyticsService.track('onboarding_rating_skipped', {
+              onboarding_version: 'v3'
+            });
+            onContinue();
+          }} 
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
           <Text style={{ color: '#FFFFFF', fontFamily: 'Lexend-Medium', fontSize: 16 }}>
             {(() => { const k = 'onboarding.rating.skip'; const v = t(k); return v === k ? 'Skip' : v; })()}
           </Text>

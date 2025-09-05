@@ -156,6 +156,12 @@ export default function HomeGalleryLikeScreen() {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <TouchableOpacity 
             onPress={async () => {
+              // Track Pro button click (fire and forget)
+              analyticsService.track('explore_pro_button_clicked', {
+                is_pro: isPro ? 'true' : 'false',
+                section: 'header'
+              });
+
               if (isPro) {
                 // Pro users: refresh subscription status with cache invalidation
                 console.log('🔒 [SECURITY] Pro icon tapped - refreshing subscription status...');
@@ -266,6 +272,12 @@ export default function HomeGalleryLikeScreen() {
           <TouchableOpacity
             onPress={async () => {
               if (settingsNavLock.current) return;
+              
+              // Track settings button click (fire and forget)
+              analyticsService.track('explore_settings_button_clicked', {
+                is_pro: isPro ? 'true' : 'false'
+              });
+              
               settingsNavLock.current = true;
               try {
                 await router.push('/settings-modal');
@@ -283,16 +295,76 @@ export default function HomeGalleryLikeScreen() {
       <NavigationPills
         activeSectionId={activeSectionId}
         sections={[
-          { id: 'memorial', titleKey: 'explore.sections.memorial', onPress: () => scrollToSection('memorial') },
-          { id: 'colorize', titleKey: 'explore.sections.colorize', onPress: () => scrollToSection('colorize') },
-          { id: 'waterDamage', titleKey: 'explore.sections.waterDamage', onPress: () => scrollToSection('waterDamage') },
-          { id: 'descratch', titleKey: 'explore.sections.descratch', onPress: () => scrollToSection('descratch') },
-          { id: 'brighten', titleKey: 'explore.sections.brighten', onPress: () => scrollToSection('brighten') },
-          { id: 'recreate', titleKey: 'explore.sections.recreate', onPress: () => scrollToSection('recreate') },
-          { id: 'clarify', titleKey: 'explore.sections.clarify', onPress: () => scrollToSection('clarify') },
-          { id: 'outfits', titleKey: 'explore.sections.outfits', onPress: () => scrollToSection('outfits') },
-          { id: 'popular', titleKey: 'explore.sections.popular', onPress: () => scrollToSection('popular') },
-          { id: 'fixMyPhoto', titleKey: 'explore.sections.fixMyPhoto', onPress: () => scrollToSection('fixMyPhoto') },
+          { id: 'memorial', titleKey: 'explore.sections.memorial', onPress: () => {
+            analyticsService.track('explore_navigation_pill_clicked', {
+              section_id: 'memorial',
+              is_pro: isPro ? 'true' : 'false'
+            });
+            scrollToSection('memorial');
+          }},
+          { id: 'colorize', titleKey: 'explore.sections.colorize', onPress: () => {
+            analyticsService.track('explore_navigation_pill_clicked', {
+              section_id: 'colorize',
+              is_pro: isPro ? 'true' : 'false'
+            });
+            scrollToSection('colorize');
+          }},
+          { id: 'waterDamage', titleKey: 'explore.sections.waterDamage', onPress: () => {
+            analyticsService.track('explore_navigation_pill_clicked', {
+              section_id: 'waterDamage',
+              is_pro: isPro ? 'true' : 'false'
+            });
+            scrollToSection('waterDamage');
+          }},
+          { id: 'descratch', titleKey: 'explore.sections.descratch', onPress: () => {
+            analyticsService.track('explore_navigation_pill_clicked', {
+              section_id: 'descratch',
+              is_pro: isPro ? 'true' : 'false'
+            });
+            scrollToSection('descratch');
+          }},
+          { id: 'brighten', titleKey: 'explore.sections.brighten', onPress: () => {
+            analyticsService.track('explore_navigation_pill_clicked', {
+              section_id: 'brighten',
+              is_pro: isPro ? 'true' : 'false'
+            });
+            scrollToSection('brighten');
+          }},
+          { id: 'recreate', titleKey: 'explore.sections.recreate', onPress: () => {
+            analyticsService.track('explore_navigation_pill_clicked', {
+              section_id: 'recreate',
+              is_pro: isPro ? 'true' : 'false'
+            });
+            scrollToSection('recreate');
+          }},
+          { id: 'clarify', titleKey: 'explore.sections.clarify', onPress: () => {
+            analyticsService.track('explore_navigation_pill_clicked', {
+              section_id: 'clarify',
+              is_pro: isPro ? 'true' : 'false'
+            });
+            scrollToSection('clarify');
+          }},
+          { id: 'outfits', titleKey: 'explore.sections.outfits', onPress: () => {
+            analyticsService.track('explore_navigation_pill_clicked', {
+              section_id: 'outfits',
+              is_pro: isPro ? 'true' : 'false'
+            });
+            scrollToSection('outfits');
+          }},
+          { id: 'popular', titleKey: 'explore.sections.popular', onPress: () => {
+            analyticsService.track('explore_navigation_pill_clicked', {
+              section_id: 'popular',
+              is_pro: isPro ? 'true' : 'false'
+            });
+            scrollToSection('popular');
+          }},
+          { id: 'fixMyPhoto', titleKey: 'explore.sections.fixMyPhoto', onPress: () => {
+            analyticsService.track('explore_navigation_pill_clicked', {
+              section_id: 'fixMyPhoto',
+              is_pro: isPro ? 'true' : 'false'
+            });
+            scrollToSection('fixMyPhoto');
+          }},
         ]}
       />
 
@@ -328,6 +400,12 @@ export default function HomeGalleryLikeScreen() {
         <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>{t('explore.sections.fixMyPhoto')}</Text>
         <TouchableOpacity
           onPress={async () => {
+            // Track Fix My Photo picker click (fire and forget)
+            analyticsService.track('explore_fix_photo_picker_clicked', {
+              is_pro: isPro ? 'true' : 'false',
+              section: 'fix_my_photo'
+            });
+
             // Validate premium access before proceeding
             const hasAccess = await validatePremiumAccess();
             if (__DEV__) {
@@ -344,9 +422,20 @@ export default function HomeGalleryLikeScreen() {
               exif: false
             });
             if (!result.canceled && result.assets[0]) {
+              // Track image selected (fire and forget)
+              analyticsService.track('explore_fix_photo_image_selected', {
+                is_pro: isPro ? 'true' : 'false',
+                image_source: 'gallery'
+              });
+              
               useQuickEditStore.getState().openWithImage({ 
                 functionType: 'restore_repair', 
                 imageUri: result.assets[0].uri 
+              });
+            } else if (!result.canceled) {
+              // Track image picker cancelled (fire and forget)
+              analyticsService.track('explore_fix_photo_picker_cancelled', {
+                is_pro: isPro ? 'true' : 'false'
               });
             }
           }}

@@ -97,8 +97,19 @@ export default function PhotoMagicUploadScreen() {
             fromUpload: 'true'
           }
         });
+      } else if (result.canceled) {
+        // Track image picker cancelled (fire and forget)
+        analyticsService.track('photo_magic_picker_cancelled', {
+          source: 'gallery'
+        });
       }
     } catch (error) {
+      // Track image picker error (fire and forget)
+      analyticsService.track('photo_magic_picker_error', {
+        source: 'gallery',
+        error: error?.toString() || 'unknown_error'
+      });
+      
       Alert.alert('Error', 'Failed to select image. Please try again.');
       console.error('Image picker error:', error);
     } finally {
@@ -154,8 +165,19 @@ export default function PhotoMagicUploadScreen() {
             fromUpload: 'true'
           }
         });
+      } else if (result.canceled) {
+        // Track camera cancelled (fire and forget)
+        analyticsService.track('photo_magic_camera_cancelled', {
+          source: 'camera'
+        });
       }
     } catch (error) {
+      // Track camera error (fire and forget)  
+      analyticsService.track('photo_magic_camera_error', {
+        source: 'camera',
+        error: error?.toString() || 'unknown_error'
+      });
+      
       Alert.alert('Error', 'Failed to take photo. Please try again.');
       console.error('Camera error:', error);
       
