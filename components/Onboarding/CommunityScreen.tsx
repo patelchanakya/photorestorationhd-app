@@ -2,17 +2,18 @@ import { useTranslation } from '@/src/hooks/useTranslation';
 import { Image as ExpoImage } from 'expo-image';
 import * as WebBrowser from 'expo-web-browser';
 import React from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Dimensions, ScrollView, Text, View } from 'react-native';
+import { PanGestureHandler } from 'react-native-gesture-handler';
 import Animated, {
-    cancelAnimation,
-    runOnJS,
-    useAnimatedReaction,
-    useAnimatedStyle,
-    useSharedValue,
-    withDelay,
-    withRepeat,
-    withSpring,
-    withTiming
+  cancelAnimation,
+  runOnJS,
+  useAnimatedGestureHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withSpring,
+  withTiming
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OnboardingButton } from './shared/OnboardingButton';
@@ -27,9 +28,8 @@ interface CommunityScreenProps {
 export function CommunityScreen({ onContinue }: CommunityScreenProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  // @ts-ignore
+  const { height: screenHeight } = Dimensions.get('window');
   const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
-  // @ts-ignore
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   
   // Background animation values
@@ -51,6 +51,22 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
   const statsOpacity = useSharedValue(0);
   const statsScale = useSharedValue(0.9);
   const buttonOpacity = useSharedValue(0);
+  
+  // Simple, clean animations
+  const benefitsOpacity = useSharedValue(0);
+  const benefitsTranslateY = useSharedValue(30);
+  
+  // Showcase animations
+  const showcaseHeaderOpacity = useSharedValue(0);
+  const showcaseHeaderTranslateY = useSharedValue(30);
+  const memorialOpacity = useSharedValue(0);
+  const memorialTranslateY = useSharedValue(30);
+  const recreateOpacity = useSharedValue(0);
+  const recreateTranslateY = useSharedValue(30);
+  const backgroundOpacity = useSharedValue(0);
+  const backgroundTranslateY = useSharedValue(30);
+  const customOpacity = useSharedValue(0);
+  const customTranslateY = useSharedValue(30);
 
   // Animated values for stats counting
   const stat1Value = useSharedValue(0);
@@ -90,12 +106,32 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
     titleTranslateY.value = withDelay(600, withSpring(0, { damping: 16, stiffness: 200 }));
     
     // Body animation
-    bodyOpacity.value = withDelay(800, withTiming(1, { duration: 500 }));
+    bodyOpacity.value = withDelay(800, withTiming(1, { duration: 600 }));
     bodyTranslateY.value = withDelay(800, withSpring(0, { damping: 16, stiffness: 200 }));
     
-    // Stats animation with scale effect
-    statsOpacity.value = withDelay(1000, withTiming(1, { duration: 600 }));
-    statsScale.value = withDelay(1000, withSpring(1, { damping: 14, stiffness: 250 }));
+    // Benefits animation
+    benefitsOpacity.value = withDelay(1000, withTiming(1, { duration: 800 }));
+    benefitsTranslateY.value = withDelay(1000, withSpring(0, { damping: 16, stiffness: 180 }));
+    
+    // Showcase animations with staggered delays
+    showcaseHeaderOpacity.value = withDelay(1200, withTiming(1, { duration: 600 }));
+    showcaseHeaderTranslateY.value = withDelay(1200, withSpring(0, { damping: 16, stiffness: 200 }));
+    
+    memorialOpacity.value = withDelay(1400, withTiming(1, { duration: 600 }));
+    memorialTranslateY.value = withDelay(1400, withSpring(0, { damping: 16, stiffness: 200 }));
+    
+    recreateOpacity.value = withDelay(1600, withTiming(1, { duration: 600 }));
+    recreateTranslateY.value = withDelay(1600, withSpring(0, { damping: 16, stiffness: 200 }));
+    
+    backgroundOpacity.value = withDelay(1800, withTiming(1, { duration: 600 }));
+    backgroundTranslateY.value = withDelay(1800, withSpring(0, { damping: 16, stiffness: 200 }));
+    
+    customOpacity.value = withDelay(2000, withTiming(1, { duration: 600 }));
+    customTranslateY.value = withDelay(2000, withSpring(0, { damping: 16, stiffness: 200 }));
+    
+    // Stats animation
+    statsOpacity.value = withDelay(2200, withTiming(1, { duration: 600 }));
+    statsScale.value = withDelay(2200, withSpring(1, { damping: 14, stiffness: 250 }));
     
     // Start with initial counting animation to 10,532
     stat1Value.value = withDelay(1200, withTiming(10532, { duration: 1800 }));
@@ -115,8 +151,8 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
         counterGlow.value = withTiming(1, { duration: 200 }, () => {
           counterGlow.value = withTiming(0, { duration: 800 });
         });
-      }, 1500); // Slower increment for better UX
-    }, 3000);
+      }, 1500) as any; // Slower increment for better UX
+    }, 3000) as any;
 
     // Cleanup function
     return () => {
@@ -132,8 +168,20 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
       cancelAnimation(backgroundPulse);
       cancelAnimation(counterGlow);
       cancelAnimation(statsBgPulse);
+      cancelAnimation(benefitsOpacity);
+      cancelAnimation(benefitsTranslateY);
+      cancelAnimation(showcaseHeaderOpacity);
+      cancelAnimation(showcaseHeaderTranslateY);
+      cancelAnimation(memorialOpacity);
+      cancelAnimation(memorialTranslateY);
+      cancelAnimation(recreateOpacity);
+      cancelAnimation(recreateTranslateY);
+      cancelAnimation(backgroundOpacity);
+      cancelAnimation(backgroundTranslateY);
+      cancelAnimation(customOpacity);
+      cancelAnimation(customTranslateY);
     };
-  }, [backgroundPulse, statsBgPulse, heroOpacity, heroScale, heroGlow, photo1Rotate, photo2Rotate, photo3Rotate, titleOpacity, titleTranslateY, bodyOpacity, bodyTranslateY, statsOpacity, statsScale, buttonOpacity, stat1Value, stat2Value, stat3Value, counterGlow]);
+  }, [backgroundPulse, statsBgPulse, heroOpacity, heroScale, heroGlow, photo1Rotate, photo2Rotate, photo3Rotate, titleOpacity, titleTranslateY, bodyOpacity, bodyTranslateY, statsOpacity, statsScale, buttonOpacity, stat1Value, stat2Value, stat3Value, counterGlow, benefitsOpacity, benefitsTranslateY, showcaseHeaderOpacity, showcaseHeaderTranslateY, memorialOpacity, memorialTranslateY, recreateOpacity, recreateTranslateY, backgroundOpacity, backgroundTranslateY, customOpacity, customTranslateY]);
 
   // Background animated style
   const backgroundAnimatedStyle = useAnimatedStyle(() => ({
@@ -158,27 +206,48 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
     transform: [{ translateY: bodyTranslateY.value }],
   }));
 
-  const statsAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: statsOpacity.value,
-    transform: [{ scale: statsScale.value }],
-  }));
 
   const buttonAnimatedStyle = useAnimatedStyle(() => ({
     opacity: buttonOpacity.value,
   }));
 
-  const counterGlowAnimatedStyle = useAnimatedStyle(() => ({
-    shadowColor: '#FF8C5A',
-    shadowOpacity: 0.2 + (counterGlow.value * 0.4),
-    shadowRadius: 4 + (counterGlow.value * 6),
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 4,
+
+  // Benefits animated style
+  const benefitsAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: benefitsOpacity.value,
+    transform: [{ translateY: benefitsTranslateY.value }],
+  }));
+
+  // Showcase animated styles
+  const showcaseHeaderAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: showcaseHeaderOpacity.value,
+    transform: [{ translateY: showcaseHeaderTranslateY.value }],
+  }));
+
+  const memorialAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: memorialOpacity.value,
+    transform: [{ translateY: memorialTranslateY.value }],
+  }));
+
+  const recreateAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: recreateOpacity.value,
+    transform: [{ translateY: recreateTranslateY.value }],
+  }));
+
+  const backgroundAnimatedStyle2 = useAnimatedStyle(() => ({
+    opacity: backgroundOpacity.value,
+    transform: [{ translateY: backgroundTranslateY.value }],
+  }));
+
+  const customAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: customOpacity.value,
+    transform: [{ translateY: customTranslateY.value }],
   }));
 
 
   return (
     <OnboardingContainer showGradient={false}>{/* Fix children prop */}
-      {/* Animated Background Elements */}
+      {/* Clean Background */}
       <Animated.View style={[
         {
           position: 'absolute',
@@ -186,7 +255,7 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(250, 204, 21, 0.02)',
+          backgroundColor: 'rgba(255, 107, 53, 0.05)',
         },
         backgroundAnimatedStyle
       ]} />
@@ -194,181 +263,484 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
       <View style={{ flex: 1 }}>
         <ScrollView 
           style={{ flex: 1 }}
-          contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 40, paddingBottom: 20 }}
+          contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 20, paddingBottom: 200 }}
           showsVerticalScrollIndicator={false}
         >
-          {/* Hero Section - Photo Collage */}
+          {/* Hero Image */}
           <Animated.View style={[
             {
               alignItems: 'center',
-              marginBottom: 56,
-              marginTop: 20,
+              marginBottom: 32,
+              marginTop: 8,
             },
             heroAnimatedStyle
           ]}>
             <ExpoImage
               source={require('@/assets/images/onboarding/communityscreen.svg')}
               style={{
-                width: 320,
-                height: 200,
+                width: 280,
+                height: 180,
                 borderRadius: 16,
               }}
               contentFit="cover"
             />
           </Animated.View>
 
-          {/* Main Title */}
+          {/* Title */}
           <Animated.View style={[
-            { alignItems: 'center', marginBottom: 16 }, 
+            { 
+              alignItems: 'center', 
+              marginBottom: screenHeight > 700 ? 48 : 24,
+            }, 
             titleAnimatedStyle
           ]}>
             <Text style={{ 
-              fontSize: 34, 
+              fontSize: 32, 
               fontFamily: 'Lexend-Bold', 
               color: '#FFFFFF',
               textAlign: 'center',
-              lineHeight: 40,
-              letterSpacing: -1.0,
+              lineHeight: 38,
+              letterSpacing: -0.8,
             }}>
               {t('onboarding.community.title')}
             </Text>
           </Animated.View>
 
-          {/* Subtitle */}
-          <Animated.View style={[
-            { alignItems: 'center', marginBottom: 48 }, 
-            bodyAnimatedStyle
-          ]}>
-            <Text style={{ 
-              fontSize: 18, 
-              color: 'rgba(255, 255, 255, 0.8)',
-              textAlign: 'center',
-              lineHeight: 26,
-              fontFamily: 'Lexend-Regular',
-              letterSpacing: -0.3,
-            }}>
-              {t('onboarding.community.subtitle')}
-            </Text>
-          </Animated.View>
-
-          {/* Stats Section */}
+          {/* Benefits List */}
           <Animated.View style={[
             {
               paddingHorizontal: 24,
-              marginBottom: 32,
-              alignItems: 'center',
+              marginBottom: 48,
             },
-            statsAnimatedStyle
+            benefitsAnimatedStyle
           ]}>
-            {/* Live counter */}
-            <StatItem
-              value={stat1Value}
-              suffix=""
-              label={t('onboarding.community.photosPerfected')}
-              isCounting
-              isLarge
-              glowStyle={counterGlowAnimatedStyle}
+            <BenefitItem 
+              icon="✨"
+              text={t('onboarding.community.benefit1')}
+            />
+            <BenefitItem 
+              icon="⚡"
+              text={t('onboarding.community.benefit2')}
+            />
+            <BenefitItem 
+              icon="🎯"
+              text={t('onboarding.community.benefit3')}
+            />
+          </Animated.View>
+
+          {/* Showcase Header */}
+          <Animated.View style={[
+            { 
+              alignItems: 'center', 
+              marginBottom: 32,
+              paddingHorizontal: 24,
+            }, 
+            showcaseHeaderAnimatedStyle
+          ]}>
+            <Text style={{ 
+              fontSize: 24, 
+              fontFamily: 'Lexend-Bold', 
+              color: '#FFFFFF',
+              textAlign: 'center',
+              marginBottom: 8,
+              letterSpacing: -0.5,
+            }}>
+              {t('onboarding.community.showcaseTitle')}
+            </Text>
+            <Text style={{ 
+              fontSize: 16, 
+              color: 'rgba(255, 255, 255, 0.7)',
+              textAlign: 'center',
+              fontFamily: 'Lexend-Regular',
+              letterSpacing: -0.1,
+            }}>
+              {t('onboarding.community.showcaseSubtitle')}
+            </Text>
+          </Animated.View>
+
+          {/* Memorial Showcase */}
+          <Animated.View style={[
+            {
+              marginBottom: 40,
+              paddingHorizontal: 16,
+            },
+            memorialAnimatedStyle
+          ]}>
+            <ShowcaseCard
+              title={t('onboarding.community.memorial.title')}
+              description={t('onboarding.community.memorial.description')}
+              beforeImage={require('@/assets/images/onboarding/before-2.jpg')}
+              afterImage={require('@/assets/images/onboarding/after-2.png')}
+            />
+          </Animated.View>
+
+          {/* Recreate Showcase */}
+          <Animated.View style={[
+            {
+              marginBottom: 40,
+              paddingHorizontal: 16,
+            },
+            recreateAnimatedStyle
+          ]}>
+            <ShowcaseCard
+              title={t('onboarding.community.recreate.title')}
+              description={t('onboarding.community.recreate.description')}
+              beforeImage={require('@/assets/images/onboarding/before-3.jpg')}
+              afterImage={require('@/assets/images/onboarding/after-3.png')}
+            />
+          </Animated.View>
+
+          {/* Background Showcase */}
+          <Animated.View style={[
+            {
+              marginBottom: 40,
+              paddingHorizontal: 16,
+            },
+            backgroundAnimatedStyle2
+          ]}>
+            <ShowcaseCard
+              title={t('onboarding.community.background.title')}
+              description={t('onboarding.community.background.description')}
+              beforeImage={require('@/assets/images/onboarding/before-4.jpg')}
+              afterImage={require('@/assets/images/backgrounds/thumbnail/beach/beach.jpeg')}
+            />
+          </Animated.View>
+
+          {/* Custom Magic Section */}
+          <Animated.View style={[
+            {
+              marginBottom: 32,
+              paddingHorizontal: 16,
+            },
+            customAnimatedStyle
+          ]}>
+            <CustomMagicCard
+              title={t('onboarding.community.custom.title')}
+              description={t('onboarding.community.custom.description')}
             />
           </Animated.View>
         </ScrollView>
 
-        {/* Continue Button - Fixed at bottom */}
-        <Animated.View style={[
-          { 
-            paddingHorizontal: ONBOARDING_SPACING.xxl, 
-            paddingBottom: Math.max(insets.bottom, ONBOARDING_SPACING.huge),
-            paddingTop: ONBOARDING_SPACING.xl,
-          }, 
-          buttonAnimatedStyle
-        ]}>
-          {/* Facebook CTA above Continue */}
-          {(() => {
-            const followLabel = t('onboarding.community.followFacebook');
-            const title = followLabel === 'onboarding.community.followFacebook' 
-              ? 'Follow us on Facebook' 
-              : followLabel;
-            return (
-              <OnboardingButton
-                title={title}
-                onPress={() => WebBrowser.openBrowserAsync('https://www.facebook.com/photorestorationhd/')}
-                variant="secondary"
-                size="large"
-                style={{ width: '100%', marginBottom: 12 }}
-              />
-            );
-          })()}
-          <OnboardingButton
-            title={t('onboarding.community.continue')}
-            onPress={onContinue}
-            variant="primary"
-            size="large"
-            style={{ width: '100%' }}
-          />
-        </Animated.View>
+        {/* Continue Button - Fixed at bottom with glass morphism */}
+        <View style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          borderTopWidth: 1,
+          borderTopColor: 'rgba(255, 255, 255, 0.1)',
+        }}>
+          <Animated.View style={[
+            { 
+              paddingHorizontal: ONBOARDING_SPACING.xxl, 
+              paddingBottom: Math.max(insets.bottom, ONBOARDING_SPACING.huge),
+              paddingTop: ONBOARDING_SPACING.xl,
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            }, 
+            buttonAnimatedStyle
+          ]}>
+            {/* Facebook CTA above Continue */}
+            {(() => {
+              const followLabel = t('onboarding.community.followFacebook');
+              const title = followLabel === 'onboarding.community.followFacebook' 
+                ? 'Follow us on Facebook' 
+                : followLabel;
+              return (
+                <OnboardingButton
+                  title={title}
+                  onPress={() => WebBrowser.openBrowserAsync('https://www.facebook.com/photorestorationhd/')}
+                  variant="secondary"
+                  size="large"
+                  style={{ 
+                    width: '100%', 
+                    marginBottom: 12,
+                    backgroundColor: 'transparent',
+                    borderWidth: 0,
+                  }}
+                />
+              );
+            })()}
+            <OnboardingButton
+              title={t('onboarding.community.continue')}
+              onPress={onContinue}
+              variant="primary"
+              size="large"
+              style={{ 
+                width: '100%',
+              }}
+            />
+          </Animated.View>
+        </View>
       </View>
     </OnboardingContainer>
   );
 }
 
-interface StatItemProps {
-  value: Animated.SharedValue<number>;
-  suffix: string;
-  label: string;
-  isDecimal?: boolean;
-  isCounting?: boolean;
-  isLarge?: boolean;
-  glowStyle?: any;
+interface BenefitItemProps {
+  icon: string;
+  text: string;
 }
 
-function StatItem({ value, suffix, label, isDecimal = false, isCounting = false, isLarge = false, glowStyle }: StatItemProps) {
-  // @ts-ignore
-  const [displayText, setDisplayText] = React.useState('0');
-
-  // Use animated reaction to update the text when value changes
-  useAnimatedReaction(
-    () => value.value,
-    (currentValue) => {
-      if (isCounting) {
-        const displayValue = Math.round(currentValue);
-        const formattedValue = displayValue.toLocaleString('en-US');
-        runOnJS(setDisplayText)(`${formattedValue}${suffix}`);
-      } else {
-        const displayValue = isDecimal ? currentValue.toFixed(1) : Math.round(currentValue);
-        runOnJS(setDisplayText)(`${displayValue}${suffix}`);
-      }
-    }
-  );
-
+function BenefitItem({ icon, text }: BenefitItemProps) {
   return (
-    <View style={{ alignItems: 'center', position: 'relative' }}>
-      
-      <Animated.Text style={[
-        { 
-          fontSize: isLarge ? 64 : 44, 
-          fontFamily: isCounting ? 'Lexend-SemiBold' : 'Lexend-SemiBold',
-          color: isCounting ? '#FF6B35' : '#FFFFFF',
-          marginBottom: isLarge ? 8 : 6,
-          letterSpacing: -0.8,
-          textAlign: 'center',
-          shadowColor: isCounting ? '#FFB380' : '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowRadius: 4,
-        },
-        isCounting && glowStyle
-      ]}>
-        {displayText}
-      </Animated.Text>
+    <View style={{
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      backgroundColor: 'rgba(255, 255, 255, 0.08)',
+      borderRadius: 12,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.1)',
+    }}>
       <Text style={{ 
-        fontSize: isLarge ? 14 : 12, 
-        color: 'rgba(255, 255, 255, 0.7)',
-        textAlign: 'center',
-        fontFamily: 'Lexend-Medium',
-        letterSpacing: 0.3,
-        textTransform: 'uppercase',
+        fontSize: 20, 
+        marginRight: 16,
       }}>
-        {label}
+        {icon}
+      </Text>
+      <Text style={{ 
+        fontSize: 16, 
+        color: '#FFFFFF',
+        fontFamily: 'Lexend-Medium',
+        letterSpacing: -0.2,
+        flex: 1,
+      }}>
+        {text}
       </Text>
     </View>
+  );
+}
+
+interface ShowcaseCardProps {
+  title: string;
+  description: string;
+  beforeImage: any;
+  afterImage: any;
+}
+
+function ShowcaseCard({ title, description, beforeImage, afterImage }: ShowcaseCardProps) {
+  return (
+    <View style={{
+      backgroundColor: 'rgba(255, 255, 255, 0.08)',
+      borderRadius: 16,
+      padding: 20,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.1)',
+    }}>
+      <Text style={{ 
+        fontSize: 20, 
+        fontFamily: 'Lexend-Bold', 
+        color: '#FFFFFF',
+        textAlign: 'center',
+        marginBottom: 12,
+        letterSpacing: -0.4,
+      }}>
+        {title}
+      </Text>
+      
+      <View style={{
+        marginBottom: 16,
+        borderRadius: 12,
+        overflow: 'hidden',
+      }}>
+        <SimpleBeforeAfterSlider
+          beforeImage={beforeImage}
+          afterImage={afterImage}
+          height={240}
+        />
+      </View>
+      
+      <Text style={{ 
+        fontSize: 14, 
+        color: 'rgba(255, 255, 255, 0.8)',
+        textAlign: 'center',
+        fontFamily: 'Lexend-Regular',
+        letterSpacing: -0.1,
+        lineHeight: 20,
+      }}>
+        {description}
+      </Text>
+    </View>
+  );
+}
+
+interface CustomMagicCardProps {
+  title: string;
+  description: string;
+}
+
+function CustomMagicCard({ title, description }: CustomMagicCardProps) {
+  return (
+    <View style={{
+      backgroundColor: 'rgba(255, 107, 53, 0.1)',
+      borderRadius: 16,
+      padding: 24,
+      borderWidth: 2,
+      borderColor: 'rgba(255, 107, 53, 0.3)',
+    }}>
+      <Text style={{ 
+        fontSize: 20, 
+        fontFamily: 'Lexend-Bold', 
+        color: '#FF6B35',
+        textAlign: 'center',
+        marginBottom: 16,
+        letterSpacing: -0.4,
+      }}>
+        {title}
+      </Text>
+      
+      {/* Mock Text Input */}
+      <View style={{
+        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+      }}>
+        <Text style={{ 
+          fontSize: 16, 
+          color: 'rgba(255, 255, 255, 0.6)',
+          fontFamily: 'Lexend-Regular',
+          fontStyle: 'italic',
+        }}>
+          Type what you want to change...
+        </Text>
+      </View>
+      
+      <Text style={{ 
+        fontSize: 14, 
+        color: 'rgba(255, 255, 255, 0.9)',
+        textAlign: 'center',
+        fontFamily: 'Lexend-Regular',
+        letterSpacing: -0.1,
+        lineHeight: 20,
+      }}>
+        {description}
+      </Text>
+    </View>
+  );
+}
+
+interface SimpleBeforeAfterSliderProps {
+  beforeImage: any;
+  afterImage: any;
+  height: number;
+}
+
+function SimpleBeforeAfterSlider({ beforeImage, afterImage, height }: SimpleBeforeAfterSliderProps) {
+  const [containerWidth, setContainerWidth] = React.useState(300);
+  const sliderPosition = useSharedValue(0.5);
+  const [dragging, setDragging] = React.useState(false);
+
+  const gestureHandler = useAnimatedGestureHandler({
+    onStart: () => {
+      'worklet';
+      runOnJS(setDragging)(true);
+    },
+    onActive: (event) => {
+      'worklet';
+      const newPosition = Math.max(0, Math.min(1, event.x / containerWidth));
+      sliderPosition.value = newPosition;
+    },
+    onEnd: () => {
+      'worklet';
+      runOnJS(setDragging)(false);
+    },
+  });
+
+  const clipAnimatedStyle = useAnimatedStyle(() => ({
+    width: `${sliderPosition.value * 100}%`,
+  }));
+
+  const lineAnimatedStyle = useAnimatedStyle(() => ({
+    left: `${sliderPosition.value * 100}%`,
+  }));
+
+  const handleAnimatedStyle = useAnimatedStyle(() => ({
+    left: `${sliderPosition.value * 100}%`,
+    transform: [
+      { translateX: -12 },
+      { scale: dragging ? 1.05 : 1 },
+    ],
+  }));
+
+  return (
+    <PanGestureHandler onGestureEvent={gestureHandler}>
+      <Animated.View 
+        style={{ height, position: 'relative', backgroundColor: '#000' }}
+        onLayout={(event) => {
+          const { width } = event.nativeEvent.layout;
+          setContainerWidth(width);
+        }}
+      >
+        {/* After image (base) */}
+        <ExpoImage
+          source={afterImage}
+          style={{ width: '100%', height: '100%', position: 'absolute' }}
+          contentFit="cover"
+        />
+        
+        {/* Before image (clipped) */}
+        <Animated.View style={[{ position: 'absolute', height: '100%', overflow: 'hidden' }, clipAnimatedStyle]}>
+          <ExpoImage
+            source={beforeImage}
+            style={{ width: containerWidth, height: '100%' }}
+            contentFit="cover"
+          />
+        </Animated.View>
+        
+        {/* Divider line */}
+        <Animated.View style={[
+          {
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            width: 1,
+            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+            zIndex: 1,
+          },
+          lineAnimatedStyle
+        ]} />
+        
+        {/* Simple minimal handle */}
+        <Animated.View style={[
+          {
+            position: 'absolute',
+            top: '50%',
+            width: 24,
+            height: 24,
+            borderRadius: 12,
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            borderWidth: 1,
+            borderColor: 'rgba(0, 0, 0, 0.1)',
+            zIndex: 2,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowRadius: 2,
+            shadowOpacity: 0.2,
+            transform: [{ translateY: -12 }],
+          },
+          handleAnimatedStyle
+        ]}>
+          {/* Inner dot */}
+          <View style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: 6,
+            height: 6,
+            borderRadius: 3,
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+            transform: [{ translateX: -3 }, { translateY: -3 }],
+          }} />
+        </Animated.View>
+      </Animated.View>
+    </PanGestureHandler>
   );
 }
 

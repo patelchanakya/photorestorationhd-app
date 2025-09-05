@@ -179,11 +179,23 @@ export const PermissionsScreen = React.memo(function PermissionsScreen({ onConti
 
         {/* Buttons */}
         <Animated.View style={[{ width: '100%' }, buttonAnimatedStyle]}>
+          <OnboardingButton
+            title="Skip"
+            onPress={() => onContinue()}
+            variant="secondary"
+            size="large"
+            style={{ 
+              width: '100%',
+              backgroundColor: 'transparent',
+              borderWidth: 0,
+              marginBottom: ONBOARDING_SPACING.md,
+            }}
+          />
+          
           <LinearGradient
             colors={[ONBOARDING_COLORS.accent, ONBOARDING_COLORS.accentDark]}
             style={{
               borderRadius: 16,
-              marginBottom: ONBOARDING_SPACING.md,
             }}
           >
             <OnboardingButton
@@ -198,18 +210,6 @@ export const PermissionsScreen = React.memo(function PermissionsScreen({ onConti
               }}
             />
           </LinearGradient>
-          
-          <OnboardingButton
-            title="Skip"
-            onPress={() => onContinue()}
-            variant="secondary"
-            size="large"
-            style={{ 
-              width: '100%',
-              backgroundColor: 'transparent',
-              borderWidth: 0,
-            }}
-          />
         </Animated.View>
       </View>
     </OnboardingContainer>

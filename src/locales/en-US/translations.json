@@ -310,8 +310,29 @@
       "pickPhotoError": "Failed to pick photo. Please try again."
     },
     "community": {
-      "title": "What used to take hours in Photoshop\nnow takes seconds",
-      "subtitle": "Become the photo miracle worker everyone needs",
+      "title": "Ready to Bring Your Photos\nBack to Life?",
+      "subtitle": "Transform faded memories into stunning masterpieces",
+      "benefit1": "No Photoshop skills needed",
+      "benefit2": "Fix decades of damage in seconds",
+      "benefit3": "Perfect for beginners & pros alike",
+      "showcaseTitle": "See the Magic Yourself",
+      "showcaseSubtitle": "Drag the sliders to see real transformations",
+      "memorial": {
+        "title": "Restore Precious Memories",
+        "description": "Honor their legacy with perfect restoration"
+      },
+      "recreate": {
+        "title": "Fix Severe Damage",
+        "description": "Rebuild missing pieces like magic"
+      },
+      "background": {
+        "title": "Change Any Background",
+        "description": "Transport them anywhere instantly"
+      },
+      "custom": {
+        "title": "Or Simply Type What You Want",
+        "description": "\"Add a smile\" • \"Fix the hair\" • \"Make it sunny\" • Anything you imagine"
+      },
       "continue": "Continue",
       "photosPerfected": "Photos Perfected",
       "followFacebook": "Follow us on Facebook"

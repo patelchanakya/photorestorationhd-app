@@ -313,10 +313,14 @@
       "pickPhotoError": "Failed to pick photo. Please try again."
     },
     "community": {
-      "title": "Rejoignez notre communauté",
-      "subtitle": "Connectez-vous avec nous sur les réseaux sociaux",
+      "title": "Restauration photo professionnelle\nen secondes, pas en heures",
+      "subtitle": "Transformez les souvenirs endommagés en chefs-d'œuvre époustouflants avec la précision de l'IA",
+      "tagline": "De fané à fabuleux en seulement",
+      "timeComparison": "3-5 secondes",
+      "versus": "vs 2-4 heures manuellement",
       "continue": "Continuer",
-      "followFacebook": "Follow us on Facebook"
+      "photosPerfected": "Photos Perfectionnées",
+      "followFacebook": "Suivez-nous sur Facebook"
     },
     "setup": {
       "title": "Configuration de votre expérience...",
