@@ -3,7 +3,6 @@ import { analyticsService } from '@/services/analytics';
 import { useTranslation } from '@/src/hooks/useTranslation';
 import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import React, { useRef, useState } from 'react';
@@ -69,6 +68,11 @@ export default function PhotoMagicUploadScreen() {
     setIsSelecting(true);
 
     try {
+      // CTA analytics
+      analyticsService.track('tile_cta_tapped', {
+        placement: 'upload_library',
+        cta_label: 'Choose Photo'
+      });
       // Launch photo picker - works with limited access even if permissions denied
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
@@ -122,6 +126,11 @@ export default function PhotoMagicUploadScreen() {
     setIsSelecting(true);
 
     try {
+      // CTA analytics
+      analyticsService.track('tile_cta_tapped', {
+        placement: 'upload_camera',
+        cta_label: 'Take Photo'
+      });
       // Pause video to free up memory before camera launch
       try {
         if (videoPlayer && videoPlayer.status !== 'idle' && videoPlayer.playing) {
@@ -270,7 +279,7 @@ export default function PhotoMagicUploadScreen() {
             gap: 16 
           }}
         >
-            {/* Primary Upload Button */}
+            {/* Primary Upload Button (glass pill) */}
             <TouchableOpacity 
               onPress={pickImage}
               activeOpacity={0.8} 
@@ -279,49 +288,61 @@ export default function PhotoMagicUploadScreen() {
                 height: 64,
                 borderRadius: 20, 
                 overflow: 'hidden',
-                shadowColor: '#F59E0B',
-                shadowOffset: { width: 0, height: 6 },
-                shadowOpacity: 0.4,
-                shadowRadius: 12,
-                elevation: 8,
+                shadowColor: 'rgba(255,255,255,0.2)',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                elevation: 6,
               }}
+              onPressIn={() => {}}
+              onPressOut={() => {}}
             >
-              <LinearGradient 
-                colors={['#F59E0B', '#FBBF24']} 
-                start={{ x: 0, y: 0 }} 
-                end={{ x: 1, y: 1 }} 
-                style={{ 
+              <BlurView intensity={10} tint="dark" style={{ flex: 1, borderRadius: 20 }}>
+                <View style={{ 
                   flex: 1,
                   flexDirection: 'row',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  paddingHorizontal: 24
-                }}
-              >
-                {isSelecting ? (
-                  <>
-                    <View style={{ 
-                      width: 20, 
-                      height: 20, 
-                      borderRadius: 10, 
-                      borderWidth: 2, 
-                      borderColor: '#0B0B0F', 
-                      borderTopColor: 'transparent',
-                      marginRight: 12
-                    }} />
-                    <Text style={{ color: '#0B0B0F', fontSize: 18, fontFamily: 'Lexend-Black' }}>
-                      Opening Library...
-                    </Text>
-                  </>
-                ) : (
-                  <>
-                    <IconSymbol name="photo.on.rectangle" size={24} color="#0B0B0F" />
-                    <Text style={{ color: '#0B0B0F', fontSize: 18, fontFamily: 'Lexend-Black', marginLeft: 12 }}>
-                      Choose from Library
-                    </Text>
-                  </>
-                )}
-              </LinearGradient>
+                  backgroundColor: 'rgba(255,255,255,0.08)',
+                  borderWidth: 1,
+                  borderColor: 'rgba(255,255,255,0.15)',
+                  paddingHorizontal: 24,
+                  borderRadius: 20,
+                }}>
+                  {isSelecting ? (
+                    <>
+                      <View style={{ 
+                        width: 20, 
+                        height: 20, 
+                        borderRadius: 10, 
+                        borderWidth: 2, 
+                        borderColor: 'rgba(255,255,255,0.9)', 
+                        borderTopColor: 'transparent',
+                        marginRight: 12
+                      }} />
+                      <Text style={{ 
+                        color: 'rgba(255,255,255,0.95)', 
+                        fontSize: 18, 
+                        fontFamily: 'Lexend-Bold' 
+                      }}>
+                        Opening Library...
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <IconSymbol name="photo.on.rectangle" size={24} color="rgba(255,255,255,0.95)" />
+                      <Text style={{ 
+                        color: 'rgba(255,255,255,0.95)', 
+                        fontSize: 18, 
+                        fontFamily: 'Lexend-Bold', 
+                        marginLeft: 12 
+                      }}>
+                        Choose Photo
+                      </Text>
+                    </>
+                  )}
+                </View>
+              </BlurView>
             </TouchableOpacity>
 
             {/* Camera Button */}
@@ -339,6 +360,8 @@ export default function PhotoMagicUploadScreen() {
                 shadowRadius: 8,
                 elevation: 6,
               }}
+              onPressIn={() => {}}
+              onPressOut={() => {}}
             >
               <BlurView intensity={10} tint="dark" style={{ flex: 1, borderRadius: 20 }}>
                 <View style={{ 
@@ -359,7 +382,7 @@ export default function PhotoMagicUploadScreen() {
                     fontFamily: 'Lexend-Bold', 
                     marginLeft: 12 
                   }}>
-                    Take New Photo
+                    Take Photo
                   </Text>
                 </View>
               </BlurView>

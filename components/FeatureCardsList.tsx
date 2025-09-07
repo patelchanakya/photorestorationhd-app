@@ -9,7 +9,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Alert, Animated, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Animated, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { IconSymbol } from './ui/IconSymbol';
 
 type CardItem = {
@@ -32,8 +32,8 @@ const CARDS: CardItem[] = [
   { id: 'fc_enlighten', titleKey: 'magic.brighten.title', emoji: '☀️', functionType: 'enlighten', image: require('../assets/images/popular/brighten/pop-4.png') },
   { id: 'fc_water_stain', titleKey: 'magic.waterDamage.title', emoji: '💧', functionType: 'water_damage', image: require('../assets/images/popular/stain/pop-7.png') },
   { id: 'fc_enhance', titleKey: 'magic.clarify.title', emoji: '🔍', functionType: 'unblur', image: require('../assets/images/popular/enhance/pop-3.png') },
-  { id: 'fc_remove_stains', titleKey: 'Remove Stains 🧽', emoji: '🧽', functionType: 'water_damage', customPrompt: 'Remove coffee stains, water stains, and discoloration', image: require('../assets/images/popular/stain/pop-7.png') },
-  { id: 'fc_faded_photos', titleKey: 'Fix Faded Photos 🌅', emoji: '🌅', functionType: 'enlighten', customPrompt: 'Restore color and contrast to faded images', image: require('../assets/images/popular/brighten/pop-4.png') },
+  { id: 'fc_remove_stains', titleKey: 'Remove Stains', emoji: '🧽', functionType: 'water_damage', customPrompt: 'Remove coffee stains, water stains, and discoloration', image: require('../assets/images/popular/stain/pop-7.png') },
+  { id: 'fc_faded_photos', titleKey: 'Fix Faded Photos', emoji: '🌅', functionType: 'enlighten', customPrompt: 'Restore color and contrast to faded images', image: require('../assets/images/popular/brighten/pop-4.png') },
 ];
 
 type FeatureCardsListProps = {
@@ -169,6 +169,9 @@ export function FeatureCardsList({
   const router = useRouter();
   const { isPro } = useRevenueCat();
   const t = useT();
+  const { width, height } = useWindowDimensions();
+  const shortestSide = Math.min(width, height);
+  const isTabletLike = shortestSide >= 768;
 
   // Handle request idea submission
   const handleRequestIdea = React.useCallback(async () => {
@@ -471,23 +474,39 @@ export function FeatureCardsList({
     <View style={{ paddingTop: 8, paddingBottom: 24 }}>
       <Card item={featured} onPress={handlePress} />
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 8 }}>
-        {rest.map((item) => (
-          <TouchableOpacity key={item.id} activeOpacity={0.9} onPress={() => handlePress(item)} style={{ width: '50%' }}>
-            <View style={{ marginHorizontal: 8, marginBottom: 14, borderRadius: 18, overflow: 'hidden', height: 200 }}>
-              <ExpoImage source={item.image} style={{ width: '100%', height: '100%' }} contentFit="cover" cachePolicy="memory-disk" priority="high" />
-              <LinearGradient colors={[ 'transparent', 'rgba(0,0,0,0.65)' ]} locations={[0, 1]} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '45%' }} />
-              <View style={{ position: 'absolute', left: 12, right: 12, bottom: 12, alignItems: 'center' }}>
-                <Text style={{ color: '#FFFFFF', fontSize: 16, fontFamily: 'Lexend-Bold', letterSpacing: -0.3, textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.85)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }} numberOfLines={2}>
-                  {t(item.titleKey)}
-                </Text>
-                <View style={{ backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 7, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', marginTop: 6 }}>
-                  <IconSymbol name="camera" size={13} color="#FFFFFF" />
-                  <Text style={{ color: '#FFFFFF', fontSize: 12, fontFamily: 'Lexend-Medium', marginLeft: 6 }}>Choose Photo</Text>
+        {rest.map((item) => {
+          const cardWidth = isTabletLike ? '33.333%' : '50%';
+          const scale = new Animated.Value(1);
+          const onPressIn = () => {
+            Animated.timing(scale, { toValue: 0.97, duration: 100, useNativeDriver: true }).start();
+          };
+          const onPressOut = () => {
+            Animated.timing(scale, { toValue: 1, duration: 100, useNativeDriver: true }).start();
+          };
+          const imageOpacity = new Animated.Value(0);
+          const onImageLoad = () => {
+            Animated.timing(imageOpacity, { toValue: 1, duration: 160, useNativeDriver: true }).start();
+          };
+          return (
+            <TouchableOpacity key={item.id} activeOpacity={0.9} onPress={() => handlePress(item)} onPressIn={onPressIn} onPressOut={onPressOut} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }} accessibilityRole="button" accessibilityLabel={`${t(item.titleKey)} - Choose Photo`} style={{ width: cardWidth }}>
+              <Animated.View style={{ marginHorizontal: 8, marginBottom: 14, borderRadius: 18, overflow: 'hidden', height: 200, transform: [{ scale }] }}>
+                <Animated.View style={{ opacity: imageOpacity }}>
+                  <ExpoImage source={item.image} style={{ width: '100%', height: '100%' }} contentFit="cover" cachePolicy="memory-disk" priority="high" onLoad={onImageLoad} />
+                </Animated.View>
+                <LinearGradient colors={[ 'transparent', 'rgba(0,0,0,0.65)' ]} locations={[0, 1]} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '45%' }} />
+                <View style={{ position: 'absolute', left: 12, right: 12, bottom: 12, alignItems: 'center' }}>
+                  <Text style={{ color: '#FFFFFF', fontSize: 16, fontFamily: 'Lexend-Bold', letterSpacing: -0.3, textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.85)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }} numberOfLines={2}>
+                    {t(item.titleKey)}
+                  </Text>
+                  <View style={{ backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 7, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', marginTop: 6 }}>
+                    <IconSymbol name="camera" size={13} color="#FFFFFF" />
+                    <Text style={{ color: '#FFFFFF', fontSize: 12, fontFamily: 'Lexend-Medium', marginLeft: 6 }}>Choose Photo</Text>
+                  </View>
                 </View>
-              </View>
-            </View>
-          </TouchableOpacity>
-        ))}
+              </Animated.View>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </View>
   );
