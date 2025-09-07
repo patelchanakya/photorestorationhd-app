@@ -30,7 +30,7 @@ const FEATURE_MODE_MAP: Record<string, string> = {
   'make_slimmer': 'custom',
   
   // Main Features
-  'recreate': 'repair',
+  'repair': 'repair',
   'water_stain_damage': 'water_damage',
   'restore_repair': 'restore_repair',
   'professional_outfit': 'outfit',

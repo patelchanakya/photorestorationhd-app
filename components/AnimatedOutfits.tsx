@@ -65,6 +65,34 @@ const DEFAULT_OUTFITS: OutfitItem[] = [
     type: 'video', 
     video: require('../assets/videos/magic/outfits/thumbnail/job-interview/jobinterview.mp4'), 
     outfitPrompt: "Replace the subject's clothing with smart business casual attire suitable for a job interview: a nice blazer with dark jeans or smart trousers, or a professional dress that's approachable and friendly. Use neutral, professional colors that look confident but not intimidating. Keep the subject's face, hairstyle, pose, lighting, and background unchanged. Ensure clothing appears realistic with natural fabric folds and texture." 
+  },
+  { 
+    id: 'outfit-7', 
+    titleKey: 'Make Doctor', 
+    type: 'video', 
+    // video: require('../assets/videos/magic/outfits/thumbnail/doctor/doctor.mp4'), 
+    outfitPrompt: "Replace the subject's clothing with professional medical attire: a white doctor's coat over professional clothing, or medical scrubs. Keep the subject's face, hairstyle, pose, lighting, and background unchanged. Ensure the medical attire looks professional and realistic." 
+  },
+  { 
+    id: 'outfit-8', 
+    titleKey: 'Make Business CEO', 
+    type: 'video', 
+    // video: require('../assets/videos/magic/outfits/thumbnail/ceo/ceo.mp4'), 
+    outfitPrompt: "Replace the subject's clothing with high-end executive business attire: an expensive, well-tailored suit, luxury dress shirt, premium tie, and polished appearance fitting a CEO or top executive. Keep the subject's face, hairstyle, pose, lighting, and background unchanged." 
+  },
+  { 
+    id: 'outfit-9', 
+    titleKey: 'Make Soccer Player', 
+    type: 'video', 
+    // video: require('../assets/videos/magic/outfits/thumbnail/soccer/soccer.mp4'), 
+    outfitPrompt: "Replace the subject's clothing with professional soccer uniform: team jersey, shorts, and soccer cleats. Choose a popular team's colors and design. Keep the subject's face, hairstyle, pose, lighting, and background unchanged. Make the uniform look authentic and professional." 
+  },
+  { 
+    id: 'outfit-10', 
+    titleKey: 'Make Football Player', 
+    type: 'video', 
+    // video: require('../assets/videos/magic/outfits/thumbnail/football/football.mp4'), 
+    outfitPrompt: "Replace the subject's clothing with American football uniform: team jersey with shoulder pads, football pants, and cleats. Choose professional team colors. Keep the subject's face, hairstyle, pose, lighting, and background unchanged. Make the uniform look authentic and professional." 
   }
 ];
 

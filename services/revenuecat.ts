@@ -437,7 +437,7 @@ export const restorePurchasesDetailed = async (): Promise<RestoreResult> => {
 };
 
 // Native paywall presentation functions
-export const presentPaywall = async (): Promise<boolean> => {
+export const presentPaywall = async (offeringId?: string): Promise<boolean> => {
   try {
     if (isExpoGo()) {
       if (__DEV__) {
@@ -453,6 +453,7 @@ export const presentPaywall = async (): Promise<boolean> => {
     // Track paywall presentation
     analyticsService.track('Paywall Shown', {
       source: 'presentPaywall',
+      offeringId: offeringId || 'default',
       timestamp: new Date().toISOString(),
     });
     
@@ -466,30 +467,47 @@ export const presentPaywall = async (): Promise<boolean> => {
         console.log('📦 RevenueCatUI.presentPaywall:', RevenueCatUI.presentPaywall);
       }
       
-      // Fetch offerings and use specific "defaultv4" offering
-      // Get fresh offerings for paywall presentation
+      // Fetch offerings and use specific offering if provided
       const offerings = await Purchases.getOfferings();
       
-      // Use current offering for experiments, fallback to defaultv4
-      const currentOffering = offerings.current;
-      const fallbackOffering = offerings.all['defaultv4'];
-      
-      if (currentOffering) {
-        if (__DEV__) {
-          console.log('🎯 Using current offering for experiments:', currentOffering.identifier);
+      if (offeringId) {
+        // Use specific offering if provided
+        const targetOffering = offerings.all[offeringId];
+        if (targetOffering) {
+          if (__DEV__) {
+            console.log('🎯 Using specific offering:', offeringId);
+          }
+          paywallResult = await RevenueCatUI.presentPaywall({ offering: targetOffering });
+        } else {
+          if (__DEV__) {
+            console.log('⚠️ Specific offering not found:', offeringId);
+            console.log('📋 Available offerings:', Object.keys(offerings.all));
+          }
+          // Fallback to current offering
+          paywallResult = await RevenueCatUI.presentPaywall({ offering: offerings.current });
         }
-        paywallResult = await RevenueCatUI.presentPaywall({ offering: currentOffering });
-      } else if (fallbackOffering) {
-        if (__DEV__) {
-          console.log('🔄 No current offering, using defaultv4 fallback');
-        }
-        paywallResult = await RevenueCatUI.presentPaywall({ offering: fallbackOffering });
       } else {
-        if (__DEV__) {
-          console.log('⚠️ No current or defaultv4 offering found, using default');
-          console.log('📋 Available offerings:', Object.keys(offerings.all));
+        // Use current offering for experiments, fallback to defaultv4
+        const currentOffering = offerings.current;
+        const fallbackOffering = offerings.all['defaultv4'];
+        
+        if (currentOffering) {
+          if (__DEV__) {
+            console.log('🎯 Using current offering for experiments:', currentOffering.identifier);
+          }
+          paywallResult = await RevenueCatUI.presentPaywall({ offering: currentOffering });
+        } else if (fallbackOffering) {
+          if (__DEV__) {
+            console.log('🔄 No current offering, using defaultv4 fallback');
+          }
+          paywallResult = await RevenueCatUI.presentPaywall({ offering: fallbackOffering });
+        } else {
+          if (__DEV__) {
+            console.log('⚠️ No current or defaultv4 offering found, using default');
+            console.log('📋 Available offerings:', Object.keys(offerings.all));
+          }
+          paywallResult = await RevenueCatUI.presentPaywall();
         }
-        paywallResult = await RevenueCatUI.presentPaywall();
       }
     } catch (uiError) {
       // Only log UI errors in development, not user cancellations

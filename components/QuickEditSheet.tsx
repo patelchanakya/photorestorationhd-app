@@ -89,7 +89,7 @@ export function QuickEditSheet() {
       case 'repair':
         return 'Repair';
       case 'restore_repair':
-        return 'Fix My Photo';
+        return 'Restore';
       case 'descratch':
         return 'Descratch';
       case 'unblur':

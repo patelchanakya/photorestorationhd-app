@@ -38,11 +38,11 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
     gradient: ['#8b5cf6', '#a78bfa']
   },
 
-  // Recreate Photos (Position 2)
+  // Repair Photos (Position 2)
   {
-    id: 'recreate',
-    name: 'Recreate',
-    description: 'Recreation while staying consistent with features',
+    id: 'repair',
+    name: 'Repair',
+    description: 'Repair while staying consistent with features',
     icon: 'arrow.clockwise',
     mapsTo: 'repair',
     gradient: ['#f97316', '#fb923c']

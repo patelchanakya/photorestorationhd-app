@@ -1,9 +1,10 @@
 import { MemorialFeatures } from '@/components/AnimatedBackgrounds';
+import { AnimatedBackgroundsReal } from '@/components/AnimatedBackgroundsReal';
+import { AnimatedFaceBody } from '@/components/AnimatedFaceBody';
 import { AnimatedOutfits } from '@/components/AnimatedOutfits';
 import { DeviceTwoRowCarousel } from '@/components/DeviceTwoRowCarousel';
 import { FeatureCardsList } from '@/components/FeatureCardsList';
 import { NavigationPills } from '@/components/NavigationPills';
-import { PopularExamples } from '@/components/PopularExamples';
 import { QuickActionRail } from '@/components/QuickActionRail';
 import { QuickEditSheet } from '@/components/QuickEditSheet';
 import { IconSymbol } from '@/components/ui/IconSymbol';
@@ -37,14 +38,15 @@ export default function HomeGalleryLikeScreen() {
 
   // Refs for each section to enable smooth scrolling
   const scrollViewRef = React.useRef<ScrollView>(null);
-  const popularSectionRef = React.useRef<View>(null);
   const fixMyPhotoSectionRef = React.useRef<View>(null);
   const memorialSectionRef = React.useRef<View>(null);
+  const faceBodySectionRef = React.useRef<View>(null);
+  const backgroundsSectionRef = React.useRef<View>(null);
   const outfitsSectionRef = React.useRef<View>(null);
   const magicSectionRef = React.useRef<View>(null);
 
   // Track active section for pill highlighting
-  const [activeSectionId, setActiveSectionId] = React.useState<string>('popular');
+  const [activeSectionId, setActiveSectionId] = React.useState<string>('backgrounds');
   
   // Store section positions for reliable scrolling
   const [sectionPositions, setSectionPositions] = React.useState<Record<string, number>>({});
@@ -55,12 +57,12 @@ export default function HomeGalleryLikeScreen() {
     let position = sectionPositions[sectionId === 'magic' ? 'magic' : sectionId];
     
     // For individual magic features, calculate offset within magic section
-    if (['waterDamage', 'clarify', 'recreate', 'colorize', 'descratch', 'brighten'].includes(sectionId)) {
+    if (['waterDamage', 'clarify', 'repair', 'colorize', 'descratch', 'brighten'].includes(sectionId)) {
       const magicPosition = sectionPositions['magic'];
       if (magicPosition !== undefined) {
         // Card height: 240px, margin: 14px = 254px per card
         const cardHeight = 254;
-        const featureOrder = ['waterDamage', 'clarify', 'recreate', 'colorize', 'descratch', 'brighten'];
+        const featureOrder = ['waterDamage', 'clarify', 'repair', 'colorize', 'descratch', 'brighten'];
         const featureIndex = featureOrder.indexOf(sectionId);
         position = magicPosition + (featureIndex * cardHeight);
       }
@@ -113,7 +115,7 @@ export default function HomeGalleryLikeScreen() {
         if (recoveryState.recoveryType === 'textEdit' && recoveryState.recoveryData?.route) {
           console.log('📝 [EXPLORE] Executing text-edit recovery navigation:', recoveryState.recoveryData.route);
           clearRecoveryState();
-          router.push(recoveryState.recoveryData.route);
+          router.push(recoveryState.recoveryData.route as any);
         } else if (recoveryState.recoveryType === 'quickEdit' && recoveryState.recoveryData?.predictionId && recoveryState.recoveryData?.restoredUri) {
           console.log('📱 [EXPLORE] Executing Quick Edit recovery:', recoveryState.recoveryData.predictionId);
           clearRecoveryState();
@@ -330,12 +332,12 @@ export default function HomeGalleryLikeScreen() {
             });
             scrollToSection('brighten');
           }},
-          { id: 'recreate', titleKey: 'explore.sections.recreate', onPress: () => {
+          { id: 'repair', titleKey: 'explore.sections.repair', onPress: () => {
             analyticsService.track('explore_navigation_pill_clicked', {
-              section_id: 'recreate',
+              section_id: 'repair',
               is_pro: isPro ? 'true' : 'false'
             });
-            scrollToSection('recreate');
+            scrollToSection('repair');
           }},
           { id: 'clarify', titleKey: 'explore.sections.clarify', onPress: () => {
             analyticsService.track('explore_navigation_pill_clicked', {
@@ -344,19 +346,26 @@ export default function HomeGalleryLikeScreen() {
             });
             scrollToSection('clarify');
           }},
+          { id: 'faceBody', titleKey: 'explore.sections.faceBody', onPress: () => {
+            analyticsService.track('explore_navigation_pill_clicked', {
+              section_id: 'faceBody',
+              is_pro: isPro ? 'true' : 'false'
+            });
+            scrollToSection('faceBody');
+          }},
+          { id: 'backgrounds', titleKey: 'explore.sections.backgrounds', onPress: () => {
+            analyticsService.track('explore_navigation_pill_clicked', {
+              section_id: 'backgrounds',
+              is_pro: isPro ? 'true' : 'false'
+            });
+            scrollToSection('backgrounds');
+          }},
           { id: 'outfits', titleKey: 'explore.sections.outfits', onPress: () => {
             analyticsService.track('explore_navigation_pill_clicked', {
               section_id: 'outfits',
               is_pro: isPro ? 'true' : 'false'
             });
             scrollToSection('outfits');
-          }},
-          { id: 'popular', titleKey: 'explore.sections.popular', onPress: () => {
-            analyticsService.track('explore_navigation_pill_clicked', {
-              section_id: 'popular',
-              is_pro: isPro ? 'true' : 'false'
-            });
-            scrollToSection('popular');
           }},
           { id: 'fixMyPhoto', titleKey: 'explore.sections.fixMyPhoto', onPress: () => {
             analyticsService.track('explore_navigation_pill_clicked', {
@@ -371,20 +380,6 @@ export default function HomeGalleryLikeScreen() {
       <ScrollView ref={scrollViewRef} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomPadding }}>
         
         
-        {/* Popular section title */}
-        <View 
-          ref={popularSectionRef} 
-          onLayout={(event) => {
-            const y = event.nativeEvent.layout.y;
-            setSectionPositions(prev => ({ ...prev, popular: y }));
-          }}
-          style={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
-        >
-          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>{t('explore.sections.popular')}</Text>
-        </View>
-        
-        {/* Popular examples using outfit assets as placeholders */}
-        <PopularExamples />
 
 {/* BackToLife feature removed */}
 
@@ -397,7 +392,10 @@ export default function HomeGalleryLikeScreen() {
         }}
         style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
       >
-        <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>{t('explore.sections.fixMyPhoto')}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>{t('explore.sections.fixMyPhoto')}</Text>
+          <Text style={{ color: '#888', fontSize: 11, fontFamily: 'Lexend-Medium', letterSpacing: -0.1 }}>by clever</Text>
+        </View>
         <TouchableOpacity
           onPress={async () => {
             // Track Fix My Photo picker click (fire and forget)
@@ -418,7 +416,7 @@ export default function HomeGalleryLikeScreen() {
               allowsEditing: false, 
               quality: 1,
               presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
-              preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.CURRENT,
+              preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
               exif: false
             });
             if (!result.canceled && result.assets[0]) {
@@ -452,8 +450,34 @@ export default function HomeGalleryLikeScreen() {
           <DeviceTwoRowCarousel functionType="restore_repair" />
         </View>
 
+        {/* Backgrounds Section - moved right after Restore */}
+        <View 
+          ref={backgroundsSectionRef} 
+          onLayout={(event) => {
+            const y = event.nativeEvent.layout.y;
+            setSectionPositions(prev => ({ ...prev, backgrounds: y }));
+          }}
+          style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+        >
+          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>{t('explore.sections.backgrounds')}</Text>
+        </View>
+        <AnimatedBackgroundsReal />
 
-        {/* Memorial Section */}
+        {/* Face & Body Section */}
+        <View 
+          ref={faceBodySectionRef} 
+          onLayout={(event) => {
+            const y = event.nativeEvent.layout.y;
+            setSectionPositions(prev => ({ ...prev, faceBody: y }));
+          }}
+          style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+        >
+          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>{t('explore.sections.faceBody')}</Text>
+        </View>
+        <AnimatedFaceBody />
+
+
+        {/* Memorial Section - moved right before Photo Restoration */}
         <View 
           ref={memorialSectionRef} 
           onLayout={(event) => {

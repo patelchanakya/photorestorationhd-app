@@ -15,21 +15,25 @@ import { IconSymbol } from './ui/IconSymbol';
 type CardItem = {
   id: string;
   titleKey: string; // Translation key for title
-  subtitleKey: string; // Translation key for subtitle
+  emoji: string; // Emoji for the card
   functionType?: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'restore_repair' | 'water_damage';
   styleKey?: string;
   route?: string;
+  customPrompt?: string; // Custom prompt for specific functionality
   image: any; // require('...')
 };
 
 // Poster-style cards inspired by the provided reference
 const CARDS: CardItem[] = [
-  { id: 'fc_water_stain', titleKey: 'magic.waterDamage.title', subtitleKey: 'magic.waterDamage.subtitle', functionType: 'water_damage', image: require('../assets/images/popular/stain/pop-7.png') },
-  { id: 'fc_enhance', titleKey: 'magic.clarify.title', subtitleKey: 'magic.clarify.subtitle', functionType: 'unblur', image: require('../assets/images/popular/enhance/pop-3.png') },
-  { id: 'fc_recreate', titleKey: 'magic.recreate.title', subtitleKey: 'magic.recreate.subtitle', functionType: 'repair', image: require('../assets/images/popular/recreate/pop-5.png') },
-  { id: 'fc_colorize', titleKey: 'magic.colorize.title', subtitleKey: 'magic.colorize.subtitle', functionType: 'colorize', image: require('../assets/images/popular/colorize/pop-1.png') },
-  { id: 'fc_descratch', titleKey: 'magic.descratch.title', subtitleKey: 'magic.descratch.subtitle', functionType: 'descratch', image: require('../assets/images/popular/descratch/pop-2.png') },
-  { id: 'fc_enlighten', titleKey: 'magic.brighten.title', subtitleKey: 'magic.brighten.subtitle', functionType: 'enlighten', image: require('../assets/images/popular/brighten/pop-4.png') },
+  { id: 'fc_water_stain', titleKey: 'magic.waterDamage.title', emoji: '💧', functionType: 'water_damage', image: require('../assets/images/popular/stain/pop-7.png') },
+  { id: 'fc_enhance', titleKey: 'magic.clarify.title', emoji: '🔍', functionType: 'unblur', image: require('../assets/images/popular/enhance/pop-3.png') },
+  { id: 'fc_repair', titleKey: 'magic.repair.title', emoji: '🔧', functionType: 'repair', image: require('../assets/images/popular/recreate/pop-5.png') },
+  { id: 'fc_colorize', titleKey: 'magic.colorize.title', emoji: '🎨', functionType: 'colorize', image: require('../assets/images/popular/colorize/pop-1.png') },
+  { id: 'fc_descratch', titleKey: 'magic.descratch.title', emoji: '✨', functionType: 'descratch', image: require('../assets/images/popular/descratch/pop-2.png') },
+  { id: 'fc_enlighten', titleKey: 'magic.brighten.title', emoji: '☀️', functionType: 'enlighten', image: require('../assets/images/popular/brighten/pop-4.png') },
+  { id: 'fc_torn_photos', titleKey: 'Fix Torn Photos', emoji: '📄', functionType: 'repair', customPrompt: 'Repair tears and rips in old photos', image: require('../assets/images/popular/recreate/pop-5.png') },
+  { id: 'fc_remove_stains', titleKey: 'Remove Stains 🧽', emoji: '🧽', functionType: 'water_damage', customPrompt: 'Remove coffee stains, water stains, and discoloration', image: require('../assets/images/popular/stain/pop-7.png') },
+  { id: 'fc_faded_photos', titleKey: 'Fix Faded Photos 🌅', emoji: '🌅', functionType: 'enlighten', customPrompt: 'Restore color and contrast to faded images', image: require('../assets/images/popular/brighten/pop-4.png') },
 ];
 
 type FeatureCardsListProps = {
@@ -90,84 +94,61 @@ const FeatureCardBase = ({
         placeholderContentFit="cover"
         transition={0} // Disable transition to prevent flash
       />
-      {/* Enhanced top gradient for superior text contrast */}
+      {/* Clean gradient overlay */}
       <LinearGradient
-        colors={[ 'rgba(0,0,0,0.85)', 'rgba(0,0,0,0.4)', 'transparent' ]}
-        locations={[0, 0.6, 1]}
-        style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '45%' }}
-      />
-      {/* Bottom gradient for action bar */}
-      <LinearGradient
-        colors={[ 'transparent', 'rgba(0,0,0,0.8)' ]}
-        style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '30%' }}
+        colors={[ 'transparent', 'rgba(0,0,0,0.6)' ]}
+        locations={[0, 1]}
+        style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '40%' }}
       />
       
-      {/* Enhanced title and subtitle with better readability */}
+      {/* Clean aligned content */}
       <View style={{ 
         position: 'absolute', 
-        left: 18, 
-        right: 18, 
-        top: 18,
-        backgroundColor: 'transparent' // Add solid background for shadow efficiency
+        left: 24, 
+        right: 24, 
+        bottom: 24,
+        alignItems: 'center'
       }}>
+        {/* Feature Title */}
         <Text style={{ 
           color: '#FFFFFF', 
-          fontSize: 23, 
+          fontSize: 20, 
           fontFamily: 'Lexend-Bold', 
           letterSpacing: -0.4,
+          textAlign: 'center',
           textShadowColor: 'rgba(0,0,0,0.8)',
           textShadowOffset: { width: 0, height: 1 },
           textShadowRadius: 3,
-          marginBottom: 4
+          marginBottom: 8
         }} numberOfLines={1}>
           {t(item.titleKey)}
         </Text>
-        <Text style={{ 
-          color: 'rgba(255,255,255,0.95)', 
-          fontSize: 14, 
-          fontFamily: 'Lexend-Medium',
-          lineHeight: 20,
-          textShadowColor: 'rgba(0,0,0,0.7)',
-          textShadowOffset: { width: 0, height: 1 },
-          textShadowRadius: 2,
-          letterSpacing: -0.1
-        }} numberOfLines={2}>
-          {t(item.subtitleKey)}
-        </Text>
-      </View>
-      
-      {/* Refined bottom action bar with enhanced visual appeal */}
-      <View style={{ 
-        position: 'absolute', 
-        left: 18, 
-        right: 18, 
-        bottom: 18,
-        backgroundColor: 'transparent' // Add solid background for shadow efficiency
-      }}>
-        <View style={{ 
-          flexDirection: 'row', 
-          alignItems: 'center', 
+        
+        {/* Action with emoji */}
+        <View style={{
+          backgroundColor: 'rgba(255,255,255,0.15)',
+          borderRadius: 20,
+          paddingHorizontal: 16,
+          paddingVertical: 8,
+          flexDirection: 'row',
+          alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: 'transparent', 
-          paddingHorizontal: 18, 
-          paddingVertical: 12, 
-          borderRadius: 14
+          borderWidth: 1,
+          borderColor: 'rgba(255,255,255,0.2)'
         }}>
           <Text style={{ 
             color: '#FFFFFF', 
-            fontSize: 15, 
-            fontFamily: 'Lexend-SemiBold', 
-            marginRight: 10,
-            letterSpacing: -0.2,
-            textShadowColor: 'rgba(0,0,0,0.5)',
-            textShadowOffset: { width: 0, height: 1 },
-            textShadowRadius: 2
+            fontSize: 13, 
+            fontFamily: 'Lexend-Medium', 
+            letterSpacing: -0.1,
+            marginRight: 6
           }}>
-            Tap to select photo
+            Choose your photo
           </Text>
-          <IconSymbol name="arrow.right" size={17} color={'#FFFFFF'} />
+          <Text style={{ fontSize: 14 }}>{item.emoji}</Text>
         </View>
       </View>
+      
     </Animated.View>
   </TouchableOpacity>
   );
@@ -272,13 +253,11 @@ export function FeatureCardsList({
     }
     const functionType = item.functionType ?? 'restoration';
     const translatedTitle = t(item.titleKey);
-    const translatedSubtitle = t(item.subtitleKey);
     
     // PROMPT LOGGING: Track which feature card is selected
     console.log('🎯 FEATURE CARD SELECTED:', {
       id: item.id,
       title: translatedTitle,
-      subtitle: translatedSubtitle,
       functionType: functionType,
       styleKey: item.styleKey
     });
@@ -305,7 +284,13 @@ export function FeatureCardsList({
     });
     if (!result.canceled && result.assets[0]) {
       try {
-        useQuickEditStore.getState().openWithImage({ functionType, imageUri: result.assets[0].uri, styleKey: item.styleKey, styleName: translatedTitle });
+        useQuickEditStore.getState().openWithImage({ 
+          functionType, 
+          imageUri: result.assets[0].uri, 
+          styleKey: item.styleKey, 
+          styleName: translatedTitle,
+          customPrompt: item.customPrompt
+        });
       } catch {}
     }
   }, [onOpenBackgrounds, onOpenClothes, router, t]);

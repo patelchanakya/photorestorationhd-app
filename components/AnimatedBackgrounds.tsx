@@ -25,6 +25,28 @@ interface MemorialItem {
 // Memorial features specifically designed for passed loved ones and remembrance photos
 const DEFAULT_MEMORIAL_ITEMS: MemorialItem[] = [
   {
+    id: 'memorial-7',
+    titleKey: 'Memorial Portrait',
+    type: 'video',
+    // video: require('../assets/videos/memorial/memorial-portrait.mp4'),
+    memorialPrompt:
+      "Create a clean, professional memorial portrait by removing background distractions and enhancing the subject with respectful, dignified presentation perfect for memorial services."
+  },
+  { 
+    id: 'popular-3', 
+    titleKey: 'popular.addHalo', 
+    type: 'video', 
+    video: require('../assets/videos/popular/halo.mp4'), 
+    memorialPrompt: "Add a subtle glowing halo above the subject's head." 
+  },
+  { 
+    id: 'popular-7', 
+    titleKey: 'popular.angelWings', 
+    type: 'video', 
+    video: require('../assets/videos/popular/angel.mp4'), 
+    memorialPrompt: "Add realistic wings that match pose, background, and lighting." 
+  },
+  {
     id: 'memorial-1',
     titleKey: 'memorial.memorialFlowers',
     type: 'video',
@@ -71,6 +93,38 @@ const DEFAULT_MEMORIAL_ITEMS: MemorialItem[] = [
     video: require('../assets/videos/memorial/glow.mp4'),
     memorialPrompt:
       "Add a soft, ethereal glow around the subject creating a peaceful and spiritual memorial atmosphere. The glow should be gentle and respectful, not overwhelming."
+  },
+  {
+    id: 'memorial-8',
+    titleKey: 'Candlelight Vigil 🕯️',
+    type: 'video',
+    // video: require('../assets/videos/memorial/candlelight-vigil.mp4'),
+    memorialPrompt:
+      "Add warm candlelight elements around the photo with soft glowing candles and peaceful ambiance, creating a reverent vigil atmosphere for remembrance."
+  },
+  {
+    id: 'memorial-9',
+    titleKey: 'Rest in Peace Text',
+    type: 'video',
+    // video: require('../assets/videos/memorial/rip-text.mp4'),
+    memorialPrompt:
+      "Add elegant 'Rest in Peace' text overlay to the image in a respectful, tasteful font that complements the memorial photo."
+  },
+  {
+    id: 'memorial-10',
+    titleKey: 'Memorial Frame',
+    type: 'video',
+    // video: require('../assets/videos/memorial/memorial-frame.mp4'),
+    memorialPrompt:
+      "Add a dignified memorial frame around the photo with 'In Loving Memory' text, creating a formal memorial presentation."
+  },
+  {
+    id: 'memorial-11',
+    titleKey: 'Heavenly Clouds ☁️',
+    type: 'video',
+    // video: require('../assets/videos/memorial/heavenly-clouds.mp4'),
+    memorialPrompt:
+      "Add soft, peaceful clouds in the background creating a serene heavenly atmosphere perfect for memorial photos."
   }
 ];
 

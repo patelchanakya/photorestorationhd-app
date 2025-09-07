@@ -37,7 +37,7 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
   const isMountedRef = useRef(true);
 
   // Simple state
-  const [currentVideo, setCurrentVideo] = useState<'loading' | 'onboarding' | 'done'>('loading');
+  const [currentVideo, setCurrentVideo] = useState<'loading' | 'done'>('loading');
 
   // Main loading video player - play once only
   const videoPlayer = useVideoPlayer(require('../assets/videos/loading.mp4'), (player) => {
@@ -50,16 +50,6 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
     }
   });
 
-  // Onboarding intro video player
-  const onloadingVideoPlayer = useVideoPlayer(require('../assets/videos/onloading.mp4'), (player) => {
-    try {
-      player.loop = false;  // Play once only
-      player.muted = true;
-      // Don't auto-play - will be triggered after main video
-    } catch (error) {
-      console.error('Onboarding video player init error:', error);
-    }
-  });
 
   // Cleanup video players on unmount
   useEffect(() => {
@@ -83,19 +73,6 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
         }
       }
 
-      try {
-        if (onloadingVideoPlayer) {
-          const status = onloadingVideoPlayer.status;
-          if (status !== 'idle') {
-            onloadingVideoPlayer.pause();
-          }
-          onloadingVideoPlayer.release();
-        }
-      } catch (error) {
-        if (__DEV__) {
-          console.log('Onboarding video cleanup handled');
-        }
-      }
     };
   }, []);
 
@@ -194,42 +171,9 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
           return;
         }
         
-        // New user - show onboarding video then go to onboarding
+        // New user - go directly to onboarding
         if (__DEV__) {
-          console.log('🎯 New user - showing onboarding video');
-        }
-        setCurrentVideo('onboarding');
-        
-        // Play onboarding video
-        setTimeout(() => {
-          try {
-            if (isMountedRef.current) {
-              onloadingVideoPlayer.play();
-            }
-          } catch (error) {
-            if (__DEV__) {
-              console.log('Onboarding video play error handled');
-            }
-          }
-        }, 300);
-        
-        // Wait for video to complete
-        await new Promise(resolve => {
-          const subscription = onloadingVideoPlayer.addListener('statusChange', ({ status }) => {
-            if (status === 'idle') {
-              subscription?.remove();
-              resolve(void 0);
-            }
-          });
-          
-          setTimeout(() => {
-            subscription?.remove();
-            resolve(void 0);
-          }, 12500);
-        });
-        
-        if (__DEV__) {
-          console.log('🎬 Onboarding video complete - going to onboarding');
+          console.log('🎯 New user - going directly to onboarding');
         }
         setInitialRoute('onboarding-v3');
         markInitialized();
@@ -636,26 +580,6 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
         />
       )}
 
-      {/* Onboarding intro video - shows after main video */}
-      {currentVideo === 'onboarding' && (
-        <VideoView
-          player={onloadingVideoPlayer}
-          style={{ 
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            width: '100%',
-            height: '100%',
-            backgroundColor: '#000000',
-          }}
-          contentFit="contain"
-          nativeControls={false}
-          allowsFullscreen={false}
-          useExoShutter={false}
-        />
-      )}
     </View>
   );
 }

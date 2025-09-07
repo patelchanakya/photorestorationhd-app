@@ -9,13 +9,14 @@
     },
     "sections": {
       "popular": "热门",
-      "fixMyPhoto": "修复我的照片",
+      "fixMyPhoto": "Restore",
+      "backgrounds": "Backgrounds",
       "memorial": "纪念",
       "outfits": "服装",
       "magic": "魔法",
       "waterDamage": "水损害",
       "clarify": "清晰化",
-      "recreate": "重新创建",
+      "repair": "重新创建",
       "colorize": "上色",
       "descratch": "去划痕",
       "brighten": "增亮"
@@ -94,7 +95,7 @@
       "title": "澄清",
       "subtitle": "移除模糊，锐化细节"
     },
-    "recreate": {
+    "repair": {
       "title": "重新创建",
       "subtitle": "让 Clever 重新创建您的图像"
     },
@@ -189,7 +190,7 @@
       "clearCache": "清除缓存",
       "privacyPolicy": "隐私政策",
       "termsOfService": "服务条款",
-      "rateUs": "为我们评分",
+      "rateUs": "请为我们评分 :)",
       "shareApp": "分享应用",
       "version": "版本",
       "language": "语言"
@@ -226,8 +227,8 @@
       "noneAbove": "以上都不是",
       "chooseYourOwn": "Choose Your Own",
       "chooseYourOwnDesc": "Describe what you want to do with your photo",
-      "recreate": "Recreate",
-      "recreateDesc": "Recreation while staying consistent with features",
+      "repair": "Recreate",
+      "repairDesc": "Recreation while staying consistent with features",
       "clearSkin": "Clear Skin",
       "clearSkinDesc": "Remove acne, blemishes & imperfections",
       "addSmile": "Add Smile",
@@ -241,7 +242,7 @@
       "addWingsDesc": "Beautiful wings that match your photo",
       "waterStainDamage": "Water/Stain Damage",
       "waterStainDamageDesc": "Remove water damage, stains, and discoloration",
-      "fixMyPhoto": "Fix My Photo",
+      "fixMyPhoto": "Restore",
       "fixMyPhotoDesc": "Fix tears, scratches, and damage in old photos",
       "professionalOutfit": "Professional Outfit",
       "professionalOutfitDesc": "Change to professional business attire",
@@ -282,7 +283,7 @@
       "addwingsDesc": "Beautiful wings that match your photo",
       "waterstaindamage": "Water/Stain Damage",
       "waterstaindamageDesc": "Remove water damage, stains, and discoloration",
-      "restorerepair": "Fix My Photo",
+      "restorerepair": "Restore",
       "restorerepairDesc": "Fix tears, scratches, and damage in old photos",
       "professionaloutfit": "Professional Outfit",
       "professionaloutfitDesc": "Change to professional business attire",

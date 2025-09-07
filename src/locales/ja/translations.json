@@ -9,13 +9,14 @@
     },
     "sections": {
       "popular": "人気",
-      "fixMyPhoto": "写真を修正",
+      "fixMyPhoto": "Restore",
+      "backgrounds": "Backgrounds",
       "memorial": "記念",
       "outfits": "服装",
       "magic": "マジック",
       "waterDamage": "水损害",
       "clarify": "鮮明化",
-      "recreate": "再作成",
+      "repair": "再作成",
       "colorize": "色付け",
       "descratch": "スクラッチ除去",
       "brighten": "明るく"
@@ -94,7 +95,7 @@
       "title": "明瞭化",
       "subtitle": "ぼかしを除去、詳細を鮮明に"
     },
-    "recreate": {
+    "repair": {
       "title": "再作成",
       "subtitle": "Cleverにあなたの画像を再作成させる"
     },
@@ -184,7 +185,7 @@
       "clearCache": "キャッシュをクリア",
       "privacyPolicy": "プライバシーポリシー",
       "termsOfService": "利用規約",
-      "rateUs": "評価する",
+      "rateUs": "評価してください :)",
       "shareApp": "アプリを共有",
       "version": "バージョン",
       "language": "言語"
@@ -221,8 +222,8 @@
       "noneAbove": "上記以外",
       "chooseYourOwn": "Choose Your Own",
       "chooseYourOwnDesc": "Describe what you want to do with your photo",
-      "recreate": "Recreate",
-      "recreateDesc": "Recreation while staying consistent with features",
+      "repair": "Recreate",
+      "repairDesc": "Recreation while staying consistent with features",
       "clearSkin": "Clear Skin",
       "clearSkinDesc": "Remove acne, blemishes & imperfections",
       "addSmile": "Add Smile",
@@ -236,7 +237,7 @@
       "addWingsDesc": "Beautiful wings that match your photo",
       "waterStainDamage": "Water/Stain Damage",
       "waterStainDamageDesc": "Remove water damage, stains, and discoloration",
-      "fixMyPhoto": "Fix My Photo",
+      "fixMyPhoto": "Restore",
       "fixMyPhotoDesc": "Fix tears, scratches, and damage in old photos",
       "professionalOutfit": "Professional Outfit",
       "professionalOutfitDesc": "Change to professional business attire",
@@ -277,7 +278,7 @@
       "addwingsDesc": "Beautiful wings that match your photo",
       "waterstaindamage": "Water/Stain Damage",
       "waterstaindamageDesc": "Remove water damage, stains, and discoloration",
-      "restorerepair": "Fix My Photo",
+      "restorerepair": "Restore",
       "restorerepairDesc": "Fix tears, scratches, and damage in old photos",
       "professionaloutfit": "Professional Outfit",
       "professionaloutfitDesc": "Change to professional business attire",

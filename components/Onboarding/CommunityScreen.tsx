@@ -1,9 +1,9 @@
 import { analyticsService } from '@/services/analytics';
+import { presentPaywall } from '@/services/revenuecat';
 import { useTranslation } from '@/src/hooks/useTranslation';
 import { Image as ExpoImage } from 'expo-image';
-import * as WebBrowser from 'expo-web-browser';
 import React from 'react';
-import { Dimensions, ScrollView, Text, View } from 'react-native';
+import { Dimensions, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import Animated, {
   cancelAnimation,
@@ -62,8 +62,8 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
   const showcaseHeaderTranslateY = useSharedValue(30);
   const memorialOpacity = useSharedValue(0);
   const memorialTranslateY = useSharedValue(30);
-  const recreateOpacity = useSharedValue(0);
-  const recreateTranslateY = useSharedValue(30);
+  const repairOpacity = useSharedValue(0);
+  const repairTranslateY = useSharedValue(30);
   const backgroundOpacity = useSharedValue(0);
   const backgroundTranslateY = useSharedValue(30);
   const customOpacity = useSharedValue(0);
@@ -127,8 +127,8 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
     memorialOpacity.value = withDelay(1400, withTiming(1, { duration: 600 }));
     memorialTranslateY.value = withDelay(1400, withSpring(0, { damping: 16, stiffness: 200 }));
     
-    recreateOpacity.value = withDelay(1600, withTiming(1, { duration: 600 }));
-    recreateTranslateY.value = withDelay(1600, withSpring(0, { damping: 16, stiffness: 200 }));
+    repairOpacity.value = withDelay(1600, withTiming(1, { duration: 600 }));
+    repairTranslateY.value = withDelay(1600, withSpring(0, { damping: 16, stiffness: 200 }));
     
     backgroundOpacity.value = withDelay(1800, withTiming(1, { duration: 600 }));
     backgroundTranslateY.value = withDelay(1800, withSpring(0, { damping: 16, stiffness: 200 }));
@@ -191,8 +191,8 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
       cancelAnimation(showcaseHeaderTranslateY);
       cancelAnimation(memorialOpacity);
       cancelAnimation(memorialTranslateY);
-      cancelAnimation(recreateOpacity);
-      cancelAnimation(recreateTranslateY);
+      cancelAnimation(repairOpacity);
+      cancelAnimation(repairTranslateY);
       cancelAnimation(backgroundOpacity);
       cancelAnimation(backgroundTranslateY);
       cancelAnimation(customOpacity);
@@ -202,7 +202,7 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
       stat1Value.value = 10532;
       counterGlow.value = 0;
     };
-  }, [backgroundPulse, statsBgPulse, heroOpacity, heroScale, heroGlow, photo1Rotate, photo2Rotate, photo3Rotate, titleOpacity, titleTranslateY, bodyOpacity, bodyTranslateY, statsOpacity, statsScale, buttonOpacity, stat1Value, stat2Value, stat3Value, counterGlow, benefitsOpacity, benefitsTranslateY, showcaseHeaderOpacity, showcaseHeaderTranslateY, memorialOpacity, memorialTranslateY, recreateOpacity, recreateTranslateY, backgroundOpacity, backgroundTranslateY, customOpacity, customTranslateY, screenHeight]);
+  }, [backgroundPulse, statsBgPulse, heroOpacity, heroScale, heroGlow, photo1Rotate, photo2Rotate, photo3Rotate, titleOpacity, titleTranslateY, bodyOpacity, bodyTranslateY, statsOpacity, statsScale, buttonOpacity, stat1Value, stat2Value, stat3Value, counterGlow, benefitsOpacity, benefitsTranslateY, showcaseHeaderOpacity, showcaseHeaderTranslateY, memorialOpacity, memorialTranslateY, repairOpacity, repairTranslateY, backgroundOpacity, backgroundTranslateY, customOpacity, customTranslateY, screenHeight]);
 
   // Background animated style
   const backgroundAnimatedStyle = useAnimatedStyle(() => ({
@@ -246,9 +246,9 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
     transform: [{ translateY: memorialTranslateY.value }],
   }));
 
-  const recreateAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: recreateOpacity.value,
-    transform: [{ translateY: recreateTranslateY.value }],
+  const repairAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: repairOpacity.value,
+    transform: [{ translateY: repairTranslateY.value }],
   }));
 
   const backgroundAnimatedStyle2 = useAnimatedStyle(() => ({
@@ -345,6 +345,17 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
             />
           </Animated.View>
 
+          {/* Claim Offer Section */}
+          <Animated.View style={[
+            {
+              marginHorizontal: 24,
+              marginBottom: 48,
+            },
+            benefitsAnimatedStyle
+          ]}>
+            <ClaimOfferCard />
+          </Animated.View>
+
           {/* Showcase Header */}
           <Animated.View style={[
             { 
@@ -391,17 +402,17 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
             />
           </Animated.View>
 
-          {/* Recreate Showcase */}
+          {/* Repair Showcase */}
           <Animated.View style={[
             {
               marginBottom: 40,
               paddingHorizontal: 16,
             },
-            recreateAnimatedStyle
+            repairAnimatedStyle
           ]}>
             <ShowcaseCard
-              title={t('onboarding.community.recreate.title')}
-              description={t('onboarding.community.recreate.description')}
+              title={t('onboarding.community.repair.title')}
+              description={t('onboarding.community.repair.description')}
               beforeImage={require('@/assets/images/onboarding/before-3.jpg')}
               afterImage={require('@/assets/images/onboarding/after-3.png')}
             />
@@ -457,34 +468,6 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
             }, 
             buttonAnimatedStyle
           ]}>
-            {/* Facebook CTA above Continue */}
-            {(() => {
-              const followLabel = t('onboarding.community.followFacebook');
-              const title = followLabel === 'onboarding.community.followFacebook' 
-                ? 'Follow us on Facebook' 
-                : followLabel;
-              return (
-                <OnboardingButton
-                  title={title}
-                  onPress={() => {
-                    // Track Facebook follow click (fire and forget)
-                    analyticsService.track('onboarding_facebook_follow_clicked', {
-                      screen: 'community',
-                      onboarding_version: 'v3'
-                    });
-                    WebBrowser.openBrowserAsync('https://www.facebook.com/photorestorationhd/');
-                  }}
-                  variant="secondary"
-                  size="large"
-                  style={{ 
-                    width: '100%', 
-                    marginBottom: 12,
-                    backgroundColor: 'transparent',
-                    borderWidth: 0,
-                  }}
-                />
-              );
-            })()}
             <OnboardingButton
               title={t('onboarding.community.continue')}
               onPress={() => {
@@ -504,6 +487,117 @@ export function CommunityScreen({ onContinue }: CommunityScreenProps) {
         </View>
       </View>
     </OnboardingContainer>
+  );
+}
+
+function ClaimOfferCard() {
+  const handleClaimTrial = async () => {
+    try {
+      // Track claim button click
+      analyticsService.track('claim_trial_clicked', {
+        source: 'community_claim_offer_card',
+        onboarding_version: 'v3'
+      });
+
+      // Present the specific "claim trial" paywall
+      const success = await presentPaywall('default4-trial');
+      
+      if (success) {
+        // Track successful trial claim
+        analyticsService.track('trial_claimed_from_community', {
+          source: 'claim_offer_card',
+          onboarding_version: 'v3'
+        });
+      }
+    } catch (error) {
+      console.error('Claim trial error:', error);
+    }
+  };
+  
+  return (
+    <View style={{
+      backgroundColor: 'rgba(255, 107, 53, 0.15)',
+      borderRadius: 20,
+      padding: 24,
+      borderWidth: 2,
+      borderColor: 'rgba(255, 107, 53, 0.4)',
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
+      {/* Floating gradient background */}
+      <View style={{
+        position: 'absolute',
+        top: -50,
+        right: -50,
+        width: 150,
+        height: 150,
+        borderRadius: 75,
+        backgroundColor: 'rgba(255, 107, 53, 0.1)',
+        opacity: 0.6,
+      }} />
+      
+      {/* Main content */}
+      <View style={{ alignItems: 'center', zIndex: 1 }}>
+        <Text style={{
+          fontSize: 14,
+          fontFamily: 'Lexend-Bold',
+          color: '#FF6B35',
+          textAlign: 'center',
+          marginBottom: 8,
+          textTransform: 'uppercase',
+          letterSpacing: 1,
+        }}>
+          UNLOCK EVERYTHING FREE
+        </Text>
+        
+        <Text style={{
+          fontSize: 28,
+          fontFamily: 'Lexend-Bold',
+          color: '#FFFFFF',
+          textAlign: 'center',
+          marginBottom: 8,
+          letterSpacing: -0.5,
+        }}>
+          Try 3 Days Free
+        </Text>
+        
+        <Text style={{
+          fontSize: 16,
+          color: 'rgba(255, 255, 255, 0.8)',
+          textAlign: 'center',
+          fontFamily: 'Lexend-Regular',
+          letterSpacing: -0.1,
+          marginBottom: 20,
+        }}>
+          Access all premium features
+        </Text>
+        
+        <TouchableOpacity 
+          style={{
+            backgroundColor: '#FF6B35',
+            borderRadius: 16,
+            paddingVertical: 14,
+            paddingHorizontal: 32,
+            shadowColor: '#FF6B35',
+            shadowOffset: { width: 0, height: 4 },
+            shadowRadius: 12,
+            shadowOpacity: 0.3,
+            elevation: 8,
+          }}
+          onPress={handleClaimTrial}
+        >
+          <Text style={{
+            fontSize: 18,
+            fontFamily: 'Lexend-Bold',
+            color: '#FFFFFF',
+            textAlign: 'center',
+            letterSpacing: -0.2,
+          }}>
+            Claim Your Free Trial
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
 

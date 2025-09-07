@@ -9,13 +9,14 @@
     },
     "sections": {
       "popular": "Популярное",
-      "fixMyPhoto": "Исправить Мое Фото",
+      "fixMyPhoto": "Restore",
+      "backgrounds": "Backgrounds",
       "memorial": "Мемориал",
       "outfits": "Одежда",
       "magic": "Магия",
       "waterDamage": "Повреждение Водой",
       "clarify": "Осветлить",
-      "recreate": "Воссоздать",
+      "repair": "Воссоздать",
       "colorize": "Раскрасить",
       "descratch": "Убрать Царапины",
       "brighten": "Осветлить"
@@ -94,7 +95,7 @@
       "title": "Прояснить",
       "subtitle": "Убрать размытость, заострить детали"
     },
-    "recreate": {
+    "repair": {
       "title": "Воссоздать",
       "subtitle": "Пусть Clever воссоздаст ваше изображение"
     },
@@ -189,7 +190,7 @@
       "clearCache": "Очистить Кэш",
       "privacyPolicy": "Политика Конфиденциальности",
       "termsOfService": "Условия Обслуживания",
-      "rateUs": "Оценить Нас",
+      "rateUs": "пожалуйста оцените нас :)",
       "shareApp": "Поделиться Приложением",
       "version": "Версия",
       "language": "Язык"
@@ -226,8 +227,8 @@
       "noneAbove": "Ничего из перечисленного",
       "chooseYourOwn": "Choose Your Own",
       "chooseYourOwnDesc": "Describe what you want to do with your photo",
-      "recreate": "Recreate",
-      "recreateDesc": "Recreation while staying consistent with features",
+      "repair": "Recreate",
+      "repairDesc": "Recreation while staying consistent with features",
       "clearSkin": "Clear Skin",
       "clearSkinDesc": "Remove acne, blemishes & imperfections",
       "addSmile": "Add Smile",
@@ -241,7 +242,7 @@
       "addWingsDesc": "Beautiful wings that match your photo",
       "waterStainDamage": "Water/Stain Damage",
       "waterStainDamageDesc": "Remove water damage, stains, and discoloration",
-      "fixMyPhoto": "Fix My Photo",
+      "fixMyPhoto": "Restore",
       "fixMyPhotoDesc": "Fix tears, scratches, and damage in old photos",
       "professionalOutfit": "Professional Outfit",
       "professionalOutfitDesc": "Change to professional business attire",
@@ -282,7 +283,7 @@
       "addwingsDesc": "Beautiful wings that match your photo",
       "waterstaindamage": "Water/Stain Damage",
       "waterstaindamageDesc": "Remove water damage, stains, and discoloration",
-      "restorerepair": "Fix My Photo",
+      "restorerepair": "Restore",
       "restorerepairDesc": "Fix tears, scratches, and damage in old photos",
       "professionaloutfit": "Professional Outfit",
       "professionaloutfitDesc": "Change to professional business attire",

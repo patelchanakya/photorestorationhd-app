@@ -341,7 +341,7 @@ function getPreviewMedia(featureId: string): PreviewMedia {
     'custom_prompt': { type: 'video', source: require('../../assets/videos/text-edit.mp4') },
     
     // Magic sections (top priority)
-    'recreate': { type: 'video', source: require('../../assets/videos/recreate.mp4') },
+    'repair': { type: 'video', source: require('../../assets/videos/recreate.mp4') },
     'water_stain_damage': { type: 'image', source: require('../../assets/images/popular/stain/pop-7.png') },
     'restore_repair': { type: 'image', source: require('../../assets/images/popular/descratch/pop-2.png') },
     'professional_outfit': { type: 'video', source: require('../../assets/videos/magic/outfits/thumbnail/formal-wear/professional.mp4') },

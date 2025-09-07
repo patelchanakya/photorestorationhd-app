@@ -2,8 +2,11 @@ import { NetworkErrorModal } from '@/components/NetworkErrorModal';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { analyticsService } from '@/services/analytics';
 import { useTranslation } from '@/src/hooks/useTranslation';
+import { useFocusEffect } from '@react-navigation/native';
 import React from 'react';
-import { Dimensions, Image, Linking, Text, View } from 'react-native';
+import { AppState, Dimensions, Linking, Text, View } from 'react-native';
+import { useVideoPlayer, VideoView } from 'expo-video';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
     useAnimatedStyle,
     useSharedValue,
@@ -38,6 +41,17 @@ export const WelcomeScreen = React.memo(function WelcomeScreen({ onContinue }: W
   
   const { hasReliableConnection, refreshNetworkStatus } = useNetworkStatus();
   const [showNetworkModal, setShowNetworkModal] = React.useState(false);
+  const playerRef = React.useRef<any>(null);
+  const shouldBePlayingRef = React.useRef(true);
+  const isMountedRef = React.useRef(true);
+  
+  // Video player setup
+  const player = useVideoPlayer(require('../../assets/videos/welcome.mp4'), player => {
+    playerRef.current = player;
+    player.loop = true;
+    player.play();
+    shouldBePlayingRef.current = true;
+  });
   
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(20);
@@ -45,6 +59,7 @@ export const WelcomeScreen = React.memo(function WelcomeScreen({ onContinue }: W
   const buttonOpacity = useSharedValue(0);
   const buttonScale = useSharedValue(0.8);
 
+  // App state and video lifecycle management
   React.useEffect(() => {
     if (__DEV__) {
       console.log('🔥 [WELCOME-SCREEN] useEffect triggered');
@@ -72,7 +87,94 @@ export const WelcomeScreen = React.memo(function WelcomeScreen({ onContinue }: W
     if (__DEV__) {
       console.log('🔥 [WELCOME-SCREEN] Animations initiated');
     }
-  }, [isTablet]);
+
+    // Handle app state changes for video lifecycle
+    const handleAppStateChange = (nextAppState: string) => {
+      if (__DEV__) {
+        console.log('🎬 [WELCOME-VIDEO] App state changed:', nextAppState);
+      }
+
+      if (playerRef.current) {
+        try {
+          if (nextAppState === 'active') {
+            // App came to foreground - restart video
+            if (__DEV__) {
+              console.log('🎬 [WELCOME-VIDEO] App active - restarting video');
+            }
+            if (shouldBePlayingRef.current && isMountedRef.current) {
+              playerRef.current.play();
+            }
+          } else if (nextAppState === 'background' || nextAppState === 'inactive') {
+            // App going to background - pause video
+            if (__DEV__) {
+              console.log('🎬 [WELCOME-VIDEO] App backgrounded - pausing video');
+            }
+            playerRef.current.pause();
+            shouldBePlayingRef.current = false;
+          }
+        } catch (error) {
+          if (__DEV__) {
+            console.warn('🎬 [WELCOME-VIDEO] Error handling app state change:', error);
+          }
+        }
+      }
+    };
+
+    const appStateSubscription = AppState.addEventListener('change', handleAppStateChange);
+
+    // Cleanup function
+    return () => {
+      if (__DEV__) {
+        console.log('🔥 [WELCOME-SCREEN] Cleanup starting');
+      }
+      
+      isMountedRef.current = false;
+      shouldBePlayingRef.current = false;
+      
+      // Remove app state listener
+      appStateSubscription?.remove();
+      
+      // Clean up video player
+      if (playerRef.current) {
+        try {
+          playerRef.current.pause();
+          playerRef.current.release();
+          if (__DEV__) {
+            console.log('🎬 [WELCOME-VIDEO] Video player cleaned up');
+          }
+        } catch (error) {
+          if (__DEV__) {
+            console.warn('🎬 [WELCOME-VIDEO] Error during video cleanup:', error);
+          }
+        }
+        playerRef.current = null;
+      }
+    };
+  }, [isTablet, titleOpacity, titleTranslateY, legalOpacity, buttonOpacity, buttonScale]);
+
+  // Handle navigation focus - restart video after fast refresh
+  useFocusEffect(
+    React.useCallback(() => {
+      if (shouldBePlayingRef.current && isMountedRef.current && playerRef.current) {
+        try {
+          if (playerRef.current.status !== 'idle' && !playerRef.current.playing) {
+            if (__DEV__) {
+              console.log('🎬 [WELCOME-VIDEO] Focus restored - restarting video');
+            }
+            setTimeout(() => {
+              if (isMountedRef.current && playerRef.current) {
+                playerRef.current.play();
+              }
+            }, 100);
+          }
+        } catch (error) {
+          if (__DEV__) {
+            console.warn('🎬 [WELCOME-VIDEO] Error resuming on focus:', error);
+          }
+        }
+      }
+    }, [])
+  );
 
   const titleAnimatedStyle = useAnimatedStyle(() => ({
     opacity: titleOpacity.value,
@@ -160,31 +262,38 @@ export const WelcomeScreen = React.memo(function WelcomeScreen({ onContinue }: W
         paddingHorizontal: ONBOARDING_SPACING.xxl,
         paddingBottom: ONBOARDING_SPACING.huge,
       }}>
-        {/* Spacer to position content */}
-        <View style={{ flex: 0.3 }} />
-
-        {/* Hero Image - top half */}
+        {/* Hero Video - full width and height */}
         <View style={{ 
-          height: imageHeight,
+          flex: 3,
           width: screenWidth,
           marginLeft: -ONBOARDING_SPACING.xxl,
           marginRight: -ONBOARDING_SPACING.xxl,
           justifyContent: 'center',
           alignItems: 'center',
-          marginBottom: ONBOARDING_SPACING.xl
+          position: 'relative',
         }}>
-          <Image 
-            source={require('../../assets/images/onboarding/welcomescreen.png')}
+          <VideoView
+            player={player}
             style={{
-              width: screenWidth,
-              height: imageHeight,
-              resizeMode: 'cover',
+              width: '100%',
+              height: '100%',
             }}
+            nativeControls={false}
+            contentFit="cover"
+          />
+          {/* Gradient fade overlay at bottom */}
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.8)']}
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 100,
+            }}
+            pointerEvents="none"
           />
         </View>
-
-        {/* Spacer to push title to lower third */}
-        <View style={{ flex: 1.2 }} />
 
         {/* Title - positioned in lower third */}
         <Animated.View style={[

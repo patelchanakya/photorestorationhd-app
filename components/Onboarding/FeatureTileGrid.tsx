@@ -36,7 +36,7 @@ const FEATURE_ASSETS: Record<string, { video?: any; image?: any }> = {
   make_slimmer: { video: require('../../assets/videos/popular/slimmer.mp4') },
   add_color_bw: { image: require('../../assets/images/popular/colorize/pop-1.png') },
   water_stain_damage: { image: require('../../assets/images/popular/stain/pop-7.png') },
-  recreate: { image: require('../../assets/images/popular/recreate/pop-5.png') },
+  repair: { image: require('../../assets/images/popular/recreate/pop-5.png') },
   unblur_sharpen: { image: require('../../assets/images/popular/enhance/pop-3.png') },
   professional_outfit: { image: require('../../assets/images/popular/enhance/pop-3.png') },
   blur_background: { image: require('../../assets/images/backgrounds/thumbnail/studio/studio.jpeg') },

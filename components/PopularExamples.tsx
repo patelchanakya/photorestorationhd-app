@@ -24,97 +24,6 @@ interface PopularItem {
 
 // Popular photo restoration and editing requests
 const DEFAULT_POPULAR_ITEMS: PopularItem[] = [
-  { 
-    id: 'popular-1', 
-    titleKey: 'popular.addSmile', 
-    type: 'video', 
-    video: require('../assets/videos/popular/smile.mp4'), 
-    prompt: "Add a natural, authentic smile while preserving facial identity and features." 
-  },
-  { 
-    id: 'popular-2', 
-    titleKey: 'popular.openEyes', 
-    type: 'video', 
-    video: require('../assets/videos/popular/open-eyes.mp4'), 
-    prompt: "open my eyes" 
-  },
-  { 
-    id: 'popular-3', 
-    titleKey: 'popular.addHalo', 
-    type: 'video', 
-    video: require('../assets/videos/popular/halo.mp4'), 
-    prompt: "Add a subtle glowing halo above the subject's head." 
-  },
-  { 
-    id: 'popular-4', 
-    titleKey: 'popular.slimmer', 
-    type: 'video', 
-    video: require('../assets/videos/popular/slimmer.mp4'), 
-    prompt: "Reduce visible body and facial fat while keeping natural proportions, pose, and facial identity intact. Make changes realistic and balanced without distorting the subject." 
-  },
-  { 
-    id: 'popular-5', 
-    titleKey: 'popular.clearSkin', 
-    type: 'video', 
-    video: require('../assets/videos/popular/clear-skin.mp4'), 
-    prompt: "Remove acne, blemishes, and skin imperfections while keeping natural skin texture, tone, and lighting unchanged." 
-  },
-  { 
-    id: 'popular-6', 
-    titleKey: 'popular.fixHair', 
-    type: 'video', 
-    video: require('../assets/videos/popular/fix-hair.mp4'), 
-    prompt: "Clean up messy or stray hairs while preserving natural hair texture, style, volume, and keeping hair in place without altering its position on the face." 
-  },
-  { 
-    id: 'popular-7', 
-    titleKey: 'popular.angelWings', 
-    type: 'video', 
-    video: require('../assets/videos/popular/angel.mp4'), 
-    prompt: "Add realistic wings that match pose, background, and lighting." 
-  },
-  { 
-    id: 'popular-8', 
-    titleKey: 'popular.younger', 
-    type: 'video', 
-    video: require('../assets/videos/popular/younger.mp4'), 
-    prompt: "Make the subject look a bit younger while keeping their identity, facial features, and natural expression unchanged." 
-  },
-  { 
-    id: 'popular-9', 
-    titleKey: 'popular.older', 
-    type: 'video', 
-    video: require('../assets/videos/popular/older.mp4'), 
-    prompt: "Make the subject appear slightly older in a natural, age-appropriate way. Preserve facial identity, proportions, and realistic features, adjusting age subtly without exaggeration." 
-  },
-  { 
-    id: 'popular-10', 
-    titleKey: 'popular.gardenBackground', 
-    type: 'image', 
-    image: require('../assets/images/backgrounds/thumbnail/garden/garden.jpeg'), 
-    prompt: "Replace background with a garden scene - greenery and foliage in natural daylight." 
-  },
-  { 
-    id: 'popular-11', 
-    titleKey: 'popular.studioBackground', 
-    type: 'image', 
-    image: require('../assets/images/backgrounds/thumbnail/studio/studio.jpeg'), 
-    prompt: "Replace background with a clean studio backdrop in white or light gray." 
-  },
-  { 
-    id: 'popular-12', 
-    titleKey: 'popular.softLightsBackground', 
-    type: 'image', 
-    image: require('../assets/images/backgrounds/thumbnail/soft-lights/softer.jpg'), 
-    prompt: "Replace background with soft bokeh lights for a cinematic look." 
-  },
-  { 
-    id: 'popular-13', 
-    titleKey: 'popular.heavenlyBackground', 
-    type: 'image', 
-    image: require('../assets/images/backgrounds/thumbnail/heavenly/heavenly.jpg'), 
-    prompt: "Replace background with a bright heavenly sky of soft white clouds and gentle sunbeams." 
-  }
 ];
 
 // VideoView component with reliable playback recovery
@@ -305,7 +214,7 @@ export function PopularExamples({ items = DEFAULT_POPULAR_ITEMS }: { items?: Pop
       allowsEditing: false, 
       quality: 1,
       presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
-      preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.CURRENT,
+      preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
       exif: false
     });
     if (!result.canceled && result.assets[0]) {

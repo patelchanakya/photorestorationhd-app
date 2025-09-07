@@ -9,13 +9,16 @@
     },
     "sections": {
       "popular": "Popular",
-      "fixMyPhoto": "Fix My Photo",
+      "fixMyPhoto": "Restore",
+      "backgrounds": "Backgrounds",
       "memorial": "Memorial",
+      "faceBody": "Face & Body",
+      "addRemove": "Add/Remove",
       "outfits": "Outfits",
-      "magic": "Magic",
+      "magic": "Photo Restoration",
       "waterDamage": "Water Damage",
       "clarify": "Clarify",
-      "recreate": "Recreate",
+      "repair": "Repair",
       "colorize": "Colorize",
       "descratch": "Descratch",
       "brighten": "Brighten"
@@ -67,7 +70,15 @@
     "gardenBackground": "Garden Background",
     "studioBackground": "Studio Background",
     "softLightsBackground": "Soft Lights Background",
-    "heavenlyBackground": "Heavenly Background"
+    "heavenlyBackground": "Heavenly Background",
+    "beachBackground": "Beach Background",
+    "officeBackground": "Office Background",
+    "natureBackground": "Nature Background",
+    "cityBackground": "City Background",
+    "sunsetBackground": "Sunset Background",
+    "winterBackground": "Winter Background",
+    "vintageBackground": "Vintage Background",
+    "abstractBackground": "Abstract Background"
   },
   "memorial": {
     "lightRays": "Light Rays",
@@ -94,9 +105,9 @@
       "title": "Clarify",
       "subtitle": "Remove blur, sharpen details"
     },
-    "recreate": {
-      "title": "Recreate",
-      "subtitle": "Let Clever recreate your image"
+    "repair": {
+      "title": "Repair",
+      "subtitle": "Let Clever repair your image"
     },
     "colorize": {
       "title": "Colorize",
@@ -129,6 +140,58 @@
       "errorTitle": "Report Failed",
       "errorMessage": "Unable to submit your bug report. Please try again.",
       "errorGeneric": "Something went wrong. Please try again."
+    }
+  },
+  "faceBody": {
+    "clearSkin": {
+      "title": "Clear Skin"
+    },
+    "addSmile": {
+      "title": "Add Smile"
+    },
+    "fixHair": {
+      "title": "Fix Hair"
+    },
+    "makeYounger": {
+      "title": "Make Younger"
+    },
+    "makeSlimmer": {
+      "title": "Make Slimmer"
+    },
+    "teethWhitening": {
+      "title": "Teeth Whitening"
+    },
+    "removeWrinkles": {
+      "title": "Remove Wrinkles"
+    },
+    "eyeEnhancement": {
+      "title": "Eye Enhancement"
+    }
+  },
+  "addRemove": {
+    "removePerson": {
+      "title": "Remove Person"
+    },
+    "removeObjects": {
+      "title": "Remove Objects"
+    },
+    "removeText": {
+      "title": "Remove Text"
+    },
+    "removeWires": {
+      "title": "Remove Wires"
+    },
+    "addPerson": {
+      "title": "Add Person"
+    },
+    "addObjects": {
+      "title": "Add Objects"
+    },
+    "cloneDuplicate": {
+      "title": "Clone/Duplicate"
+    },
+    "removeBackground": {
+      "title": "Remove Background Items"
     }
   },
   "quickAction": {
@@ -194,7 +257,7 @@
       "clearCache": "Clear Cache",
       "privacyPolicy": "Privacy Policy",
       "termsOfService": "Terms of Service",
-      "rateUs": "Rate Us",
+      "rateUs": "please rate us :)",
       "shareApp": "Share App",
       "version": "Version",
       "language": "Language"
@@ -234,8 +297,8 @@
       "chooseYourOwnDesc": "Describe what you want to do with your photo",
       "customprompt": "Choose Your Own",
       "custompromptDesc": "Describe what you want to do with your photo",
-      "recreate": "Recreate",
-      "recreateDesc": "Recreation while staying consistent with features",
+      "repair": "Repair",
+      "repairDesc": "Repair while staying consistent with features",
       "clearSkin": "Clear Skin",
       "clearSkinDesc": "Remove acne, blemishes & imperfections",
       "addSmile": "Add Smile",
@@ -248,7 +311,7 @@
       "addWingsDesc": "Beautiful wings that match your photo",
       "waterStainDamage": "Water/Stain Damage",
       "waterStainDamageDesc": "Remove water damage, stains, and discoloration",
-      "fixMyPhoto": "Fix My Photo",
+      "fixMyPhoto": "Restore",
       "fixMyPhotoDesc": "Fix tears, scratches, and damage in old photos",
       "professionalOutfit": "Professional Outfit",
       "professionalOutfitDesc": "Change to professional business attire",
@@ -284,7 +347,7 @@
       "addwingsDesc": "Beautiful wings that match your photo",
       "waterstaindamage": "Water/Stain Damage",
       "waterstaindamageDesc": "Remove water damage, stains, and discoloration",
-      "restorerepair": "Fix My Photo",
+      "restorerepair": "Restore",
       "restorerepairDesc": "Fix tears, scratches, and damage in old photos",
       "professionaloutfit": "Professional Outfit",
       "professionaloutfitDesc": "Change to professional business attire",
@@ -332,7 +395,7 @@
         "title": "Restore Precious Memories",
         "description": "Honor their legacy with perfect restoration"
       },
-      "recreate": {
+      "repair": {
         "title": "Fix Severe Damage",
         "description": "Rebuild missing pieces like magic"
       },
@@ -346,7 +409,13 @@
       },
       "continue": "Continue",
       "photosPerfected": "Photos Perfected",
-      "followFacebook": "Follow us on Facebook"
+      "followFacebook": "Follow us on Facebook",
+      "claimOffer": {
+        "title": "UNLOCK EVERYTHING FREE",
+        "subtitle": "Try 3 Days Free",
+        "description": "Access all premium features",
+        "button": "Claim Your Free Trial"
+      }
     },
     "setup": {
       "title": "Setting up your experience...",
