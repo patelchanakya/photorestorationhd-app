@@ -515,7 +515,7 @@ export default function HomeGalleryLikeScreen() {
           <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>{t('explore.sections.magic')}</Text>
         </View>
 
-        <FeatureCardsList onOpenBackgrounds={() => openQuick('background')} onOpenClothes={() => openQuick('outfit')} />
+        <FeatureCardsList compact onOpenBackgrounds={() => openQuick('background')} onOpenClothes={() => openQuick('outfit')} />
 
       </ScrollView>
       {/* Bottom quick action rail */}
