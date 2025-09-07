@@ -7,15 +7,18 @@ import Animated, { interpolate, useAnimatedStyle, useSharedValue, withRepeat, wi
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconSymbol } from './ui/IconSymbol';
 
-const ACTIONS: { route: string; labelKey: string; icon: string }[] = [
-  { route: '/photo-magic', labelKey: 'quickAction.photoMagic', icon: 'wand.and.stars' },
-];
+const ACTIONS: { route: string; labelKey: string; icon: string }[] = [];
 
 export function QuickActionRail() {
   const router = useRouter();
   const [busy, setBusy] = React.useState(false);
   const insets = useSafeAreaInsets();
   const t = useT();
+  
+  // Don't render if no actions
+  if (ACTIONS.length === 0) {
+    return null;
+  }
   
   // Animation values
   const buttonScale = useSharedValue(1);

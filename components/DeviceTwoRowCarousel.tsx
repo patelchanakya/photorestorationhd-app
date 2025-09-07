@@ -6,7 +6,7 @@ import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, FlatList, Linking, Platform, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, Dimensions, FlatList, Linking, Platform, Text, TouchableOpacity, View } from 'react-native';
 
 interface DeviceTwoRowCarouselProps {
   functionType: FunctionType;
@@ -45,17 +45,21 @@ export function DeviceTwoRowCarousel({ functionType }: DeviceTwoRowCarouselProps
     // Check immediately with async refresh
     checkPermission();
     
-    // If no permission initially, check periodically in case user grants it later
+    // If no permission initially, listen for app state changes to recheck when app becomes active
     if (!permissionsService.hasMediaLibraryPermission()) {
-      const interval = setInterval(() => {
-        const granted = permissionsService.hasMediaLibraryPermission();
-        setHasPermission(granted);
-        if (granted && !didInitRef.current) {
-          didInitRef.current = true;
-          resetAndLoad();
+      const handleAppStateChange = (nextAppState: string) => {
+        if (nextAppState === 'active') {
+          const granted = permissionsService.hasMediaLibraryPermission();
+          setHasPermission(granted);
+          if (granted && !didInitRef.current) {
+            didInitRef.current = true;
+            resetAndLoad();
+          }
         }
-      }, 1000);
-      return () => clearInterval(interval);
+      };
+
+      const subscription = AppState.addEventListener('change', handleAppStateChange);
+      return () => subscription?.remove();
     }
   }, []);
 
@@ -245,6 +249,10 @@ export function DeviceTwoRowCarousel({ functionType }: DeviceTwoRowCarouselProps
                     contentFit="cover"
                     cachePolicy="memory-disk"
                     transition={0}
+                    recyclingKey={asset.id}
+                    priority={index < 8 ? "high" : "low"}
+                    placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
+                    responsivePolicy="live"
                     style={{ width: '100%', height: '100%' }}
                   />
                 ) : (
@@ -256,9 +264,10 @@ export function DeviceTwoRowCarousel({ functionType }: DeviceTwoRowCarouselProps
         )}
         onEndReachedThreshold={0.6}
         onEndReached={loadNextPage}
-        initialNumToRender={16}
-        maxToRenderPerBatch={16}
-        windowSize={12}
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={8}
+        updateCellsBatchingPeriod={100}
         removeClippedSubviews
         getItemLayout={(_, i) => ({ length: COLUMN_WIDTH + 8, offset: (COLUMN_WIDTH + 8) * i, index: i })}
         ListFooterComponent={loadingMore ? (

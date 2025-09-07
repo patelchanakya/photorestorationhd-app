@@ -9,7 +9,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Alert, Animated, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { Alert, Animated, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { IconSymbol } from './ui/IconSymbol';
 
 type CardItem = {
@@ -78,74 +78,35 @@ const FeatureCardBase = ({
     onPress={() => onPress(item)}
     onPressIn={handlePressIn}
     onPressOut={handlePressOut}
-    style={{ marginHorizontal: 16, marginBottom: 14 }}
+    style={styles.cardContainer}
   >
-    <Animated.View style={{ 
-      height: 260, 
-      borderRadius: 24, 
-      overflow: 'hidden', 
-      backgroundColor: 'transparent',
+    <Animated.View style={[styles.cardView, {
       transform: [{ scale: scaleValue }]
-    }}>
+    }]}>
       <ExpoImage 
         source={item.image} 
-        style={{ width: '100%', height: '100%' }} 
+        style={styles.cardImage} 
         contentFit="cover"
-        cachePolicy="memory-disk" // Enable aggressive caching
-        priority="high" // High priority loading
+        cachePolicy="memory-disk"
+        priority="high"
         placeholderContentFit="cover"
-        transition={0} // Disable transition to prevent flash
+        transition={0}
+        recyclingKey={item.id}
       />
-      {/* Clean gradient overlay */}
       <LinearGradient
         colors={[ 'transparent', 'rgba(0,0,0,0.68)' ]}
         locations={[0, 1]}
-        style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '45%' }}
+        style={styles.gradientOverlay}
       />
       
-      {/* Clean aligned content */}
-      <View style={{ 
-        position: 'absolute', 
-        left: 24, 
-        right: 24, 
-        bottom: 24,
-        alignItems: 'center'
-      }}>
-        {/* Feature Title */}
-        <Text style={{ 
-          color: '#FFFFFF', 
-          fontSize: 20, 
-          fontFamily: 'Lexend-Bold', 
-          letterSpacing: -0.4,
-          textAlign: 'center',
-          textShadowColor: 'rgba(0,0,0,0.85)',
-          textShadowOffset: { width: 0, height: 1 },
-          textShadowRadius: 3,
-          marginBottom: 8
-        }} numberOfLines={1}>
+      <View style={styles.cardContent}>
+        <Text style={styles.cardTitle} numberOfLines={1}>
           {t(item.titleKey)}
         </Text>
         
-        {/* Action with emoji */}
-        <View style={{
-          backgroundColor: 'rgba(255,255,255,0.15)',
-          borderRadius: 20,
-          paddingHorizontal: 16,
-          paddingVertical: 8,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderWidth: 1,
-          borderColor: 'rgba(255,255,255,0.2)'
-        }}>
+        <View style={styles.cardActionButton}>
           <IconSymbol name="camera" size={14} color="#FFFFFF" />
-          <Text style={{ 
-            color: '#FFFFFF', 
-            fontSize: 13, 
-            fontFamily: 'Lexend-Medium', 
-            letterSpacing: -0.1,
-            marginLeft: 6
-          }}>
+          <Text style={styles.cardActionText}>
             Choose Photo
           </Text>
         </View>
@@ -511,3 +472,124 @@ export function FeatureCardsList({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  cardContainer: {
+    marginHorizontal: 16,
+    marginBottom: 14
+  },
+  cardView: {
+    height: 260,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: 'transparent'
+  },
+  cardImage: {
+    width: '100%',
+    height: '100%'
+  },
+  gradientOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '45%'
+  },
+  cardContent: {
+    position: 'absolute',
+    left: 24,
+    right: 24,
+    bottom: 24,
+    alignItems: 'center'
+  },
+  cardTitle: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontFamily: 'Lexend-Bold',
+    letterSpacing: -0.4,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.85)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+    marginBottom: 8
+  },
+  cardActionButton: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)'
+  },
+  cardActionText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontFamily: 'Lexend-Medium',
+    letterSpacing: -0.1,
+    marginLeft: 6
+  },
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 8
+  },
+  gridCardContainer: {
+    // width set dynamically
+  },
+  gridCard: {
+    marginHorizontal: 8,
+    marginBottom: 14,
+    borderRadius: 18,
+    overflow: 'hidden',
+    height: 200
+  },
+  gridCardImage: {
+    width: '100%',
+    height: '100%'
+  },
+  gridGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '45%'
+  },
+  gridCardContent: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    bottom: 12,
+    alignItems: 'center'
+  },
+  gridCardTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontFamily: 'Lexend-Bold',
+    letterSpacing: -0.3,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.85)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3
+  },
+  gridActionButton: {
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+    marginTop: 6
+  },
+  gridActionText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontFamily: 'Lexend-Medium',
+    marginLeft: 6
+  }
+});

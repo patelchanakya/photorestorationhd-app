@@ -8,20 +8,40 @@ import { NavigationPills } from '@/components/NavigationPills';
 import { QuickActionRail } from '@/components/QuickActionRail';
 import { QuickEditSheet } from '@/components/QuickEditSheet';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { ShimmerText } from '@/components/ui/ShimmerText';
 import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import { analyticsService } from '@/services/analytics';
+import { featureRequestService } from '@/services/featureRequestService';
 import { presentPaywall, restorePurchasesSecure, validatePremiumAccess } from '@/services/revenuecat';
 import { restorationService } from '@/services/supabase';
 import { useT } from '@/src/hooks/useTranslation';
 import { useAppInitStore } from '@/store/appInitStore';
 import { useQuickEditStore } from '@/store/quickEditStore';
 import Constants from 'expo-constants';
+import * as StoreReview from 'expo-store-review';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Alert, Platform, ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { Alert, Platform, Text, TouchableOpacity, View, useWindowDimensions, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+
+interface SectionData {
+  id: string;
+  type: 'fixMyPhoto' | 'backgrounds' | 'faceBody' | 'memorial' | 'outfits' | 'magic' | 'requestFeature';
+  title?: string;
+}
+
+const sections: SectionData[] = [
+  { id: 'fixMyPhoto', type: 'fixMyPhoto' },
+  { id: 'backgrounds', type: 'backgrounds' },
+  { id: 'faceBody', type: 'faceBody' },
+  { id: 'memorial', type: 'memorial' },
+  { id: 'outfits', type: 'outfits' },
+  { id: 'magic', type: 'magic' },
+  { id: 'requestFeature', type: 'requestFeature' }
+];
 
 export default function HomeGalleryLikeScreen() {
   const settingsNavLock = React.useRef(false);
@@ -32,44 +52,28 @@ export default function HomeGalleryLikeScreen() {
   const longestSide = Math.max(width, height);
   const isTabletLike = shortestSide >= 768;
   const isSmallPhone = longestSide <= 700;
-  const railApproxHeight = isSmallPhone ? 58 : 86;
-  const basePadding = isTabletLike ? 154 : (isSmallPhone ? 45 : 112); // Reduced by ~30%
-  const bottomPadding = Math.max(basePadding, (insets?.bottom || 0) + railApproxHeight);
+  // No rail anymore, so minimal bottom padding
+  const bottomPadding = Math.max(20, (insets?.bottom || 0) + 8);
 
   // Refs for each section to enable smooth scrolling
-  const scrollViewRef = React.useRef<ScrollView>(null);
-  const fixMyPhotoSectionRef = React.useRef<View>(null);
-  const memorialSectionRef = React.useRef<View>(null);
-  const faceBodySectionRef = React.useRef<View>(null);
-  const backgroundsSectionRef = React.useRef<View>(null);
-  const outfitsSectionRef = React.useRef<View>(null);
-  const magicSectionRef = React.useRef<View>(null);
-
+  const scrollViewRef = React.useRef<FlashList<SectionData>>(null);
   // Track active section for pill highlighting
   const [activeSectionId, setActiveSectionId] = React.useState<string>('backgrounds');
-  
-  // Store section positions for reliable scrolling
-  const [sectionPositions, setSectionPositions] = React.useState<Record<string, number>>({});
 
   const scrollToSection = (sectionId: string) => {
     setActiveSectionId(sectionId);
     
-    let position = sectionPositions[sectionId === 'magic' ? 'magic' : sectionId];
-    
-    // For individual magic features, calculate offset within magic section
-    if (['waterDamage', 'clarify', 'repair', 'colorize', 'descratch', 'brighten'].includes(sectionId)) {
-      const magicPosition = sectionPositions['magic'];
-      if (magicPosition !== undefined) {
-        // Card height: 240px, margin: 14px = 254px per card
-        const cardHeight = 254;
-        const featureOrder = ['waterDamage', 'clarify', 'repair', 'colorize', 'descratch', 'brighten'];
-        const featureIndex = featureOrder.indexOf(sectionId);
-        position = magicPosition + (featureIndex * cardHeight);
-      }
+    const sectionIndex = sections.findIndex(s => s.id === sectionId);
+    if (sectionIndex !== -1) {
+      scrollViewRef.current?.scrollToIndex({ index: sectionIndex, animated: true });
     }
     
-    if (position !== undefined) {
-      scrollViewRef.current?.scrollTo({ y: Math.max(0, position - 100), animated: true });
+    // For individual magic features, scroll to magic section
+    if (['waterDamage', 'clarify', 'repair', 'colorize', 'descratch', 'brighten'].includes(sectionId)) {
+      const magicIndex = sections.findIndex(s => s.id === 'magic');
+      if (magicIndex !== -1) {
+        scrollViewRef.current?.scrollToIndex({ index: magicIndex, animated: true });
+      }
     }
   };
   const openQuick = (functionType: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'background' | 'outfit' | 'custom' | 'restore_repair' | 'water_damage', styleKey?: string | null) => {
@@ -97,6 +101,295 @@ export default function HomeGalleryLikeScreen() {
   const overlayAnimationStyle = useAnimatedStyle(() => ({
     opacity: Platform.OS === 'ios' ? 0.08 * dropProgress.value : 0,
   }));
+
+  const renderSectionHeader = React.useCallback((sectionType: SectionData['type']) => {
+    switch (sectionType) {
+      case 'fixMyPhoto':
+        return (
+          <View style={exploreStyles.sectionHeader}>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+              <Text style={exploreStyles.sectionTitle}>{t('explore.sections.fixMyPhoto')}</Text>
+              <Text style={exploreStyles.byCleverText}>by clever</Text>
+            </View>
+            <TouchableOpacity
+              onPress={async () => {
+                analyticsService.track('explore_fix_photo_picker_clicked', {
+                  is_pro: isPro ? 'true' : 'false',
+                  section: 'fix_my_photo'
+                });
+
+                const hasAccess = await validatePremiumAccess();
+                if (__DEV__) {
+                  console.log('📱 Premium access validation:', hasAccess);
+                }
+                
+                const result = await ImagePicker.launchImageLibraryAsync({ 
+                  mediaTypes: ['images'], 
+                  allowsEditing: false, 
+                  quality: 1,
+                  presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
+                  preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
+                  exif: false
+                });
+                if (!result.canceled && result.assets[0]) {
+                  analyticsService.track('explore_fix_photo_image_selected', {
+                    is_pro: isPro ? 'true' : 'false',
+                    image_source: 'gallery'
+                  });
+                  
+                  useQuickEditStore.getState().openWithImage({ 
+                    functionType: 'restore_repair', 
+                    imageUri: result.assets[0].uri 
+                  });
+                } else if (!result.canceled) {
+                  analyticsService.track('explore_fix_photo_picker_cancelled', {
+                    is_pro: isPro ? 'true' : 'false'
+                  });
+                }
+              }}
+              style={exploreStyles.pickerButton}
+            >
+              <IconSymbol name="photo.stack" size={18} color="#EAEAEA" />
+            </TouchableOpacity>
+          </View>
+        );
+      case 'backgrounds':
+        return (
+          <View style={exploreStyles.sectionHeader}>
+            <Text style={exploreStyles.sectionTitle}>{t('explore.sections.backgrounds')}</Text>
+            <ShimmerText onPress={() => router.push('/photo-magic' as any)}>
+              Write Your Own
+            </ShimmerText>
+          </View>
+        );
+      case 'faceBody':
+        return (
+          <View style={exploreStyles.sectionHeader}>
+            <Text style={exploreStyles.sectionTitle}>{t('explore.sections.faceBody')}</Text>
+            <ShimmerText onPress={() => router.push('/photo-magic' as any)}>
+              Write Your Own
+            </ShimmerText>
+          </View>
+        );
+      case 'memorial':
+        return (
+          <View style={exploreStyles.sectionHeader}>
+            <Text style={exploreStyles.sectionTitle}>{t('explore.sections.memorial')}</Text>
+            <ShimmerText onPress={() => router.push('/photo-magic' as any)}>
+              Write Your Own
+            </ShimmerText>
+          </View>
+        );
+      case 'outfits':
+        return (
+          <View style={exploreStyles.sectionHeader}>
+            <Text style={exploreStyles.sectionTitle}>{t('explore.sections.outfits')}</Text>
+            <ShimmerText onPress={() => router.push('/photo-magic' as any)}>
+              Write Your Own
+            </ShimmerText>
+          </View>
+        );
+      case 'magic':
+        return (
+          <View style={exploreStyles.sectionHeader}>
+            <Text style={exploreStyles.sectionTitle}>{t('explore.sections.magic')}</Text>
+          </View>
+        );
+      default:
+        return null;
+    }
+  }, [t, isPro, router]);
+
+  const renderSectionContent = React.useCallback((sectionType: SectionData['type']) => {
+    switch (sectionType) {
+      case 'fixMyPhoto':
+        return (
+          <View style={{ paddingBottom: 10 }}>
+            <DeviceTwoRowCarousel functionType="restore_repair" />
+          </View>
+        );
+      case 'backgrounds':
+        return <AnimatedBackgroundsReal />;
+      case 'faceBody':
+        return <AnimatedFaceBody />;
+      case 'memorial':
+        return <MemorialFeatures />;
+      case 'outfits':
+        return <AnimatedOutfits />;
+      case 'magic':
+        return <FeatureCardsList compact onOpenBackgrounds={() => openQuick('background')} onOpenClothes={() => openQuick('outfit')} />;
+      case 'requestFeature':
+        return (
+          <View style={exploreStyles.requestSection}>
+            {/* Rate Us - First */}
+            <TouchableOpacity 
+              style={exploreStyles.requestButton}
+              activeOpacity={0.7}
+              onPress={async () => {
+                // Track rate us click
+                analyticsService.track('rate_us_clicked', {
+                  source: 'explore_page',
+                  is_pro: isPro ? 'true' : 'false'
+                });
+                
+                try {
+                  // Check if the store review is available
+                  const isAvailable = await StoreReview.isAvailableAsync();
+                  if (isAvailable) {
+                    // Request the native in-app review
+                    await StoreReview.requestReview();
+                  } else {
+                    // Fallback to opening the app store
+                    const storeUrl = Platform.OS === 'ios' 
+                      ? 'https://apps.apple.com/app/id6472609177?action=write-review'
+                      : 'https://play.google.com/store/apps/details?id=com.chanakyap.photorestorationhdapp';
+                    
+                    Alert.alert(
+                      'Rate Clever',
+                      'Thank you for using Clever! Would you like to rate us on the App Store?',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        { 
+                          text: 'Rate App', 
+                          onPress: () => {
+                            // This would normally use Linking.openURL but keeping it simple
+                            Alert.alert('Thank You!', 'Please visit the App Store to rate us.');
+                          }
+                        }
+                      ]
+                    );
+                  }
+                } catch (error) {
+                  Alert.alert(
+                    'Thank You!',
+                    'We appreciate your feedback! It helps us a lot! Please visit the App Store to rate us.'
+                  );
+                }
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <IconSymbol name="star.fill" size={14} color="rgba(255,255,255,0.8)" />
+                <View style={{ flex: 1 }}>
+                  <Text style={exploreStyles.requestButtonTitle}>
+                    Rate Us
+                  </Text>
+                  <Text style={exploreStyles.requestButtonSubtitle}>
+                    Leave a review, it helps us a lot!
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={exploreStyles.requestButton}
+              activeOpacity={0.7}
+              onPress={() => {
+                analyticsService.track('request_feature_clicked', {
+                  source: 'explore_page',
+                  is_pro: isPro ? 'true' : 'false'
+                });
+                
+                Alert.prompt(
+                  'Request Feature',
+                  'What feature would you like to see added?',
+                  async (text) => {
+                    if (text && text.trim()) {
+                      try {
+                        const result = await featureRequestService.submitRequest(text, undefined, isPro, 'feature');
+                        if (result.success) {
+                          Alert.alert(
+                            'Thank You!',
+                            'Your feature request has been submitted. We\'ll review it and consider it for future updates.'
+                          );
+                        } else {
+                          Alert.alert('Error', result.error || 'Failed to submit request');
+                        }
+                      } catch (error) {
+                        Alert.alert('Error', 'An unexpected error occurred');
+                      }
+                    }
+                  },
+                  'plain-text',
+                  '',
+                  'Describe the feature you\'d like to see...'
+                );
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <IconSymbol name="lightbulb" size={14} color="rgba(255,255,255,0.8)" />
+                <View style={{ flex: 1 }}>
+                  <Text style={exploreStyles.requestButtonTitle}>
+                    Request Feature
+                  </Text>
+                  <Text style={exploreStyles.requestButtonSubtitle}>
+                    Suggest new features for the app
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={exploreStyles.requestButton}
+              activeOpacity={0.7}
+              onPress={() => {
+                analyticsService.track('bug_report_clicked', {
+                  source: 'explore_page',
+                  is_pro: isPro ? 'true' : 'false'
+                });
+                
+                Alert.prompt(
+                  'Report Bug',
+                  'What bug did you encounter?',
+                  async (text) => {
+                    if (text && text.trim()) {
+                      try {
+                        const result = await featureRequestService.submitRequest(text, undefined, isPro, 'bug');
+                        if (result.success) {
+                          Alert.alert(
+                            'Thank You!',
+                            'Your bug report has been submitted. We\'ll investigate and work on a fix.'
+                          );
+                        } else {
+                          Alert.alert('Error', result.error || 'Failed to submit bug report');
+                        }
+                      } catch (error) {
+                        Alert.alert('Error', 'An unexpected error occurred');
+                      }
+                    }
+                  },
+                  'plain-text',
+                  '',
+                  'Describe the bug you encountered...'
+                );
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <IconSymbol name="exclamationmark.triangle" size={14} color="rgba(255,255,255,0.8)" />
+                <View style={{ flex: 1 }}>
+                  <Text style={exploreStyles.requestButtonTitle}>
+                    Report Bug
+                  </Text>
+                  <Text style={exploreStyles.requestButtonSubtitle}>
+                    Help us fix issues you&apos;ve encountered
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </View>
+        );
+      default:
+        return null;
+    }
+  }, [isPro, openQuick, router]);
+
+  const renderItem = React.useCallback(({ item }: { item: SectionData }) => (
+    <View style={exploreStyles.sectionContainer}>
+      {renderSectionHeader(item.type)}
+      {renderSectionContent(item.type)}
+    </View>
+  ), [renderSectionHeader, renderSectionContent]);
+
+  const keyExtractor = React.useCallback((item: SectionData) => item.id, []);
 
   // Track screen view on mount
   React.useEffect(() => {
@@ -377,147 +670,19 @@ export default function HomeGalleryLikeScreen() {
         ]}
       />
 
-      <ScrollView ref={scrollViewRef} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomPadding }}>
-        
-        
-
-{/* BackToLife feature removed */}
-
-      {/* Fix My Image section title */}
-      <View 
-        ref={fixMyPhotoSectionRef} 
-        onLayout={(event) => {
-          const y = event.nativeEvent.layout.y;
-          setSectionPositions(prev => ({ ...prev, fixMyPhoto: y }));
-        }}
-        style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>{t('explore.sections.fixMyPhoto')}</Text>
-          <Text style={{ color: '#888', fontSize: 11, fontFamily: 'Lexend-Medium', letterSpacing: -0.1 }}>by clever</Text>
-        </View>
-        <TouchableOpacity
-          onPress={async () => {
-            // Track Fix My Photo picker click (fire and forget)
-            analyticsService.track('explore_fix_photo_picker_clicked', {
-              is_pro: isPro ? 'true' : 'false',
-              section: 'fix_my_photo'
-            });
-
-            // Validate premium access before proceeding
-            const hasAccess = await validatePremiumAccess();
-            if (__DEV__) {
-              console.log('📱 Premium access validation:', hasAccess);
-            }
-            
-            // Launch image picker - no permission check needed on iOS 11+
-            const result = await ImagePicker.launchImageLibraryAsync({ 
-              mediaTypes: ['images'], 
-              allowsEditing: false, 
-              quality: 1,
-              presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
-              preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
-              exif: false
-            });
-            if (!result.canceled && result.assets[0]) {
-              // Track image selected (fire and forget)
-              analyticsService.track('explore_fix_photo_image_selected', {
-                is_pro: isPro ? 'true' : 'false',
-                image_source: 'gallery'
-              });
-              
-              useQuickEditStore.getState().openWithImage({ 
-                functionType: 'restore_repair', 
-                imageUri: result.assets[0].uri 
-              });
-            } else if (!result.canceled) {
-              // Track image picker cancelled (fire and forget)
-              analyticsService.track('explore_fix_photo_picker_cancelled', {
-                is_pro: isPro ? 'true' : 'false'
-              });
-            }
-          }}
-          style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}
-        >
-          <IconSymbol name="photo.stack" size={18} color="#EAEAEA" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Mode chips removed as requested */}
-
-        {/* Two-row horizontally scrolling device photos (UNTOUCHED) */}
-        <View style={{ paddingBottom: 10 }}>
-          <DeviceTwoRowCarousel functionType="restore_repair" />
-        </View>
-
-        {/* Backgrounds Section - moved right after Restore */}
-        <View 
-          ref={backgroundsSectionRef} 
-          onLayout={(event) => {
-            const y = event.nativeEvent.layout.y;
-            setSectionPositions(prev => ({ ...prev, backgrounds: y }));
-          }}
-          style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
-        >
-          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>{t('explore.sections.backgrounds')}</Text>
-        </View>
-        <AnimatedBackgroundsReal />
-
-        {/* Face & Body Section */}
-        <View 
-          ref={faceBodySectionRef} 
-          onLayout={(event) => {
-            const y = event.nativeEvent.layout.y;
-            setSectionPositions(prev => ({ ...prev, faceBody: y }));
-          }}
-          style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
-        >
-          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>{t('explore.sections.faceBody')}</Text>
-        </View>
-        <AnimatedFaceBody />
-
-
-        {/* Memorial Section - moved right before Photo Restoration */}
-        <View 
-          ref={memorialSectionRef} 
-          onLayout={(event) => {
-            const y = event.nativeEvent.layout.y;
-            setSectionPositions(prev => ({ ...prev, memorial: y }));
-          }}
-          style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
-        >
-          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>{t('explore.sections.memorial')}</Text>
-        </View>
-        <MemorialFeatures />
-
-        {/* Outfits Section */}
-        <View 
-          ref={outfitsSectionRef} 
-          onLayout={(event) => {
-            const y = event.nativeEvent.layout.y;
-            setSectionPositions(prev => ({ ...prev, outfits: y }));
-          }}
-          style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
-        >
-          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>{t('explore.sections.outfits')}</Text>
-        </View>
-        <AnimatedOutfits />
-
-        {/* Magic Section */}
-        <View 
-          ref={magicSectionRef} 
-          onLayout={(event) => {
-            const y = event.nativeEvent.layout.y;
-            setSectionPositions(prev => ({ ...prev, magic: y }));
-          }}
-          style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
-        >
-          <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Lexend-SemiBold', letterSpacing: -0.3 }}>{t('explore.sections.magic')}</Text>
-        </View>
-
-        <FeatureCardsList compact onOpenBackgrounds={() => openQuick('background')} onOpenClothes={() => openQuick('outfit')} />
-
-      </ScrollView>
+      <FlashList
+        ref={scrollViewRef}
+        data={sections}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        estimatedItemSize={400}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: bottomPadding }}
+        initialNumToRender={3}
+        maxToRenderPerBatch={2}
+        windowSize={5}
+        removeClippedSubviews={true}
+      />
       {/* Bottom quick action rail */}
       <QuickActionRail />
     </SafeAreaView>
@@ -535,4 +700,60 @@ export default function HomeGalleryLikeScreen() {
   );
 }
 
+const exploreStyles = StyleSheet.create({
+  sectionContainer: {
+    marginBottom: 4
+  },
+  sectionHeader: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+  sectionTitle: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontFamily: 'Lexend-SemiBold',
+    letterSpacing: -0.3
+  },
+  byCleverText: {
+    color: '#888',
+    fontSize: 11,
+    fontFamily: 'Lexend-Medium',
+    letterSpacing: -0.1
+  },
+  pickerButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)'
+  },
+  requestSection: {
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    paddingBottom: 8,
+    gap: 4
+  },
+  requestButton: {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)'
+  },
+  requestButtonTitle: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontFamily: 'Lexend-Medium'
+  },
+  requestButtonSubtitle: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 10,
+    fontFamily: 'Lexend-Regular'
+  }
+});
 
