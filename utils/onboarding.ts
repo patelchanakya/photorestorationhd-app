@@ -175,6 +175,12 @@ export const ONBOARDING_FEATURES: OnboardingFeature[] = [
   }
 ];
 
+// Performance optimization: Create lookup object for O(1) feature access
+const FEATURES_LOOKUP = ONBOARDING_FEATURES.reduce((acc, feature) => {
+  acc[feature.id] = feature;
+  return acc;
+}, {} as Record<string, OnboardingFeature>);
+
 export const onboardingUtils = {
   // Check if user has seen onboarding
   async hasSeenOnboarding(): Promise<boolean> {
@@ -299,9 +305,9 @@ export const onboardingUtils = {
     }
   },
 
-  // Get feature by ID
+  // Get feature by ID (O(1) lookup)
   getFeatureById(id: string) {
-    return ONBOARDING_FEATURES.find(f => f.id === id);
+    return FEATURES_LOOKUP[id];
   },
 
   // Get primary feature from selections

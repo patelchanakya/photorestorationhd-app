@@ -1,7 +1,7 @@
 import { NetworkErrorModal } from '@/components/NetworkErrorModal';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { analyticsService } from '@/services/analytics';
-import { useTranslation } from '@/src/hooks/useTranslation';
+import { useTranslation } from 'react-i18next';
 import { useFocusEffect } from '@react-navigation/native';
 import React from 'react';
 import { AppState, Dimensions, Linking, Text, View } from 'react-native';
@@ -24,7 +24,8 @@ interface WelcomeScreenProps {
 }
 
 export const WelcomeScreen = React.memo(function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLanguage = i18n.language;
   
   if (__DEV__) {
     console.log('🔥 [WELCOME-SCREEN] Component mounting...');

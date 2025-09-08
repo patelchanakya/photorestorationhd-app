@@ -19,6 +19,80 @@ const COLUMN_WIDTH = Math.round(Math.min(130, SCREEN_WIDTH * 0.28));
 const ITEM_RADIUS = 16;
 const PAGE_SIZE = 150; // how many assets we fetch per page
 
+// Memoized item component for better performance
+const CarouselColumn = React.memo<{
+  item: AssetColumn;
+  index: number;
+  functionType: FunctionType;
+}>(({ item, index, functionType }) => {
+  return (
+    <View style={{ width: COLUMN_WIDTH }}>
+      {[item.top, item.bottom].map((asset, idx) => (
+        <TouchableOpacity
+          key={`${asset?.id ?? 'empty'}-${index}-${idx}`}
+          activeOpacity={0.85}
+          onPress={async () => {
+            if (!asset) return;
+            
+            // Validate premium access before proceeding
+            const hasAccess = await validatePremiumAccess();
+            if (__DEV__) {
+              console.log('📱 Premium access validation in carousel:', hasAccess);
+            }
+            
+            const info = await MediaLibrary.getAssetInfoAsync(asset.id);
+            const uri = info.localUri || info.uri;
+            if (uri) {
+              const normalized = functionType as any;
+              useQuickEditStore.getState().openWithImage({ 
+                functionType: normalized as any, 
+                imageUri: uri 
+              });
+            }
+          }}
+          style={{
+            height: COLUMN_WIDTH * 0.95,
+            borderRadius: ITEM_RADIUS,
+            overflow: 'hidden',
+            backgroundColor: '#111',
+            marginBottom: idx === 0 ? 8 : 0,
+          }}
+        >
+          {asset ? (
+            <ExpoImage
+              source={{ uri: asset.uri }}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+              transition={0}
+              recyclingKey={asset.id}
+              priority={index < 8 ? "high" : "low"}
+              placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
+              responsivePolicy="live"
+              style={{ width: '100%', height: '100%' }}
+            />
+          ) : (
+            <View style={{ flex: 1, backgroundColor: '#151515' }} />
+          )}
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+}, (prevProps, nextProps) => {
+  // Custom comparison for better memoization
+  return prevProps.item.id === nextProps.item.id && 
+         prevProps.index === nextProps.index &&
+         prevProps.functionType === nextProps.functionType;
+});
+
+// Static components for better performance (avoid recreation on each render)
+const ItemSeparator = React.memo(() => <View style={{ width: 8 }} />);
+const LoadingFooter = React.memo(() => (
+  <View style={{ width: 48, alignItems: 'center', justifyContent: 'center' }}>
+    <ActivityIndicator color="#888" />
+  </View>
+));
+const EmptyFooter = React.memo(() => <View style={{ width: 8 }} />);
+
 export function DeviceTwoRowCarousel({ functionType }: DeviceTwoRowCarouselProps) {
   const [columns, setColumns] = useState<AssetColumn[]>([]);
   const [loadingInitial, setLoadingInitial] = useState(false);
@@ -110,6 +184,23 @@ export function DeviceTwoRowCarousel({ functionType }: DeviceTwoRowCarouselProps
     }
   }, [appendAssetsAsColumns, endCursor, hasNextPage, loadingMore]);
 
+  // Memoized callbacks for FlatList
+  const keyExtractor = useCallback((c: AssetColumn) => c.id, []);
+  
+  const renderItem = useCallback(({ item, index }: { item: AssetColumn; index: number }) => (
+    <CarouselColumn 
+      item={item} 
+      index={index} 
+      functionType={functionType}
+    />
+  ), [functionType]);
+  
+  const getItemLayout = useCallback((data: any, index: number) => ({ 
+    length: COLUMN_WIDTH + 8, 
+    offset: (COLUMN_WIDTH + 8) * index, 
+    index 
+  }), []);
+
   const openSettings = async () => {
     try {
       if (Platform.OS === 'ios') {
@@ -177,7 +268,7 @@ export function DeviceTwoRowCarousel({ functionType }: DeviceTwoRowCarouselProps
                 mediaTypes: ['images'], 
                 quality: 1,
                 presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
-                preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.CURRENT,
+                preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
                 exif: false
               });
               if (!result.canceled && result.assets[0]) {
@@ -206,75 +297,22 @@ export function DeviceTwoRowCarousel({ functionType }: DeviceTwoRowCarouselProps
       <FlatList
         horizontal
         data={columns}
-        keyExtractor={(c, index) => `${c.id}-${index}`}
+        keyExtractor={keyExtractor}
         contentContainerStyle={{ paddingHorizontal: 12 }}
         showsHorizontalScrollIndicator={false}
-        ItemSeparatorComponent={() => <View style={{ width: 8 }} />}
-        renderItem={({ item, index }) => (
-          <View style={{ width: COLUMN_WIDTH }}>
-            {[item.top, item.bottom].map((asset, idx) => (
-              <TouchableOpacity
-                key={`${asset?.id ?? 'empty'}-${index}-${idx}`}
-                activeOpacity={0.85}
-                onPress={async () => {
-                  if (!asset) return;
-                  
-                  // Validate premium access before proceeding
-                  const hasAccess = await validatePremiumAccess();
-                  if (__DEV__) {
-                    console.log('📱 Premium access validation in carousel:', hasAccess);
-                  }
-                  
-                  const info = await MediaLibrary.getAssetInfoAsync(asset.id);
-                  const uri = info.localUri || info.uri;
-                  if (uri) {
-                    const normalized = functionType as any;
-                    useQuickEditStore.getState().openWithImage({ 
-                      functionType: normalized as any, 
-                      imageUri: uri 
-                    });
-                  }
-                }}
-                style={{
-                  height: COLUMN_WIDTH * 0.95,
-                  borderRadius: ITEM_RADIUS,
-                  overflow: 'hidden',
-                  backgroundColor: '#111',
-                  marginBottom: idx === 0 ? 8 : 0,
-                }}
-              >
-                {asset ? (
-                  <ExpoImage
-                    source={{ uri: asset.uri }}
-                    contentFit="cover"
-                    cachePolicy="memory-disk"
-                    transition={0}
-                    recyclingKey={asset.id}
-                    priority={index < 8 ? "high" : "low"}
-                    placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
-                    responsivePolicy="live"
-                    style={{ width: '100%', height: '100%' }}
-                  />
-                ) : (
-                  <View style={{ flex: 1, backgroundColor: '#151515' }} />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
+        ItemSeparatorComponent={ItemSeparator}
+        renderItem={renderItem}
         onEndReachedThreshold={0.6}
         onEndReached={loadNextPage}
-        initialNumToRender={8}
-        maxToRenderPerBatch={8}
-        windowSize={8}
-        updateCellsBatchingPeriod={100}
-        removeClippedSubviews
-        getItemLayout={(_, i) => ({ length: COLUMN_WIDTH + 8, offset: (COLUMN_WIDTH + 8) * i, index: i })}
-        ListFooterComponent={loadingMore ? (
-          <View style={{ width: 48, alignItems: 'center', justifyContent: 'center' }}>
-            <ActivityIndicator color="#888" />
-          </View>
-        ) : <View style={{ width: 8 }} />}
+        initialNumToRender={6} // Optimized for device screens
+        maxToRenderPerBatch={4} // Smaller batches for better responsiveness
+        windowSize={6} // Reduced for better memory usage
+        updateCellsBatchingPeriod={50} // Faster updates for smoother scrolling
+        removeClippedSubviews={true}
+        getItemLayout={getItemLayout}
+        disableIntervalMomentum={true} // Prevent over-scrolling
+        decelerationRate="fast" // Faster deceleration
+        ListFooterComponent={loadingMore ? LoadingFooter : EmptyFooter}
       />
     </View>
   );

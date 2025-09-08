@@ -1,6 +1,6 @@
 import { analyticsService } from '@/services/analytics';
 import { permissionsService } from '@/services/permissions';
-import { useTranslation } from '@/src/hooks/useTranslation';
+import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,7 +27,8 @@ interface PermissionsScreenProps {
 }
 
 export const PermissionsScreen = React.memo(function PermissionsScreen({ onContinue }: PermissionsScreenProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLanguage = i18n.language;
   const [isRequesting, setIsRequesting] = React.useState(false);
   const insets = useSafeAreaInsets();
   

@@ -39,6 +39,10 @@ const MEMORIAL_STYLES: Record<string, { title: string; prompt: string }> = {
   'memorial-6': {
     title: 'Clean Background',
     prompt: "Clean background only - remove clutter, trash, objects, and background distractions. Do not remove or alter any people in the main part of the photo. Preserve all subjects completely unchanged."
+  },
+  'candlelight_vigil': {
+    title: 'Candlelight Vigil',
+    prompt: "Transform this photo into a warm candlelit memorial-style portrait. Keep the person's face and features unchanged. Add soft golden candlelight in front of the subject, casting a gentle warm glow across the image without darkening the background too much. Place several realistic candles at the bottom, making the scene feel peaceful, emotional, and respectful."
   }
 }
 

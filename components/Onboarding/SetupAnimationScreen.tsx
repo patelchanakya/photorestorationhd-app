@@ -1,5 +1,5 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { useTranslation } from '@/src/hooks/useTranslation';
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { Text, View } from 'react-native';
 import Animated, {

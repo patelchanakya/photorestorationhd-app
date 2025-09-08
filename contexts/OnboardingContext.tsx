@@ -1,7 +1,7 @@
 import { onboardingTrackingService } from '@/services/onboardingTracking';
 import { onboardingUtils } from '@/utils/onboarding';
 import * as Device from 'expo-device';
-import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useCallback, useEffect, useRef, useState, use } from 'react';
 import { Platform } from 'react-native';
 
 export type OnboardingScreen = 'welcome' | 'permissions' | 'features' | 'preview' | 'community' | 'setup';
@@ -149,21 +149,25 @@ export function OnboardingProvider({ children, initialScreen = 'welcome' }: Onbo
     setCurrentScreen(screen);
     screenStartTimes.current[screen] = now;
     
-    // Track in background without blocking navigation
-    Promise.all([
-      onboardingTrackingService.trackStepProgress({
-        stepName: previousScreen,
-        status: 'completed',
-        timeSpentSeconds: timeSpent
-      }),
-      onboardingTrackingService.trackStepProgress({
-        stepName: screen,
-        status: 'viewed'
-      })
-    ]).catch(error => {
-      if (__DEV__) {
-        console.error('Background tracking failed:', error);
-      }
+    // Track in background without blocking navigation - use InteractionManager for better performance
+    import('react-native').then(({ InteractionManager }) => {
+      InteractionManager.runAfterInteractions(() => {
+        Promise.all([
+          onboardingTrackingService.trackStepProgress({
+            stepName: previousScreen,
+            status: 'completed',
+            timeSpentSeconds: timeSpent
+          }),
+          onboardingTrackingService.trackStepProgress({
+            stepName: screen,
+            status: 'viewed'
+          })
+        ]).catch(error => {
+          if (__DEV__) {
+            console.error('Background tracking failed:', error);
+          }
+        });
+      });
     });
   }, [currentScreen]);
 
@@ -186,15 +190,19 @@ export function OnboardingProvider({ children, initialScreen = 'welcome' }: Onbo
     updateOnboardingState({ selectedFeature: featureId });
     await navigateToScreen('preview');
     
-    // Track in background
-    onboardingTrackingService.trackFeatureInteraction({
-      featureId,
-      interactionType: 'selected',
-      featureMetadata: { step: 'feature_selection' }
-    }).catch(error => {
-      if (__DEV__) {
-        console.error('Background feature tracking failed:', error);
-      }
+    // Track in background using InteractionManager for better performance
+    import('react-native').then(({ InteractionManager }) => {
+      InteractionManager.runAfterInteractions(() => {
+        onboardingTrackingService.trackFeatureInteraction({
+          featureId,
+          interactionType: 'selected',
+          featureMetadata: { step: 'feature_selection' }
+        }).catch(error => {
+          if (__DEV__) {
+            console.error('Background feature tracking failed:', error);
+          }
+        });
+      });
     });
   }, [updateOnboardingState, navigateToScreen]);
 
@@ -331,7 +339,7 @@ export function OnboardingProvider({ children, initialScreen = 'welcome' }: Onbo
 }
 
 export function useOnboardingContext() {
-  const context = useContext(OnboardingContext);
+  const context = use(OnboardingContext);
   if (!context) {
     throw new Error('useOnboardingContext must be used within an OnboardingProvider');
   }

@@ -7,21 +7,18 @@ import { useRollbackMetrics } from '@/hooks/useRollbackRecovery';
  * Can be conditionally rendered in debug builds to track rollback performance
  */
 export function RollbackMonitor() {
-  // Only show in development builds
-  if (!__DEV__) {
-    return null;
-  }
-
   const { getMetrics } = useRollbackMetrics();
   const [metrics, setMetrics] = useState<any>(null);
   const [isVisible, setIsVisible] = useState(false);
 
-  const refreshMetrics = async () => {
+  const refreshMetrics = React.useCallback(async () => {
     const currentMetrics = await getMetrics();
     setMetrics(currentMetrics);
-  };
+  }, [getMetrics]);
 
   useEffect(() => {
+    if (!__DEV__) return;
+    
     refreshMetrics();
     
     // Refresh metrics every 30 seconds when visible
@@ -36,6 +33,11 @@ export function RollbackMonitor() {
       }
     };
   }, [isVisible, refreshMetrics]);
+
+  // Only show in development builds
+  if (!__DEV__) {
+    return null;
+  }
 
   if (!isVisible) {
     return (

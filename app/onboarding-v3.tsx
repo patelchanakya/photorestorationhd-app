@@ -10,7 +10,7 @@ import { onboardingTrackingService } from '@/services/onboardingTracking';
 import { permissionsService } from '@/services/permissions';
 import { presentPaywall } from '@/services/revenuecat';
 import { useQuickEditStore } from '@/store/quickEditStore';
-import { ONBOARDING_FEATURES } from '@/utils/onboarding';
+import { onboardingUtils } from '@/utils/onboarding';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React from 'react';
@@ -232,7 +232,7 @@ function OnboardingFlow() {
         // Small delay to ensure explore screen is loaded
         setTimeout(() => {
           // Get the feature to extract styleKey if available
-          const feature = ONBOARDING_FEATURES.find(f => f.id === onboardingState.selectedFeature);
+          const feature = onboardingUtils.getFeatureById(onboardingState.selectedFeature);
           const styleKey = feature && 'styleKey' in feature ? feature.styleKey : undefined;
 
           useQuickEditStore.getState().openWithImage({

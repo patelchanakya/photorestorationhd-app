@@ -1,4 +1,4 @@
-import { useT } from '@/src/hooks/useTranslation';
+import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React from 'react';
@@ -13,26 +13,23 @@ export function QuickActionRail() {
   const router = useRouter();
   const [busy, setBusy] = React.useState(false);
   const insets = useSafeAreaInsets();
-  const t = useT();
+  const { t } = useTranslation();
   
-  // Don't render if no actions
-  if (ACTIONS.length === 0) {
-    return null;
-  }
-  
-  // Animation values
+  // Animation values - always call hooks first
   const buttonScale = useSharedValue(1);
   const glowOpacity = useSharedValue(0);
   const badgePulse = useSharedValue(0);
   
   React.useEffect(() => {
-    // Start pulsing animation for NEW badge
-    badgePulse.value = withRepeat(
-      withTiming(1, { duration: 2000 }),
-      -1,
-      true
-    );
-  }, []);
+    // Start pulsing animation for NEW badge only if there are actions
+    if (ACTIONS.length > 0) {
+      badgePulse.value = withRepeat(
+        withTiming(1, { duration: 2000 }),
+        -1,
+        true
+      );
+    }
+  }, [badgePulse]);
   
   const buttonAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: buttonScale.value }],
@@ -48,6 +45,11 @@ export function QuickActionRail() {
     ],
     opacity: interpolate(badgePulse.value, [0, 1], [0.8, 1]),
   }));
+  
+  // Don't render if no actions - after all hooks are called
+  if (ACTIONS.length === 0) {
+    return null;
+  }
 
   const handlePressIn = () => {
     buttonScale.value = withSpring(0.95, { damping: 12, stiffness: 200 });

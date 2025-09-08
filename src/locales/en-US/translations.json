@@ -9,7 +9,7 @@
     },
     "sections": {
       "popular": "Popular",
-      "fixMyPhoto": "Restore",
+      "fixMyPhoto": "Auto-Restore",
       "backgrounds": "Backgrounds",
       "memorial": "Memorial",
       "faceBody": "Face & Body",
@@ -19,9 +19,23 @@
       "waterDamage": "Water Damage",
       "clarify": "Clarify",
       "repair": "Repair",
-      "colorize": "Colorize",
+      "colourise": "Colorize",
       "descratch": "Descratch",
       "brighten": "Brighten"
+    },
+    "writeYourOwn": "Write Your Own",
+    "byClever": "by clever",
+    "rateUs": {
+      "title": "Rate us",
+      "subtitle": "Leave a review, it helps us a lot!"
+    },
+    "requestFeature": {
+      "title": "Request Feature",
+      "subtitle": "Suggest new features for the app"
+    },
+    "reportBug": {
+      "title": "Report Bug",
+      "subtitle": "Help us fix issues you've encountered"
     },
     "alerts": {
       "proMember": {
@@ -54,6 +68,35 @@
         "title": "Welcome to Pro!",
         "message": "You now have unlimited access!",
         "button": "Awesome!"
+      },
+      "rateClever": {
+        "title": "Rate Clever",
+        "message": "Thank you for using Clever! Would you like to rate us on the App Store?",
+        "cancel": "Cancel",
+        "rateApp": "Rate App",
+        "thankYou": "Thank You!",
+        "visitAppStore": "Please visit the App Store to rate us.",
+        "appreciateFeedback": "We appreciate your feedback! It helps us a lot! Please visit the App Store to rate us."
+      },
+      "requestFeature": {
+        "title": "Request Feature",
+        "message": "What feature would you like to see added?",
+        "placeholder": "Describe the feature you'd like to see...",
+        "success": "Your feature request has been submitted. We'll review it and consider it for future updates.",
+        "thankYou": "Thank You!"
+      },
+      "reportBug": {
+        "title": "Report Bug",
+        "message": "What bug did you encounter?",
+        "placeholder": "Describe the bug you encountered...",
+        "success": "Your bug report has been submitted. We'll investigate and work on a fix.",
+        "thankYou": "Thank You!"
+      },
+      "error": {
+        "title": "Error",
+        "failedSubmitRequest": "Failed to submit request",
+        "failedSubmitBugReport": "Failed to submit bug report",
+        "unexpectedError": "An unexpected error occurred"
       }
     }
   },
@@ -78,7 +121,9 @@
     "sunsetBackground": "Sunset Background",
     "winterBackground": "Winter Background",
     "vintageBackground": "Vintage Background",
-    "abstractBackground": "Abstract Background"
+    "abstractBackground": "Abstract Background",
+    "cleanBackground": "Clean Background",
+    "blurBackground": "Blur Background"
   },
   "memorial": {
     "lightRays": "Light Rays",
@@ -86,87 +131,26 @@
     "etherealGlow": "Ethereal Glow",
     "heavenGates": "Heaven Gates",
     "memorialFlowers": "Memorial Flowers",
-    "cleanBackground": "Clean Background"
+    "cleanBackground": "Clean Background",
+    "whiteBackground": "White Background",
+    "candlelightVigil": "Candlelight Vigil",
+    "restInPeace": "Rest in Peace",
+    "heavenly": "Heavenly ☁️"
   },
-  "outfits": {
-    "fixClothes": "Fix Clothes",
-    "changeColor": "Change Color",
-    "jobInterview": "Job Interview",
-    "weddingOutfit": "Wedding Outfit",
-    "professional": "Professional",
-    "casualDay": "Casual Day"
-  },
-  "magic": {
-    "waterDamage": {
-      "title": "Water Damage",
-      "subtitle": "Remove water damage and stains"
-    },
-    "clarify": {
-      "title": "Clarify",
-      "subtitle": "Remove blur, sharpen details"
-    },
-    "repair": {
-      "title": "Repair",
-      "subtitle": "Let Clever repair your image"
-    },
-    "colorize": {
-      "title": "Colorize",
-      "subtitle": "Add colors to B&W photos"
-    },
-    "descratch": {
-      "title": "Descratch",
-      "subtitle": "Remove scratches & marks"
-    },
-    "brighten": {
-      "title": "Brighten",
-      "subtitle": "Fix lighting & exposure"
-    },
-    "requestFeature": {
-      "title": "Request a Feature",
-      "prompt": "What feature would you like to see in Clever?",
-      "thankYouTitle": "Thank You!",
-      "thankYouMessage": "Your feature request has been submitted. We appreciate your feedback!",
-      "button": "Great!",
-      "errorTitle": "Submission Failed",
-      "errorMessage": "Unable to submit your request. Please try again.",
-      "errorGeneric": "Something went wrong. Please try again."
-    },
-    "reportBug": {
-      "title": "Report a Bug",
-      "prompt": "Please describe the bug you encountered:",
-      "thankYouTitle": "Bug Report Received!",
-      "thankYouMessage": "Thank you for reporting this bug. We'll investigate and fix it as soon as possible.",
-      "button": "Thanks!",
-      "errorTitle": "Report Failed",
-      "errorMessage": "Unable to submit your bug report. Please try again.",
-      "errorGeneric": "Something went wrong. Please try again."
-    }
+  "backgrounds": {
+    "blurBackground": "Blur Background"
   },
   "faceBody": {
-    "clearSkin": {
-      "title": "Clear Skin"
-    },
-    "addSmile": {
-      "title": "Add Smile"
-    },
-    "fixHair": {
-      "title": "Fix Hair"
-    },
-    "makeYounger": {
-      "title": "Make Younger"
-    },
-    "makeSlimmer": {
-      "title": "Make Slimmer"
-    },
-    "teethWhitening": {
-      "title": "Teeth Whitening"
-    },
-    "removeWrinkles": {
-      "title": "Remove Wrinkles"
-    },
-    "eyeEnhancement": {
-      "title": "Eye Enhancement"
-    }
+    "clearSkin": "Clear Skin",
+    "addSmile": "Add Smile",
+    "fixHair": "Fix Hair",
+    "makeYounger": "Make Younger",
+    "makeSlimmer": "Make Slimmer",
+    "teethWhitening": "Teeth Whitening",
+    "removeWrinkles": "Remove Wrinkles",
+    "eyeEnhancement": "Eye Enhancement",
+    "fixClosedEyes": "Fix Closed Eyes",
+    "removeRedEye": "Remove Red Eye"
   },
   "addRemove": {
     "removePerson": {
@@ -194,10 +178,81 @@
       "title": "Remove Background Items"
     }
   },
+  "outfits": {
+    "fixClothes": "Fix Clothes",
+    "changeColor": "Change Color",
+    "jobInterview": "Job Interview",
+    "weddingOutfit": "Wedding Outfit",
+    "professional": "Professional",
+    "casualDay": "Casual Day",
+    "makeDoctor": "Make Doctor"
+  },
+  "magic": {
+    "waterDamage": {
+      "title": "Water Damage",
+      "subtitle": "Remove water damage and stains"
+    },
+    "clarify": {
+      "title": "Clarify",
+      "subtitle": "Remove blur, sharpen details"
+    },
+    "repair": {
+      "title": "Repair",
+      "subtitle": "Let Clever repair your image"
+    },
+    "colorize": {
+      "title": "Colorize",
+      "subtitle": "Add colors to B&W photos"
+    },
+    "colourise": {
+      "title": "Colorize",
+      "subtitle": "Add colors to B&W photos"
+    },
+    "descratch": {
+      "title": "Descratch",
+      "subtitle": "Remove scratches & marks"
+    },
+    "brighten": {
+      "title": "Brighten",
+      "subtitle": "Fix lighting & exposure"
+    },
+    "fixTornPhotos": "Fix Torn Photos",
+    "removeStains": "Remove Stains",
+    "fixFadedPhotos": "Fix Faded Photos",
+    "requestIdea": "Request Idea",
+    "requestIdeaSubtitle": "Share your feature idea",
+    "send": "Send",
+    "reportBugSubtitle": "Found an issue? Tell us",
+    "report": "Report",
+    "requestFeature": {
+      "title": "Request a Feature",
+      "prompt": "What feature would you like to see in Clever?",
+      "thankYouTitle": "Thank You!",
+      "thankYouMessage": "Your feature request has been submitted. We'll review it and consider it for future updates.",
+      "button": "Great!",
+      "errorTitle": "Submission Failed",
+      "errorMessage": "Unable to submit your request. Please try again.",
+      "errorGeneric": "Something went wrong. Please try again."
+    },
+    "reportBug": {
+      "title": "Report a Bug",
+      "prompt": "Please describe the bug you encountered:",
+      "thankYouTitle": "Bug Report Received!",
+      "thankYouMessage": "Thank you for reporting this bug. We'll investigate and fix it as soon as possible.",
+      "button": "Thanks!",
+      "errorTitle": "Report Failed",
+      "errorMessage": "Unable to submit your bug report. Please try again.",
+      "errorGeneric": "Something went wrong. Please try again."
+    }
+  },
   "quickAction": {
     "photoMagic": "Photo Magic"
   },
   "photoMagic": {
+    "title": "Photo Magic",
+    "subtitle": "Type what you want to edit and watch it happen",
+    "choosePhoto": "Choose Photo",
+    "takePhoto": "Take Photo",
     "permissionRequired": "Permission Required",
     "photoAccessMessage": "Photo library access is required to select photos",
     "cameraAccessMessage": "Camera access is required to take photos"
@@ -207,7 +262,7 @@
       "restoration": "Restoration",
       "repair": "Repair",
       "unblur": "Unblur",
-      "colorize": "Colorize",
+      "colourise": "Colorize",
       "descratch": "Descratch",
       "enlighten": "Brighten",
       "background": "Background",
@@ -235,7 +290,16 @@
       "somethingWrong": "Something went wrong",
       "networkError": "Network error",
       "tryAgainLater": "Please try again later"
-    }
+    },
+    "editPhoto": "Edit Photo"
+  },
+  "photoProcessor": {
+    "choosePhoto": "Choose a photo",
+    "pickPhoto": "Pick Photo",
+    "tryWithPhoto": "Try it with one of your photos",
+    "photoMagic": "Photo Magic",
+    "photoMagicDesc": "Type what you want to edit and watch it happen",
+    "pickPhotoError": "Failed to pick photo. Please try again."
   },
   "settings": {
     "title": "Settings",
@@ -291,6 +355,7 @@
       "subtitle": "Select what you're ready to do",
       "continue": "Continue",
       "selectOption": "Choose your feature",
+      "exploreApp": "Explore App →",
       "startWith": "Start with",
       "customPromptPlaceholder": "What would you like to do with your photo?",
       "chooseYourOwn": "Choose Your Own",
@@ -311,7 +376,7 @@
       "addWingsDesc": "Beautiful wings that match your photo",
       "waterStainDamage": "Water/Stain Damage",
       "waterStainDamageDesc": "Remove water damage, stains, and discoloration",
-      "fixMyPhoto": "Restore",
+      "fixMyPhoto": "Auto-Restore",
       "fixMyPhotoDesc": "Fix tears, scratches, and damage in old photos",
       "professionalOutfit": "Professional Outfit",
       "professionalOutfitDesc": "Change to professional business attire",
@@ -325,8 +390,8 @@
       "memorialFlowersDesc": "Cover scene with memorial flowers and petals",
       "makeSlimmer": "Make Slimmer",
       "makeSlimmerDesc": "Natural body enhancement",
-      "colorize": "Colorize",
-      "colorizeDesc": "Bring old B&W photos to life with realistic color",
+      "colourise": "Colorize",
+      "colouriseDesc": "Bring old B&W photos to life with realistic colors",
       "clarify": "Clarify",
       "clarifyDesc": "Make blurry photos crystal clear",
       "brighten": "Brighten",
@@ -335,53 +400,16 @@
       "beachBackgroundDesc": "Beautiful ocean and sand scene",
       "noneOfAbove": "Explore App",
       "noneOfAboveDesc": "Skip and explore the app",
-      "clearskin": "Clear Skin",
-      "clearskinDesc": "Remove acne, blemishes & imperfections",
-      "addsmile": "Add Smile",
-      "addsmileDesc": "Add a natural, authentic smile",
-      "fixhair": "Fix Hair",
-      "fixhairDesc": "Clean up messy or stray hairs",
-      "makeyounger": "Make Younger",
-      "makeyoungerDesc": "Subtle age reduction while keeping identity",
-      "addwings": "Add Angel Wings",
-      "addwingsDesc": "Beautiful wings that match your photo",
-      "waterstaindamage": "Water/Stain Damage",
-      "waterstaindamageDesc": "Remove water damage, stains, and discoloration",
-      "restorerepair": "Restore",
-      "restorerepairDesc": "Fix tears, scratches, and damage in old photos",
-      "professionaloutfit": "Professional Outfit",
-      "professionaloutfitDesc": "Change to professional business attire",
-      "blurbackground": "Blur Background",
-      "blurbackgroundDesc": "Create professional blurred background effect",
-      "addhalo": "Add Halo",
-      "addhaloDesc": "Subtle glowing halo above head",
-      "lightrays": "Light Rays",
-      "lightraysDesc": "Add peaceful memorial atmosphere with golden light",
-      "memorialflowers": "Memorial Flowers",
-      "memorialflowersDesc": "Cover scene with memorial flowers and petals",
-      "makeslimmer": "Make Slimmer",
-      "makeslimmerDesc": "Natural body enhancement",
-      "addcolorbw": "Colorize",
-      "addcolorbwDesc": "Bring old B&W photos to life with realistic color",
-      "unblursharpen": "Clarify",
-      "unblursharpenDesc": "Make blurry photos crystal clear",
-      "brightenphotos": "Brighten",
-      "brightenphotosDesc": "Illuminate underexposed images",
-      "beachbackground": "Beach Background",
-      "beachbackgroundDesc": "Beautiful ocean and sand scene",
-      "noneabove": "Explore App",
-      "noneaboveDesc": "Skip and explore the app"
+      "customPrompt": "Choose Your Own",
+      "customPromptDesc": "Describe what you want to do with your photo"
     },
     "preview": {
       "tryNow": "Try it now",
       "skip": "Skip",
       "back": "Back",
-      "choosePhoto": "Choose a photo to get started",
+      "choosePhoto": "Choose a photo",
       "pickPhoto": "Pick Photo",
-      "tryWithPhoto": "Try it with one of your photos",
-      "photoMagic": "Photo Magic",
-      "photoMagicDesc": "Type what you want to edit and watch it happen",
-      "pickPhotoError": "Failed to pick photo. Please try again."
+      "tryWithPhoto": "Try it with one of your photos"
     },
     "community": {
       "title": "Ready to Bring Your Photos\nBack to Life?",
@@ -409,13 +437,7 @@
       },
       "continue": "Continue",
       "photosPerfected": "Photos Perfected",
-      "followFacebook": "Follow us on Facebook",
-      "claimOffer": {
-        "title": "UNLOCK EVERYTHING FREE",
-        "subtitle": "Try 3 Days Free",
-        "description": "Access all premium features",
-        "button": "Claim Your Free Trial"
-      }
+      "followFacebook": "Follow us on Facebook"
     },
     "setup": {
       "title": "Setting up your experience...",
@@ -427,12 +449,29 @@
       "preparingTools": "Preparing your tools",
       "allSet": "You're all set!",
       "readyToCreate": "Ready to start creating magic with your photos"
+    },
+    "rating": {
+      "skip": "Skip",
+      "title": "Ready for your photo edit?",
+      "subtitle": "A quick rating helps us a lot and takes just a moment.",
+      "rateNow": "Rate now"
     }
   },
   "textEdit": {
     "customTextEdits": "Custom text edits",
     "maxEffectsReached": "Maximum Effects Reached",
-    "maxEffectsMessage": "You can apply up to 3 effects at once"
+    "maxEffectsMessage": "You can apply up to 3 effects at once",
+    "placeholder": "Describe exactly what you want to change or enhance in your photo...",
+    "noImage": "No Image",
+    "selectImageFirst": "Please select an image first",
+    "selectEdits": "Select edits",
+    "selectAtLeastOne": "Please select at least 1 preset or write a custom edit.",
+    "purchaseError": "Purchase Error",
+    "tryAgainOrRestore": "Please try again or restore purchases if you already have a subscription."
+  },
+  "textEdits": {
+    "title": "Custom Text Edits",
+    "subtitle": "Describe exactly what you want to change or enhance in your photo"
   },
   "restoration": {
     "processingFailed": "Processing Failed",
@@ -445,6 +484,17 @@
     "actions": {
       "save": "Save",
       "share": "Share"
+    },
+    "alerts": {
+      "error": "Error",
+      "failedToLoad": "Failed to load restoration details",
+      "processingTitle": "Photo Processing",
+      "processingMessage": "Your photo is being processed. You can check back here for the result.",
+      "got": "Got it",
+      "sharePhoto": "Share Photo",
+      "shareWith": "Share this restored photo with friends and family!",
+      "shareFailed": "Share Failed",
+      "shareFailedMessage": "Unable to share photo. Please try again."
     }
   },
   "deviceCarousel": {
@@ -468,6 +518,28 @@
     "success": "Success",
     "warning": "Warning",
     "info": "Info",
-    "saved": "Saved"
+    "saved": "Saved",
+    "choosePhoto": "Choose Photo",
+    "videoLoading": "Video Loading..."
+  },
+  "accessibility": {
+    "visitPinterestPage": "Visit Pinterest page",
+    "opensPinterestInBrowser": "Opens Pinterest page in browser",
+    "visitFacebookPage": "Visit Facebook page",
+    "opensFacebookInBrowser": "Opens Facebook page in browser",
+    "visitInstagramPage": "Visit Instagram page",
+    "opensInstagramInBrowser": "Opens Instagram page in browser",
+    "visitTikTokPage": "Visit TikTok page",
+    "opensTikTokInBrowser": "Opens TikTok page in browser",
+    "emailSupport": "Email support",
+    "opensEmailToSupport": "Opens email to contact support",
+    "rateUs": "Rate us",
+    "opensRatingPrompt": "Opens rating prompt or app store page",
+    "shareApp": "Share app",
+    "opensShareSheet": "Opens share sheet to share app with others"
+  },
+  "proUpgrade": {
+    "title": "Upgrade to Pro",
+    "message": "You've reached your video generation limit"
   }
 }

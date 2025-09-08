@@ -1,5 +1,5 @@
 import { analyticsService } from '@/services/analytics';
-import { useT } from '@/src/hooks/useTranslation';
+import { useTranslation } from 'react-i18next';
 import { useQuickEditStore } from '@/store/quickEditStore';
 import { useFocusEffect } from '@react-navigation/native';
 import { useEvent } from 'expo';
@@ -184,14 +184,17 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
 
 // Individual tile component - smaller style like Backgrounds
 const AddRemoveTile = React.memo(({ item, index, tileWidth, fontSize }: { item: AddRemoveItem; index: number; tileWidth: number; fontSize: number }) => {
-  const t = useT();
+  const { t, i18n } = useTranslation();
+  const currentLanguage = i18n.language;
   const router = useRouter();
+  
+  const translatedTitle = React.useMemo(() => t(item.titleKey), [item.titleKey, t, currentLanguage]);
 
   const handlePress = async () => {
     // Track tile selection
     analyticsService.trackTileUsage({
       category: 'addremove',
-      tileName: t(item.titleKey),
+      tileName: translatedTitle,
       tileId: item.id,
       functionType: 'custom',
       stage: 'selected'
@@ -283,7 +286,7 @@ const AddRemoveTile = React.memo(({ item, index, tileWidth, fontSize }: { item: 
               letterSpacing: -0.2
             }}
           >
-            {t(item.titleKey)}
+            {translatedTitle}
           </Text>
         </View>
       </TouchableOpacity>

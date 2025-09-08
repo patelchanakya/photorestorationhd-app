@@ -1,7 +1,7 @@
 import { analyticsService } from '@/services/analytics';
 import { getOrCreateCustomUserId } from '@/services/trackingIds';
 import Constants from 'expo-constants';
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useEffect, useState, use } from 'react';
 import Purchases, { CustomerInfo } from 'react-native-purchases';
 
 interface RevenueCatContextValue {
@@ -360,7 +360,7 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 };
 
 export const useRevenueCat = () => {
-  const context = useContext(RevenueCatContext);
+  const context = use(RevenueCatContext);
   if (!context) {
     if (__DEV__) {
       console.warn('useRevenueCat called before RevenueCatProvider is ready, providing defaults');

@@ -7,8 +7,9 @@ import { checkSubscriptionStatus, getAppUserId, presentPaywall, restorePurchases
 import { getUnifiedTrackingId } from '@/services/trackingIds';
 import { photoStorage } from '@/services/storage';
 import { localStorageHelpers } from '@/services/supabase';
-import { useTranslation } from '@/src/hooks/useTranslation';
-import type { AvailableLanguage } from '@/src/locales/translations';
+import { useTranslation } from 'react-i18next';
+import type { AvailableLanguage } from '@/src/locales/index';
+import { languageNames, availableLanguages } from '@/src/locales/index';
 import { useCropModalStore } from '@/store/cropModalStore';
 import { useRestorationStore } from '@/store/restorationStore';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
@@ -63,7 +64,12 @@ export default function SettingsModalScreen() {
   const [revenueCatUserId, setRevenueCatUserId] = useState<string | null>(null);
   
   // Translation system
-  const { t, setLanguage, currentLanguage, availableLanguages, languageNames } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLanguage = i18n.language as AvailableLanguage;
+  
+  const setLanguage = async (language: AvailableLanguage) => {
+    await i18n.changeLanguage(language);
+  };
   
   // Language flag mappings
   const languageFlags: Record<AvailableLanguage, string> = {

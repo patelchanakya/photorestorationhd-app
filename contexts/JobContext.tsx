@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useState, ReactNode, use } from 'react';
 
 export interface JobState {
   id: string;
@@ -94,7 +94,7 @@ export function JobProvider({ children }: { children: ReactNode }) {
 }
 
 export function useJob() {
-  const context = useContext(JobContext);
+  const context = use(JobContext);
   if (!context) {
     throw new Error('useJob must be used within a JobProvider');
   }

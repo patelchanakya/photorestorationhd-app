@@ -1,6 +1,6 @@
 // Removed Pro gating - all popular examples are now free
 import { analyticsService } from '@/services/analytics';
-import { useT } from '@/src/hooks/useTranslation';
+import { useTranslation } from 'react-i18next';
 import { useQuickEditStore } from '@/store/quickEditStore';
 import { useFocusEffect } from '@react-navigation/native';
 import { useEvent } from 'expo';
@@ -179,7 +179,7 @@ export function PopularExamples({ items = DEFAULT_POPULAR_ITEMS }: { items?: Pop
   const longestSide = Math.max(width, height);
   const isTabletLike = shortestSide >= 768;
   const isSmallPhone = longestSide <= 700;
-  const t = useT();
+  const { t } = useTranslation();
   
   // Responsive tile dimensions - optimized for text visibility and mobile/tablet experience
   const tileWidth = isTabletLike ? 105 : (isSmallPhone ? 90 : 105);

@@ -3,21 +3,136 @@ import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuickEditStore } from '@/store/quickEditStore';
+import { VideoView, useVideoPlayer } from 'expo-video';
+import { useFocusEffect } from '@react-navigation/native';
+import { useEvent } from 'expo';
 import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { AppState, Text, TouchableOpacity, View } from 'react-native';
 import { IconSymbol } from './ui/IconSymbol';
 
 interface HeroRepairTileProps {
   title?: string;
   subtitle?: string;
-  image?: any; // require('...')
 }
 
 export function HeroRepairTile({
   title = 'Back to life',
   subtitle = 'Fix damage & enhance',
-  image = require('../assets/images/onboarding/after-2.png'),
 }: HeroRepairTileProps) {
+  const isMountedRef = React.useRef(true);
+  const shouldBePlayingRef = React.useRef(false);
+
+  // Video player setup - matches AnimatedOutfits pattern exactly
+  const videoPlayer = useVideoPlayer(require('../assets/videos/repair.webm'), (player) => {
+    try {
+      player.loop = true;
+      player.muted = true;
+      player.playbackRate = 1.0;
+    } catch (error) {
+      console.error('HeroRepairTile video player init error:', error);
+    }
+  });
+
+  // Monitor playback status with expo's useEvent hook
+  const { isPlaying } = useEvent(videoPlayer, 'playingChange', { isPlaying: videoPlayer.playing });
+
+  // Auto-recovery: restart video if it should be playing but isn't
+  React.useEffect(() => {
+    if (!isPlaying && shouldBePlayingRef.current && isMountedRef.current) {
+      try {
+        if (videoPlayer && videoPlayer.status !== 'idle') {
+          videoPlayer.play();
+        }
+      } catch (error) {
+        // Ignore recovery errors
+      }
+    }
+  }, [isPlaying, videoPlayer]);
+
+  // Cleanup video player on unmount
+  React.useEffect(() => {
+    isMountedRef.current = true;
+    
+    return () => {
+      isMountedRef.current = false;
+      shouldBePlayingRef.current = false;
+      
+      try {
+        if (videoPlayer) {
+          const status = videoPlayer.status;
+          if (status !== 'idle') {
+            videoPlayer.pause();
+          }
+          videoPlayer.release();
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.log('HeroRepairTile video cleanup handled');
+        }
+      }
+    };
+  }, []);
+
+  // Initial playback setup
+  React.useEffect(() => {
+    if (!videoPlayer) return;
+    
+    const playTimer = setTimeout(() => {
+      if (!isMountedRef.current) return;
+      
+      try {
+        if (videoPlayer.status !== 'idle') {
+          videoPlayer.play();
+          shouldBePlayingRef.current = true;
+        }
+      } catch (e) {
+        // Ignore initial play errors
+      }
+    }, 300);
+    
+    return () => clearTimeout(playTimer);
+  }, [videoPlayer]);
+
+  // Handle app state changes (backgrounding/foregrounding)
+  React.useEffect(() => {
+    const handleAppStateChange = (nextAppState: string) => {
+      if (nextAppState === 'active' && shouldBePlayingRef.current && isMountedRef.current) {
+        try {
+          if (videoPlayer && !videoPlayer.playing && videoPlayer.status !== 'idle') {
+            setTimeout(() => {
+              if (isMountedRef.current) {
+                videoPlayer.play();
+              }
+            }, 100);
+          }
+        } catch (error) {
+          // Ignore resume errors
+        }
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription?.remove();
+  }, [videoPlayer]);
+
+  // Handle navigation focus (returning to screen)
+  useFocusEffect(
+    React.useCallback(() => {
+      if (shouldBePlayingRef.current && isMountedRef.current) {
+        try {
+          if (videoPlayer && !videoPlayer.playing && videoPlayer.status !== 'idle') {
+            setTimeout(() => {
+              if (isMountedRef.current) {
+                videoPlayer.play();
+              }
+            }, 100);
+          }
+        } catch (error) {
+          // Ignore focus resume errors
+        }
+      }
+    }, [videoPlayer])
+  );
 
   const handlePick = async () => {
     try {
@@ -48,13 +163,12 @@ export function HeroRepairTile({
       activeOpacity={0.9}
       style={{ marginHorizontal: 16, marginTop: 8, marginBottom: 8, borderRadius: 22, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', height: 180 }}
     >
-      <ExpoImage
-        source={image}
-        style={{ position: 'absolute', inset: 0 as any, width: '100%', height: '100%' }}
+      <VideoView
+        player={videoPlayer}
+        style={{ position: 'absolute', inset: 0 as any, width: '100%', height: '100%', opacity: 0.95 }}
         contentFit="cover"
-        transition={0}
-        allowDownscaling
-        cachePolicy="memory-disk"
+        nativeControls={false}
+        allowsFullscreen={false}
       />
       <LinearGradient
         colors={["rgba(0,0,0,0.15)", "rgba(0,0,0,0.65)"]}

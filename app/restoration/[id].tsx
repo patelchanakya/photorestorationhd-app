@@ -6,7 +6,7 @@ import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 import { type FunctionType } from '@/services/photoGenerationV2';
 import { photoStorage } from '@/services/storage';
 import { restorationService } from '@/services/supabase';
-import { useTranslation } from '@/src/hooks/useTranslation';
+import { useTranslation } from 'react-i18next';
 import { useCropModalStore } from '@/store/cropModalStore';
 import { useQuickEditStore } from '@/store/quickEditStore';
 import { useRestorationScreenStore } from '@/store/restorationScreenStore';

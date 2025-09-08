@@ -1,6 +1,6 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { useTranslation } from '@/src/hooks/useTranslation';
-import { ONBOARDING_FEATURES } from '@/utils/onboarding';
+import { useTranslation } from 'react-i18next';
+import { onboardingUtils } from '@/utils/onboarding';
 import { useFocusEffect } from '@react-navigation/native';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -32,9 +32,11 @@ export const FeaturePreviewScreen = React.memo(function FeaturePreviewScreen({
   onSkip, 
   onPickPhoto 
 }: FeaturePreviewScreenProps) {
-  const { t } = useTranslation();
-  const selectedFeature = ONBOARDING_FEATURES.find(f => f.id === selectedFeatureId);
+  const { t, i18n } = useTranslation();
+  const currentLanguage = i18n.language;
+  const selectedFeature = onboardingUtils.getFeatureById(selectedFeatureId);
   const isMountedRef = useRef(true);
+  const shouldBePlayingRef = useRef(false);
   
   const headerOpacity = useSharedValue(0);
   const titleOpacity = useSharedValue(0);
@@ -50,7 +52,7 @@ export const FeaturePreviewScreen = React.memo(function FeaturePreviewScreen({
       if (previewMedia.type === 'video') {
         player.loop = true;
         player.muted = true;
-        player.play();
+        player.playbackRate = 1.0;
       }
     } catch (error) {
       console.error('FeaturePreview video player init error:', error);
@@ -79,6 +81,26 @@ export const FeaturePreviewScreen = React.memo(function FeaturePreviewScreen({
       }
     };
   }, []);
+
+  // Initial playback setup
+  React.useEffect(() => {
+    if (!videoPlayer || previewMedia.type !== 'video') return;
+    
+    const playTimer = setTimeout(() => {
+      if (!isMountedRef.current) return;
+      
+      try {
+        if (videoPlayer.status !== 'idle') {
+          videoPlayer.play();
+          shouldBePlayingRef.current = true;
+        }
+      } catch (e) {
+        // Ignore initial play errors
+      }
+    }, 300);
+    
+    return () => clearTimeout(playTimer);
+  }, [videoPlayer, previewMedia.type]);
 
   React.useEffect(() => {
     // If "none_above" is selected, automatically skip to community screen
@@ -359,6 +381,7 @@ function getPreviewMedia(featureId: string): PreviewMedia {
     // Memorial features
     'light_rays': { type: 'video', source: require('../../assets/videos/memorial/light.mp4') },
     'memorial_flowers': { type: 'video', source: require('../../assets/videos/memorial/flowers.mp4') },
+    'candlelight_vigil': { type: 'video', source: require('../../assets/videos/candle.mp4') },
     
     // Core repair features
     'add_color_bw': { type: 'image', source: require('../../assets/images/popular/colorize/pop-1.png') },

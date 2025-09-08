@@ -1,5 +1,5 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { useTranslation } from '@/src/hooks/useTranslation';
+import { useTranslation } from 'react-i18next';
 import { ONBOARDING_FEATURES, OnboardingFeature } from '@/utils/onboarding';
 import { analyticsService } from '@/services/analytics';
 import * as Haptics from 'expo-haptics';

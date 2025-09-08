@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Modal } from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { useTranslation } from '@/src/hooks/useTranslation';
+import { useTranslation } from 'react-i18next';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 

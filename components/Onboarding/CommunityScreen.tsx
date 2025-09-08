@@ -1,6 +1,6 @@
 import { analyticsService } from '@/services/analytics';
 import { presentPaywall } from '@/services/revenuecat';
-import { useTranslation } from '@/src/hooks/useTranslation';
+import { useTranslation } from 'react-i18next';
 import { Image as ExpoImage } from 'expo-image';
 import React from 'react';
 import { Dimensions, ScrollView, Text, TouchableOpacity, View } from 'react-native';

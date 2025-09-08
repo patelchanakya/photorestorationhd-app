@@ -1,12 +1,14 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { analyticsService } from '@/services/analytics';
-import { useTranslation } from '@/src/hooks/useTranslation';
+import { useTranslation } from 'react-i18next';
+import { useFocusEffect } from '@react-navigation/native';
+import { useEvent } from 'expo';
 import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import React, { useRef, useState } from 'react';
-import { Alert, ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { Alert, AppState, ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function PhotoMagicUploadScreen() {
@@ -15,17 +17,38 @@ export default function PhotoMagicUploadScreen() {
   const { width, height } = useWindowDimensions();
   const [isSelecting, setIsSelecting] = useState(false);
   const isMountedRef = useRef(true);
+  const shouldBePlayingRef = useRef(false);
 
-  // Video player setup
+  // Video player setup - matches working components exactly
   const videoPlayer = useVideoPlayer(require('../assets/videos/text-edit.mp4'), (player) => {
     try {
       player.loop = true;
       player.muted = true;
-      player.play();
+      player.playbackRate = 1.0;
     } catch (error) {
-      console.error('Video player initialization error:', error);
+      console.error('PhotoMagic video player init error:', error);
     }
   });
+
+  // Monitor playback status
+  const { isPlaying } = useEvent(videoPlayer, 'playingChange', { isPlaying: videoPlayer.playing });
+
+  // Auto-recovery: restart video if it should be playing but isn't (with debounce)
+  React.useEffect(() => {
+    if (!isPlaying && shouldBePlayingRef.current && isMountedRef.current) {
+      const recoveryTimeout = setTimeout(() => {
+        try {
+          if (videoPlayer && videoPlayer.status !== 'idle' && isMountedRef.current) {
+            videoPlayer.play();
+          }
+        } catch (error) {
+          // Ignore recovery errors - player may be released
+        }
+      }, 100);
+      
+      return () => clearTimeout(recoveryTimeout);
+    }
+  }, [isPlaying, videoPlayer]);
 
   // Track screen view on mount
   React.useEffect(() => {
@@ -33,6 +56,90 @@ export default function PhotoMagicUploadScreen() {
       is_tablet: width > 768 ? 'true' : 'false'
     });
   }, [width]);
+
+  // Initial playback setup
+  React.useEffect(() => {
+    if (!videoPlayer) return;
+    
+    const playTimer = setTimeout(() => {
+      if (!isMountedRef.current) return;
+      
+      try {
+        if (videoPlayer.status !== 'idle') {
+          videoPlayer.play();
+          shouldBePlayingRef.current = true;
+        }
+      } catch (error) {
+        // Ignore initial play errors
+      }
+    }, 300);
+    
+    return () => clearTimeout(playTimer);
+  }, [videoPlayer]);
+
+  // Handle app state changes (backgrounding/foregrounding)
+  React.useEffect(() => {
+    const handleAppStateChange = (nextAppState: string) => {
+      if (nextAppState === 'active' && isMountedRef.current) {
+        // Always try to resume video when app becomes active
+        const resumeVideo = () => {
+          try {
+            if (videoPlayer && videoPlayer.status !== 'idle') {
+              if (!videoPlayer.playing) {
+                videoPlayer.play();
+                shouldBePlayingRef.current = true;
+                if (__DEV__) {
+                  console.log('Video resumed on app active');
+                }
+              }
+            }
+          } catch (error) {
+            if (__DEV__) {
+              console.log('App state resume handled');
+            }
+          }
+        };
+
+        // Try multiple times with different delays to ensure resume
+        resumeVideo();
+        setTimeout(resumeVideo, 200);
+        setTimeout(resumeVideo, 500);
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription?.remove();
+  }, [videoPlayer]);
+
+  // Handle navigation focus (returning to screen)
+  useFocusEffect(
+    React.useCallback(() => {
+      // Always ensure video is playing when screen is focused
+      const resumeVideo = () => {
+        try {
+          if (isMountedRef.current && videoPlayer && videoPlayer.status !== 'idle') {
+            if (!videoPlayer.playing) {
+              videoPlayer.play();
+              shouldBePlayingRef.current = true;
+              if (__DEV__) {
+                console.log('Video resumed on focus');
+              }
+            }
+          }
+        } catch (error) {
+          if (__DEV__) {
+            console.log('Video focus resume handled');
+          }
+        }
+      };
+
+      // Try immediately and with a delay
+      resumeVideo();
+      const focusTimer = setTimeout(resumeVideo, 300);
+      
+      return () => clearTimeout(focusTimer);
+    }, [videoPlayer])
+  );
 
   // Cleanup video player on unmount
   React.useEffect(() => {
@@ -42,10 +149,11 @@ export default function PhotoMagicUploadScreen() {
     return () => {
       // Clear mounted flag
       isMountedRef.current = false;
+      shouldBePlayingRef.current = false;
       
       // Cleanup video player
       try {
-        if (videoPlayer) {
+        if (videoPlayer && typeof videoPlayer.status !== 'undefined') {
           // Try to check status first as a validity check
           const status = videoPlayer.status;
           if (status !== 'idle') {
@@ -135,6 +243,7 @@ export default function PhotoMagicUploadScreen() {
       try {
         if (videoPlayer && videoPlayer.status !== 'idle' && videoPlayer.playing) {
           videoPlayer.pause();
+          shouldBePlayingRef.current = false;
         }
       } catch (pauseError) {
         // Continue even if pause fails
@@ -179,6 +288,18 @@ export default function PhotoMagicUploadScreen() {
         analyticsService.track('photo_magic_camera_cancelled', {
           source: 'camera'
         });
+        
+        // Resume video playback when camera is cancelled
+        try {
+          if (isMountedRef.current && videoPlayer && videoPlayer.status !== 'idle') {
+            videoPlayer.play();
+            shouldBePlayingRef.current = true;
+          }
+        } catch (videoError) {
+          if (__DEV__) {
+            console.log('Video resume after cancel handled');
+          }
+        }
       }
     } catch (error) {
       // Track camera error (fire and forget)  
@@ -194,6 +315,7 @@ export default function PhotoMagicUploadScreen() {
       try {
         if (isMountedRef.current && videoPlayer && videoPlayer.status !== 'idle' && !videoPlayer.playing) {
           videoPlayer.play();
+          shouldBePlayingRef.current = true;
         }
       } catch (videoError) {
         if (__DEV__) {
@@ -218,16 +340,20 @@ export default function PhotoMagicUploadScreen() {
           justifyContent: 'space-between' 
         }}
       >
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity 
+          onPress={() => router.back()}
+          hitSlop={{ top: 12, left: 12, bottom: 12, right: 12 }}
+          style={{ padding: 8 }}
+        >
           <IconSymbol name="arrow.left" size={20} color="#EAEAEA" />
         </TouchableOpacity>
         
         <View style={{ alignItems: 'center' }}>
           <Text style={{ color: '#FFFFFF', fontSize: 26, fontFamily: 'Lexend-Bold', letterSpacing: -0.5 }}>
-            Photo Magic
+            {t('photoMagic.title')}
           </Text>
           <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, fontWeight: '400', marginTop: 2 }}>
-            Just tell it what to change
+            {t('photoMagic.subtitle')}
           </Text>
         </View>
         
@@ -309,38 +435,17 @@ export default function PhotoMagicUploadScreen() {
                   paddingHorizontal: 24,
                   borderRadius: 20,
                 }}>
-                  {isSelecting ? (
-                    <>
-                      <View style={{ 
-                        width: 20, 
-                        height: 20, 
-                        borderRadius: 10, 
-                        borderWidth: 2, 
-                        borderColor: 'rgba(255,255,255,0.9)', 
-                        borderTopColor: 'transparent',
-                        marginRight: 12
-                      }} />
-                      <Text style={{ 
-                        color: 'rgba(255,255,255,0.95)', 
-                        fontSize: 18, 
-                        fontFamily: 'Lexend-Bold' 
-                      }}>
-                        Opening Library...
-                      </Text>
-                    </>
-                  ) : (
-                    <>
-                      <IconSymbol name="photo.on.rectangle" size={24} color="rgba(255,255,255,0.95)" />
-                      <Text style={{ 
-                        color: 'rgba(255,255,255,0.95)', 
-                        fontSize: 18, 
-                        fontFamily: 'Lexend-Bold', 
-                        marginLeft: 12 
-                      }}>
-                        Choose Photo
-                      </Text>
-                    </>
-                  )}
+                  <>
+                    <IconSymbol name="photo.on.rectangle" size={24} color="rgba(255,255,255,0.95)" />
+                    <Text style={{ 
+                      color: 'rgba(255,255,255,0.95)', 
+                      fontSize: 18, 
+                      fontFamily: 'Lexend-Bold', 
+                      marginLeft: 12 
+                    }}>
+                      {t('photoMagic.choosePhoto')}
+                    </Text>
+                  </>
                 </View>
               </BlurView>
             </TouchableOpacity>
@@ -382,7 +487,7 @@ export default function PhotoMagicUploadScreen() {
                     fontFamily: 'Lexend-Bold', 
                     marginLeft: 12 
                   }}>
-                    Take Photo
+                    {t('photoMagic.takePhoto')}
                   </Text>
                 </View>
               </BlurView>

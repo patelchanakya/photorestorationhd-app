@@ -1,4 +1,4 @@
-import { useTranslation } from '@/src/hooks/useTranslation';
+import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
 import * as StoreReview from 'expo-store-review';

@@ -4,7 +4,7 @@ import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 import { useSavePhoto } from '@/hooks/useSavePhoto';
 import { presentPaywall } from '@/services/revenuecat';
 import { useQuickEditStore } from '@/store/quickEditStore';
-import { useTranslation } from '@/src/hooks/useTranslation';
+import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image as ExpoImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -38,7 +38,8 @@ const { height } = Dimensions.get('window');
 export function QuickEditSheet() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLanguage = i18n.language;
   const {
     visible,
     stage,
@@ -85,31 +86,31 @@ export function QuickEditSheet() {
     
     switch (functionType) {
       case 'restoration':
-        return 'Restore';
+        return t('quickEdit.autoRestore');
       case 'repair':
-        return 'Repair';
+        return t('quickEdit.repair');
       case 'restore_repair':
-        return 'Restore';
+        return t('quickEdit.autoRestore');
       case 'descratch':
-        return 'Descratch';
+        return t('quickEdit.descratch');
       case 'unblur':
-        return 'Enhance';
+        return t('quickEdit.enhance');
       case 'colorize':
-        return 'Colorize';
+        return t('quickEdit.colorize');
       case 'enlighten':
-        return 'Fix Lighting';
+        return t('quickEdit.fixLighting');
       case 'background':
-        return 'Change Background';
+        return t('quickEdit.changeBackground');
       case 'outfit':
-        return 'Change Outfit';
+        return t('quickEdit.changeOutfit');
       case 'memorial':
-        return 'Memorial Edit';
+        return t('quickEdit.memorialEdit');
       case 'custom':
-        return 'Custom Edit';
+        return t('quickEdit.customEdit');
       default:
-        return 'Edit Photo';
+        return t('quickEdit.editPhoto');
     }
-  }, [styleName, functionType]);
+  }, [styleName, functionType, t, currentLanguage]);
 
   const translateY = useSharedValue(0);
   const overlayOpacity = useSharedValue(0);
@@ -721,16 +722,16 @@ export function QuickEditSheet() {
                 )}
                 {stage === 'preview' && !isCropping && (
                   <>
-                    <TouchableOpacity onPress={handleCrop} style={{ paddingHorizontal: 22, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' }}>
+                    <TouchableOpacity onPress={handleCrop} style={{ flex: 1, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' }}>
                       <Text style={{ color: '#fff', fontWeight: '900', fontSize: 16 }}>Crop</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={handleUpload} disabled={isUploading} style={{ flex: 1, height: 56, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', opacity: isUploading ? 0.7 : 1, minWidth: 120, marginLeft: 0 }}>
+                    <TouchableOpacity onPress={handleUpload} disabled={isUploading} style={{ flex: 1, height: 56, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', opacity: isUploading ? 0.7 : 1 }}>
                       <LinearGradient colors={['#F59E0B', '#F59E0B']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
                       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                         {isUploading ? (
                           <ActivityIndicator color="#0B0B0F" />
                         ) : (
-                          <Text style={{ color: '#0B0B0F', fontWeight: '900', fontSize: 16 }}>Create</Text>
+                          <IconSymbol name="checkmark" size={20} color="#0B0B0F" />
                         )}
                       </View>
                     </TouchableOpacity>

@@ -393,6 +393,7 @@
     "success": "Success",
     "warning": "Warning",
     "info": "Info",
-    "saved": "Saved"
+    "saved": "Saved",
+    "choosePhoto": "Choose Photo"
   }
 }

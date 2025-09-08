@@ -1,4 +1,4 @@
-import { useT } from '@/src/hooks/useTranslation';
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn, useAnimatedStyle, withSpring } from 'react-native-reanimated';
@@ -20,7 +20,7 @@ export function NavigationPills({ sections, activeSectionId }: NavigationPillsPr
   const isSmallPhone = width <= 375; // iPhone SE and similar
   const isLargeTablet = shortestSide >= 1024; // iPad Pro and similar
   const isLandscape = width > height;
-  const t = useT();
+  const { t } = useTranslation();
 
   // Enhanced responsive sizing for better cross-device support
   const pillPadding = isLargeTablet ? 28 : (isTabletLike ? 24 : (isSmallPhone ? 12 : 16));

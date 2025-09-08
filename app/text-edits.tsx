@@ -3,12 +3,12 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 import { usePhotoUsage } from '@/services/photoUsageService';
 import { presentPaywall, validatePremiumAccess } from '@/services/revenuecat';
-import { useTranslation } from '@/src/hooks/useTranslation';
+import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInDown, FadeInUp, FadeOut, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,7 +20,8 @@ import { PresetCard } from '@/components/PhotoMagic/PresetCard';
 import { analyticsService } from '@/services/analytics';
 
 export default function TextEditsScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLanguage = i18n.language;
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
@@ -39,6 +40,22 @@ export default function TextEditsScreen() {
   const applyLockRef = useRef(false);
   const [editMode, setEditMode] = useState<'presets' | 'custom'>('custom');
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
+  
+  // Performance optimization: convert array to Set for O(1) lookups
+  const selectedLabelsSet = useMemo(() => new Set(selectedLabels), [selectedLabels]);
+  
+  // Cache filtered suggestions for better performance
+  const filteredSuggestions = useMemo(() => {
+    return category === 'All' ? SUGGESTIONS : SUGGESTIONS.filter(s => s.category === category);
+  }, [category]);
+  
+  // Create lookup object for O(1) suggestion finding
+  const suggestionsLookup = useMemo(() => {
+    return SUGGESTIONS.reduce((acc, suggestion) => {
+      acc[suggestion.label] = suggestion;
+      return acc;
+    }, {} as Record<string, Suggestion>);
+  }, []);
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const photoRestoration = usePhotoRestoration();
@@ -317,9 +334,9 @@ useEffect(() => {
   const identityClause = ' Maintain the same facial features, hairstyle, and expression.';
 
   const handleSuggestionPress = (label: string) => {
-    const s = SUGGESTIONS.find(x => x.label === label);
+    const s = suggestionsLookup[label];
     setSelectedLabels((prev) => {
-      const already = prev.includes(label);
+      const already = selectedLabelsSet.has(label);
       
       // If trying to select and already at max (3), prevent it
       if (!already && prev.length >= 3) {
@@ -363,7 +380,7 @@ useEffect(() => {
   };
 
   const handleSuggestionLongPress = (label: string) => {
-    const s = SUGGESTIONS.find(x => x.label === label);
+    const s = suggestionsLookup[label];
     setInfoTitle(label);
     setInfoText(s?.template || 'More details coming soon.');
     setInfoVisible(true);
@@ -375,8 +392,8 @@ useEffect(() => {
       return customPrompt.trim();
     }
     
-    // Preset mode - build from selected presets
-    const chosen = SUGGESTIONS.filter(s => selectedLabels.includes(s.label));
+    // Preset mode - build from selected presets (optimized)
+    const chosen = selectedLabels.map(label => suggestionsLookup[label]).filter(Boolean);
     if (chosen.length === 0) return '';
     
     // Group presets by category for better organization
@@ -540,9 +557,9 @@ useEffect(() => {
         </TouchableOpacity>
         
         <View style={{ alignItems: 'center' }}>
-          <Text style={{ color: '#EAEAEA', fontSize: 22, fontFamily: 'Lexend-Black' }}>Photo Magic</Text>
+          <Text style={{ color: '#EAEAEA', fontSize: 22, fontFamily: 'Lexend-Black' }}>{t('textEdits.title')}</Text>
           <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 2 }}>
-            Instant photo editing
+            {t('textEdits.subtitle')}
           </Text>
         </View>
         
@@ -672,12 +689,12 @@ useEffect(() => {
           </View>
           
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-            {(category === 'All' ? SUGGESTIONS : SUGGESTIONS.filter(s => s.category === category)).map((suggestion) => (
+            {filteredSuggestions.map((suggestion) => (
               <View key={suggestion.label} style={{ minWidth: '48%', maxWidth: '48%' }}>
                 <PresetCard
                   label={suggestion.label}
                   icon={suggestion.icon}
-                  isSelected={selectedLabels.includes(suggestion.label)}
+                  isSelected={selectedLabelsSet.has(suggestion.label)}
                   onPress={() => handleSuggestionPress(suggestion.label)}
                   onLongPress={() => handleSuggestionLongPress(suggestion.label)}
                 />

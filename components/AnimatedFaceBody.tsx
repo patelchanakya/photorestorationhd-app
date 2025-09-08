@@ -1,5 +1,5 @@
 import { analyticsService } from '@/services/analytics';
-import { useT } from '@/src/hooks/useTranslation';
+import { useTranslation } from 'react-i18next';
 import { useQuickEditStore } from '@/store/quickEditStore';
 import { useFocusEffect } from '@react-navigation/native';
 import { useEvent } from 'expo';
@@ -7,8 +7,9 @@ import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { VideoView, useVideoPlayer } from 'expo-video';
-import React, { useRef } from 'react';
+import { VideoView } from 'expo-video';
+import { useVideoPlayer } from 'expo-video';
+import React, { useRef, useState } from 'react';
 import { AppState, ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
@@ -22,8 +23,16 @@ interface FaceBodyItem {
   emoji: string; // Emoji for the feature
 }
 
-// Face/Body transformation options
+// Face/Body transformation options - ordered by virality (most to least important)
 const DEFAULT_FACEBODY: FaceBodyItem[] = [
+  { 
+    id: 'popular-5', 
+    titleKey: 'popular.clearSkin', 
+    type: 'video', 
+    video: require('../assets/videos/popular/clear-skin.mp4'), 
+    emoji: '✨',
+    customPrompt: "Remove acne, blemishes, and skin imperfections while keeping natural skin texture, tone, and lighting unchanged." 
+  },
   { 
     id: 'popular-1', 
     titleKey: 'popular.addSmile', 
@@ -33,20 +42,20 @@ const DEFAULT_FACEBODY: FaceBodyItem[] = [
     customPrompt: "Add a natural, authentic smile while preserving facial identity and features." 
   },
   { 
-    id: 'popular-2', 
-    titleKey: 'Fix Closed Eyes 👁️‍️', 
+    id: 'popular-4', 
+    titleKey: 'popular.slimmer', 
     type: 'video', 
-    video: require('../assets/videos/popular/open-eyes.mp4'), 
-    emoji: '👁️',
-    customPrompt: "open my eyes" 
+    video: require('../assets/videos/popular/slimmer.mp4'), 
+    emoji: '💪',
+    customPrompt: "Reduce visible body and facial fat while keeping natural proportions, pose, and facial identity intact. Make changes realistic and balanced without distorting the subject." 
   },
-  { 
-    id: 'popular-5', 
-    titleKey: 'popular.clearSkin', 
-    type: 'video', 
-    video: require('../assets/videos/popular/clear-skin.mp4'), 
-    emoji: '✨',
-    customPrompt: "Remove acne, blemishes, and skin imperfections while keeping natural skin texture, tone, and lighting unchanged." 
+  {
+    id: 'facebody-new-2',
+    titleKey: 'faceBody.teethWhitening',
+    type: 'video',
+    video: require('../assets/videos/whitening.mp4'),
+    emoji: '🦷',
+    customPrompt: "Whiten and brighten teeth naturally"
   },
   { 
     id: 'popular-6', 
@@ -57,12 +66,20 @@ const DEFAULT_FACEBODY: FaceBodyItem[] = [
     customPrompt: "Clean up messy or stray hairs while preserving natural hair texture, style, volume, and keeping hair in place without altering its position on the face." 
   },
   { 
-    id: 'popular-4', 
-    titleKey: 'popular.slimmer', 
+    id: 'popular-2', 
+    titleKey: 'faceBody.fixClosedEyes', 
     type: 'video', 
-    video: require('../assets/videos/popular/slimmer.mp4'), 
-    emoji: '💪',
-    customPrompt: "Reduce visible body and facial fat while keeping natural proportions, pose, and facial identity intact. Make changes realistic and balanced without distorting the subject." 
+    video: require('../assets/videos/popular/open-eyes.mp4'), 
+    emoji: '👁️',
+    customPrompt: "open my eyes" 
+  },
+  {
+    id: 'facebody-new-3',
+    titleKey: 'faceBody.removeWrinkles',
+    type: 'video',
+    video: require('../assets/videos/wrinkles.mp4'),
+    emoji: '✨',
+    customPrompt: "Smooth facial lines and wrinkles while maintaining natural appearance"
   },
   { 
     id: 'popular-8', 
@@ -72,6 +89,14 @@ const DEFAULT_FACEBODY: FaceBodyItem[] = [
     emoji: '⏰',
     customPrompt: "Make the subject look a bit younger while keeping their identity, facial features, and natural expression unchanged." 
   },
+  {
+    id: 'facebody-new-1',
+    titleKey: 'faceBody.removeRedEye',
+    type: 'video',
+    video: require('../assets/videos/redeyes.mp4'),
+    emoji: '👁️',
+    customPrompt: "Remove red-eye effect from flash photography"
+  },
   { 
     id: 'popular-9', 
     titleKey: 'popular.older', 
@@ -79,33 +104,11 @@ const DEFAULT_FACEBODY: FaceBodyItem[] = [
     video: require('../assets/videos/popular/older.mp4'), 
     emoji: '👴',
     customPrompt: "Make the subject appear slightly older in a natural, age-appropriate way. Preserve facial identity, proportions, and realistic features, adjusting age subtly without exaggeration." 
-  },
-  {
-    id: 'facebody-new-1',
-    titleKey: 'Remove Red Eye️‍️',
-    type: 'image',
-    emoji: '👁️',
-    customPrompt: "Remove red-eye effect from flash photography"
-  },
-  {
-    id: 'facebody-new-2',
-    titleKey: 'Teeth Whitening 🦷',
-    type: 'image',
-    emoji: '🦷',
-    customPrompt: "Whiten and brighten teeth naturally"
-  },
-  {
-    id: 'facebody-new-3',
-    titleKey: 'Remove Wrinkles',
-    type: 'image',
-    emoji: '✨',
-    customPrompt: "Smooth facial lines and wrinkles while maintaining natural appearance"
   }
 ];
 
-// VideoView component with reliable playback recovery - same as AnimatedBackgroundsReal
-const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) => {
-  const videoIndex = index || 0;
+// Video content component - only rendered when player exists
+const VideoContent = ({ player, videoIndex, isVisible }: { player: any; videoIndex: number; isVisible: boolean }) => {
   const isMountedRef = useRef(true);
   const shouldBePlayingRef = useRef(false);
   
@@ -117,25 +120,75 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
   const initialSeek = React.useMemo(() => {
     return (videoIndex * 0.3) % 2;
   }, [videoIndex]);
-  
-  const player = useVideoPlayer(video, (player) => {
-    try {
-      player.loop = true;
-      player.muted = true;
-      player.playbackRate = playbackRate;
-    } catch (error) {
-      console.error('AnimatedFaceBody video player init error:', error);
-    }
-  });
 
-  const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
-  
-  // Initial play effect
+  // useEvent is ALWAYS called with valid player here
+  const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing || false });
+
+  // Visibility-based pause/play - MAIN performance optimization
   React.useEffect(() => {
     if (!isMountedRef.current) return;
     
+    try {
+      if (!isVisible && player && player.playing) {
+        // Pause when scrolled out of view
+        player.pause();
+        shouldBePlayingRef.current = false;
+        if (__DEV__) console.log(`⏸️ Paused video ${videoIndex} (scrolled away)`);
+      } else if (isVisible && player && !player.playing && shouldBePlayingRef.current) {
+        // Resume when scrolled back into view
+        player.play();
+        if (__DEV__) console.log(`▶️ Resumed video ${videoIndex} (scrolled back)`);
+      }
+    } catch (error) {
+      // Ignore visibility errors
+    }
+  }, [isVisible, player, videoIndex]);
+
+  // Auto-recovery: restart video if it should be playing but isn't (with debounce)
+  React.useEffect(() => {
+    if (!isPlaying && shouldBePlayingRef.current && isMountedRef.current && isVisible) {
+      const recoveryTimeout = setTimeout(() => {
+        try {
+          if (player && player.status !== 'idle' && isMountedRef.current) {
+            player.play();
+          }
+        } catch (error) {
+          // Ignore recovery errors - player may be released
+        }
+      }, 100);
+      
+      return () => clearTimeout(recoveryTimeout);
+    }
+  }, [isPlaying, player, isVisible]);
+
+  // Cleanup video player on unmount
+  React.useEffect(() => {
+    isMountedRef.current = true;
+    
+    return () => {
+      isMountedRef.current = false;
+      shouldBePlayingRef.current = false;
+      
+      try {
+        if (player && typeof player.status !== 'undefined') {
+          const status = player.status;
+          if (status !== 'idle') {
+            player.pause();
+          }
+          player.release();
+        }
+      } catch (error) {
+        // Silent cleanup
+      }
+    };
+  }, []);
+
+  // Initial playback setup (only when player exists)
+  React.useEffect(() => {
+    if (!player) return;
+    
     const playTimer = setTimeout(() => {
-      if (!isMountedRef.current) return;
+      if (!isMountedRef.current || !player) return;
       
       try {
         if (player.status !== 'idle') {
@@ -146,12 +199,12 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
       } catch (e) {
         // Ignore initial play errors
       }
-    }, videoIndex * 100);
+    }, videoIndex * 150);
     
     return () => clearTimeout(playTimer);
   }, [player, videoIndex, initialSeek]);
 
-  // Handle app state changes
+  // Handle app state changes (backgrounding/foregrounding)
   React.useEffect(() => {
     const handleAppStateChange = (nextAppState: string) => {
       if (nextAppState === 'active' && shouldBePlayingRef.current && isMountedRef.current) {
@@ -173,7 +226,7 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
     return () => subscription?.remove();
   }, [player, videoIndex]);
 
-  // Handle navigation focus
+  // Handle navigation focus (returning to screen)
   useFocusEffect(
     React.useCallback(() => {
       if (shouldBePlayingRef.current && isMountedRef.current) {
@@ -203,16 +256,47 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
   );
 };
 
-// Individual tile component - smaller style like Backgrounds
-const FaceBodyTile = React.memo(({ item, index, tileWidth, fontSize }: { item: FaceBodyItem; index: number; tileWidth: number; fontSize: number }) => {
-  const t = useT();
+// Wrapper component that only renders VideoContent when player exists
+const VideoViewWithPlayer = ({ video, index, isVisible }: { video: any; index?: number; isVisible?: boolean }) => {
+  const { t } = useTranslation();
+  const videoIndex = index || 0;
+
+  const player = useVideoPlayer(video, (player: any) => {
+    player.loop = true;
+    player.muted = true;
+  }); // No artificial limit - viewport handles it
+
+  if (!player) {
+    return (
+      <View style={{ 
+        width: '100%', 
+        height: '100%', 
+        backgroundColor: '#1a1a1a',
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}>
+        <Text style={{ color: '#666', fontSize: 11 }}>{t('common.videoLoading')}</Text>
+      </View>
+    );
+  }
+
+  // Only render VideoContent when player exists - useEvent will always have valid player
+  return <VideoContent player={player} videoIndex={videoIndex} isVisible={isVisible ?? true} />;
+};
+
+// Individual tile component - with viewport-based video loading
+const FaceBodyTile = React.memo(({ item, index, tileWidth, fontSize, isVisible }: { item: FaceBodyItem; index: number; tileWidth: number; fontSize: number; isVisible: boolean }) => {
+  const { t, i18n } = useTranslation();
+  const currentLanguage = i18n.language;
   const router = useRouter();
+  
+  const translatedTitle = React.useMemo(() => t(item.titleKey), [item.titleKey, t, currentLanguage]);
 
   const handlePress = async () => {
     // Track tile selection
     analyticsService.trackTileUsage({
       category: 'popular',
-      tileName: t(item.titleKey),
+      tileName: translatedTitle,
       tileId: item.id,
       functionType: 'custom',
       stage: 'selected'
@@ -259,9 +343,26 @@ const FaceBodyTile = React.memo(({ item, index, tileWidth, fontSize }: { item: F
           backgroundColor: '#0b0b0f' 
         }}
       >
-        {/* Render video or image based on type */}
-        {item.type === 'video' && item.video ? (
-          <VideoViewWithPlayer video={item.video} index={index} />
+        {/* Render video only when visible, otherwise show placeholder */}
+        {item.type === 'video' && item.video && isVisible ? (
+          <View style={{ 
+            width: '100%', 
+            height: '100%',
+            ...(item.id === 'facebody-new-1' || item.id === 'facebody-new-2' ? { transform: [{ scale: 1.5 }] } : {})
+          }}>
+            <VideoViewWithPlayer video={item.video} index={index} isVisible={isVisible} />
+          </View>
+        ) : item.type === 'video' && item.video && !isVisible ? (
+          // Show static placeholder when not visible
+          <View style={{ 
+            width: '100%', 
+            height: '100%', 
+            backgroundColor: '#1a1a1a',
+            justifyContent: 'center',
+            alignItems: 'center'
+          }}>
+            <Text style={{ color: '#666', fontSize: 24 }}>{item.emoji}</Text>
+          </View>
         ) : item.image ? (
           <ExpoImage 
             source={item.image} 
@@ -316,7 +417,7 @@ const FaceBodyTile = React.memo(({ item, index, tileWidth, fontSize }: { item: F
               letterSpacing: -0.2
             }}
           >
-            {t(item.titleKey)}
+            {translatedTitle}
           </Text>
         </View>
       </TouchableOpacity>
@@ -326,7 +427,7 @@ const FaceBodyTile = React.memo(({ item, index, tileWidth, fontSize }: { item: F
 
 FaceBodyTile.displayName = 'FaceBodyTile';
 
-// Main component - matching Backgrounds style
+// Main component - with viewport-based video loading
 export function AnimatedFaceBody() {
   const { width, height } = useWindowDimensions();
   const shortestSide = Math.min(width, height);
@@ -338,12 +439,44 @@ export function AnimatedFaceBody() {
   const tileWidth = isTabletLike ? 105 : (isSmallPhone ? 90 : 105);
   const fontSize = isTabletLike ? 13 : (isSmallPhone ? 11 : 12);
   
+  // Track visible tiles based on scroll position
+  const [visibleIndices, setVisibleIndices] = React.useState<Set<number>>(new Set([0, 1, 2])); // Initially show first 3
+  
+  const handleScroll = React.useCallback((event: any) => {
+    const scrollX = event.nativeEvent.contentOffset.x;
+    const viewportWidth = width - 32; // Account for padding
+    
+    // Calculate which tiles are visible (with some buffer)
+    const firstVisibleIndex = Math.max(0, Math.floor((scrollX - 50) / (tileWidth + 10))); 
+    const lastVisibleIndex = Math.min(
+      DEFAULT_FACEBODY.length - 1, 
+      Math.ceil((scrollX + viewportWidth + 50) / (tileWidth + 10))
+    );
+    
+    const newVisibleIndices = new Set<number>();
+    for (let i = firstVisibleIndex; i <= lastVisibleIndex; i++) {
+      newVisibleIndices.add(i);
+    }
+    
+    // Only update if changed to prevent unnecessary re-renders
+    if (newVisibleIndices.size !== visibleIndices.size || 
+        ![...newVisibleIndices].every(i => visibleIndices.has(i))) {
+      setVisibleIndices(newVisibleIndices);
+      
+      if (__DEV__) {
+        console.log('🎭 FaceBody visible tiles:', [...newVisibleIndices]);
+      }
+    }
+  }, [tileWidth, width, visibleIndices]);
+  
   return (
     <View style={{ marginTop: 16, marginBottom: 8, position: 'relative' }}>
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 16 }}
+        onScroll={handleScroll}
+        scrollEventThrottle={100} // Throttle to reduce performance impact
       >
         {DEFAULT_FACEBODY.map((item, index) => (
           <FaceBodyTile 
@@ -352,6 +485,7 @@ export function AnimatedFaceBody() {
             index={index} 
             tileWidth={tileWidth}
             fontSize={fontSize}
+            isVisible={visibleIndices.has(index)}
           />
         ))}
       </ScrollView>

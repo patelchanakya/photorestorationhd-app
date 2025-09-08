@@ -1,6 +1,7 @@
 import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import { analyticsService } from '@/services/analytics';
 import { generatePhoto, generatePhotoWithPolling, pollPhotoStatus, type FunctionType } from '@/services/photoGenerationV2';
+import { performanceMonitor } from '@/services/performanceMonitor';
 import { useInvalidatePhotoUsage } from '@/services/photoUsageService';
 import { restorationTrackingService } from '@/services/restorationTracking';
 import { getAppUserId } from '@/services/revenuecat';
@@ -179,7 +180,10 @@ export function usePhotoRestoration() {
         }
         
         // Save original photo locally
-        const originalFilename = await photoStorage.saveOriginal(imageUri);
+        const originalFilename = await performanceMonitor.measureAsync(
+          'save_original_photo',
+          () => photoStorage.saveOriginal(imageUri)
+        );
 
         // Get unified tracking ID (transaction ID for Pro, anonymous ID for free)
         const trackingId = await getUnifiedTrackingId('photo');
@@ -202,11 +206,14 @@ export function usePhotoRestoration() {
         }
         
         // Start generation FIRST to get prediction ID
-        const startResponse = await generatePhoto(imageUri, functionType, {
-          styleKey,
-          customPrompt,
-          userId: userId || 'fallback-anonymous'
-        });
+        const startResponse = await performanceMonitor.measureAsync(
+          'generate_photo_start',
+          () => generatePhoto(imageUri, functionType, {
+            styleKey,
+            customPrompt,
+            userId: userId || 'fallback-anonymous'
+          })
+        );
         
         const predictionId = startResponse.prediction_id;
         
@@ -245,15 +252,17 @@ export function usePhotoRestoration() {
         }
         
         // PROMPT LOGGING: Detailed client-side generation tracking
-        console.log('🎯 HOOK GENERATION DETAILS:', {
-          functionType,
-          styleKey,
-          customPrompt,
-          userId: userId || 'fallback-anonymous',
-          hasCustomPrompt: !!customPrompt,
-          hasStyleKey: !!styleKey,
-          predictionId
-        });
+        if (__DEV__) {
+          console.log('🎯 HOOK GENERATION DETAILS:', {
+            functionType,
+            styleKey,
+            customPrompt,
+            userId: userId || 'fallback-anonymous',
+            hasCustomPrompt: !!customPrompt,
+            hasStyleKey: !!styleKey,
+            predictionId
+          });
+        }
         
         // Now poll for completion using the prediction ID
         const apiStartTime = Date.now();
@@ -387,13 +396,11 @@ export function usePhotoRestoration() {
             if (false) {
             } else {
               // Save as photo with original extension
-              const photoDownloadStart = Date.now();
-              restoredFilename = await photoStorage.saveRestored(restoredUrl, originalFilename);
+              restoredFilename = await performanceMonitor.measureAsync(
+                'save_restored_photo',
+                () => photoStorage.saveRestored(restoredUrl, originalFilename)
+              );
               restoredUri = photoStorage.getPhotoUri('restored', restoredFilename);
-              if (__DEV__) {
-                const photoDownloadTime = Date.now() - photoDownloadStart;
-                console.log(`💾 [BACKGROUND] Photo saved in ${photoDownloadTime}ms:`, restoredFilename, restoredUri);
-              }
             }
 
             // Create thumbnails (skip for video generations)
@@ -401,15 +408,10 @@ export function usePhotoRestoration() {
             
             if (true) {
               // Only create thumbnails for image restorations
-              const thumbnailStart = Date.now();
-              thumbnailFilename = await photoStorage.createThumbnail(
-                restoredUri,
-                'restored'
+              thumbnailFilename = await performanceMonitor.measureAsync(
+                'create_thumbnail',
+                () => photoStorage.createThumbnail(restoredUri, 'restored')
               );
-              if (__DEV__) {
-                const thumbnailTime = Date.now() - thumbnailStart;
-                console.log(`🖼️ [BACKGROUND] Thumbnail created in ${thumbnailTime}ms:`, thumbnailFilename);
-              }
             } else {
             }
 

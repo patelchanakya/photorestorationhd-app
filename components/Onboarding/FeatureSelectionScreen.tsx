@@ -1,6 +1,6 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { useTranslation } from '@/src/hooks/useTranslation';
-import { ONBOARDING_FEATURES } from '@/utils/onboarding';
+import { useTranslation } from 'react-i18next';
+import { ONBOARDING_FEATURES, onboardingUtils } from '@/utils/onboarding';
 import { analyticsService } from '@/services/analytics';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
@@ -27,7 +27,8 @@ interface FeatureSelectionScreenProps {
 }
 
 export const FeatureSelectionScreen = React.memo(function FeatureSelectionScreen({ onContinue }: FeatureSelectionScreenProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLanguage = i18n.language;
   const [selectedFeature, setSelectedFeature] = React.useState<string | null>(null);
   const [customPrompt, setCustomPrompt] = React.useState<string>('');
   const customInputRef = React.useRef<any>(null);
@@ -211,7 +212,7 @@ export const FeatureSelectionScreen = React.memo(function FeatureSelectionScreen
       return selectText !== 'onboarding.features.selectOption' ? selectText : 'Choose your feature';
     }
     
-    const feature = ONBOARDING_FEATURES.find(f => f.id === selectedFeature);
+    const feature = onboardingUtils.getFeatureById(selectedFeature);
     
     // Special case for "none_above" - show "Explore App"
     if (selectedFeature === 'none_above') {

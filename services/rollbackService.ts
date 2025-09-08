@@ -292,7 +292,11 @@ class RollbackService {
   private async getPendingRollbacks(): Promise<PendingRollback[]> {
     try {
       const stored = await AsyncStorage.getItem(this.STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
+      if (!stored) return [];
+      
+      const parsed = JSON.parse(stored);
+      // Ensure we always return an array, even if data is corrupted
+      return Array.isArray(parsed) ? parsed : [];
     } catch (error) {
       if (__DEV__) {
         console.error('❌ [ROLLBACK] Error reading pending rollbacks:', error);

@@ -1,6 +1,6 @@
 // Removed Pro gating - all outfits are now free
 import { analyticsService } from '@/services/analytics';
-import { useT } from '@/src/hooks/useTranslation';
+import { useTranslation } from 'react-i18next';
 import { useQuickEditStore } from '@/store/quickEditStore';
 import { useFocusEffect } from '@react-navigation/native';
 import { useEvent } from 'expo';
@@ -8,8 +8,9 @@ import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { VideoView, useVideoPlayer } from 'expo-video';
-import React, { useRef } from 'react';
+import { VideoView } from 'expo-video';
+import { useVideoPlayer } from 'expo-video';
+import React, { useRef, useState } from 'react';
 import { AppState, ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
@@ -68,38 +69,15 @@ const DEFAULT_OUTFITS: OutfitItem[] = [
   },
   { 
     id: 'outfit-7', 
-    titleKey: 'Make Doctor', 
+    titleKey: 'outfits.makeDoctor', 
     type: 'video', 
-    // video: require('../assets/videos/magic/outfits/thumbnail/doctor/doctor.mp4'), 
+    video: require('../assets/videos/doctor.mp4'), 
     outfitPrompt: "Replace the subject's clothing with professional medical attire: a white doctor's coat over professional clothing, or medical scrubs. Keep the subject's face, hairstyle, pose, lighting, and background unchanged. Ensure the medical attire looks professional and realistic." 
   },
-  { 
-    id: 'outfit-8', 
-    titleKey: 'Make Business CEO', 
-    type: 'video', 
-    // video: require('../assets/videos/magic/outfits/thumbnail/ceo/ceo.mp4'), 
-    outfitPrompt: "Replace the subject's clothing with high-end executive business attire: an expensive, well-tailored suit, luxury dress shirt, premium tie, and polished appearance fitting a CEO or top executive. Keep the subject's face, hairstyle, pose, lighting, and background unchanged." 
-  },
-  { 
-    id: 'outfit-9', 
-    titleKey: 'Make Soccer Player', 
-    type: 'video', 
-    // video: require('../assets/videos/magic/outfits/thumbnail/soccer/soccer.mp4'), 
-    outfitPrompt: "Replace the subject's clothing with professional soccer uniform: team jersey, shorts, and soccer cleats. Choose a popular team's colors and design. Keep the subject's face, hairstyle, pose, lighting, and background unchanged. Make the uniform look authentic and professional." 
-  },
-  { 
-    id: 'outfit-10', 
-    titleKey: 'Make Football Player', 
-    type: 'video', 
-    // video: require('../assets/videos/magic/outfits/thumbnail/football/football.mp4'), 
-    outfitPrompt: "Replace the subject's clothing with American football uniform: team jersey with shoulder pads, football pants, and cleats. Choose professional team colors. Keep the subject's face, hairstyle, pose, lighting, and background unchanged. Make the uniform look authentic and professional." 
-  }
 ];
 
-// VideoView component with reliable playback recovery
-const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) => {
-  // Deterministic values based on index for visual variety
-  const videoIndex = index || 0;
+// Video content component - only rendered when player exists  
+const VideoContent = ({ player, videoIndex, isVisible }: { player: any; videoIndex: number; isVisible: boolean }) => {
   const isMountedRef = useRef(true);
   const shouldBePlayingRef = useRef(false);
   
@@ -113,32 +91,46 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
     // Start at different points in the video (0-2 seconds)
     return (videoIndex * 0.3) % 2;
   }, [videoIndex]);
-  
-  const player = useVideoPlayer(video, (player) => {
-    try {
-      player.loop = true;
-      player.muted = true;
-      player.playbackRate = playbackRate;
-    } catch (error) {
-      console.error('AnimatedOutfits video player init error:', error);
-    }
-  });
 
-  // Monitor playback status with expo's useEvent hook
-  const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
+  // Monitor playback status with expo's useEvent hook - player is ALWAYS valid here
+  const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing || false });
 
-  // Auto-recovery: restart video if it should be playing but isn't
+  // Visibility-based pause/play - MAIN performance optimization
   React.useEffect(() => {
-    if (!isPlaying && shouldBePlayingRef.current && isMountedRef.current) {
-      try {
-        if (player && player.status !== 'idle') {
-          player.play();
-        }
-      } catch (error) {
-        // Ignore recovery errors
+    if (!isMountedRef.current) return;
+    
+    try {
+      if (!isVisible && player && player.playing) {
+        // Pause when scrolled out of view
+        player.pause();
+        shouldBePlayingRef.current = false;
+        if (__DEV__) console.log(`⏸️ Paused outfit video ${videoIndex} (scrolled away)`);
+      } else if (isVisible && player && !player.playing && shouldBePlayingRef.current) {
+        // Resume when scrolled back into view
+        player.play();
+        if (__DEV__) console.log(`▶️ Resumed outfit video ${videoIndex} (scrolled back)`);
       }
+    } catch (error) {
+      // Ignore visibility errors
     }
-  }, [isPlaying, player]);
+  }, [isVisible, player, videoIndex]);
+
+  // Auto-recovery: restart video if it should be playing but isn't (with debounce)
+  React.useEffect(() => {
+    if (!isPlaying && shouldBePlayingRef.current && isMountedRef.current && isVisible) {
+      const recoveryTimeout = setTimeout(() => {
+        try {
+          if (player && player.status !== 'idle' && isMountedRef.current) {
+            player.play();
+          }
+        } catch (error) {
+          // Ignore recovery errors - player may be released
+        }
+      }, 100);
+      
+      return () => clearTimeout(recoveryTimeout);
+    }
+  }, [isPlaying, player, isVisible]);
 
   // Cleanup video player on unmount
   React.useEffect(() => {
@@ -149,7 +141,7 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
       shouldBePlayingRef.current = false;
       
       try {
-        if (player) {
+        if (player && typeof player.status !== 'undefined') {
           const status = player.status;
           if (status !== 'idle') {
             player.pause();
@@ -157,20 +149,16 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
           player.release();
         }
       } catch (error) {
-        if (__DEV__) {
-          console.log('AnimatedOutfits video cleanup handled');
-        }
       }
     };
   }, []);
 
-  // Initial playback setup with consistent timing
+  // Initial playback setup (only when player exists)
   React.useEffect(() => {
     if (!player) return;
     
-    // Consistent staggered timing without random offset
     const playTimer = setTimeout(() => {
-      if (!isMountedRef.current) return;
+      if (!isMountedRef.current || !player) return;
       
       try {
         if (player.status !== 'idle') {
@@ -181,7 +169,7 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
       } catch (e) {
         // Ignore initial play errors
       }
-    }, videoIndex * 150); // Consistent 150ms delay per video
+    }, videoIndex * 150);
     
     return () => clearTimeout(playTimer);
   }, [player, videoIndex, initialSeek]);
@@ -243,17 +231,80 @@ const VideoViewWithPlayer = ({ video, index }: { video: any; index?: number }) =
   );
 };
 
+// VideoView component with lazy loading and performance optimization
+const VideoViewWithPlayer = ({ video, index, isVisible }: { video: any; index?: number; isVisible?: boolean }) => {
+  const { t } = useTranslation();
+  const videoIndex = index || 0;
+
+  const player = useVideoPlayer(video, (player: any) => {
+    player.loop = true;
+    player.muted = true;
+  }); // No artificial limit - viewport handles it
+
+  if (!player) {
+    return (
+      <Animated.View 
+        entering={FadeIn.delay(videoIndex * 100).duration(800)}
+        style={{ width: '100%', height: '100%' }}
+      >
+        <View style={{ 
+          width: '100%', 
+          height: '100%', 
+          backgroundColor: '#1a1a1a',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <Text style={{ color: '#666', fontSize: 12 }}>{t('common.loading')}</Text>
+        </View>
+      </Animated.View>
+    );
+  }
+
+  // Only render VideoContent when player exists - useEvent will always have valid player
+  return <VideoContent player={player} videoIndex={videoIndex} isVisible={isVisible ?? true} />;
+};
+
 export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: OutfitItem[] }) {
   const { width, height } = useWindowDimensions();
   const shortestSide = Math.min(width, height);
   const longestSide = Math.max(width, height);
   const isTabletLike = shortestSide >= 768;
   const isSmallPhone = longestSide <= 700;
-  const t = useT();
+  const { t } = useTranslation();
   
   // Responsive tile dimensions - optimized for text visibility and mobile/tablet experience
   const tileWidth = isTabletLike ? 105 : (isSmallPhone ? 90 : 105);
   const fontSize = isTabletLike ? 13 : (isSmallPhone ? 11 : 12);
+  
+  // Track visible tiles based on scroll position
+  const [visibleIndices, setVisibleIndices] = React.useState<Set<number>>(new Set([0, 1, 2])); // Initially show first 3
+  
+  const handleScroll = React.useCallback((event: any) => {
+    const scrollX = event.nativeEvent.contentOffset.x;
+    const viewportWidth = width - 32; // Account for padding
+    
+    // Calculate which tiles are visible (with some buffer)
+    const firstVisibleIndex = Math.max(0, Math.floor((scrollX - 50) / (tileWidth + 10))); 
+    const lastVisibleIndex = Math.min(
+      outfits.length - 1, 
+      Math.ceil((scrollX + viewportWidth + 50) / (tileWidth + 10))
+    );
+    
+    const newVisibleIndices = new Set<number>();
+    for (let i = firstVisibleIndex; i <= lastVisibleIndex; i++) {
+      newVisibleIndices.add(i);
+    }
+    
+    // Only update if changed to prevent unnecessary re-renders
+    if (newVisibleIndices.size !== visibleIndices.size || 
+        ![...newVisibleIndices].every(i => visibleIndices.has(i))) {
+      setVisibleIndices(newVisibleIndices);
+      
+      if (__DEV__) {
+        console.log('🎨 Outfits visible tiles:', [...newVisibleIndices]);
+      }
+    }
+  }, [tileWidth, width, visibleIndices, outfits.length]);
   
   const router = useRouter();
   const handleOutfitSelect = async (outfit: OutfitItem) => {
@@ -302,10 +353,13 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
         horizontal 
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 16 }}
-        // Removed extraData as Pro gating is removed
+        onScroll={handleScroll}
+        scrollEventThrottle={100} // Throttle to reduce performance impact
       >
-        {outfits.map((item, index) => (
-          <Animated.View
+        {outfits.map((item, index) => {
+          const isVisible = visibleIndices.has(index);
+          return (
+            <Animated.View
             key={item.id}
             entering={FadeIn.delay(index * 100).duration(800)}
             style={{ width: tileWidth, marginRight: index === outfits.length - 1 ? 0 : 10 }}
@@ -323,9 +377,20 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
                 backgroundColor: '#0b0b0f' 
               }}
             >
-              {/* Render video or image based on type */}
-              {item.type === 'video' && item.video ? (
-                <VideoViewWithPlayer video={item.video} index={index} />
+              {/* Render video only when visible, otherwise show placeholder */}
+              {item.type === 'video' && item.video && isVisible ? (
+                <VideoViewWithPlayer video={item.video} index={index} isVisible={isVisible} />
+              ) : item.type === 'video' && item.video && !isVisible ? (
+                // Show static placeholder when not visible
+                <View style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  backgroundColor: '#1a1a1a',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}>
+                  <Text style={{ color: '#666', fontSize: 24 }}>👔</Text>
+                </View>
               ) : (
                 <ExpoImage 
                   source={item.image} 
@@ -374,7 +439,8 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
               </View>
             </TouchableOpacity>
           </Animated.View>
-        ))}
+          );
+        })}
       </ScrollView>
       
       {/* Right edge gradient */}

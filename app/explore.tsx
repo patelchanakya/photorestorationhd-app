@@ -1,5 +1,5 @@
-import { MemorialFeatures } from '@/components/AnimatedBackgrounds';
-import { AnimatedBackgroundsReal } from '@/components/AnimatedBackgroundsReal';
+import { MemorialFeatures } from '@/components/AnimatedMemorial';
+import { AnimatedBackgrounds } from '@/components/AnimatedBackgrounds';
 import { AnimatedFaceBody } from '@/components/AnimatedFaceBody';
 import { AnimatedOutfits } from '@/components/AnimatedOutfits';
 import { DeviceTwoRowCarousel } from '@/components/DeviceTwoRowCarousel';
@@ -8,13 +8,12 @@ import { NavigationPills } from '@/components/NavigationPills';
 import { QuickActionRail } from '@/components/QuickActionRail';
 import { QuickEditSheet } from '@/components/QuickEditSheet';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { ShimmerText } from '@/components/ui/ShimmerText';
 import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import { analyticsService } from '@/services/analytics';
 import { featureRequestService } from '@/services/featureRequestService';
 import { presentPaywall, restorePurchasesSecure, validatePremiumAccess } from '@/services/revenuecat';
 import { restorationService } from '@/services/supabase';
-import { useT } from '@/src/hooks/useTranslation';
+import { useTranslation } from 'react-i18next';
 import { useAppInitStore } from '@/store/appInitStore';
 import { useQuickEditStore } from '@/store/quickEditStore';
 import Constants from 'expo-constants';
@@ -46,7 +45,9 @@ const sections: SectionData[] = [
 export default function HomeGalleryLikeScreen() {
   const settingsNavLock = React.useRef(false);
   const insets = useSafeAreaInsets();
-  const t = useT();
+  const { t, i18n } = useTranslation();
+  // Force re-render when language changes
+  const currentLanguage = i18n.language;
   const { width, height } = useWindowDimensions();
   const shortestSide = Math.min(width, height);
   const longestSide = Math.max(width, height);
@@ -76,11 +77,11 @@ export default function HomeGalleryLikeScreen() {
       }
     }
   };
-  const openQuick = (functionType: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'background' | 'outfit' | 'custom' | 'restore_repair' | 'water_damage', styleKey?: string | null) => {
+  const openQuick = React.useCallback((functionType: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'background' | 'outfit' | 'custom' | 'restore_repair' | 'water_damage', styleKey?: string | null) => {
     try {
       useQuickEditStore.getState().open({ functionType, styleKey: styleKey ?? null });
     } catch {}
-  };
+  }, []); // No dependencies - this function is stable
   const { isPro, forceRefresh, refreshCustomerInfo } = useRevenueCat();
   const router = useRouter();
   
@@ -109,7 +110,7 @@ export default function HomeGalleryLikeScreen() {
           <View style={exploreStyles.sectionHeader}>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
               <Text style={exploreStyles.sectionTitle}>{t('explore.sections.fixMyPhoto')}</Text>
-              <Text style={exploreStyles.byCleverText}>by clever</Text>
+              <Text style={exploreStyles.byCleverText}>{t('explore.byClever')}</Text>
             </View>
             <TouchableOpacity
               onPress={async () => {
@@ -157,36 +158,44 @@ export default function HomeGalleryLikeScreen() {
         return (
           <View style={exploreStyles.sectionHeader}>
             <Text style={exploreStyles.sectionTitle}>{t('explore.sections.backgrounds')}</Text>
-            <ShimmerText onPress={() => router.push('/photo-magic' as any)}>
-              Write Your Own
-            </ShimmerText>
+            <TouchableOpacity onPress={() => router.push('/photo-magic' as any)} activeOpacity={0.7}>
+              <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, fontFamily: 'Lexend-Medium' }}>
+                {t('explore.writeYourOwn')}
+              </Text>
+            </TouchableOpacity>
           </View>
         );
       case 'faceBody':
         return (
           <View style={exploreStyles.sectionHeader}>
             <Text style={exploreStyles.sectionTitle}>{t('explore.sections.faceBody')}</Text>
-            <ShimmerText onPress={() => router.push('/photo-magic' as any)}>
-              Write Your Own
-            </ShimmerText>
+            <TouchableOpacity onPress={() => router.push('/photo-magic' as any)} activeOpacity={0.7}>
+              <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, fontFamily: 'Lexend-Medium' }}>
+                {t('explore.writeYourOwn')}
+              </Text>
+            </TouchableOpacity>
           </View>
         );
       case 'memorial':
         return (
           <View style={exploreStyles.sectionHeader}>
             <Text style={exploreStyles.sectionTitle}>{t('explore.sections.memorial')}</Text>
-            <ShimmerText onPress={() => router.push('/photo-magic' as any)}>
-              Write Your Own
-            </ShimmerText>
+            <TouchableOpacity onPress={() => router.push('/photo-magic' as any)} activeOpacity={0.7}>
+              <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, fontFamily: 'Lexend-Medium' }}>
+                {t('explore.writeYourOwn')}
+              </Text>
+            </TouchableOpacity>
           </View>
         );
       case 'outfits':
         return (
           <View style={exploreStyles.sectionHeader}>
             <Text style={exploreStyles.sectionTitle}>{t('explore.sections.outfits')}</Text>
-            <ShimmerText onPress={() => router.push('/photo-magic' as any)}>
-              Write Your Own
-            </ShimmerText>
+            <TouchableOpacity onPress={() => router.push('/photo-magic' as any)} activeOpacity={0.7}>
+              <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, fontFamily: 'Lexend-Medium' }}>
+                {t('explore.writeYourOwn')}
+              </Text>
+            </TouchableOpacity>
           </View>
         );
       case 'magic':
@@ -198,7 +207,7 @@ export default function HomeGalleryLikeScreen() {
       default:
         return null;
     }
-  }, [t, isPro, router]);
+  }, [t, isPro, router, currentLanguage]);
 
   const renderSectionContent = React.useCallback((sectionType: SectionData['type']) => {
     switch (sectionType) {
@@ -209,7 +218,7 @@ export default function HomeGalleryLikeScreen() {
           </View>
         );
       case 'backgrounds':
-        return <AnimatedBackgroundsReal />;
+        return <AnimatedBackgrounds />;
       case 'faceBody':
         return <AnimatedFaceBody />;
       case 'memorial':
@@ -271,10 +280,10 @@ export default function HomeGalleryLikeScreen() {
                 <IconSymbol name="star.fill" size={14} color="rgba(255,255,255,0.8)" />
                 <View style={{ flex: 1 }}>
                   <Text style={exploreStyles.requestButtonTitle}>
-                    Rate Us
+                    {t('explore.rateUs.title')}
                   </Text>
                   <Text style={exploreStyles.requestButtonSubtitle}>
-                    Leave a review, it helps us a lot!
+                    {t('explore.rateUs.subtitle')}
                   </Text>
                 </View>
               </View>
@@ -319,10 +328,10 @@ export default function HomeGalleryLikeScreen() {
                 <IconSymbol name="lightbulb" size={14} color="rgba(255,255,255,0.8)" />
                 <View style={{ flex: 1 }}>
                   <Text style={exploreStyles.requestButtonTitle}>
-                    Request Feature
+                    {t('explore.requestFeature.title')}
                   </Text>
                   <Text style={exploreStyles.requestButtonSubtitle}>
-                    Suggest new features for the app
+                    {t('explore.requestFeature.subtitle')}
                   </Text>
                 </View>
               </View>
@@ -367,10 +376,10 @@ export default function HomeGalleryLikeScreen() {
                 <IconSymbol name="exclamationmark.triangle" size={14} color="rgba(255,255,255,0.8)" />
                 <View style={{ flex: 1 }}>
                   <Text style={exploreStyles.requestButtonTitle}>
-                    Report Bug
+                    {t('explore.reportBug.title')}
                   </Text>
                   <Text style={exploreStyles.requestButtonSubtitle}>
-                    Help us fix issues you&apos;ve encountered
+                    {t('explore.reportBug.subtitle')}
                   </Text>
                 </View>
               </View>
@@ -389,7 +398,7 @@ export default function HomeGalleryLikeScreen() {
     </View>
   ), [renderSectionHeader, renderSectionContent]);
 
-  const keyExtractor = React.useCallback((item: SectionData) => item.id, []);
+  const keyExtractor = React.useCallback((item: SectionData) => `${item.id}-${currentLanguage}`, [currentLanguage]);
 
   // Track screen view on mount
   React.useEffect(() => {
@@ -590,54 +599,19 @@ export default function HomeGalleryLikeScreen() {
       <NavigationPills
         activeSectionId={activeSectionId}
         sections={[
+          { id: 'magic', titleKey: 'explore.sections.magic', onPress: () => {
+            analyticsService.track('explore_navigation_pill_clicked', {
+              section_id: 'magic',
+              is_pro: isPro ? 'true' : 'false'
+            });
+            scrollToSection('magic');
+          }},
           { id: 'memorial', titleKey: 'explore.sections.memorial', onPress: () => {
             analyticsService.track('explore_navigation_pill_clicked', {
               section_id: 'memorial',
               is_pro: isPro ? 'true' : 'false'
             });
             scrollToSection('memorial');
-          }},
-          { id: 'colorize', titleKey: 'explore.sections.colorize', onPress: () => {
-            analyticsService.track('explore_navigation_pill_clicked', {
-              section_id: 'colorize',
-              is_pro: isPro ? 'true' : 'false'
-            });
-            scrollToSection('colorize');
-          }},
-          { id: 'waterDamage', titleKey: 'explore.sections.waterDamage', onPress: () => {
-            analyticsService.track('explore_navigation_pill_clicked', {
-              section_id: 'waterDamage',
-              is_pro: isPro ? 'true' : 'false'
-            });
-            scrollToSection('waterDamage');
-          }},
-          { id: 'descratch', titleKey: 'explore.sections.descratch', onPress: () => {
-            analyticsService.track('explore_navigation_pill_clicked', {
-              section_id: 'descratch',
-              is_pro: isPro ? 'true' : 'false'
-            });
-            scrollToSection('descratch');
-          }},
-          { id: 'brighten', titleKey: 'explore.sections.brighten', onPress: () => {
-            analyticsService.track('explore_navigation_pill_clicked', {
-              section_id: 'brighten',
-              is_pro: isPro ? 'true' : 'false'
-            });
-            scrollToSection('brighten');
-          }},
-          { id: 'repair', titleKey: 'explore.sections.repair', onPress: () => {
-            analyticsService.track('explore_navigation_pill_clicked', {
-              section_id: 'repair',
-              is_pro: isPro ? 'true' : 'false'
-            });
-            scrollToSection('repair');
-          }},
-          { id: 'clarify', titleKey: 'explore.sections.clarify', onPress: () => {
-            analyticsService.track('explore_navigation_pill_clicked', {
-              section_id: 'clarify',
-              is_pro: isPro ? 'true' : 'false'
-            });
-            scrollToSection('clarify');
           }},
           { id: 'faceBody', titleKey: 'explore.sections.faceBody', onPress: () => {
             analyticsService.track('explore_navigation_pill_clicked', {
@@ -660,13 +634,6 @@ export default function HomeGalleryLikeScreen() {
             });
             scrollToSection('outfits');
           }},
-          { id: 'fixMyPhoto', titleKey: 'explore.sections.fixMyPhoto', onPress: () => {
-            analyticsService.track('explore_navigation_pill_clicked', {
-              section_id: 'fixMyPhoto',
-              is_pro: isPro ? 'true' : 'false'
-            });
-            scrollToSection('fixMyPhoto');
-          }},
         ]}
       />
 
@@ -675,13 +642,14 @@ export default function HomeGalleryLikeScreen() {
         data={sections}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
-        estimatedItemSize={400}
+        estimatedItemSize={600} // More accurate estimate for video sections
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: bottomPadding }}
-        initialNumToRender={3}
-        maxToRenderPerBatch={2}
-        windowSize={5}
+        initialNumToRender={1} // Only render first section initially
+        maxToRenderPerBatch={1} // Render one section at a time
+        windowSize={3} // Reduce memory window (was 5)
         removeClippedSubviews={true}
+        getItemType={() => 'section'} // Help FlashList optimize
       />
       {/* Bottom quick action rail */}
       <QuickActionRail />
