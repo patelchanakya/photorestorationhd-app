@@ -171,11 +171,11 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
           return;
         }
         
-        // New user - go directly to onboarding
+        // New user - go directly to explore
         if (__DEV__) {
-          console.log('🎯 New user - going directly to onboarding');
+          console.log('🎯 New user - going directly to explore');
         }
-        setInitialRoute('onboarding-v3');
+        setInitialRoute('explore');
         markInitialized();
         onLoadingComplete();
 

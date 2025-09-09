@@ -95,7 +95,7 @@ export const WelcomeScreen = React.memo(function WelcomeScreen({ onContinue }: W
         console.log('🎬 [WELCOME-VIDEO] App state changed:', nextAppState);
       }
 
-      if (playerRef.current) {
+      if (player) {
         try {
           if (nextAppState === 'active') {
             // App came to foreground - restart video
@@ -110,7 +110,7 @@ export const WelcomeScreen = React.memo(function WelcomeScreen({ onContinue }: W
             if (__DEV__) {
               console.log('🎬 [WELCOME-VIDEO] App backgrounded - pausing video');
             }
-            playerRef.current.pause();
+            player.pause();
             shouldBePlayingRef.current = false;
           }
         } catch (error) {
@@ -136,10 +136,10 @@ export const WelcomeScreen = React.memo(function WelcomeScreen({ onContinue }: W
       appStateSubscription?.remove();
       
       // Clean up video player
-      if (playerRef.current) {
+      if (player) {
         try {
-          playerRef.current.pause();
-          playerRef.current.release();
+          player.pause();
+          player.release();
           if (__DEV__) {
             console.log('🎬 [WELCOME-VIDEO] Video player cleaned up');
           }

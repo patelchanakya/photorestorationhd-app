@@ -53,7 +53,7 @@ export function OnboardingContainer({
     }
     return (
       <LinearGradient 
-        colors={[ONBOARDING_COLORS.backgroundGradientStart, ONBOARDING_COLORS.backgroundGradientEnd]} 
+        colors={[ONBOARDING_COLORS.backgroundGradientStart || '#000000', ONBOARDING_COLORS.backgroundGradientEnd || '#000000']} 
         style={{ flex: 1 }}
       >
         <Animated.View 

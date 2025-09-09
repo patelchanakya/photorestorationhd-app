@@ -1,16 +1,12 @@
-module.exports = function (api) {
+module.exports = function(api) {
   api.cache(true);
   return {
     presets: [
-      ["babel-preset-expo", { jsxImportSource: "nativewind" }],
+      ["babel-preset-expo", { reanimated: false }],
       "nativewind/babel",
     ],
     plugins: [
-      ["babel-plugin-react-compiler", {
-        // Enable React Compiler for performance optimization
-        // Only compiles app code, not node_modules
-        compilationMode: "infer"
-      }]
+      ["babel-plugin-react-compiler", { compilationMode: "infer" }],
     ],
   };
 };

@@ -6,7 +6,16 @@ import { useQuickEditStore } from '@/store/quickEditStore';
 import * as Haptics from 'expo-haptics';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { LinearGradient } from 'expo-linear-gradient';
+import { LinearGradient as OriginalLinearGradient } from 'expo-linear-gradient';
+
+// Debug wrapper to catch empty gradient arrays
+const LinearGradient = (props: any) => {
+  if (!props.colors || props.colors.length === 0) {
+    console.warn('🚨 EMPTY GRADIENT DETECTED:', props);
+    return <OriginalLinearGradient {...props} colors={['#000000', '#000000']} />;
+  }
+  return <OriginalLinearGradient {...props} />;
+};
 import { useRouter } from 'expo-router';
 import { VideoView } from 'expo-video';
 import { useVideoPlayer } from 'expo-video';
