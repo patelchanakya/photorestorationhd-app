@@ -315,7 +315,12 @@ const VideoViewWithPlayer = ({ video, index, isVisible }: { video: any; index?: 
   return <VideoContent player={player} videoIndex={videoIndex} isVisible={isVisible ?? true} />;
 };
 
-export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { backgrounds?: BackgroundItem[] }) {
+interface AnimatedBackgroundsProps {
+  backgrounds?: BackgroundItem[];
+  firstTileRef?: React.RefObject<View | null>;
+}
+
+export const AnimatedBackgrounds = React.forwardRef<View, AnimatedBackgroundsProps>(({ backgrounds = DEFAULT_BACKGROUNDS, firstTileRef }, ref) => {
   const { width, height } = useWindowDimensions();
   const shortestSide = Math.min(width, height);
   const longestSide = Math.max(width, height);
@@ -411,7 +416,7 @@ export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { bac
   };
 
   return (
-    <View style={{ marginTop: 16, marginBottom: 8, position: 'relative' }}>
+    <View ref={ref} style={{ marginTop: 16, marginBottom: 8, position: 'relative' }}>
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false}
@@ -428,6 +433,7 @@ export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { bac
             style={{ width: tileWidth, marginRight: index === backgrounds.length - 1 ? 0 : 10 }}
           >
             <TouchableOpacity
+              ref={index === 0 ? firstTileRef : undefined}
               activeOpacity={0.9}
               onPress={() => handleBackgroundSelect(item)}
               style={{ 
@@ -532,4 +538,4 @@ export function AnimatedBackgrounds({ backgrounds = DEFAULT_BACKGROUNDS }: { bac
       />
     </View>
   );
-}
+});

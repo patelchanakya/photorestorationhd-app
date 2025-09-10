@@ -19,12 +19,14 @@ import { useQuickEditStore } from '@/store/quickEditStore';
 import Constants from 'expo-constants';
 import * as StoreReview from 'expo-store-review';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import React from 'react';
 import { Alert, Platform, Text, TouchableOpacity, View, useWindowDimensions, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { ExploreTourOverlay } from '@/components/ExploreTour/ExploreTourOverlay';
 
 interface SectionData {
   id: string;
@@ -46,6 +48,9 @@ export default function HomeGalleryLikeScreen() {
   const settingsNavLock = React.useRef(false);
   const insets = useSafeAreaInsets();
   const { t, i18n } = useTranslation();
+  const router = useRouter();
+  const { showTour } = useLocalSearchParams();
+  
   // Force re-render when language changes
   const currentLanguage = i18n.language;
   const { width, height } = useWindowDimensions();
@@ -55,6 +60,127 @@ export default function HomeGalleryLikeScreen() {
   const isSmallPhone = longestSide <= 700;
   // No rail anymore, so minimal bottom padding
   const bottomPadding = Math.max(20, (insets?.bottom || 0) + 8);
+
+  // Tour state
+  const [showTourOverlay, setShowTourOverlay] = React.useState(false);
+  const [tourStep, setTourStep] = React.useState(0);
+  
+  // Refs for tour highlighting
+  const navigationRef = React.useRef<View>(null);
+  const firstTileRef = React.useRef<View>(null);
+  const backgroundTileRef = React.useRef<View>(null);
+  const imagePickerRef = React.useRef<any>(null);
+  const generateButtonRef = React.useRef<any>(null);
+  
+  // Tour steps configuration
+  const tourSteps = [
+    {
+      id: 'restoration',
+      title: 'AI-Powered Photo Restoration',
+      description: 'Tap any photo tile to start restoring old, damaged photos with AI',
+      duration: 4000,
+    },
+    {
+      id: 'backgrounds',
+      title: 'Background Transformations',
+      description: 'Change backgrounds, remove objects, or add creative effects',
+      duration: 4000,
+    },
+    {
+      id: 'generate',
+      title: 'Generate Your Result',
+      description: 'Tap the checkmark button to create your enhanced photo',
+      duration: 5000,
+    },
+  ];
+
+  const [highlightArea, setHighlightArea] = React.useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    borderRadius?: number;
+  } | null>(null);
+
+  // Initialize tour when showTour parameter is present
+  React.useEffect(() => {
+    if (showTour === 'true') {
+      setTimeout(() => {
+        setShowTourOverlay(true);
+        measureElementForStep(0);
+      }, 500); // Small delay to ensure elements are rendered
+    }
+  }, [showTour]);
+
+  // Measure element positions for highlighting
+  const measureElementForStep = (stepIndex: number) => {
+    const step = tourSteps[stepIndex];
+    if (!step) return;
+
+    let targetRef: React.RefObject<any>;
+    
+    switch (step.id) {
+      case 'restoration':
+        targetRef = firstTileRef;
+        break;
+      case 'backgrounds':
+        targetRef = backgroundTileRef;
+        break;
+      case 'generate':
+        // For generate step, we'll handle QuickEditSheet differently
+        return;
+      default:
+        return;
+    }
+
+    if (targetRef.current) {
+      targetRef.current.measure((x: number, y: number, width: number, height: number, pageX: number, pageY: number) => {
+        setHighlightArea({
+          x: pageX,
+          y: pageY,
+          width,
+          height,
+          borderRadius: 12,
+        });
+      });
+    }
+  };
+
+  // Tour handlers
+  const handleTourNext = () => {
+    const nextStep = tourStep + 1;
+    if (nextStep < tourSteps.length) {
+      setTourStep(nextStep);
+      const nextStepObj = tourSteps[nextStep];
+      
+      // For the generate step, the overlay will show the sheet content
+      if (nextStepObj.id === 'generate') {
+        console.log('🎯 Step 3 - showing tour sheet inside overlay');
+        // Clear highlight area since we'll show the sheet instead
+        setHighlightArea(null);
+      } else {
+        measureElementForStep(nextStep);
+      }
+    } else {
+      handleTourComplete();
+    }
+  };
+
+  const handleTourSkip = () => {
+    console.log('🎯 Tour skipped - cleaning up');
+    setShowTourOverlay(false);
+    setTourStep(0);
+    setHighlightArea(null);
+  };
+
+  const handleTourComplete = () => {
+    console.log('🎯 Tour completed - cleaning up');
+    setShowTourOverlay(false);
+    setTourStep(0);
+    setHighlightArea(null);
+    // Clear tour parameter without navigation refresh
+    router.setParams({ showTour: undefined });
+  };
 
   // Refs for each section to enable smooth scrolling
   const scrollViewRef = React.useRef<FlashList<SectionData>>(null);
@@ -83,7 +209,6 @@ export default function HomeGalleryLikeScreen() {
     } catch {}
   }, []); // No dependencies - this function is stable
   const { isPro, forceRefresh, refreshCustomerInfo } = useRevenueCat();
-  const router = useRouter();
   
 
   // Subtle drop-back effect for screen when launching picker (Remini-like feedback)
@@ -113,6 +238,7 @@ export default function HomeGalleryLikeScreen() {
               <Text style={exploreStyles.byCleverText}>{t('explore.byClever')}</Text>
             </View>
             <TouchableOpacity
+              ref={imagePickerRef}
               onPress={async () => {
                 analyticsService.track('explore_fix_photo_picker_clicked', {
                   is_pro: isPro ? 'true' : 'false',
@@ -214,11 +340,11 @@ export default function HomeGalleryLikeScreen() {
       case 'fixMyPhoto':
         return (
           <View style={{ paddingBottom: 10 }}>
-            <DeviceTwoRowCarousel functionType="restore_repair" />
+            <DeviceTwoRowCarousel functionType="restore_repair" firstTileRef={firstTileRef} />
           </View>
         );
       case 'backgrounds':
-        return <AnimatedBackgrounds />;
+        return <AnimatedBackgrounds firstTileRef={backgroundTileRef} />;
       case 'faceBody':
         return <AnimatedFaceBody />;
       case 'memorial':
@@ -597,6 +723,7 @@ export default function HomeGalleryLikeScreen() {
 
       {/* Navigation Pills */}
       <NavigationPills
+        ref={navigationRef}
         activeSectionId={activeSectionId}
         sections={[
           { id: 'magic', titleKey: 'explore.sections.magic', onPress: () => {
@@ -655,7 +782,7 @@ export default function HomeGalleryLikeScreen() {
       {/* Bottom quick action rail */}
       <QuickActionRail />
     </SafeAreaView>
-    <QuickEditSheet />
+    <QuickEditSheet generateButtonRef={generateButtonRef} />
     {Platform.OS === 'ios' && (
       <Animated.View
         pointerEvents="none"
@@ -665,6 +792,23 @@ export default function HomeGalleryLikeScreen() {
         ]}
       />
     )}
+
+    {/* Tour Overlay - only render when needed */}
+    {showTourOverlay && (
+      <ExploreTourOverlay
+        visible={showTourOverlay}
+        currentStep={tourStep}
+        steps={tourSteps}
+        highlightArea={highlightArea}
+        showSheet={tourSteps[tourStep]?.id === 'generate'}
+        generateButtonRef={generateButtonRef}
+        insets={insets}
+        onNext={handleTourNext}
+        onSkip={handleTourSkip}
+        onComplete={handleTourComplete}
+      />
+    )}
+
     </Animated.View>
   );
 }

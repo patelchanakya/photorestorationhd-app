@@ -10,6 +10,7 @@ import { ActivityIndicator, Alert, AppState, Dimensions, FlatList, Linking, Plat
 
 interface DeviceTwoRowCarouselProps {
   functionType: FunctionType;
+  firstTileRef?: React.RefObject<TouchableOpacity | null>;
 }
 
 type AssetColumn = { id: string; top?: MediaLibrary.Asset; bottom?: MediaLibrary.Asset };
@@ -24,12 +25,14 @@ const CarouselColumn = React.memo<{
   item: AssetColumn;
   index: number;
   functionType: FunctionType;
-}>(({ item, index, functionType }) => {
+  firstTileRef?: React.RefObject<TouchableOpacity | null>;
+}>(({ item, index, functionType, firstTileRef }) => {
   return (
     <View style={{ width: COLUMN_WIDTH }}>
       {[item.top, item.bottom].map((asset, idx) => (
         <TouchableOpacity
           key={`${asset?.id ?? 'empty'}-${index}-${idx}`}
+          ref={index === 0 && idx === 0 ? firstTileRef : undefined}
           activeOpacity={0.85}
           onPress={async () => {
             if (!asset) return;
@@ -81,7 +84,8 @@ const CarouselColumn = React.memo<{
   // Custom comparison for better memoization
   return prevProps.item.id === nextProps.item.id && 
          prevProps.index === nextProps.index &&
-         prevProps.functionType === nextProps.functionType;
+         prevProps.functionType === nextProps.functionType &&
+         prevProps.firstTileRef === nextProps.firstTileRef;
 });
 
 // Static components for better performance (avoid recreation on each render)
@@ -93,7 +97,7 @@ const LoadingFooter = React.memo(() => (
 ));
 const EmptyFooter = React.memo(() => <View style={{ width: 8 }} />);
 
-export function DeviceTwoRowCarousel({ functionType }: DeviceTwoRowCarouselProps) {
+export function DeviceTwoRowCarousel({ functionType, firstTileRef }: DeviceTwoRowCarouselProps) {
   const [columns, setColumns] = useState<AssetColumn[]>([]);
   const [loadingInitial, setLoadingInitial] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -192,8 +196,9 @@ export function DeviceTwoRowCarousel({ functionType }: DeviceTwoRowCarouselProps
       item={item} 
       index={index} 
       functionType={functionType}
+      firstTileRef={firstTileRef}
     />
-  ), [functionType]);
+  ), [functionType, firstTileRef]);
   
   const getItemLayout = useCallback((data: any, index: number) => ({ 
     length: COLUMN_WIDTH + 8, 

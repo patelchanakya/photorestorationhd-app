@@ -35,7 +35,11 @@ const determineTileCategory = (functionType: string, styleKey?: string | null): 
 
 const { height } = Dimensions.get('window');
 
-export function QuickEditSheet() {
+interface QuickEditSheetProps {
+  generateButtonRef?: React.RefObject<any>;
+}
+
+export function QuickEditSheet({ generateButtonRef }: QuickEditSheetProps = {}) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t, i18n } = useTranslation();
@@ -58,7 +62,31 @@ export function QuickEditSheet() {
     customPrompt,
     errorMessage,
     setError,
+    tourMode,
   } = useQuickEditStore();
+
+  // Tour overlay state
+  const [showTourOverlay, setShowTourOverlay] = React.useState(false);
+
+  // Debug logging for tour mode
+  React.useEffect(() => {
+    if (tourMode) {
+      console.log('🎯 QuickEditSheet: Tour mode activated', { visible, stage, functionType });
+      // Show tour overlay after sheet is visible
+      setTimeout(() => {
+        console.log('🎯 Setting showTourOverlay to true');
+        setShowTourOverlay(true);
+      }, 300);
+    } else {
+      console.log('🎯 Resetting showTourOverlay to false');
+      setShowTourOverlay(false);
+    }
+  }, [tourMode, visible, stage, functionType]);
+
+  // Additional debug logging for showTourOverlay state
+  React.useEffect(() => {
+    console.log('🎯 showTourOverlay changed:', showTourOverlay, 'tourMode:', tourMode);
+  }, [showTourOverlay, tourMode]);
 
   const photoRestoration = usePhotoRestoration();
   const savePhotoMutation = useSavePhoto();
@@ -289,6 +317,35 @@ export function QuickEditSheet() {
 
   const handleUpload = async () => {
     if (!selectedImageUri || !functionType) return;
+    
+    // Tour mode - fake the process
+    if (tourMode) {
+      setIsUploading(true);
+      setStage('loading');
+      
+      // Fake progress
+      let progress = 0;
+      const progressInterval = setInterval(() => {
+        progress += 10;
+        setProgress(progress);
+        if (progress >= 100) {
+          clearInterval(progressInterval);
+          // Fake completion
+          setTimeout(() => {
+            setResult('tour-demo-id', 'tour-demo-uri');
+            setStage('done');
+            setIsUploading(false);
+            // Close after showing result briefly
+            setTimeout(() => {
+              console.log('🎯 QuickEditSheet: Auto-closing after tour completion');
+              close();
+              // Note: The tour should complete itself when the sheet closes in tour mode
+            }, 2000);
+          }, 500);
+        }
+      }, 200);
+      return;
+    }
     
     // CRITICAL: Check for active prediction before any processing
     const activePredictionId = await AsyncStorage.getItem('activePredictionId');
@@ -620,9 +677,21 @@ export function QuickEditSheet() {
                             }}
                           />
                         </TouchableOpacity>
+                      ) : tourMode && selectedImageUri === 'demo' ? (
+                        // Tour mode - show simple placeholder
+                        <View style={{ 
+                          width: '100%', 
+                          height: '100%', 
+                          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          borderRadius: 12
+                        }}>
+                          <Text style={{ color: '#9CA3AF', fontSize: 14 }}>Demo Photo</Text>
+                        </View>
                       ) : (
                         <ExpoImage 
-                          source={{ uri: selectedImageUri as string }} 
+                          source={{ uri: selectedImageUri as string }}
                           style={{ width: '100%', height: '100%' }} 
                           contentFit="contain" 
                           cachePolicy="memory"
@@ -725,7 +794,11 @@ export function QuickEditSheet() {
                     <TouchableOpacity onPress={handleCrop} style={{ flex: 1, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' }}>
                       <Text style={{ color: '#fff', fontWeight: '900', fontSize: 16 }}>Crop</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={handleUpload} disabled={isUploading} style={{ flex: 1, height: 56, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', opacity: isUploading ? 0.7 : 1 }}>
+                    <TouchableOpacity 
+                      ref={generateButtonRef}
+                      onPress={handleUpload} 
+                      disabled={isUploading} 
+                      style={{ flex: 1, height: 56, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', opacity: isUploading ? 0.7 : 1 }}>
                       <LinearGradient colors={['#F59E0B', '#F59E0B']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
                       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                         {isUploading ? (
@@ -878,6 +951,82 @@ export function QuickEditSheet() {
         visible={showSavingModal} 
         onComplete={() => setShowSavingModal(false)}
       />
+      
+      {/* Tour overlay for step 3 - render inside modal so it appears above sheet */}
+      {tourMode && showTourOverlay && (
+        <View style={{ 
+          position: 'absolute', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.4)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <View style={{
+            position: 'absolute',
+            bottom: 100,
+            left: 20,
+            right: 20,
+            backgroundColor: 'rgba(11, 11, 15, 0.95)',
+            borderRadius: 16,
+            padding: 20,
+            borderWidth: 1,
+            borderColor: 'rgba(255, 255, 255, 0.1)'
+          }}>
+            <Text style={{ 
+              color: '#FFFFFF', 
+              fontSize: 18, 
+              fontFamily: 'Lexend-SemiBold',
+              marginBottom: 8 
+            }}>
+              Generate Your Result
+            </Text>
+            <Text style={{ 
+              color: 'rgba(255, 255, 255, 0.8)', 
+              fontSize: 14,
+              lineHeight: 20,
+              marginBottom: 16
+            }}>
+              Tap the checkmark button to create your enhanced photo
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  paddingVertical: 12,
+                  paddingHorizontal: 16,
+                  borderRadius: 8,
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                }}
+                onPress={() => {
+                  console.log('🎯 Tour step 3 skipped');
+                  close();
+                }}
+              >
+                <Text style={{ color: '#FFFFFF', textAlign: 'center', fontSize: 14 }}>Skip</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  paddingVertical: 12,
+                  paddingHorizontal: 16,
+                  borderRadius: 8,
+                  backgroundColor: '#f97316'
+                }}
+                onPress={() => {
+                  console.log('🎯 Tour step 3 completed - hiding overlay');
+                  setShowTourOverlay(false);
+                }}
+              >
+                <Text style={{ color: '#000000', textAlign: 'center', fontSize: 14, fontWeight: '600' }}>Got it!</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </Modal>
   );
 }

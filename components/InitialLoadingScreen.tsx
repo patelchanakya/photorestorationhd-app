@@ -161,7 +161,10 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
           return;
         }
         
-        if (hasSeenOnboarding) {
+        // TEMP: Always show OnboardingV4 for development/testing
+        if (__DEV__) {
+          console.log('🎯 DEVELOPMENT MODE - Always showing OnboardingV4');
+        } else if (hasSeenOnboarding) {
           if (__DEV__) {
             console.log('🎯 Free user completed onboarding - going to app');
           }
@@ -171,11 +174,11 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
           return;
         }
         
-        // New user - go directly to explore
+        // Go to OnboardingV4 (always in dev, new users in prod)
         if (__DEV__) {
-          console.log('🎯 New user - going directly to explore');
+          console.log('🎯 Going to OnboardingV4');
         }
-        setInitialRoute('explore');
+        setInitialRoute('onboarding-v4');
         markInitialized();
         onLoadingComplete();
 

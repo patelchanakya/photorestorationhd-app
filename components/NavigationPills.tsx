@@ -12,7 +12,7 @@ interface NavigationPillsProps {
   activeSectionId?: string;
 }
 
-export function NavigationPills({ sections, activeSectionId }: NavigationPillsProps) {
+export const NavigationPills = React.forwardRef<View, NavigationPillsProps>(({ sections, activeSectionId }, ref) => {
   const { width, height } = useWindowDimensions();
   const shortestSide = Math.min(width, height);
   const longestSide = Math.max(width, height);
@@ -30,12 +30,14 @@ export function NavigationPills({ sections, activeSectionId }: NavigationPillsPr
   const gap = isLargeTablet ? 16 : (isTabletLike ? 12 : (isSmallPhone ? 6 : 8));
 
   return (
-    <View style={{ 
-      paddingVertical: isLargeTablet ? 20 : (isTabletLike ? 16 : 12), 
-      backgroundColor: '#000000',
-      borderBottomWidth: 1,
-      borderBottomColor: 'rgba(255,255,255,0.05)'
-    }}>
+    <View 
+      ref={ref}
+      style={{ 
+        paddingVertical: isLargeTablet ? 20 : (isTabletLike ? 16 : 12), 
+        backgroundColor: '#000000',
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(255,255,255,0.05)'
+      }}>
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false}
@@ -98,4 +100,4 @@ export function NavigationPills({ sections, activeSectionId }: NavigationPillsPr
       </ScrollView>
     </View>
   );
-}
+});
