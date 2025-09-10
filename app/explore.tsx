@@ -398,7 +398,7 @@ export default function HomeGalleryLikeScreen() {
     </View>
   ), [renderSectionHeader, renderSectionContent]);
 
-  const keyExtractor = React.useCallback((item: SectionData) => `${item.id}-${currentLanguage}`, [currentLanguage]);
+  const keyExtractor = React.useCallback((item: SectionData) => item.id, []);
 
   // Track screen view on mount
   React.useEffect(() => {
