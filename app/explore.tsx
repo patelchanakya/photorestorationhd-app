@@ -389,7 +389,7 @@ export default function HomeGalleryLikeScreen() {
       default:
         return null;
     }
-  }, [isPro, openQuick, router]);
+  }, [isPro, openQuick, router, t]);
 
   const renderItem = React.useCallback(({ item }: { item: SectionData }) => (
     <View style={exploreStyles.sectionContainer}>
@@ -398,7 +398,7 @@ export default function HomeGalleryLikeScreen() {
     </View>
   ), [renderSectionHeader, renderSectionContent]);
 
-  const keyExtractor = React.useCallback((item: SectionData) => item.id, []);
+  const keyExtractor = React.useCallback((item: SectionData) => `${item.id}-${i18n.language}`, [i18n.language]);
 
   // Track screen view on mount
   React.useEffect(() => {
@@ -638,6 +638,7 @@ export default function HomeGalleryLikeScreen() {
       />
 
       <FlashList
+        key={i18n.language} // Force re-render when language changes
         ref={scrollViewRef}
         data={sections}
         renderItem={renderItem}
