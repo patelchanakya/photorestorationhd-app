@@ -19,6 +19,7 @@ import { useQuickEditStore } from '@/store/quickEditStore';
 import Constants from 'expo-constants';
 import * as StoreReview from 'expo-store-review';
 import * as ImagePicker from 'expo-image-picker';
+import * as MediaLibrary from 'expo-media-library';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import React from 'react';
 import { Alert, Platform, Text, TouchableOpacity, View, useWindowDimensions, StyleSheet } from 'react-native';
@@ -96,6 +97,23 @@ export default function HomeGalleryLikeScreen() {
     height: number;
     borderRadius?: number;
   } | null>(null);
+
+  // Request permissions when reaching explore for auto-restore features
+  React.useEffect(() => {
+    const requestPermissions = async () => {
+      try {
+        const { status } = await MediaLibrary.getPermissionsAsync();
+        if (status !== 'granted') {
+          await MediaLibrary.requestPermissionsAsync();
+        }
+      } catch (error) {
+        console.error('Failed to request permissions:', error);
+      }
+    };
+
+    // Only request on first visit to explore
+    requestPermissions();
+  }, []);
 
   // Initialize tour when showTour parameter is present
   React.useEffect(() => {

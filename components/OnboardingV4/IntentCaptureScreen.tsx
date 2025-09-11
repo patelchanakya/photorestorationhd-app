@@ -215,7 +215,7 @@ function IntentTile({
             
             <View style={styles.tileActionButton}>
               <Text style={styles.tileActionText} numberOfLines={1}>
-                {option.id === 'just-explore' ? 'Continue' : 'Choose Photo'}
+                {option.id === 'just-explore' ? 'Continue' : 'Try This'}
               </Text>
               <IconSymbol name="chevron.right" size={12} color="#FFFFFF" />
             </View>
@@ -330,6 +330,7 @@ export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenPr
         {/* Header */}
         <Animated.View style={[styles.header, headerStyle]}>
           <Text style={styles.title}>What brought you here?</Text>
+          <Text style={styles.subtitle}>Join thousands becoming the family photo expert</Text>
         </Animated.View>
 
         {/* Intent Options Grid */}
@@ -375,6 +376,13 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     textAlign: 'center',
     letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#9CA3AF',
+    textAlign: 'center',
+    fontFamily: 'Lexend-Regular',
   },
   scrollContainer: {
     flex: 1,
@@ -427,12 +435,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.12)',
     borderRadius: 16,
     paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.18)',
+    minHeight: 36,
   },
   tileActionText: {
     color: '#FFFFFF',

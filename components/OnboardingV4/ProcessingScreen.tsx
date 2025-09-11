@@ -50,9 +50,10 @@ export function ProcessingScreen({ photo, intent, onComplete, onError }: Process
   const [startTime] = React.useState(Date.now());
   
   const scanLineOpacity = useSharedValue(0);
-  const scanLineTranslateY = useSharedValue(-50);
+  const scanLineTranslateY = useSharedValue(-10);
   const socialProofOpacity = useSharedValue(0);
   const counterValue = useSharedValue(0);
+  const imageOpacity = useSharedValue(1);
   
   // Function to map intent to restoration function type
   const getRestorationFunction = (intentId: string | null): 'restoration' | 'colorize' => {
@@ -133,15 +134,25 @@ export function ProcessingScreen({ photo, intent, onComplete, onError }: Process
   }, [photo, intent, startTime, onComplete, onError, getRestorationFunction, photoRestoration]);
 
   React.useEffect(() => {
-    // Start scan line animation
+    // Start scan line animation - continuous scanning for 5 seconds
     scanLineOpacity.value = withTiming(1, { duration: 300 });
     scanLineTranslateY.value = withRepeat(
       withSequence(
-        withTiming(50, { duration: 2000 }),
-        withTiming(-50, { duration: 0 })
+        withTiming(266, { duration: 1500 }), // Scan down full image height
+        withTiming(-10, { duration: 1500 }) // Same speed reset to top for uniform motion
+      ),
+      -1, // Repeat indefinitely until processing completes
+      false
+    );
+
+    // Add subtle pulsing effect to image during processing
+    imageOpacity.value = withRepeat(
+      withSequence(
+        withTiming(0.8, { duration: 1000 }),
+        withTiming(1, { duration: 1000 })
       ),
       -1,
-      false
+      true
     );
 
     // Show social proof after 1 second
@@ -156,8 +167,8 @@ export function ProcessingScreen({ photo, intent, onComplete, onError }: Process
     }, 1500);
 
     // Change processing steps
-    setTimeout(() => runOnJS(setProcessingStep)('enhancing'), 2000);
-    setTimeout(() => runOnJS(setProcessingStep)('finalizing'), 4000);
+    setTimeout(() => runOnJS(setProcessingStep)('enhancing'), 1500);
+    setTimeout(() => runOnJS(setProcessingStep)('finalizing'), 3500);
 
     // Start restoration process
     performRestoration();
@@ -176,16 +187,20 @@ export function ProcessingScreen({ photo, intent, onComplete, onError }: Process
     opacity: socialProofOpacity.value,
   }));
 
+  const imageStyle = useAnimatedStyle(() => ({
+    opacity: imageOpacity.value,
+  }));
+
   const getProcessingText = () => {
     switch (processingStep) {
       case 'analyzing':
-        return 'Analyzing damage...';
+        return 'You\'re analyzing the damage...';
       case 'enhancing':
-        return 'Enhancing details...';
+        return 'You\'re enhancing the details...';
       case 'finalizing':
-        return 'Finalizing restoration...';
+        return 'You\'re bringing it back to life...';
       default:
-        return 'Processing...';
+        return 'You\'re working on your photo...';
     }
   };
 
@@ -199,11 +214,15 @@ export function ProcessingScreen({ photo, intent, onComplete, onError }: Process
         <View style={styles.photoContainer}>
           {photo ? (
             <View style={styles.imageWrapper}>
-              <Image source={{ uri: photo.uri }} style={styles.image} />
+              <Animated.Image source={{ uri: photo.uri }} style={[styles.image, imageStyle]} />
+              
+              {/* Processing overlay */}
+              <View style={styles.processingOverlay} />
               
               {/* Scan line overlay */}
               <View style={styles.scanOverlay}>
                 <Animated.View style={[styles.scanLine, scanLineStyle]} />
+                <Animated.View style={[styles.scanGlow, scanLineStyle]} />
               </View>
             </View>
           ) : (
@@ -285,6 +304,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
   },
+  processingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    borderRadius: 16,
+  },
   scanOverlay: {
     position: 'absolute',
     top: 0,
@@ -293,13 +321,21 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   scanLine: {
-    height: 2,
+    height: 3,
     backgroundColor: '#f97316',
     width: '100%',
     shadowColor: '#f97316',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,
     shadowRadius: 4,
+  },
+  scanGlow: {
+    height: 8,
+    backgroundColor: 'rgba(249, 115, 22, 0.3)',
+    width: '100%',
+    position: 'absolute',
+    top: -2.5,
+    borderRadius: 4,
   },
   statusContainer: {
     marginBottom: 40,

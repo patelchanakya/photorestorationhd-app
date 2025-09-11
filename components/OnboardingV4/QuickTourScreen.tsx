@@ -41,20 +41,20 @@ const TOUR_STYLE_TILES = [
 const TOUR_STEPS = [
   {
     id: 'navigation',
-    title: 'Jump between sections instantly',
-    description: 'Navigation pills pulse',
+    title: 'Navigate between your tools',
+    description: 'Switch between restoration types',
     duration: 2000,
   },
   {
     id: 'selection',
-    title: 'Tap any style to start',
-    description: 'One tile bounces',
+    title: 'Choose your restoration style',
+    description: 'Pick the tool for your photo',
     duration: 3000,
   },
   {
     id: 'preview',
-    title: 'Your photo appears here → Tap to create',
-    description: 'Quick sheet demo',
+    title: 'Your photo appears here → Start creating',
+    description: 'Tap to begin your restoration',
     duration: 5000,
   },
 ];
@@ -243,8 +243,8 @@ export function QuickTourScreen({ onComplete, onSkip }: QuickTourScreenProps) {
         {/* Tour Content */}
         <View style={styles.tourContent}>
           <Animated.View style={titleStyle}>
-            <Text style={styles.mainTitle}>Quick Tour</Text>
-            <Text style={styles.subtitle}>Learn the basics in 10 seconds</Text>
+            <Text style={styles.mainTitle}>Your Restoration Toolkit</Text>
+            <Text style={styles.subtitle}>Here's how to use your new capabilities</Text>
           </Animated.View>
 
           {/* Current Step */}
@@ -310,8 +310,8 @@ export function QuickTourScreen({ onComplete, onSkip }: QuickTourScreenProps) {
                   </View>
                   <Animated.View style={[styles.quickSheet, sheetStyle]}>
                     <View style={styles.sheetHandle} />
-                    <Text style={styles.sheetTitle}>Quick Edit</Text>
-                    <Text style={styles.sheetSubtitle}>Tap to create</Text>
+                    <Text style={styles.sheetTitle}>Your Quick Edit</Text>
+                    <Text style={styles.sheetSubtitle}>Tap to start creating</Text>
                   </Animated.View>
                 </View>
               )}

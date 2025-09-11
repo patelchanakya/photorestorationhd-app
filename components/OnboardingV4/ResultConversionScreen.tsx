@@ -40,21 +40,20 @@ export function ResultConversionScreen({
   onMaybeLater
 }: ResultConversionScreenProps) {
   const insets = useSafeAreaInsets();
-  const [isSaving, setIsSaving] = React.useState(false);
-  const [savedToGallery, setSavedToGallery] = React.useState(false);
+  const [isSharing, setIsSharing] = React.useState(false);
+  const [sharedToGallery, setSharedToGallery] = React.useState(false);
   
   const checkmarkScale = useSharedValue(0);
   const titleOpacity = useSharedValue(0);
   const imageOpacity = useSharedValue(0);
   const saveMessageOpacity = useSharedValue(0);
-  const ctaOpacity = useSharedValue(0);
   const buttonsOpacity = useSharedValue(0);
 
-  const handleSaveToGallery = async () => {
-    if (isSaving || savedToGallery) return;
+  const handleShareToGallery = async () => {
+    if (isSharing || sharedToGallery) return;
     
     try {
-      setIsSaving(true);
+      setIsSharing(true);
       
       // Request media library permissions
       const { status } = await MediaLibrary.requestPermissionsAsync();
@@ -70,16 +69,16 @@ export function ResultConversionScreen({
         return;
       }
       
-      // Save to media library
+      // Save to media library (still saves, but branded as sharing)
       await MediaLibrary.saveToLibraryAsync(imageUri);
-      setSavedToGallery(true);
-      Alert.alert('Success!', 'Photo saved to your gallery.');
+      setSharedToGallery(true);
+      Alert.alert('Success!', 'Your work has been shared to your gallery.');
       
     } catch (error) {
-      console.error('Failed to save photo:', error);
-      Alert.alert('Error', 'Failed to save photo to gallery.');
+      console.error('Failed to share photo:', error);
+      Alert.alert('Error', 'Failed to share photo to gallery.');
     } finally {
-      setIsSaving(false);
+      setIsSharing(false);
     }
   };
 
@@ -103,12 +102,8 @@ export function ResultConversionScreen({
     }, 800);
 
     setTimeout(() => {
-      ctaOpacity.value = withTiming(1, { duration: 400 });
-    }, 1000);
-
-    setTimeout(() => {
       buttonsOpacity.value = withTiming(1, { duration: 400 });
-    }, 1200);
+    }, 1000);
   }, []);
 
   const checkmarkStyle = useAnimatedStyle(() => ({
@@ -125,10 +120,6 @@ export function ResultConversionScreen({
 
   const saveMessageStyle = useAnimatedStyle(() => ({
     opacity: saveMessageOpacity.value,
-  }));
-
-  const ctaStyle = useAnimatedStyle(() => ({
-    opacity: ctaOpacity.value,
   }));
 
   const buttonsStyle = useAnimatedStyle(() => ({
@@ -148,7 +139,7 @@ export function ResultConversionScreen({
           </Animated.View>
           
           <Animated.View style={titleStyle}>
-            <Text style={styles.title}>Beautifully Restored!</Text>
+            <Text style={styles.title}>Look What YOU Just Did!</Text>
           </Animated.View>
         </View>
 
@@ -183,31 +174,20 @@ export function ResultConversionScreen({
           )}
         </Animated.View>
 
-        {/* Save to gallery button */}
-        <Animated.View style={[styles.saveMessage, saveMessageStyle]}>
+        {/* Share to gallery button */}
+        <Animated.View style={[styles.shareMessage, saveMessageStyle]}>
           <TouchableOpacity 
             style={[
-              styles.saveButton, 
-              savedToGallery && styles.saveButtonDisabled
+              styles.shareButton, 
+              sharedToGallery && styles.shareButtonDisabled
             ]} 
-            onPress={handleSaveToGallery}
-            disabled={isSaving || savedToGallery}
+            onPress={handleShareToGallery}
+            disabled={isSharing || sharedToGallery}
           >
-            <Text style={styles.saveButtonText}>
-              {isSaving ? 'Saving...' : savedToGallery ? '✓ Saved to gallery' : 'Save to gallery'}
+            <Text style={styles.shareButtonText}>
+              {isSharing ? 'Sharing Your Work...' : sharedToGallery ? '✓ Your Work is Shared' : 'Share Your Work'}
             </Text>
           </TouchableOpacity>
-        </Animated.View>
-
-        {/* Trial CTA */}
-        <Animated.View style={[styles.ctaContainer, ctaStyle]}>
-          <View style={styles.trialBadge}>
-            <Text style={styles.trialBadgeText}>⚡ START FREE TRIAL ⚡</Text>
-          </View>
-          <Text style={styles.trialDescription}>
-            Unlimited for 3 days{'\n'}
-            Then $9.99/week
-          </Text>
         </Animated.View>
 
         {/* Action Buttons */}
@@ -261,7 +241,9 @@ const styles = StyleSheet.create({
   },
   comparisonContainer: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 32,
+    flex: 1,
+    justifyContent: 'center',
   },
   imageComparison: {
     flexDirection: 'row',
@@ -316,11 +298,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  saveMessage: {
+  shareMessage: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 60,
   },
-  saveButton: {
+  shareButton: {
     backgroundColor: 'rgba(34, 197, 94, 0.15)',
     borderWidth: 1,
     borderColor: '#22c55e',
@@ -328,42 +310,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
   },
-  saveButtonDisabled: {
+  shareButtonDisabled: {
     backgroundColor: 'rgba(34, 197, 94, 0.05)',
     borderColor: 'rgba(34, 197, 94, 0.3)',
   },
-  saveButtonText: {
+  shareButtonText: {
     fontSize: 14,
     color: '#22c55e',
     fontWeight: '600',
-  },
-  saveText: {
-    fontSize: 14,
-    color: '#22c55e',
-    fontWeight: '500',
-  },
-  ctaContainer: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  trialBadge: {
-    backgroundColor: '#f97316',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginBottom: 12,
-  },
-  trialBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
-  },
-  trialDescription: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    textAlign: 'center',
-    lineHeight: 22,
   },
   bottomContent: {
     flex: 1,

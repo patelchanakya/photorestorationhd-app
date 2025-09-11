@@ -170,12 +170,13 @@ export function ShowcaseOutfitsScreen({ onContinue, onSkip }: ShowcaseOutfitsScr
         {/* Center content */}
         <View style={styles.centerContent}>
           <Animated.View style={titleStyle}>
-            <Text style={styles.title}>Transform Outfits & Style</Text>
+            <Text style={styles.sectionHeader}>With Clever You Can:</Text>
+            <Text style={styles.title}>Enhance Special Moments</Text>
           </Animated.View>
           
           <Animated.View style={subtitleStyle}>
             <Text style={styles.subtitle}>
-              Change clothing, reduce wrinkles, and enhance facial features with AI-powered editing
+              Weddings, graduations, celebrations
             </Text>
           </Animated.View>
         </View>
@@ -183,7 +184,7 @@ export function ShowcaseOutfitsScreen({ onContinue, onSkip }: ShowcaseOutfitsScr
         {/* Bottom button */}
         <Animated.View style={[styles.bottomButton, buttonsStyle]}>
           <OnboardingButton
-            title="Next"
+            title="See More"
             onPress={onContinue}
             variant="primary"
             size="large"
@@ -230,6 +231,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'transparent',
+  },
+  sectionHeader: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#9CA3AF',
+    textAlign: 'center',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   title: {
     fontSize: 32,

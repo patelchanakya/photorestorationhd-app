@@ -2,6 +2,7 @@ import React from 'react';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
+import * as MediaLibrary from 'expo-media-library';
 
 import { OnboardingV4Provider, useOnboardingV4Context } from '@/contexts/OnboardingV4Context';
 import { useOnboardingV4Analytics } from '@/hooks/useOnboardingV4Analytics';
@@ -12,12 +13,14 @@ import { restorationService } from '@/services/supabase';
 
 // V4 Screen Components
 import { WelcomeScreenV4 } from '@/components/OnboardingV4/WelcomeScreen';
-import { PermissionsScreenV4 } from '@/components/OnboardingV4/PermissionsScreen';
 import { IntentCaptureScreen } from '@/components/OnboardingV4/IntentCaptureScreen';
 import { CapabilityDemoScreen } from '@/components/OnboardingV4/CapabilityDemoScreen';
 import { ShowcaseBackgroundsScreen } from '@/components/OnboardingV4/ShowcaseBackgroundsScreen';
 import { ShowcaseOutfitsScreen } from '@/components/OnboardingV4/ShowcaseOutfitsScreen';
 import { ShowcaseMemorialScreen } from '@/components/OnboardingV4/ShowcaseMemorialScreen';
+import { SavePermissionScreen } from '@/components/OnboardingV4/SavePermissionScreen';
+import { ProcessingScreen } from '@/components/OnboardingV4/ProcessingScreen';
+import { ResultConversionScreen } from '@/components/OnboardingV4/ResultConversionScreen';
 
 // Intent options for user selection - photo restoration focused with "Just Explore" option
 const INTENT_OPTIONS = [
@@ -28,7 +31,7 @@ const INTENT_OPTIONS = [
     demoImages: [], 
     video: require('../assets/videos/onboarding/family-photos.mp4'),
     image: require('../assets/images/teared.png'),
-    functionType: 'restore_repair' 
+    functionType: 'restore_repair' as const 
   },
   { 
     id: 'repair-torn', 
@@ -37,7 +40,7 @@ const INTENT_OPTIONS = [
     demoImages: [], 
     video: require('../assets/videos/onboarding/torn-photos.mp4'),
     image: require('../assets/images/teared.png'),
-    functionType: 'repair',
+    functionType: 'repair' as const,
     customPrompt: 'Repair tears and rips in old photos'
   },
   { 
@@ -47,7 +50,7 @@ const INTENT_OPTIONS = [
     demoImages: [], 
     video: require('../assets/videos/onboarding/color-images.mp4'),
     image: require('../assets/images/popular/colorize/pop-1.png'),
-    functionType: 'colorize' 
+    functionType: 'colorize' as const 
   },
   { 
     id: 'remove-water-damage', 
@@ -56,7 +59,7 @@ const INTENT_OPTIONS = [
     demoImages: [], 
     video: require('../assets/videos/repair.mp4'),
     image: require('../assets/images/popular/stain/pop-7.png'),
-    functionType: 'water_damage' 
+    functionType: 'water_damage' as const 
   },
   { 
     id: 'sharpen-faces', 
@@ -65,7 +68,7 @@ const INTENT_OPTIONS = [
     demoImages: [], 
     video: require('../assets/videos/onboarding/blur-photo.mp4'),
     image: require('../assets/images/popular/enhance/pop-3.png'),
-    functionType: 'unblur' 
+    functionType: 'unblur' as const 
   },
   { 
     id: 'remove-scratches', 
@@ -74,7 +77,7 @@ const INTENT_OPTIONS = [
     demoImages: [], 
     video: require('../assets/videos/onboarding/descratch-photo.mp4'),
     image: require('../assets/images/popular/descratch/pop-2.png'),
-    functionType: 'descratch' 
+    functionType: 'descratch' as const 
   },
   { 
     id: 'brighten-dark', 
@@ -83,7 +86,7 @@ const INTENT_OPTIONS = [
     demoImages: [], 
     video: require('../assets/videos/onboarding/brighten-photo.mp4'),
     image: require('../assets/images/popular/brighten/pop-4.png'),
-    functionType: 'enlighten' 
+    functionType: 'enlighten' as const 
   },
   { 
     id: 'just-explore', 
@@ -128,25 +131,9 @@ function OnboardingV4Flow() {
 
   const handleWelcomeContinue = async () => {
     await trackStepCompleted(1, 'welcome');
-    navigateToStep('permissions');
+    navigateToStep('intent');
   };
 
-  const handlePermissionsContinue = async () => {
-    try {
-      // Request photo library permission
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
-      await trackStepCompleted(2, 'permissions', { 
-        permission_granted: status === 'granted' 
-      });
-      
-      navigateToStep('intent');
-    } catch (error) {
-      console.error('Permission request failed:', error);
-      // Continue anyway - we'll handle permission denial later
-      navigateToStep('intent');
-    }
-  };
 
   const handleIntentSelection = async (intentId: string) => {
     await selectIntent(intentId);
@@ -161,41 +148,105 @@ function OnboardingV4Flow() {
     }
   };
 
-  const handleDemoContinue = async (photo?: { uri: string; width: number; height: number }) => {
+  const handleDemoContinue = async () => {
     await trackStepCompleted(4, 'demo');
     
-    if (photo) {
-      // User selected a photo and saved result
-      await selectPhoto(photo);
-      
-      await trackPhotoSelected({
-        source: 'gallery',
-        width: photo.width,
-        height: photo.height
+    // After demo video, start photo selection and processing
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: false,
+        quality: 0.8,
+        base64: false,
       });
-    }
 
-    // Navigate directly to showcase screens (skip processing/result)
+      if (!result.canceled && result.assets[0]) {
+        const photo = result.assets[0];
+        const photoData = {
+          uri: photo.uri,
+          width: photo.width || 0,
+          height: photo.height || 0
+        };
+        
+        await selectPhoto(photoData);
+        await trackPhotoSelected({
+          source: 'gallery',
+          width: photoData.width,
+          height: photoData.height
+        });
+        
+        // Start photo processing
+        navigateToStep('processing');
+      } else {
+        // User cancelled photo selection, go to showcases
+        navigateToStep('showcase1');
+      }
+    } catch (error) {
+      console.error('Photo selection failed:', error);
+      // On error, continue to showcases
+      navigateToStep('showcase1');
+    }
+  };
+
+  const handleSavePermissionAllow = async () => {
+    try {
+      // Request media library permissions
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (status === 'granted' && onboardingState.selectedPhoto) {
+        // Simulate photo restoration and save
+        const selectedIntent = INTENT_OPTIONS.find(opt => opt.id === onboardingState.selectedIntent);
+        
+        // For demo purposes, just save the original photo
+        // In real implementation, this would be the processed result
+        await MediaLibrary.saveToLibraryAsync(onboardingState.selectedPhoto.uri);
+        
+        await trackStepCompleted(5, 'savePermission', { 
+          permission_granted: true,
+          photo_saved: true 
+        });
+        
+        navigateToStep('showcase1');
+      } else {
+        await trackStepCompleted(5, 'savePermission', { 
+          permission_granted: false,
+          photo_saved: false 
+        });
+        navigateToStep('showcase1');
+      }
+    } catch (error) {
+      console.error('Save permission failed:', error);
+      navigateToStep('showcase1');
+    }
+  };
+
+  const handleSavePermissionSkip = async () => {
+    await trackStepCompleted(5, 'savePermission', { 
+      permission_granted: false,
+      photo_saved: false,
+      skipped: true 
+    });
     navigateToStep('showcase1');
   };
 
   const handleShowcase1Continue = async () => {
-    await trackStepCompleted(5, 'showcase1');
+    await trackStepCompleted(6, 'showcase1');
     navigateToStep('showcase2');
   };
 
   const handleShowcase2Continue = async () => {
-    await trackStepCompleted(6, 'showcase2');
+    await trackStepCompleted(7, 'showcase2');
     navigateToStep('showcase3');
   };
 
   const handleShowcase3Continue = async () => {
-    await trackStepCompleted(7, 'showcase3');
+    await trackStepCompleted(8, 'showcase3');
     await handleNavigateToExploreWithTour();
   };
 
   const handleShowcaseSkip = async () => {
-    await trackStepCompleted(currentStep === 'showcase1' ? 5 : currentStep === 'showcase2' ? 6 : 7, currentStep, { skipped: true });
+    const stepNum = currentStep === 'showcase1' ? 6 : currentStep === 'showcase2' ? 7 : 8;
+    await trackStepCompleted(stepNum, currentStep, { skipped: true });
     await handleNavigateToExploreWithTour();
   };
 
@@ -220,17 +271,17 @@ function OnboardingV4Flow() {
         await trackTrialStarted();
       }
       
-      // Navigate to explore regardless of purchase
-      await handleNavigateToExplore();
+      // Always continue to showcases after paywall (purchased or not)
+      navigateToStep('showcase1');
     } catch (error) {
       console.error('Trial flow error:', error);
-      await handleNavigateToExplore();
+      navigateToStep('showcase1');
     }
   };
 
   const handleMaybeLater = async () => {
     await trackStepCompleted(7, 'result', { conversion: 'declined' });
-    await handleNavigateToExploreWithTour();
+    navigateToStep('showcase1');
   };
 
   const handleNavigateToExploreWithTour = async () => {
@@ -277,20 +328,6 @@ function OnboardingV4Flow() {
       
       // Navigate to explore
       router.replace('/explore');
-      
-      // If user has photo and intent, open Quick Edit Sheet
-      if (onboardingState.selectedPhoto && onboardingState.selectedIntent) {
-        setTimeout(() => {
-          const selectedIntent = INTENT_OPTIONS.find(opt => opt.id === onboardingState.selectedIntent);
-          const mode = selectedIntent?.functionType || 'restoration';
-          useQuickEditStore.getState().openWithImage({
-            functionType: mode as any,
-            imageUri: onboardingState.selectedPhoto!.uri,
-            styleName: selectedIntent?.label || 'Photo Restoration',
-            customPrompt: selectedIntent?.customPrompt || null
-          });
-        }, 500);
-      }
     } catch (error) {
       console.error('Navigation to explore failed:', error);
       router.replace('/explore');
@@ -330,9 +367,6 @@ function OnboardingV4Flow() {
         case 'welcome':
           return <WelcomeScreenV4 onContinue={handleWelcomeContinue} />;
         
-        case 'permissions':
-          return <PermissionsScreenV4 onContinue={handlePermissionsContinue} />;
-        
         case 'intent':
           return (
             <IntentCaptureScreen 
@@ -347,6 +381,34 @@ function OnboardingV4Flow() {
             <CapabilityDemoScreen
               intent={selectedIntentOption}
               onContinue={handleDemoContinue}
+            />
+          );
+        
+        case 'processing':
+          return (
+            <ProcessingScreen
+              photo={onboardingState.selectedPhoto}
+              intent={onboardingState.selectedIntent}
+              onComplete={handleProcessingComplete}
+              onError={(error) => handleError(error, 'processing')}
+            />
+          );
+        
+        case 'result':
+          return (
+            <ResultConversionScreen
+              beforePhoto={onboardingState.selectedPhoto}
+              afterPhoto={onboardingState.processingResult}
+              onStartTrial={handleTrialSelection}
+              onMaybeLater={handleMaybeLater}
+            />
+          );
+        
+        case 'savePermission':
+          return (
+            <SavePermissionScreen
+              onAllowAndSave={handleSavePermissionAllow}
+              onNotNow={handleSavePermissionSkip}
             />
           );
         

@@ -170,12 +170,13 @@ export function ShowcaseMemorialScreen({ onContinue, onSkip }: ShowcaseMemorialS
         {/* Center content */}
         <View style={styles.centerContent}>
           <Animated.View style={titleStyle}>
-            <Text style={styles.title}>Honor Precious Memories</Text>
+            <Text style={styles.sectionHeader}>With Clever You Can:</Text>
+            <Text style={styles.title}>Preserve Memories</Text>
           </Animated.View>
           
           <Animated.View style={subtitleStyle}>
             <Text style={styles.subtitle}>
-              Create beautiful memorial tributes and preserve family memories for generations to come
+              Family photos, memorial tributes, heritage
             </Text>
           </Animated.View>
         </View>
@@ -183,7 +184,7 @@ export function ShowcaseMemorialScreen({ onContinue, onSkip }: ShowcaseMemorialS
         {/* Bottom button */}
         <Animated.View style={[styles.bottomButton, buttonsStyle]}>
           <OnboardingButton
-            title="Get Started"
+            title="Start Exploring"
             onPress={onContinue}
             variant="primary"
             size="large"
@@ -230,6 +231,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'transparent',
+  },
+  sectionHeader: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#9CA3AF',
+    textAlign: 'center',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   title: {
     fontSize: 32,
