@@ -108,10 +108,8 @@ export function DeviceTwoRowCarousel({ functionType, firstTileRef }: DeviceTwoRo
 
   useEffect(() => {
     // Check if we have media library permission from our centralized service
-    const checkPermission = async () => {
-      // Force refresh permission state in case it was updated during onboarding
-      await permissionsService.refreshPermissionStates();
-      
+    const checkPermission = () => {
+      // Use cached permission state - no need to refresh on every mount
       const granted = permissionsService.hasMediaLibraryPermission();
       setHasPermission(granted);
       if (granted && !didInitRef.current) {
@@ -120,7 +118,7 @@ export function DeviceTwoRowCarousel({ functionType, firstTileRef }: DeviceTwoRo
       }
     };
 
-    // Check immediately with async refresh
+    // Check immediately with cached state
     checkPermission();
     
     // If no permission initially, listen for app state changes to recheck when app becomes active

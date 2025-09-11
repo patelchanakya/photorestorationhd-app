@@ -186,7 +186,7 @@ export function ProcessingScreen({ photo, intent, onComplete, onError }: Process
 
   return (
     <LinearGradient
-      colors={['#0B0B0F', '#1a1a2e']}
+      colors={['#000000', '#000000']}
       style={styles.container}
     >
       <View style={[styles.content, { paddingTop: insets.top + 60 }]}>

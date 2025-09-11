@@ -1,5 +1,6 @@
 import React from 'react';
-import { Text, TouchableOpacity, ViewStyle, TextStyle } from 'react-native';
+import { Text, TouchableOpacity, ViewStyle, TextStyle, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { 
   useAnimatedStyle, 
   useSharedValue, 
@@ -35,12 +36,14 @@ export function OnboardingButton({
 
   const handlePressIn = () => {
     if (disabled) return;
-    scale.value = withSpring(0.96, { damping: 20, stiffness: 300 });
+    scale.value = withSpring(0.94, { damping: 15, stiffness: 400 });
+    opacity.value = withTiming(0.85, { duration: 100 });
   };
 
   const handlePressOut = () => {
     if (disabled) return;
-    scale.value = withSpring(1, { damping: 20, stiffness: 300 });
+    scale.value = withSpring(1, { damping: 15, stiffness: 400 });
+    opacity.value = withTiming(1, { duration: 100 });
   };
 
   const handlePress = () => {
@@ -62,30 +65,39 @@ export function OnboardingButton({
 
   const getButtonStyle = (): ViewStyle => {
     const baseStyle: ViewStyle = {
-      borderRadius: ONBOARDING_BORDER_RADIUS.lg,
+      borderRadius: 28, // Much more rounded (pill shape)
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: ONBOARDING_COLORS.background, // Add solid background for shadows
+      overflow: 'hidden', // For gradient backgrounds
+      backgroundColor: '#F97316', // Solid background for shadow optimization
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+      elevation: 4,
     };
 
     const sizeStyles = {
-      small: { paddingVertical: 12, paddingHorizontal: 20 },
-      medium: { paddingVertical: 16, paddingHorizontal: 24 },
-      large: { paddingVertical: 18, paddingHorizontal: 32 },
+      small: { paddingVertical: 14, paddingHorizontal: 24, minHeight: 44 },
+      medium: { paddingVertical: 18, paddingHorizontal: 32, minHeight: 50 },
+      large: { paddingVertical: 20, paddingHorizontal: 40, minHeight: 56 },
     };
 
     const variantStyles = {
       primary: {
-        backgroundColor: ONBOARDING_COLORS.accent,
-        // Remove shadow to prevent warnings - we'll add glow effect later if needed
+        // Primary buttons will use gradient background
+        shadowColor: ONBOARDING_COLORS.accent,
+        shadowOpacity: 0.4,
       },
       secondary: {
-        backgroundColor: ONBOARDING_COLORS.cardBackground,
-        borderWidth: 1,
-        borderColor: ONBOARDING_COLORS.border,
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        borderWidth: 1.5,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
       },
       ghost: {
         backgroundColor: 'transparent',
+        shadowOpacity: 0,
+        elevation: 0,
       },
     };
 
@@ -98,20 +110,33 @@ export function OnboardingButton({
 
   const getTextStyle = (): TextStyle => {
     const baseStyle: TextStyle = {
-      fontFamily: 'Lexend-SemiBold',
+      fontFamily: 'Lexend-Bold', // Bolder text for better visibility
       textAlign: 'center',
+      letterSpacing: 0.5,
     };
 
     const sizeStyles = {
-      small: { fontSize: ONBOARDING_TYPOGRAPHY.sm },
-      medium: { fontSize: ONBOARDING_TYPOGRAPHY.base },
-      large: { fontSize: ONBOARDING_TYPOGRAPHY.lg },
+      small: { fontSize: ONBOARDING_TYPOGRAPHY.base },
+      medium: { fontSize: ONBOARDING_TYPOGRAPHY.lg },
+      large: { fontSize: ONBOARDING_TYPOGRAPHY.xl },
     };
 
     const variantStyles = {
-      primary: { color: ONBOARDING_COLORS.background },
-      secondary: { color: ONBOARDING_COLORS.textPrimary },
-      ghost: { color: ONBOARDING_COLORS.textMuted },
+      primary: { 
+        color: '#FFFFFF',
+        textShadowColor: 'rgba(0, 0, 0, 0.25)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 2,
+      },
+      secondary: { 
+        color: ONBOARDING_COLORS.textPrimary,
+        textShadowColor: 'rgba(0, 0, 0, 0.3)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 1,
+      },
+      ghost: { 
+        color: ONBOARDING_COLORS.textSecondary,
+      },
     };
 
     return {
@@ -121,18 +146,64 @@ export function OnboardingButton({
     };
   };
 
+  const renderButtonContent = () => (
+    <Text style={[getTextStyle(), textStyle]}>
+      {title}
+    </Text>
+  );
+
+  const buttonStyle = getButtonStyle();
+
+  if (variant === 'primary') {
+    return (
+      <AnimatedTouchableOpacity
+        style={[buttonStyle, animatedStyle, style]}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={handlePress}
+        disabled={disabled}
+        activeOpacity={1}
+      >
+        <LinearGradient
+          colors={disabled ? ['#666666', '#555555'] : ['#F97316', '#FB923C', '#EA580C']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
+            borderRadius: 28,
+          }}
+        />
+        {/* Subtle overlay for extra depth */}
+        <LinearGradient
+          colors={['rgba(255,255,255,0.2)', 'transparent', 'rgba(0,0,0,0.1)']}
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
+            borderRadius: 28,
+          }}
+        />
+        {renderButtonContent()}
+      </AnimatedTouchableOpacity>
+    );
+  }
+
   return (
     <AnimatedTouchableOpacity
-      style={[getButtonStyle(), animatedStyle, style]}
+      style={[buttonStyle, animatedStyle, style]}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       onPress={handlePress}
       disabled={disabled}
       activeOpacity={1}
     >
-      <Text style={[getTextStyle(), textStyle]}>
-        {title}
-      </Text>
+      {renderButtonContent()}
     </AnimatedTouchableOpacity>
   );
 }

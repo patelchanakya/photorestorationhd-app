@@ -317,6 +317,7 @@ const FaceBodyTile = React.memo(({ item, index, tileWidth, fontSize, isVisible }
         useQuickEditStore.getState().openWithImage({ 
           functionType: 'custom', 
           imageUri: result.assets[0].uri,
+          styleName: translatedTitle,
           customPrompt: item.customPrompt
         });
       } catch (error) {

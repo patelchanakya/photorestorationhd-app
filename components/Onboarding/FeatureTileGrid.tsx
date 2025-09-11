@@ -16,7 +16,8 @@ import Animated, {
     useSharedValue, 
     withSpring,
     withTiming,
-    withSequence
+    withSequence,
+    withDelay
 } from 'react-native-reanimated';
 import { ONBOARDING_BORDER_RADIUS, ONBOARDING_COLORS, ONBOARDING_SPACING, ONBOARDING_TYPOGRAPHY } from './shared/constants';
 
@@ -226,9 +227,9 @@ const FeatureTile = React.memo<FeatureTileProps>(({
 
   // Entrance animation
   React.useEffect(() => {
-    const delay = index * 50;
-    opacity.value = withTiming(1, { duration: 400 });
-    translateY.value = withSpring(0, { damping: 15, stiffness: 200 });
+    const delay = index * 35; // Faster stagger for smoother overall animation
+    opacity.value = withDelay(delay, withTiming(1, { duration: 600 })); // Longer, smoother fade-in
+    translateY.value = withDelay(delay, withSpring(0, { damping: 20, stiffness: 150 })); // Gentler spring
   }, [index]);
 
   // Selection animation

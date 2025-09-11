@@ -243,15 +243,30 @@ export function QuickEditSheet({ generateButtonRef }: QuickEditSheetProps = {}) 
       // next frame animate
       requestAnimationFrame(() => {
         // Slight spring overshoot on open for polish
-        translateY.value = withSpring(0, { damping: 22, stiffness: 260, mass: 0.9 });
-        overlayOpacity.value = withTiming(1, { duration: 280, easing: Easing.bezier(0.22, 1, 0.36, 1) });
+        translateY.value = withSpring(0, { 
+          damping: 22, 
+          stiffness: 280, 
+          mass: 0.8,
+          restDisplacementThreshold: 0.01,
+          restSpeedThreshold: 0.01
+        });
+        overlayOpacity.value = withTiming(1, { 
+          duration: 300, 
+          easing: Easing.bezier(0.22, 1, 0.36, 1) 
+        });
       });
       try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
     } else {
       // Animate out then unmount
-      translateY.value = withTiming(height, { duration: 260, easing: Easing.bezier(0.4, 0, 0.2, 1) });
-      overlayOpacity.value = withTiming(0, { duration: 260, easing: Easing.linear });
-      const t = setTimeout(() => setRendered(false), 270);
+      translateY.value = withTiming(height, { 
+        duration: 280, 
+        easing: Easing.bezier(0.4, 0, 0.2, 1) 
+      });
+      overlayOpacity.value = withTiming(0, { 
+        duration: 280, 
+        easing: Easing.bezier(0.4, 0, 0.2, 1) 
+      });
+      const t = setTimeout(() => setRendered(false), 290);
       return () => clearTimeout(t);
     }
   }, [visible]);
@@ -616,23 +631,51 @@ export function QuickEditSheet({ generateButtonRef }: QuickEditSheetProps = {}) 
   if (!rendered) return null;
 
   return (
-    <Modal visible={true} transparent statusBarTranslucent animationType="none">
+    <Modal 
+      visible={visible} 
+      transparent 
+      statusBarTranslucent 
+      animationType="none"
+      onRequestClose={() => stage === 'loading' ? undefined : handleClose(false)}
+    >
       <View style={{ flex: 1, justifyContent: 'flex-end' }}>
         <Pressable
-          // Disable backdrop dismiss while processing
           onPress={stage === 'loading' ? undefined : () => handleClose(false)}
           accessibilityRole="button"
           accessibilityLabel="Close editor"
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+          style={{ 
+            position: 'absolute', 
+            top: 0, 
+            left: 0, 
+            right: 0, 
+            bottom: 0,
+            zIndex: 1
+          }}
         >
           <Animated.View style={[{ flex: 1 }, dimStyle]}>
             {Platform.OS === 'ios' && (
-              <BlurView intensity={12} tint="dark" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+              <BlurView 
+                intensity={12} 
+                tint="dark" 
+                style={{ 
+                  position: 'absolute', 
+                  top: 0, 
+                  left: 0, 
+                  right: 0, 
+                  bottom: 0 
+                }} 
+              />
             )}
-            <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.25)' }} />
+            <View style={{ 
+              flex: 1, 
+              backgroundColor: Platform.OS === 'android' ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.25)' 
+            }} />
           </Animated.View>
         </Pressable>
-        <Animated.View style={[{ paddingBottom: 0 }, sheetStyle]}>
+        <Animated.View style={[{ 
+          paddingBottom: 0,
+          zIndex: 2
+        }, sheetStyle]}>
           <View style={{ borderTopLeftRadius: 20, borderTopRightRadius: 20, overflow: 'hidden', backgroundColor: 'rgba(12,12,14,0.96)', borderTopWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}>
             <View style={{ padding: 16, paddingBottom: Math.max(12, insets.bottom + 8) }}>
               {/* Header */}

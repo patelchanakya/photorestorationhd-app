@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useState, use } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export type OnboardingV4Step = 'welcome' | 'permissions' | 'intent' | 'demo' | 'processing' | 'result' | 'tour';
+export type OnboardingV4Step = 'welcome' | 'permissions' | 'intent' | 'demo' | 'processing' | 'result' | 'showcase1' | 'showcase2' | 'showcase3' | 'tour';
 
 interface PhotoData {
   uri: string;

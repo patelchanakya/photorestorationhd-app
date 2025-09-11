@@ -68,6 +68,7 @@ export default function HomeGalleryLikeScreen() {
   // Refs for tour highlighting
   const navigationRef = React.useRef<View>(null);
   const firstTileRef = React.useRef<View>(null);
+  const repairTileRef = React.useRef<View>(null);
   const backgroundTileRef = React.useRef<View>(null);
   const imagePickerRef = React.useRef<any>(null);
   const generateButtonRef = React.useRef<any>(null);
@@ -76,20 +77,14 @@ export default function HomeGalleryLikeScreen() {
   const tourSteps = [
     {
       id: 'restoration',
-      title: 'AI-Powered Photo Restoration',
-      description: 'Tap any photo tile to start restoring old, damaged photos with AI',
-      duration: 4000,
-    },
-    {
-      id: 'backgrounds',
-      title: 'Background Transformations',
-      description: 'Change backgrounds, remove objects, or add creative effects',
+      title: 'Choose a Photo',
+      description: 'Pick any photo to restore, enhance, or repair damage.',
       duration: 4000,
     },
     {
       id: 'generate',
-      title: 'Generate Your Result',
-      description: 'Tap the checkmark button to create your enhanced photo',
+      title: 'Tap to Generate',
+      description: 'Hit the checkmark to create your result.',
       duration: 5000,
     },
   ];
@@ -106,8 +101,15 @@ export default function HomeGalleryLikeScreen() {
   React.useEffect(() => {
     if (showTour === 'true') {
       setTimeout(() => {
-        setShowTourOverlay(true);
-        measureElementForStep(0);
+        // Auto-scroll to Photo Restoration section first
+        console.log('🎯 Auto-scrolling to Photo Restoration section for tour');
+        scrollToSection('magic');
+        
+        // Show tour overlay and measure after scroll completes
+        setTimeout(() => {
+          setShowTourOverlay(true);
+          measureElementForStep(0);
+        }, 800); // Extra delay for scroll to complete
       }, 500); // Small delay to ensure elements are rendered
     }
   }, [showTour]);
@@ -121,10 +123,7 @@ export default function HomeGalleryLikeScreen() {
     
     switch (step.id) {
       case 'restoration':
-        targetRef = firstTileRef;
-        break;
-      case 'backgrounds':
-        targetRef = backgroundTileRef;
+        targetRef = repairTileRef;
         break;
       case 'generate':
         // For generate step, we'll handle QuickEditSheet differently
@@ -153,9 +152,8 @@ export default function HomeGalleryLikeScreen() {
       setTourStep(nextStep);
       const nextStepObj = tourSteps[nextStep];
       
-      // For the generate step, the overlay will show the sheet content
       if (nextStepObj.id === 'generate') {
-        console.log('🎯 Step 3 - showing tour sheet inside overlay');
+        console.log('🎯 Step 2 - showing tour sheet inside overlay');
         // Clear highlight area since we'll show the sheet instead
         setHighlightArea(null);
       } else {
@@ -175,11 +173,43 @@ export default function HomeGalleryLikeScreen() {
 
   const handleTourComplete = () => {
     console.log('🎯 Tour completed - cleaning up');
+    
+    // Close QuickEditSheet if it's open (tour mode)
+    const quickEditState = useQuickEditStore.getState();
+    if (quickEditState.visible && quickEditState.tourMode) {
+      console.log('🎯 Closing tour mode QuickEditSheet');
+      quickEditState.close();
+    }
+    
     setShowTourOverlay(false);
     setTourStep(0);
     setHighlightArea(null);
     // Clear tour parameter without navigation refresh
     router.setParams({ showTour: undefined });
+  };
+
+  const handleTourCTA = async () => {
+    console.log('🎯 Tour CTA clicked - showing Pro paywall');
+    
+    try {
+      analyticsService.track('tour_cta_pro_upgrade_clicked', {
+        is_pro: isPro ? 'true' : 'false',
+        source: 'tour_completion'
+      });
+      
+      // Show paywall
+      const success = await presentPaywall();
+      if (success) {
+        console.log('🎯 User upgraded to Pro from tour CTA');
+      }
+      
+      // Close tour after paywall is dismissed (whether upgraded or not)
+      handleTourComplete();
+    } catch (error) {
+      console.error('Error showing paywall from tour CTA:', error);
+      // Still close tour even if paywall failed
+      handleTourComplete();
+    }
   };
 
   // Refs for each section to enable smooth scrolling
@@ -284,44 +314,24 @@ export default function HomeGalleryLikeScreen() {
         return (
           <View style={exploreStyles.sectionHeader}>
             <Text style={exploreStyles.sectionTitle}>{t('explore.sections.backgrounds')}</Text>
-            <TouchableOpacity onPress={() => router.push('/photo-magic' as any)} activeOpacity={0.7}>
-              <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, fontFamily: 'Lexend-Medium' }}>
-                {t('explore.writeYourOwn')}
-              </Text>
-            </TouchableOpacity>
           </View>
         );
       case 'faceBody':
         return (
           <View style={exploreStyles.sectionHeader}>
             <Text style={exploreStyles.sectionTitle}>{t('explore.sections.faceBody')}</Text>
-            <TouchableOpacity onPress={() => router.push('/photo-magic' as any)} activeOpacity={0.7}>
-              <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, fontFamily: 'Lexend-Medium' }}>
-                {t('explore.writeYourOwn')}
-              </Text>
-            </TouchableOpacity>
           </View>
         );
       case 'memorial':
         return (
           <View style={exploreStyles.sectionHeader}>
             <Text style={exploreStyles.sectionTitle}>{t('explore.sections.memorial')}</Text>
-            <TouchableOpacity onPress={() => router.push('/photo-magic' as any)} activeOpacity={0.7}>
-              <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, fontFamily: 'Lexend-Medium' }}>
-                {t('explore.writeYourOwn')}
-              </Text>
-            </TouchableOpacity>
           </View>
         );
       case 'outfits':
         return (
           <View style={exploreStyles.sectionHeader}>
             <Text style={exploreStyles.sectionTitle}>{t('explore.sections.outfits')}</Text>
-            <TouchableOpacity onPress={() => router.push('/photo-magic' as any)} activeOpacity={0.7}>
-              <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, fontFamily: 'Lexend-Medium' }}>
-                {t('explore.writeYourOwn')}
-              </Text>
-            </TouchableOpacity>
           </View>
         );
       case 'magic':
@@ -352,7 +362,7 @@ export default function HomeGalleryLikeScreen() {
       case 'outfits':
         return <AnimatedOutfits />;
       case 'magic':
-        return <FeatureCardsList compact onOpenBackgrounds={() => openQuick('background')} onOpenClothes={() => openQuick('outfit')} />;
+        return <FeatureCardsList compact onOpenBackgrounds={() => openQuick('background')} onOpenClothes={() => openQuick('outfit')} firstTileRef={repairTileRef} />;
       case 'requestFeature':
         return (
           <View style={exploreStyles.requestSection}>
@@ -368,36 +378,14 @@ export default function HomeGalleryLikeScreen() {
                 });
                 
                 try {
-                  // Check if the store review is available
-                  const isAvailable = await StoreReview.isAvailableAsync();
-                  if (isAvailable) {
-                    // Request the native in-app review
-                    await StoreReview.requestReview();
-                  } else {
-                    // Fallback to opening the app store
-                    const storeUrl = Platform.OS === 'ios' 
-                      ? 'https://apps.apple.com/app/id6472609177?action=write-review'
-                      : 'https://play.google.com/store/apps/details?id=com.chanakyap.photorestorationhdapp';
-                    
-                    Alert.alert(
-                      'Rate Clever',
-                      'Thank you for using Clever! Would you like to rate us on the App Store?',
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        { 
-                          text: 'Rate App', 
-                          onPress: () => {
-                            // This would normally use Linking.openURL but keeping it simple
-                            Alert.alert('Thank You!', 'Please visit the App Store to rate us.');
-                          }
-                        }
-                      ]
-                    );
-                  }
-                } catch (error) {
+                  // Request the native iOS in-app review directly
+                  await StoreReview.requestReview();
+                } catch {
+                  // If native review fails, show fallback
                   Alert.alert(
-                    'Thank You!',
-                    'We appreciate your feedback! It helps us a lot! Please visit the App Store to rate us.'
+                    'Rate Clever',
+                    'Thank you for using Clever! Please visit the App Store to rate us.',
+                    [{ text: 'Got it!' }]
                   );
                 }
               }}
@@ -726,6 +714,13 @@ export default function HomeGalleryLikeScreen() {
         ref={navigationRef}
         activeSectionId={activeSectionId}
         sections={[
+          { id: 'fixMyPhoto', titleKey: 'explore.sections.fixMyPhoto', onPress: () => {
+            analyticsService.track('explore_navigation_pill_clicked', {
+              section_id: 'fixMyPhoto',
+              is_pro: isPro ? 'true' : 'false'
+            });
+            scrollToSection('fixMyPhoto');
+          }},
           { id: 'magic', titleKey: 'explore.sections.magic', onPress: () => {
             analyticsService.track('explore_navigation_pill_clicked', {
               section_id: 'magic',
@@ -806,6 +801,7 @@ export default function HomeGalleryLikeScreen() {
         onNext={handleTourNext}
         onSkip={handleTourSkip}
         onComplete={handleTourComplete}
+        onCTAPress={handleTourCTA}
       />
     )}
 
@@ -846,17 +842,17 @@ const exploreStyles = StyleSheet.create({
   },
   requestSection: {
     paddingHorizontal: 16,
-    paddingTop: 4,
+    paddingTop: 6,
     paddingBottom: 8,
-    gap: 4
+    gap: 8
   },
   requestButton: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)'
+    borderColor: 'rgba(255,255,255,0.15)'
   },
   requestButtonTitle: {
     color: '#FFFFFF',
@@ -865,7 +861,7 @@ const exploreStyles = StyleSheet.create({
   },
   requestButtonSubtitle: {
     color: 'rgba(255,255,255,0.6)',
-    fontSize: 10,
+    fontSize: 11,
     fontFamily: 'Lexend-Regular'
   }
 });

@@ -8,24 +8,92 @@ import { useOnboardingV4Analytics } from '@/hooks/useOnboardingV4Analytics';
 import { permissionsService } from '@/services/permissions';
 import { presentPaywall } from '@/services/revenuecat';
 import { useQuickEditStore } from '@/store/quickEditStore';
-import { restorationService } from '@/services/restoration';
+import { restorationService } from '@/services/supabase';
 
 // V4 Screen Components
 import { WelcomeScreenV4 } from '@/components/OnboardingV4/WelcomeScreen';
 import { PermissionsScreenV4 } from '@/components/OnboardingV4/PermissionsScreen';
 import { IntentCaptureScreen } from '@/components/OnboardingV4/IntentCaptureScreen';
 import { CapabilityDemoScreen } from '@/components/OnboardingV4/CapabilityDemoScreen';
-import { ProcessingScreen } from '@/components/OnboardingV4/ProcessingScreen';
-import { ResultConversionScreen } from '@/components/OnboardingV4/ResultConversionScreen';
+import { ShowcaseBackgroundsScreen } from '@/components/OnboardingV4/ShowcaseBackgroundsScreen';
+import { ShowcaseOutfitsScreen } from '@/components/OnboardingV4/ShowcaseOutfitsScreen';
+import { ShowcaseMemorialScreen } from '@/components/OnboardingV4/ShowcaseMemorialScreen';
 
-// Intent options for user selection
+// Intent options for user selection - photo restoration focused with "Just Explore" option
 const INTENT_OPTIONS = [
-  { id: 'fix_old_family', label: 'Fix old family photos', icon: '👨‍👩‍👧‍👦', demoImages: ['family_before.jpg', 'family_after.jpg'] },
-  { id: 'remove_scratches', label: 'Remove scratches', icon: '🔧', demoImages: ['scratch_before.jpg', 'scratch_after.jpg'] },
-  { id: 'restore_grandparents', label: "Restore grandparents'", icon: '👴👵', demoImages: ['grandparents_before.jpg', 'grandparents_after.jpg'] },
-  { id: 'fix_water_damage', label: 'Fix water damage', icon: '💧', demoImages: ['water_before.jpg', 'water_after.jpg'] },
-  { id: 'colorize_memories', label: 'Colorize memories', icon: '🎨', demoImages: ['bw_before.jpg', 'colorized_after.jpg'] },
-  { id: 'repair_torn', label: 'Repair torn photos', icon: '🩹', demoImages: ['torn_before.jpg', 'torn_after.jpg'] }
+  { 
+    id: 'fix-old-photos', 
+    label: 'Fix Old Family Photos', 
+    icon: '📸', 
+    demoImages: [], 
+    video: require('../assets/videos/repair.mp4'),
+    image: require('../assets/images/teared.png'),
+    functionType: 'restore_repair' 
+  },
+  { 
+    id: 'repair-torn', 
+    label: 'Repair Torn & Ripped Photos', 
+    icon: '📄', 
+    demoImages: [], 
+    video: require('../assets/videos/recreate.mp4'),
+    image: require('../assets/images/teared.png'),
+    functionType: 'repair',
+    customPrompt: 'Repair tears and rips in old photos'
+  },
+  { 
+    id: 'colorize-bw', 
+    label: 'Colorize Black & White', 
+    icon: '🎨', 
+    demoImages: [], 
+    video: require('../assets/videos/doctor.mp4'),
+    image: require('../assets/images/popular/colorize/pop-1.png'),
+    functionType: 'colorize' 
+  },
+  { 
+    id: 'remove-water-damage', 
+    label: 'Remove Water Damage', 
+    icon: '💧', 
+    demoImages: [], 
+    video: require('../assets/videos/ripvid.mp4'),
+    image: require('../assets/images/popular/stain/pop-7.png'),
+    functionType: 'water_damage' 
+  },
+  { 
+    id: 'sharpen-faces', 
+    label: 'Clear Up Blurry Faces', 
+    icon: '🔍', 
+    demoImages: [], 
+    video: require('../assets/videos/clouders.mp4'),
+    image: require('../assets/images/popular/enhance/pop-3.png'),
+    functionType: 'unblur' 
+  },
+  { 
+    id: 'remove-scratches', 
+    label: 'Remove Scratches & Marks', 
+    icon: '✨', 
+    demoImages: [], 
+    video: require('../assets/videos/repair.mp4'),
+    image: require('../assets/images/popular/descratch/pop-2.png'),
+    functionType: 'descratch' 
+  },
+  { 
+    id: 'brighten-dark', 
+    label: 'Brighten Dark Photos', 
+    icon: '☀️', 
+    demoImages: [], 
+    video: require('../assets/videos/whitening.mp4'),
+    image: require('../assets/images/popular/brighten/pop-4.png'),
+    functionType: 'enlighten' 
+  },
+  { 
+    id: 'just-explore', 
+    label: 'Just Explore the App', 
+    icon: '✨', 
+    demoImages: [], 
+    video: require('../assets/videos/welcome.mp4'),
+    image: require('../assets/images/popular/enhance/pop-3.png'),
+    functionType: null 
+  }
 ];
 
 function OnboardingV4Flow() {
@@ -84,47 +152,51 @@ function OnboardingV4Flow() {
     await selectIntent(intentId);
     await trackIntentSelected(intentId);
     await trackStepCompleted(3, 'intent', { selected_intent: intentId });
-    navigateToStep('demo');
+    
+    // Special handling for "just-explore" - skip demo/restoration and go straight to showcases
+    if (intentId === 'just-explore') {
+      navigateToStep('showcase1');
+    } else {
+      navigateToStep('demo');
+    }
   };
 
-  const handleDemoContinue = async () => {
+  const handleDemoContinue = async (photo?: { uri: string; width: number; height: number }) => {
     await trackStepCompleted(4, 'demo');
     
-    // Open image picker for photo selection (Screen 5)
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: false,
-        aspect: undefined,
-        quality: 0.8,
-        base64: false,
+    if (photo) {
+      // User selected a photo and saved result
+      await selectPhoto(photo);
+      
+      await trackPhotoSelected({
+        source: 'gallery',
+        width: photo.width,
+        height: photo.height
       });
-
-      if (!result.canceled && result.assets[0]) {
-        const photo = result.assets[0];
-        await selectPhoto({
-          uri: photo.uri,
-          width: photo.width,
-          height: photo.height
-        });
-        
-        await trackPhotoSelected({
-          source: 'gallery',
-          width: photo.width,
-          height: photo.height
-        });
-
-        // Navigate to processing screen
-        navigateToStep('processing');
-      } else {
-        // User cancelled photo selection - skip to demo mode
-        navigateToStep('processing');
-      }
-    } catch (error) {
-      console.error('Photo selection failed:', error);
-      // Continue to processing with demo mode
-      navigateToStep('processing');
     }
+
+    // Navigate directly to showcase screens (skip processing/result)
+    navigateToStep('showcase1');
+  };
+
+  const handleShowcase1Continue = async () => {
+    await trackStepCompleted(5, 'showcase1');
+    navigateToStep('showcase2');
+  };
+
+  const handleShowcase2Continue = async () => {
+    await trackStepCompleted(6, 'showcase2');
+    navigateToStep('showcase3');
+  };
+
+  const handleShowcase3Continue = async () => {
+    await trackStepCompleted(7, 'showcase3');
+    await handleNavigateToExploreWithTour();
+  };
+
+  const handleShowcaseSkip = async () => {
+    await trackStepCompleted(currentStep === 'showcase1' ? 5 : currentStep === 'showcase2' ? 6 : 7, currentStep, { skipped: true });
+    await handleNavigateToExploreWithTour();
   };
 
   const handleProcessingComplete = async (result: { uri: string; processingTime: number }) => {
@@ -209,11 +281,13 @@ function OnboardingV4Flow() {
       // If user has photo and intent, open Quick Edit Sheet
       if (onboardingState.selectedPhoto && onboardingState.selectedIntent) {
         setTimeout(() => {
-          const mode = getEditModeFromIntent(onboardingState.selectedIntent!);
+          const selectedIntent = INTENT_OPTIONS.find(opt => opt.id === onboardingState.selectedIntent);
+          const mode = selectedIntent?.functionType || 'restoration';
           useQuickEditStore.getState().openWithImage({
             functionType: mode as any,
             imageUri: onboardingState.selectedPhoto!.uri,
-            styleName: INTENT_OPTIONS.find(opt => opt.id === onboardingState.selectedIntent)?.label || 'Photo Restoration'
+            styleName: selectedIntent?.label || 'Photo Restoration',
+            customPrompt: selectedIntent?.customPrompt || null
           });
         }, 500);
       }
@@ -224,15 +298,8 @@ function OnboardingV4Flow() {
   };
 
   const getEditModeFromIntent = (intentId: string): string => {
-    const intentModeMap: Record<string, string> = {
-      'fix_old_family': 'restoration',
-      'remove_scratches': 'restoration', 
-      'restore_grandparents': 'restoration',
-      'fix_water_damage': 'restoration',
-      'colorize_memories': 'colorize',
-      'repair_torn': 'restoration'
-    };
-    return intentModeMap[intentId] || 'restoration';
+    const selectedIntent = INTENT_OPTIONS.find(opt => opt.id === intentId);
+    return selectedIntent?.functionType || 'restoration';
   };
 
   // Error boundary for graceful fallbacks
@@ -283,23 +350,27 @@ function OnboardingV4Flow() {
             />
           );
         
-        case 'processing':
+        case 'showcase1':
           return (
-            <ProcessingScreen
-              photo={onboardingState.selectedPhoto}
-              intent={onboardingState.selectedIntent}
-              onComplete={handleProcessingComplete}
-              onError={(error) => handleError(error, 'processing')}
+            <ShowcaseBackgroundsScreen
+              onContinue={handleShowcase1Continue}
+              onSkip={handleShowcaseSkip}
             />
           );
         
-        case 'result':
+        case 'showcase2':
           return (
-            <ResultConversionScreen
-              beforePhoto={onboardingState.selectedPhoto}
-              afterPhoto={onboardingState.processingResult}
-              onStartTrial={handleTrialSelection}
-              onMaybeLater={handleMaybeLater}
+            <ShowcaseOutfitsScreen
+              onContinue={handleShowcase2Continue}
+              onSkip={handleShowcaseSkip}
+            />
+          );
+        
+        case 'showcase3':
+          return (
+            <ShowcaseMemorialScreen
+              onContinue={handleShowcase3Continue}
+              onSkip={handleShowcaseSkip}
             />
           );
         

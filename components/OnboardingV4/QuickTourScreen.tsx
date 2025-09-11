@@ -11,7 +11,8 @@ import Animated, {
   withDelay,
   withRepeat,
   withSequence,
-  runOnJS
+  runOnJS,
+  cancelAnimation
 } from 'react-native-reanimated';
 
 import { OnboardingButton } from '@/components/Onboarding/shared/OnboardingButton';
@@ -63,51 +64,73 @@ export function QuickTourScreen({ onComplete, onSkip }: QuickTourScreenProps) {
   const { t } = useTranslation();
   const [currentStep, setCurrentStep] = React.useState(0);
   const [isAutoAdvancing, setIsAutoAdvancing] = React.useState(true);
+  const [isExiting, setIsExiting] = React.useState(false);
 
   const titleOpacity = useSharedValue(0);
-  const stepOpacity = useSharedValue(0);
+  const stepOpacity = useSharedValue(1); // Start visible to prevent flicker
   const progressOpacity = useSharedValue(0);
   const buttonsOpacity = useSharedValue(0);
+  const containerOpacity = useSharedValue(1);
   
   // Animation values for different demo elements
   const navigationPulse = useSharedValue(1);
   const tilesBounce = useSharedValue(1);
   const sheetSlide = useSharedValue(100);
+  
+  // Animation progress tracker
+  const currentStepValue = useSharedValue(0);
 
   React.useEffect(() => {
-    // Initial entrance
+    // Staggered entrance animations using withDelay - no setTimeout
     titleOpacity.value = withTiming(1, { duration: 400 });
-    setTimeout(() => {
-      progressOpacity.value = withTiming(1, { duration: 300 });
-      buttonsOpacity.value = withTiming(1, { duration: 400 });
-    }, 200);
-
-    startTourStep(0);
+    progressOpacity.value = withDelay(200, withTiming(1, { duration: 300 }));
+    buttonsOpacity.value = withDelay(200, withTiming(1, { duration: 400 }));
+    
+    // Start tour after initial animations settle
+    currentStepValue.value = withDelay(600, withTiming(0, { duration: 0 }, () => {
+      runOnJS(startTourStep)(0);
+    }));
+    
+    // Cleanup on unmount
+    return () => {
+      cancelAnimation(currentStepValue);
+      cancelAnimation(titleOpacity);
+      cancelAnimation(stepOpacity);
+      cancelAnimation(progressOpacity);
+      cancelAnimation(buttonsOpacity);
+      cancelAnimation(containerOpacity);
+      cancelAnimation(navigationPulse);
+      cancelAnimation(tilesBounce);
+      cancelAnimation(sheetSlide);
+    };
   }, []);
 
   const startTourStep = (stepIndex: number) => {
+    if (!isAutoAdvancing || isExiting) return; // Safety check
+    
     if (stepIndex >= TOUR_STEPS.length) {
-      // Tour complete
-      runOnJS(onComplete)();
+      // Tour complete - animate out smoothly
+      runOnJS(setIsExiting)(true);
+      containerOpacity.value = withTiming(0, { duration: 400 }, () => {
+        runOnJS(onComplete)();
+      });
       return;
     }
 
     runOnJS(setCurrentStep)(stepIndex);
     
-    // Animate step entrance
-    stepOpacity.value = withTiming(0, { duration: 200 }, () => {
-      stepOpacity.value = withTiming(1, { duration: 400 });
-    });
+    // No flicker - just ensure step is visible
+    stepOpacity.value = withTiming(1, { duration: 300 });
 
     // Trigger specific animations based on step
     const step = TOUR_STEPS[stepIndex];
     switch (step.id) {
       case 'navigation':
-        // Pulse navigation pills
+        // Smoother pulse animation
         navigationPulse.value = withRepeat(
           withSequence(
-            withSpring(1.1, { damping: 8 }),
-            withSpring(1, { damping: 8 })
+            withSpring(1.08, { damping: 12 }),
+            withSpring(1, { damping: 12 })
           ),
           3,
           false
@@ -115,11 +138,11 @@ export function QuickTourScreen({ onComplete, onSkip }: QuickTourScreenProps) {
         break;
       
       case 'selection':
-        // Bounce style tiles (staggered)
+        // Gentler bounce animation
         tilesBounce.value = withRepeat(
           withSequence(
-            withSpring(1.15, { damping: 6 }),
-            withSpring(1, { damping: 6 })
+            withSpring(1.1, { damping: 10 }),
+            withSpring(1, { damping: 10 })
           ),
           2,
           false
@@ -127,30 +150,40 @@ export function QuickTourScreen({ onComplete, onSkip }: QuickTourScreenProps) {
         break;
       
       case 'preview':
-        // Slide up Quick Edit sheet demo
-        sheetSlide.value = withSpring(0, { damping: 12 });
-        setTimeout(() => {
-          sheetSlide.value = withSpring(100, { damping: 12 });
-        }, 3000);
+        // Slide up Quick Edit sheet demo - no setTimeout
+        sheetSlide.value = withSpring(0, { damping: 15 });
+        sheetSlide.value = withDelay(2500, withSpring(100, { damping: 15 }));
         break;
     }
 
-    // Auto-advance to next step
-    if (isAutoAdvancing) {
-      setTimeout(() => {
-        startTourStep(stepIndex + 1);
-      }, step.duration);
-    }
+    // Auto-advance to next step using animation timing instead of setTimeout
+    currentStepValue.value = withDelay(step.duration, withTiming(stepIndex + 1, { duration: 0 }, () => {
+      runOnJS(startTourStep)(stepIndex + 1);
+    }));
+  };
+
+  const cleanupAndExit = (callback: () => void, duration: number = 400) => {
+    setIsAutoAdvancing(false);
+    setIsExiting(true);
+    
+    // Cancel all ongoing animations
+    cancelAnimation(currentStepValue);
+    cancelAnimation(navigationPulse);
+    cancelAnimation(tilesBounce);
+    cancelAnimation(sheetSlide);
+    
+    // Smooth exit
+    containerOpacity.value = withTiming(0, { duration }, () => {
+      runOnJS(callback)();
+    });
   };
 
   const handleSkip = () => {
-    setIsAutoAdvancing(false);
-    onSkip();
+    cleanupAndExit(onSkip, 300);
   };
 
   const handleComplete = () => {
-    setIsAutoAdvancing(false);
-    onComplete();
+    cleanupAndExit(onComplete, 400);
   };
 
   const titleStyle = useAnimatedStyle(() => ({
@@ -181,13 +214,18 @@ export function QuickTourScreen({ onComplete, onSkip }: QuickTourScreenProps) {
     transform: [{ translateY: sheetSlide.value }],
   }));
 
+  const containerStyle = useAnimatedStyle(() => ({
+    opacity: containerOpacity.value,
+  }));
+
   const currentTourStep = TOUR_STEPS[currentStep];
 
   return (
-    <LinearGradient
-      colors={['#0B0B0F', '#1a1a2e']}
-      style={styles.container}
-    >
+    <Animated.View style={[{ flex: 1 }, containerStyle]}>
+      <LinearGradient
+        colors={['#000000', '#000000']}
+        style={styles.container}
+      >
       <View style={[styles.content, { paddingTop: insets.top + 40 }]}>
         {/* Skip Button */}
         <View style={styles.header}>
@@ -315,7 +353,8 @@ export function QuickTourScreen({ onComplete, onSkip }: QuickTourScreenProps) {
           </Animated.View>
         </View>
       </View>
-    </LinearGradient>
+      </LinearGradient>
+    </Animated.View>
   );
 }
 

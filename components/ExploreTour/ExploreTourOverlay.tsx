@@ -1,15 +1,18 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, useWindowDimensions, Pressable } from 'react-native';
 import Animated, { 
   useAnimatedStyle, 
   useSharedValue, 
   withTiming,
   withSpring,
+  withDelay,
+  withSequence,
   runOnJS
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OnboardingButton } from '@/components/Onboarding/shared/OnboardingButton';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import * as Haptics from 'expo-haptics';
 
 interface TourStep {
   id: string;
@@ -37,6 +40,7 @@ interface ExploreTourOverlayProps {
   onNext: () => void;
   onSkip: () => void;
   onComplete: () => void;
+  onCTAPress?: () => void;
 }
 
 export function ExploreTourOverlay({
@@ -49,77 +53,130 @@ export function ExploreTourOverlay({
   insets,
   onNext,
   onSkip,
-  onComplete
+  onComplete,
+  onCTAPress
 }: ExploreTourOverlayProps) {
   const safeAreaInsets = useSafeAreaInsets();
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
   const [isAutoAdvancing, setIsAutoAdvancing] = React.useState(false); // Disable auto-advance
+  const [showSuccess, setShowSuccess] = React.useState(false);
   
   const overlayOpacity = useSharedValue(0);
   const tooltipOpacity = useSharedValue(0);
   const pulseScale = useSharedValue(1);
   const highlightTransition = useSharedValue(1);
+  const stepTransition = useSharedValue(1);
+  
+  // Success animation values
+  const successOpacity = useSharedValue(0);
+  const successScale = useSharedValue(0.8);
+  const buttonScale = useSharedValue(1);
 
   React.useEffect(() => {
     if (visible) {
-      overlayOpacity.value = withTiming(1, { duration: 300 });
-      tooltipOpacity.value = withTiming(1, { duration: 400 });
+      overlayOpacity.value = withTiming(1, { duration: 400 });
+      tooltipOpacity.value = withDelay(300, withTiming(1, { duration: 500 }));
+      stepTransition.value = withTiming(1, { duration: 400 });
       
-      // Continuous subtle pulse for highlighted area
+      // Subtle continuous pulse
       const startPulse = () => {
-        pulseScale.value = withSpring(1.08, { damping: 12 }, () => {
-          pulseScale.value = withSpring(1, { damping: 12 }, () => {
-            if (visible) {
-              setTimeout(startPulse, 1500); // Repeat every 1.5s
-            }
+        pulseScale.value = withTiming(1.03, { duration: 1800 }, () => {
+          pulseScale.value = withTiming(1, { duration: 1800 }, () => {
+            if (visible) startPulse();
           });
         });
       };
       startPulse();
     } else {
-      overlayOpacity.value = withTiming(0, { duration: 200 });
+      overlayOpacity.value = withTiming(0, { duration: 300 });
       tooltipOpacity.value = withTiming(0, { duration: 200 });
-      pulseScale.value = 1; // Reset pulse
+      stepTransition.value = withTiming(0, { duration: 200 });
+      pulseScale.value = 1;
+      
+      setShowSuccess(false);
     }
-  }, [visible, currentStep]);
+  }, [visible]);
+
+  // Smooth step transitions
+  React.useEffect(() => {
+    if (visible && currentStep >= 0) {
+      stepTransition.value = withTiming(0, { duration: 200 }, () => {
+        stepTransition.value = withTiming(1, { duration: 400 });
+      });
+    }
+  }, [currentStep]);
 
   // Animate highlight transitions
   React.useEffect(() => {
     if (highlightArea) {
       highlightTransition.value = withTiming(0, { duration: 150 }, () => {
-        highlightTransition.value = withTiming(1, { duration: 300 });
+        highlightTransition.value = withTiming(1, { duration: 400 });
       });
     }
   }, [highlightArea]);
 
-  // Auto-advance to next step (disabled by default)
+  // Success animation sequence - smooth and premium
+  const startSuccessAnimation = React.useCallback(() => {
+    // Immediate feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Success);
+    
+    // Smooth button feedback
+    buttonScale.value = withSpring(0.95, { damping: 20, stiffness: 300 });
+    
+    // Hide original content first
+    tooltipOpacity.value = withTiming(0, { duration: 300 });
+    
+    // Show success state with delay
+    setTimeout(() => {
+      setShowSuccess(true);
+    }, 200);
+    
+    // Smooth entrance animations
+    successOpacity.value = withDelay(250, withSpring(1, { damping: 20, stiffness: 80 }));
+    successScale.value = withDelay(250, withSpring(1, { damping: 18, stiffness: 100 }));
+  }, [buttonScale, successOpacity, successScale, tooltipOpacity]);
+  
+  // Reset animation values when success state changes
   React.useEffect(() => {
-    if (visible && isAutoAdvancing && currentStep < steps.length) {
-      const step = steps[currentStep];
-      const timer = setTimeout(() => {
-        if (currentStep === steps.length - 1) {
-          runOnJS(onComplete)();
-        } else {
-          runOnJS(onNext)();
-        }
-      }, step.duration);
-
-      return () => clearTimeout(timer);
+    if (!showSuccess) {
+      // Reset animation values for next time
+      successOpacity.value = 0;
+      successScale.value = 0.8;
+      buttonScale.value = 1;
     }
-  }, [visible, currentStep, steps, isAutoAdvancing]);
+  }, [showSuccess, successOpacity, successScale, buttonScale]);
+
+  // Auto-advance disabled - removed to prevent crashes
 
   const overlayStyle = useAnimatedStyle(() => ({
     opacity: overlayOpacity.value,
   }));
 
   const tooltipStyle = useAnimatedStyle(() => ({
-    opacity: tooltipOpacity.value,
+    opacity: tooltipOpacity.value * stepTransition.value,
+    transform: [
+      { translateY: (1 - tooltipOpacity.value) * 30 + (1 - stepTransition.value) * 20 },
+      { scale: (0.92 + tooltipOpacity.value * 0.08) * (0.95 + stepTransition.value * 0.05) }
+    ],
   }));
 
   const pulseStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulseScale.value }],
     opacity: highlightTransition.value,
   }));
+
+  const buttonAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: buttonScale.value }],
+  }));
+
+  const successCardStyle = useAnimatedStyle(() => ({
+    opacity: successOpacity.value,
+    transform: [
+      { scale: successScale.value },
+      { translateY: (1 - successOpacity.value) * 30 }
+    ],
+  }));
+
 
   if (!visible || !steps[currentStep]) {
     return null;
@@ -128,37 +185,51 @@ export function ExploreTourOverlay({
   const currentTourStep = steps[currentStep];
   const isLastStep = currentStep === steps.length - 1;
 
-  // Calculate responsive tooltip position based on highlight area and device size
+  // Smart tooltip positioning to avoid blocking highlighted elements
   const getTooltipPosition = () => {
-    const isTablet = SCREEN_WIDTH >= 768;
-    const horizontalPadding = isTablet ? SCREEN_WIDTH * 0.2 : 20; // 20% padding on tablets, 20px on phones
+    const horizontalPadding = 20;
+    const tooltipPadding = 20; // Space between tooltip and highlighted area
+    const safeTopArea = (insets?.top || safeAreaInsets.top) + 60;
+    const safeBottomArea = (insets?.bottom || safeAreaInsets.bottom) + 80;
     
-    if (!highlightArea) {
-      return {
-        top: SCREEN_HEIGHT * 0.3,
-        left: horizontalPadding,
-        right: horizontalPadding,
-      };
+    if (highlightArea) {
+      const highlightBottom = highlightArea.y + highlightArea.height;
+      const highlightTop = highlightArea.y;
+      const screenCenter = SCREEN_HEIGHT / 2;
+      
+      // If highlight is in upper half, position tooltip below it
+      if (highlightTop < screenCenter) {
+        const topPosition = highlightBottom + tooltipPadding;
+        // Ensure we don't go too close to bottom
+        if (topPosition + 200 < SCREEN_HEIGHT - safeBottomArea) {
+          return {
+            top: topPosition,
+            left: horizontalPadding,
+            right: horizontalPadding,
+          };
+        }
+      }
+      
+      // If highlight is in lower half, position tooltip above it
+      if (highlightTop > screenCenter) {
+        const bottomPosition = SCREEN_HEIGHT - highlightTop + tooltipPadding;
+        // Ensure we don't go too close to top
+        if (highlightTop - 200 > safeTopArea) {
+          return {
+            bottom: bottomPosition,
+            left: horizontalPadding,
+            right: horizontalPadding,
+          };
+        }
+      }
     }
-
-    const highlightCenterY = highlightArea.y + highlightArea.height / 2;
-    const isHighlightInTopHalf = highlightCenterY < SCREEN_HEIGHT / 2;
     
-    if (isHighlightInTopHalf) {
-      // Show tooltip below highlight
-      return {
-        top: highlightArea.y + highlightArea.height + 20,
-        left: horizontalPadding,
-        right: horizontalPadding,
-      };
-    } else {
-      // Show tooltip above highlight
-      return {
-        bottom: SCREEN_HEIGHT - highlightArea.y + 20,
-        left: horizontalPadding,
-        right: horizontalPadding,
-      };
-    }
+    // Fallback: position in bottom area
+    return {
+      bottom: safeBottomArea,
+      left: horizontalPadding,
+      right: horizontalPadding,
+    };
   };
 
   const renderHighlightCutout = () => {
@@ -237,7 +308,7 @@ export function ExploreTourOverlay({
   };
 
   const renderTourSheet = () => {
-    if (!showSheet) return null;
+    if (!showSheet || showSuccess) return null;
 
     const usedInsets = insets || safeAreaInsets;
     const MEDIA_HEIGHT = 240;
@@ -253,7 +324,9 @@ export function ExploreTourOverlay({
         overflow: 'hidden', 
         backgroundColor: 'rgba(12,12,14,0.96)', 
         borderTopWidth: 1, 
-        borderColor: 'rgba(255,255,255,0.12)' 
+        borderColor: 'rgba(255,255,255,0.12)',
+        zIndex: 5,
+        elevation: 5
       }}>
         <View style={{ 
           padding: 16, 
@@ -309,42 +382,40 @@ export function ExploreTourOverlay({
                   bottom: -3,
                   borderRadius: 31,
                   borderWidth: 3,
-                  borderColor: '#f97316',
-                  shadowColor: '#f97316',
-                  shadowOffset: { width: 0, height: 0 },
-                  shadowOpacity: 0.8,
-                  shadowRadius: 12,
+                  borderColor: '#f97316'
                 },
                 pulseStyle
               ]} />
               
-              <TouchableOpacity
-                ref={generateButtonRef}
-                style={{
-                  flex: 1, 
-                  height: 56, 
-                  borderRadius: 28, 
-                  overflow: 'hidden', 
-                  borderWidth: 1, 
-                  borderColor: 'rgba(255,255,255,0.25)'
-                }}
-                onPress={() => {
-                  console.log('🎯 Tour generate button clicked');
-                  runOnJS(onComplete)();
-                }}
-              >
-                <View style={{ 
-                  position: 'absolute', 
-                  top: 0, 
-                  left: 0, 
-                  right: 0, 
-                  bottom: 0,
-                  backgroundColor: '#F59E0B'
-                }} />
-                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                  <IconSymbol name="checkmark" size={20} color="#0B0B0F" />
-                </View>
-              </TouchableOpacity>
+              <Animated.View style={buttonAnimatedStyle}>
+                <TouchableOpacity
+                  ref={generateButtonRef}
+                  style={{
+                    flex: 1, 
+                    height: 56, 
+                    borderRadius: 28, 
+                    overflow: 'hidden', 
+                    borderWidth: 1, 
+                    borderColor: 'rgba(255,255,255,0.25)'
+                  }}
+                  onPress={() => {
+                    console.log('🎯 Tour generate button clicked');
+                    setTimeout(() => startSuccessAnimation(), 100);
+                  }}
+                >
+                  <View style={{ 
+                    position: 'absolute', 
+                    top: 0, 
+                    left: 0, 
+                    right: 0, 
+                    bottom: 0,
+                    backgroundColor: '#F59E0B'
+                  }} />
+                  <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                    <IconSymbol name="checkmark" size={20} color="#0B0B0F" />
+                  </View>
+                </TouchableOpacity>
+              </Animated.View>
             </View>
           </View>
         </View>
@@ -352,30 +423,228 @@ export function ExploreTourOverlay({
     );
   };
 
+
+  const renderSuccessCard = () => {
+    if (!showSuccess) return null;
+
+    const usedInsets = insets || safeAreaInsets;
+    const horizontalPadding = 20;
+    const cardPadding = 32; // More generous padding for premium feel
+
+    return (
+      <View
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          justifyContent: 'center',
+          alignItems: 'center',
+          paddingTop: usedInsets.top + 40,
+          paddingBottom: usedInsets.bottom + 40,
+          paddingHorizontal: horizontalPadding,
+          zIndex: 999,
+        }}
+      >
+        <Animated.View 
+          style={[
+            {
+              width: '100%',
+              maxWidth: 400, // Maximum width for larger screens
+              backgroundColor: '#0B0B0F', // Solid background for shadow optimization
+              borderRadius: 32,
+              padding: cardPadding,
+              borderWidth: 1.5,
+              borderColor: 'rgba(255, 255, 255, 0.12)',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 10 },
+              shadowOpacity: 0.4,
+              shadowRadius: 20,
+              elevation: 10,
+              // Add subtle backdrop blur effect
+              backdropFilter: 'blur(20px)',
+            },
+            successCardStyle
+          ]}
+        >
+        {/* Success Icon */}
+        <View style={{ alignItems: 'center', marginBottom: 16 }}>
+          <View style={{
+            width: 60,
+            height: 60,
+            borderRadius: 30,
+            backgroundColor: '#10B981',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 12
+          }}>
+            <IconSymbol name="checkmark" size={28} color="#FFFFFF" />
+          </View>
+          
+          <Text style={{
+            fontSize: 20,
+            fontFamily: 'Lexend-SemiBold',
+            color: '#FFFFFF',
+            textAlign: 'center',
+            marginBottom: 8
+          }}>
+It's that easy!
+          </Text>
+          
+          <Text style={{
+            fontSize: 14,
+            color: '#A1A1AA',
+            textAlign: 'center',
+            lineHeight: 20
+          }}>
+Now you know how to use all our tools.
+          </Text>
+        </View>
+
+        {/* Simplified progress */}
+        <View style={{ 
+          alignItems: 'center', 
+          marginBottom: 20,
+          paddingHorizontal: 20 
+        }}>
+          <View style={{
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            paddingHorizontal: 16,
+            paddingVertical: 8,
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: 'rgba(16, 185, 129, 0.2)'
+          }}>
+            <Text style={{
+              fontSize: 13,
+              color: '#10B981',
+              textAlign: 'center',
+              fontFamily: 'Lexend-Medium'
+            }}>
+              ✓ Tutorial Complete
+            </Text>
+          </View>
+        </View>
+
+        {/* Pro upgrade section */}
+        <View style={{
+          backgroundColor: 'rgba(249, 115, 22, 0.08)',
+          borderRadius: 20,
+          padding: 20,
+          marginBottom: 20,
+          borderWidth: 1,
+          borderColor: 'rgba(249, 115, 22, 0.15)'
+        }}>
+          <View style={{ alignItems: 'center', marginBottom: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <IconSymbol name="sparkles" size={18} color="#f97316" />
+              <Text style={{
+                fontSize: 16,
+                fontFamily: 'Lexend-SemiBold',
+                color: '#f97316',
+                marginLeft: 6
+              }}>
+                Unlock Pro Features
+              </Text>
+            </View>
+          </View>
+          
+          <Text style={{
+            fontSize: 13,
+            color: '#A1A1AA',
+            lineHeight: 19,
+            marginBottom: 16,
+            textAlign: 'center'
+          }}>
+            Unlimited restorations • Premium styles • Priority processing
+          </Text>
+          
+          <TouchableOpacity
+            style={{
+              height: 50,
+              borderRadius: 25,
+              backgroundColor: '#f97316',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            onPress={async () => {
+              console.log('CTA clicked');
+              if (onCTAPress) {
+                try {
+                  await onCTAPress();
+                } catch (error) {
+                  console.log('CTA error:', error);
+                }
+              }
+              // Don't call onComplete immediately - let the paywall handle it
+            }}
+          >
+            <Text style={{
+              color: '#0B0B0F',
+              fontSize: 15,
+              fontFamily: 'Lexend-Bold'
+            }}>
+              Save & Continue
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Skip option */}
+        <TouchableOpacity
+          onPress={() => onComplete()}
+          style={{ paddingVertical: 12 }}
+        >
+          <Text style={{
+            color: '#6B7280',
+            fontSize: 14,
+            textAlign: 'center',
+            fontFamily: 'Lexend-Medium'
+          }}>
+            Maybe Later
+          </Text>
+        </TouchableOpacity>
+        </Animated.View>
+      </View>
+    );
+  };
+
   return (
     <Modal
       visible={visible}
-      transparent={true}
+      transparent
       animationType="none"
-      statusBarTranslucent={true}
+      statusBarTranslucent
+      onRequestClose={onSkip}
+      hardwareAccelerated
+      supportedOrientations={['portrait']}
     >
       <Animated.View style={[styles.overlay, overlayStyle]}>
+        {/* Backdrop touchable to handle dismissal - disabled when showing success modal */}
+        {!showSuccess && (
+          <Pressable 
+            style={StyleSheet.absoluteFillObject}
+            onPress={onSkip}
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss tour"
+          />
+        )}
         {renderHighlightCutout()}
         
         {/* Tour Sheet - render first so it appears behind tooltip */}
         {renderTourSheet()}
         
         {/* Tooltip - show in different positions based on showSheet */}
-        {showSheet ? (
+        {showSheet && !showSuccess ? (
           /* Floating tooltip above sheet for step 3 */
           <Animated.View
             style={[
               styles.tooltip,
               {
                 position: 'absolute',
-                top: SCREEN_HEIGHT * 0.15,
-                left: 20,
-                right: 20,
+                top: SCREEN_HEIGHT * 0.12,
+                left: 24,
+                right: 24,
               },
               tooltipStyle,
             ]}
@@ -418,7 +687,7 @@ export function ExploreTourOverlay({
                   title="Got it!"
                   onPress={() => {
                     setIsAutoAdvancing(false);
-                    onComplete();
+                    setTimeout(() => startSuccessAnimation(), 100);
                   }}
                   variant="primary"
                   size="medium"
@@ -427,7 +696,7 @@ export function ExploreTourOverlay({
               </View>
             </View>
           </Animated.View>
-        ) : (
+        ) : !showSuccess ? (
           <Animated.View
             style={[
               styles.tooltip,
@@ -474,9 +743,9 @@ export function ExploreTourOverlay({
                   onPress={() => {
                     setIsAutoAdvancing(false);
                     if (isLastStep) {
-                      onComplete();
+                      setTimeout(() => startSuccessAnimation(), 100);
                     } else {
-                      onNext();
+                      setTimeout(() => onNext(), 100);
                     }
                   }}
                   variant="primary"
@@ -486,7 +755,10 @@ export function ExploreTourOverlay({
               </View>
             </View>
           </Animated.View>
-        )}
+        ) : null}
+        
+        {/* Success card - render last to appear on top of everything */}
+        {renderSuccessCard()}
       </Animated.View>
     </Modal>
   );
@@ -495,7 +767,7 @@ export function ExploreTourOverlay({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)', // Lighter overlay
+    backgroundColor: 'rgba(0, 0, 0, 0.3)', // Even lighter overlay for premium feel
     position: 'relative',
   },
   cutoutContainer: {
@@ -503,31 +775,29 @@ const styles = StyleSheet.create({
   },
   cutout: {
     position: 'absolute',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Lighter cutout
+    backgroundColor: 'rgba(0, 0, 0, 0.6)', // Slightly darker for better contrast
   },
   highlightBorder: {
     position: 'absolute',
     borderWidth: 3,
     borderColor: '#f97316',
-    shadowColor: '#f97316',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 12,
-    elevation: 10, // Android shadow
+    backgroundColor: 'transparent',
   },
   tooltip: {
     position: 'absolute',
-    backgroundColor: 'rgba(11, 11, 15, 0.95)',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(249, 115, 22, 0.3)',
+    backgroundColor: '#0B0B0F', // Solid background for shadow optimization
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: 'rgba(249, 115, 22, 0.4)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
-    shadowRadius: 16,
+    shadowRadius: 12,
+    elevation: 6,
+    zIndex: 10,
   },
   tooltipContent: {
-    padding: 20,
+    padding: 24,
   },
   tooltipTitle: {
     fontSize: 18,

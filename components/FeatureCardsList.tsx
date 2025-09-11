@@ -155,20 +155,22 @@ type FeatureCardsListProps = {
   onOpenClothes?: () => void;
   // When true, renders a compact Featured + Grid layout optimized for readability
   compact?: boolean;
+  // Ref for the first repair tile (for tour highlighting)
+  firstTileRef?: React.RefObject<View>;
 };
 
 
 
 // Memoize individual card to prevent re-renders
-const FeatureCardBase = React.memo(({ 
-  item, 
-  onPress,
-  index = 0
-}: { 
+const FeatureCardBase = React.memo(React.forwardRef<View, { 
   item: CardItem; 
   onPress: (item: CardItem) => void;
   index?: number;
-}) => {
+}>(({ 
+  item, 
+  onPress,
+  index = 0
+}, ref) => {
   const { t } = useTranslation();
   const scaleValue = React.useRef(new Animated.Value(1)).current;
 
@@ -191,6 +193,7 @@ const FeatureCardBase = React.memo(({
   
   return (
     <TouchableOpacity
+    ref={ref}
     activeOpacity={0.9}
     onPress={() => onPress(item)}
     onPressIn={handlePressIn}
@@ -236,7 +239,7 @@ const FeatureCardBase = React.memo(({
     </Animated.View>
     </TouchableOpacity>
   );
-}, (prevProps, nextProps) => {
+}), (prevProps, nextProps) => {
   return prevProps.item.id === nextProps.item.id && 
          prevProps.index === nextProps.index;
 });
@@ -369,7 +372,8 @@ GridCard.displayName = 'GridCard';
 export function FeatureCardsList({ 
   onOpenBackgrounds, 
   onOpenClothes,
-  compact = false
+  compact = false,
+  firstTileRef
 }: FeatureCardsListProps) {
   const router = useRouter();
   const { isPro } = useRevenueCat();
@@ -512,8 +516,13 @@ export function FeatureCardsList({
   if (!compact) {
     return (
       <View style={{ paddingTop: 8, paddingBottom: 24 }}>
-        {CARDS.map((c) => (
-          <Card key={c.id} item={c} onPress={handlePress} />
+        {CARDS.map((c, index) => (
+          <Card 
+            key={c.id} 
+            item={c} 
+            onPress={handlePress} 
+            ref={index === 0 ? firstTileRef : null}
+          />
         ))}
         
         {/* Request your idea & Report bug side-by-side cards */}
@@ -696,7 +705,7 @@ export function FeatureCardsList({
   return (
     <View style={{ paddingTop: 8, paddingBottom: 24 }}>
       {/* Featured card - always plays video */}
-      <Card item={featured} onPress={handlePress} />
+      <Card item={featured} onPress={handlePress} ref={firstTileRef} />
       
       {/* Grid cards - 2 columns with viewport optimization */}
       <View 

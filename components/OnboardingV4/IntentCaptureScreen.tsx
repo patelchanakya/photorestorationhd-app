@@ -1,26 +1,131 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, useWindowDimensions, AppState } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { 
-  useAnimatedStyle, 
-  useSharedValue, 
-  withTiming,
-  withSpring,
-  withDelay 
-} from 'react-native-reanimated';
+import { Image as ExpoImage } from 'expo-image';
+import { VideoView, useVideoPlayer } from 'expo-video';
+import * as Haptics from 'expo-haptics';
+import { useFocusEffect } from '@react-navigation/native';
+import { IconSymbol } from '../ui/IconSymbol';
 
 interface IntentOption {
   id: string;
   label: string;
   icon: string;
   demoImages: string[];
+  video?: any;
+  image?: any;
+  functionType?: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'restore_repair' | 'water_damage' | null;
+  customPrompt?: string;
 }
 
 interface IntentCaptureScreenProps {
   options: IntentOption[];
   onSelect: (intentId: string) => void;
 }
+
+// Video content component for tiles
+const TileVideo = React.memo(({ video }: { video: any }) => {
+  const isMountedRef = React.useRef(true);
+  const shouldBePlayingRef = React.useRef(true);
+  const playerRef = React.useRef<any>(null);
+  
+  const player = useVideoPlayer(video, (player: any) => {
+    playerRef.current = player;
+    player.loop = true;
+    player.muted = true;
+    shouldBePlayingRef.current = true;
+    
+    // Auto-play after a small delay
+    setTimeout(() => {
+      if (isMountedRef.current && playerRef.current) {
+        try {
+          playerRef.current.play();
+        } catch {
+          // Ignore initial play errors
+        }
+      }
+    }, 100);
+  });
+
+  // Initial setup
+  React.useEffect(() => {
+    isMountedRef.current = true;
+    
+    return () => {
+      isMountedRef.current = false;
+      shouldBePlayingRef.current = false;
+      if (playerRef.current) {
+        try {
+          playerRef.current.pause();
+          playerRef.current.release();
+        } catch {
+          // Silent cleanup
+        }
+        playerRef.current = null;
+      }
+    };
+  }, []);
+
+  // Handle app state changes
+  React.useEffect(() => {
+    const handleAppStateChange = (nextAppState: string) => {
+      if (nextAppState === 'active' && shouldBePlayingRef.current && isMountedRef.current) {
+        try {
+          if (playerRef.current && !playerRef.current.playing && playerRef.current.status !== 'idle') {
+            setTimeout(() => {
+              if (isMountedRef.current && playerRef.current) {
+                playerRef.current.play();
+              }
+            }, 100);
+          }
+        } catch (error) {
+          // Ignore resume errors
+        }
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription?.remove();
+  }, []);
+
+  // Handle navigation focus
+  useFocusEffect(
+    React.useCallback(() => {
+      if (shouldBePlayingRef.current && isMountedRef.current) {
+        try {
+          if (playerRef.current && !playerRef.current.playing && playerRef.current.status !== 'idle') {
+            setTimeout(() => {
+              if (isMountedRef.current && playerRef.current) {
+                playerRef.current.play();
+              }
+            }, 100);
+          }
+        } catch (error) {
+          // Ignore focus resume errors
+        }
+      }
+    }, [])
+  );
+
+  if (!player) {
+    return (
+      <View style={[styles.tileMedia, { backgroundColor: '#1a1a1a', justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ color: '#666', fontSize: 12 }}>Loading...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <VideoView
+      player={player}
+      style={styles.tileMedia}
+      contentFit="cover"
+      nativeControls={false}
+      allowsFullscreen={false}
+    />
+  );
+});
 
 function IntentTile({ 
   option, 
@@ -31,85 +136,176 @@ function IntentTile({
   index: number; 
   onPress: () => void; 
 }) {
-  const scale = useSharedValue(0.8);
-  const opacity = useSharedValue(0);
-
-  React.useEffect(() => {
-    // Staggered entrance animation
-    const delay = index * 100;
-    opacity.value = withDelay(delay, withTiming(1, { duration: 400 }));
-    scale.value = withDelay(delay, withSpring(1, { damping: 12 }));
-  }, [index]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ scale: scale.value }],
-  }));
+  const handlePressIn = React.useCallback(() => {
+    try { Haptics.selectionAsync(); } catch {}
+  }, []);
 
   const handlePress = () => {
-    scale.value = withSpring(0.95, { damping: 15 }, () => {
-      scale.value = withSpring(1, { damping: 15 });
-    });
     onPress();
   };
 
   return (
-    <Animated.View style={[styles.tileContainer, animatedStyle]}>
+    <View style={styles.tileContainer}>
       <TouchableOpacity
         style={styles.tile}
         onPress={handlePress}
-        activeOpacity={0.8}
+        onPressIn={handlePressIn}
+        activeOpacity={0.85}
       >
-        <Text style={styles.tileIcon}>{option.icon}</Text>
-        <Text style={styles.tileLabel}>{option.label}</Text>
+        <View style={styles.tileContent}>
+          {option.video ? (
+            <TileVideo video={option.video} />
+          ) : (
+            <ExpoImage 
+              source={option.image || undefined} 
+              style={styles.tileMedia} 
+              contentFit="cover"
+              cachePolicy="memory-disk"
+              priority={index < 4 ? "high" : "low"}
+              placeholderContentFit="cover"
+              transition={0}
+              recyclingKey={option.id}
+            />
+          )}
+          
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.68)']}
+            locations={[0, 1]}
+            style={styles.gradientOverlay}
+          />
+          
+          <View style={styles.tileTextContent}>
+            <Text style={styles.tileLabel}>{option.label}</Text>
+            
+            <View style={styles.tileActionButton}>
+              <Text style={styles.tileActionText} numberOfLines={1}>
+                Choose Photo
+              </Text>
+              <IconSymbol name="chevron.right" size={12} color="#FFFFFF" />
+            </View>
+          </View>
+        </View>
       </TouchableOpacity>
-    </Animated.View>
+    </View>
   );
 }
 
 export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenProps) {
   const insets = useSafeAreaInsets();
-  const titleOpacity = useSharedValue(0);
+  const { width } = useWindowDimensions();
 
-  React.useEffect(() => {
-    titleOpacity.value = withTiming(1, { duration: 600 });
-  }, []);
+  // Calculate grid dimensions
+  const isTablet = width >= 768;
+  const columnsCount = isTablet ? 3 : 2;
+  const containerPadding = 24;
+  const itemGap = 16;
+  const totalGapWidth = (columnsCount - 1) * itemGap;
+  const availableWidth = width - (containerPadding * 2) - totalGapWidth;
+  const tileWidth = availableWidth / columnsCount;
+  const tileHeight = tileWidth * 1.2;
 
-  const titleStyle = useAnimatedStyle(() => ({
-    opacity: titleOpacity.value,
-  }));
+  // Default intent options - photo restoration focused with "Just Explore" option
+  const defaultOptions: IntentOption[] = [
+    {
+      id: 'fix-old-photos',
+      label: 'Fix Old Family Photos',
+      icon: '📸',
+      demoImages: [],
+      video: require('../../assets/videos/repair.mp4'),
+      functionType: 'restore_repair'
+    },
+    {
+      id: 'repair-torn',
+      label: 'Repair Torn & Ripped Photos',
+      icon: '📄',
+      demoImages: [],
+      video: require('../../assets/videos/recreate.mp4'),
+      functionType: 'repair'
+    },
+    {
+      id: 'colorize-bw',
+      label: 'Colorize Black & White',
+      icon: '🎨',
+      demoImages: [],
+      video: require('../../assets/videos/doctor.mp4'),
+      functionType: 'colorize'
+    },
+    {
+      id: 'remove-water-damage',
+      label: 'Remove Water Damage',
+      icon: '💧',
+      demoImages: [],
+      video: require('../../assets/videos/ripvid.mp4'),
+      functionType: 'water_damage'
+    },
+    {
+      id: 'sharpen-faces',
+      label: 'Clear Up Blurry Faces',
+      icon: '🔍',
+      demoImages: [],
+      video: require('../../assets/videos/clouders.mp4'),
+      functionType: 'unblur'
+    },
+    {
+      id: 'remove-scratches',
+      label: 'Remove Scratches & Marks',
+      icon: '✨',
+      demoImages: [],
+      video: require('../../assets/videos/repair.mp4'),
+      functionType: 'descratch'
+    },
+    {
+      id: 'brighten-dark',
+      label: 'Brighten Dark Photos',
+      icon: '☀️',
+      demoImages: [],
+      video: require('../../assets/videos/whitening.mp4'),
+      functionType: 'enlighten'
+    },
+    {
+      id: 'just-explore',
+      label: 'Just Explore the App',
+      icon: '✨',
+      demoImages: [],
+      video: require('../../assets/videos/welcome.mp4'),
+      functionType: null
+    }
+  ];
+
+  const displayOptions = options.length > 0 ? options : defaultOptions;
 
   return (
     <LinearGradient
-      colors={['#0B0B0F', '#1a1a2e']}
+      colors={['#000000', '#000000']}
       style={styles.container}
     >
       <View style={[styles.content, { paddingTop: insets.top + 40 }]}>
         {/* Header */}
-        <Animated.View style={[styles.header, titleStyle]}>
+        <View style={styles.header}>
           <Text style={styles.title}>What brought you here?</Text>
-        </Animated.View>
+        </View>
 
         {/* Intent Options Grid */}
         <ScrollView 
           style={styles.scrollContainer}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.grid}>
-            {options.map((option, index) => (
-              <IntentTile
-                key={option.id}
-                option={option}
-                index={index}
-                onPress={() => onSelect(option.id)}
-              />
+          <View style={[styles.grid, { 
+            gap: itemGap,
+            paddingHorizontal: containerPadding 
+          }]}>
+            {displayOptions.map((option, index) => (
+              <View key={option.id} style={{ width: tileWidth, height: tileHeight }}>
+                <IntentTile
+                  option={option}
+                  index={index}
+                  onPress={() => onSelect(option.id)}
+                />
+              </View>
             ))}
           </View>
         </ScrollView>
-
-        {/* Bottom Spacing */}
-        <View style={{ height: insets.bottom + 20 }} />
       </View>
     </LinearGradient>
   );
@@ -121,10 +317,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
   },
   header: {
     marginBottom: 32,
+    paddingHorizontal: 24,
   },
   title: {
     fontSize: 28,
@@ -142,33 +338,59 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
   },
   tileContainer: {
-    width: '48%',
-    marginBottom: 16,
+    flex: 1,
   },
   tile: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    paddingVertical: 24,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 120,
+    flex: 1,
+    borderRadius: 18,
+    overflow: 'hidden',
   },
-  tileIcon: {
-    fontSize: 32,
-    marginBottom: 12,
-    textAlign: 'center',
+  tileContent: {
+    flex: 1,
+  },
+  tileMedia: {
+    width: '100%',
+    height: '100%',
+  },
+  gradientOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '45%',
+  },
+  tileTextContent: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    bottom: 12,
+    alignItems: 'center',
   },
   tileLabel: {
-    fontSize: 14,
-    fontWeight: '600',
     color: '#FFFFFF',
+    fontSize: 16,
+    fontFamily: 'Lexend-Bold',
+    letterSpacing: -0.3,
     textAlign: 'center',
-    lineHeight: 18,
+    marginBottom: 6,
+  },
+  tileActionButton: {
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+  },
+  tileActionText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontFamily: 'Lexend-Medium',
+    marginRight: 6,
   },
 });

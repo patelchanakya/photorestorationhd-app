@@ -45,6 +45,7 @@ export const FeatureSelectionScreen = React.memo(function FeatureSelectionScreen
   const buttonTranslateY = useSharedValue(100);
   const buttonScale = useSharedValue(0.9);
   const buttonGlow = useSharedValue(0);
+  const containerOpacity = useSharedValue(0);
 
   React.useEffect(() => {
     // Track screen view (fire and forget)
@@ -53,14 +54,17 @@ export const FeatureSelectionScreen = React.memo(function FeatureSelectionScreen
       feature_count: ONBOARDING_FEATURES.length.toString()
     });
 
-    // Faster title animation
-    titleOpacity.value = withDelay(50, withTiming(1, { duration: 300 }));
-    titleTranslateY.value = withDelay(50, withSpring(0, { damping: 15, stiffness: 200 }));
+    // Container fade-in first
+    containerOpacity.value = withTiming(1, { duration: 400 });
     
-    // Initialize button as visible immediately
-    buttonOpacity.value = withDelay(100, withTiming(1, { duration: 200 }));
-    buttonTranslateY.value = withDelay(100, withSpring(0, { damping: 15, stiffness: 200 }));
-    buttonScale.value = withDelay(100, withSpring(0.98, { damping: 15, stiffness: 200 }));
+    // Smoother title animation
+    titleOpacity.value = withDelay(100, withTiming(1, { duration: 500 }));
+    titleTranslateY.value = withDelay(100, withSpring(0, { damping: 20, stiffness: 150 }));
+    
+    // Smoother button animation
+    buttonOpacity.value = withDelay(200, withTiming(1, { duration: 400 }));
+    buttonTranslateY.value = withDelay(200, withSpring(0, { damping: 20, stiffness: 150 }));
+    buttonScale.value = withDelay(200, withSpring(0.98, { damping: 20, stiffness: 150 }));
 
     // Preload preview media assets for faster navigation
     preloadPreviewAssets();
@@ -233,13 +237,18 @@ export const FeatureSelectionScreen = React.memo(function FeatureSelectionScreen
     return `${startWith} ${featureName} →`;
   };
 
+  const containerStyle = useAnimatedStyle(() => ({
+    opacity: containerOpacity.value,
+  }));
+
   return (
     <OnboardingContainer showGradient={false} style={{ backgroundColor: '#000000' }}>
-      <KeyboardAvoidingView 
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <View style={{ flex: 1, paddingTop: insets.top + 80, paddingBottom: 120 }}>
+      <Animated.View style={[{ flex: 1 }, containerStyle]}>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View style={{ flex: 1, paddingTop: insets.top + 80, paddingBottom: 120 }}>
         {/* Feature Tile Grid */}
         <FeatureTileGrid
           selectedFeature={selectedFeature}
@@ -306,8 +315,9 @@ export const FeatureSelectionScreen = React.memo(function FeatureSelectionScreen
             }}
           />
         </Animated.View>
-        </View>
-      </KeyboardAvoidingView>
+          </View>
+        </KeyboardAvoidingView>
+      </Animated.View>
     </OnboardingContainer>
   );
 });
