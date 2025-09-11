@@ -48,9 +48,6 @@ export function OnboardingButton({
 
   const handlePress = () => {
     if (disabled) return;
-    try {
-      Haptics.selectionAsync();
-    } catch {}
     onPress();
   };
 
@@ -93,6 +90,9 @@ export function OnboardingButton({
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
         borderWidth: 1.5,
         borderColor: 'rgba(255, 255, 255, 0.2)',
+        shadowOpacity: 0,
+        shadowRadius: 0,
+        elevation: 0,
       },
       ghost: {
         backgroundColor: 'transparent',

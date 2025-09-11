@@ -82,7 +82,7 @@ export function ExploreTourOverlay({
       const startPulse = () => {
         pulseScale.value = withTiming(1.03, { duration: 1800 }, () => {
           pulseScale.value = withTiming(1, { duration: 1800 }, () => {
-            if (visible) startPulse();
+            if (visible) runOnJS(startPulse)();
           });
         });
       };

@@ -134,6 +134,18 @@ export function usePhotoRestoration() {
         }
       }
       
+      // Check for mock mode (for onboarding testing)
+      if (__DEV__ && (global as any).USE_MOCK_API) {
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        return {
+          id: 'mock-' + Date.now(),
+          originalImageUri: imageUri,
+          restoredImageUri: 'mock-result-uri',
+          status: 'completed',
+          createdAt: new Date()
+        };
+      }
+      
       // Create simple, consistent deduplication key (NO timestamp!)
       const requestKey = `${imageUri}_${functionType}_${styleKey || 'none'}_${customPrompt || 'none'}`;
       

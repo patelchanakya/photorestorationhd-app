@@ -4,8 +4,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image as ExpoImage } from 'expo-image';
 import { VideoView, useVideoPlayer } from 'expo-video';
-import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from '@react-navigation/native';
+import Animated, { FadeIn, useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { IconSymbol } from '../ui/IconSymbol';
 
 interface IntentOption {
@@ -24,37 +24,62 @@ interface IntentCaptureScreenProps {
   onSelect: (intentId: string) => void;
 }
 
-// Video content component for tiles
-const TileVideo = React.memo(({ video }: { video: any }) => {
+// Video content component for tiles - improved with fast refresh support
+const TileVideo = React.memo(({ video, isVisible = true }: { video: any; isVisible?: boolean }) => {
   const isMountedRef = React.useRef(true);
-  const shouldBePlayingRef = React.useRef(true);
+  const shouldBePlayingRef = React.useRef(false);
   const playerRef = React.useRef<any>(null);
+  const [isReady, setIsReady] = React.useState(false);
+  const [hasError, setHasError] = React.useState(false);
   
   const player = useVideoPlayer(video, (player: any) => {
     playerRef.current = player;
     player.loop = true;
     player.muted = true;
-    shouldBePlayingRef.current = true;
     
-    // Auto-play after a small delay
-    setTimeout(() => {
-      if (isMountedRef.current && playerRef.current) {
-        try {
-          playerRef.current.play();
-        } catch {
-          // Ignore initial play errors
+    // Mark as ready and start playing if visible
+    setIsReady(true);
+    setHasError(false);
+    if (isVisible && isMountedRef.current) {
+      shouldBePlayingRef.current = true;
+      setTimeout(() => {
+        if (isMountedRef.current && playerRef.current) {
+          try {
+            playerRef.current.play();
+          } catch (error) {
+            setHasError(true);
+            console.warn('Video play failed:', error);
+          }
         }
-      }
-    }, 100);
+      }, 150);
+    }
   });
 
-  // Initial setup
+  // Handle visibility changes
+  React.useEffect(() => {
+    if (!isReady || !isMountedRef.current) return;
+    
+    try {
+      if (!isVisible && playerRef.current?.playing) {
+        playerRef.current.pause();
+        shouldBePlayingRef.current = false;
+      } else if (isVisible && playerRef.current && !playerRef.current.playing && shouldBePlayingRef.current) {
+        playerRef.current.play();
+      }
+    } catch {
+      // Ignore visibility errors
+    }
+  }, [isVisible, isReady]);
+
+  // Initial setup and cleanup
   React.useEffect(() => {
     isMountedRef.current = true;
     
     return () => {
       isMountedRef.current = false;
       shouldBePlayingRef.current = false;
+      setIsReady(false);
+      setHasError(false);
       if (playerRef.current) {
         try {
           playerRef.current.pause();
@@ -65,21 +90,21 @@ const TileVideo = React.memo(({ video }: { video: any }) => {
         playerRef.current = null;
       }
     };
-  }, []);
+  }, [video]); // Re-run when video changes (fast refresh)
 
   // Handle app state changes
   React.useEffect(() => {
     const handleAppStateChange = (nextAppState: string) => {
-      if (nextAppState === 'active' && shouldBePlayingRef.current && isMountedRef.current) {
+      if (nextAppState === 'active' && shouldBePlayingRef.current && isMountedRef.current && isVisible) {
         try {
-          if (playerRef.current && !playerRef.current.playing && playerRef.current.status !== 'idle') {
+          if (playerRef.current && !playerRef.current.playing) {
             setTimeout(() => {
               if (isMountedRef.current && playerRef.current) {
                 playerRef.current.play();
               }
             }, 100);
           }
-        } catch (error) {
+        } catch {
           // Ignore resume errors
         }
       }
@@ -87,28 +112,36 @@ const TileVideo = React.memo(({ video }: { video: any }) => {
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
     return () => subscription?.remove();
-  }, []);
+  }, [isVisible]);
 
   // Handle navigation focus
   useFocusEffect(
     React.useCallback(() => {
-      if (shouldBePlayingRef.current && isMountedRef.current) {
+      if (shouldBePlayingRef.current && isMountedRef.current && isVisible && isReady) {
         try {
-          if (playerRef.current && !playerRef.current.playing && playerRef.current.status !== 'idle') {
+          if (playerRef.current && !playerRef.current.playing) {
             setTimeout(() => {
               if (isMountedRef.current && playerRef.current) {
                 playerRef.current.play();
               }
             }, 100);
           }
-        } catch (error) {
+        } catch {
           // Ignore focus resume errors
         }
       }
-    }, [])
+    }, [isVisible, isReady])
   );
 
-  if (!player) {
+  if (hasError) {
+    return (
+      <View style={[styles.tileMedia, { backgroundColor: '#2a1a1a', justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ color: '#999', fontSize: 11 }}>Preview unavailable</Text>
+      </View>
+    );
+  }
+
+  if (!player || !isReady) {
     return (
       <View style={[styles.tileMedia, { backgroundColor: '#1a1a1a', justifyContent: 'center', alignItems: 'center' }]}>
         <Text style={{ color: '#666', fontSize: 12 }}>Loading...</Text>
@@ -137,7 +170,7 @@ function IntentTile({
   onPress: () => void; 
 }) {
   const handlePressIn = React.useCallback(() => {
-    try { Haptics.selectionAsync(); } catch {}
+    // Visual feedback handled by TouchableOpacity activeOpacity
   }, []);
 
   const handlePress = () => {
@@ -145,7 +178,10 @@ function IntentTile({
   };
 
   return (
-    <View style={styles.tileContainer}>
+    <Animated.View 
+      style={styles.tileContainer}
+      entering={FadeIn.delay(index * 100).duration(500)}
+    >
       <TouchableOpacity
         style={styles.tile}
         onPress={handlePress}
@@ -179,20 +215,31 @@ function IntentTile({
             
             <View style={styles.tileActionButton}>
               <Text style={styles.tileActionText} numberOfLines={1}>
-                Choose Photo
+                {option.id === 'just-explore' ? 'Continue' : 'Choose Photo'}
               </Text>
               <IconSymbol name="chevron.right" size={12} color="#FFFFFF" />
             </View>
           </View>
         </View>
       </TouchableOpacity>
-    </View>
+    </Animated.View>
   );
 }
 
 export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenProps) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  
+  // Smooth entrance animations
+  const headerOpacity = useSharedValue(0);
+  
+  React.useEffect(() => {
+    headerOpacity.value = withTiming(1, { duration: 500 });
+  }, []);
+  
+  const headerStyle = useAnimatedStyle(() => ({
+    opacity: headerOpacity.value,
+  }));
 
   // Calculate grid dimensions
   const isTablet = width >= 768;
@@ -211,7 +258,7 @@ export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenPr
       label: 'Fix Old Family Photos',
       icon: '📸',
       demoImages: [],
-      video: require('../../assets/videos/repair.mp4'),
+      video: require('../../assets/videos/onboarding/family-photos.mp4'),
       functionType: 'restore_repair'
     },
     {
@@ -219,7 +266,7 @@ export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenPr
       label: 'Repair Torn & Ripped Photos',
       icon: '📄',
       demoImages: [],
-      video: require('../../assets/videos/recreate.mp4'),
+      video: require('../../assets/videos/onboarding/torn-photos.mp4'),
       functionType: 'repair'
     },
     {
@@ -227,7 +274,7 @@ export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenPr
       label: 'Colorize Black & White',
       icon: '🎨',
       demoImages: [],
-      video: require('../../assets/videos/doctor.mp4'),
+      video: require('../../assets/videos/onboarding/color-images.mp4'),
       functionType: 'colorize'
     },
     {
@@ -235,7 +282,7 @@ export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenPr
       label: 'Remove Water Damage',
       icon: '💧',
       demoImages: [],
-      video: require('../../assets/videos/ripvid.mp4'),
+      video: require('../../assets/videos/repair.mp4'),
       functionType: 'water_damage'
     },
     {
@@ -243,7 +290,7 @@ export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenPr
       label: 'Clear Up Blurry Faces',
       icon: '🔍',
       demoImages: [],
-      video: require('../../assets/videos/clouders.mp4'),
+      video: require('../../assets/videos/onboarding/blur-photo.mp4'),
       functionType: 'unblur'
     },
     {
@@ -251,7 +298,7 @@ export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenPr
       label: 'Remove Scratches & Marks',
       icon: '✨',
       demoImages: [],
-      video: require('../../assets/videos/repair.mp4'),
+      video: require('../../assets/videos/onboarding/descratch-photo.mp4'),
       functionType: 'descratch'
     },
     {
@@ -259,7 +306,7 @@ export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenPr
       label: 'Brighten Dark Photos',
       icon: '☀️',
       demoImages: [],
-      video: require('../../assets/videos/whitening.mp4'),
+      video: require('../../assets/videos/onboarding/brighten-photo.mp4'),
       functionType: 'enlighten'
     },
     {
@@ -281,9 +328,9 @@ export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenPr
     >
       <View style={[styles.content, { paddingTop: insets.top + 40 }]}>
         {/* Header */}
-        <View style={styles.header}>
+        <Animated.View style={[styles.header, headerStyle]}>
           <Text style={styles.title}>What brought you here?</Text>
-        </View>
+        </Animated.View>
 
         {/* Intent Options Grid */}
         <ScrollView 

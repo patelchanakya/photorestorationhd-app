@@ -48,14 +48,14 @@ export function WelcomeScreenV4({ onContinue }: WelcomeScreenV4Props) {
     // Track A/B test exposure
     trackABTestExposure('welcomeScreenCopy', welcomeCopy.variant);
     
-    // Staggered entrance animations
-    titleOpacity.value = withTiming(1, { duration: 600 });
+    // Staggered entrance animations - standardized timings
+    titleOpacity.value = withTiming(1, { duration: 500 });
     setTimeout(() => {
-      subtitleOpacity.value = withTiming(1, { duration: 500 });
+      subtitleOpacity.value = withTiming(1, { duration: 400 });
     }, 200);
     setTimeout(() => {
       buttonScale.value = withSpring(1, { damping: 12, stiffness: 100 });
-    }, 800);
+    }, 600);
     
     return () => {
       isMountedRef.current = false;

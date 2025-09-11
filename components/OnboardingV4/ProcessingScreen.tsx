@@ -12,7 +12,10 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { useOnboardingV4Analytics } from '@/hooks/useOnboardingV4Analytics';
-import { generatePhoto } from '@/services/photoGenerationV2';
+import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
+
+// Toggle for mock vs real API - change to false for production
+const USE_MOCK_API = true;
 
 interface PhotoData {
   uri: string;
@@ -67,9 +70,14 @@ export function ProcessingScreen({ photo, intent, onComplete, onError }: Process
     }
   };
   
+  const photoRestoration = usePhotoRestoration();
+
   // Real photo restoration API call
   const performRestoration = React.useCallback(async () => {
-    if (!photo) {
+    // Set global flag for mock mode
+    (global as any).USE_MOCK_API = USE_MOCK_API;
+    
+    if (!photo && USE_MOCK_API) {
       // Demo mode - simulate processing
       setTimeout(() => {
         const processingTime = Date.now() - startTime;
@@ -82,50 +90,47 @@ export function ProcessingScreen({ photo, intent, onComplete, onError }: Process
       return;
     }
 
+    if (!photo) {
+      console.error('No photo provided for restoration');
+      runOnJS(onError)(new Error('No photo provided'));
+      return;
+    }
+
     try {
       const functionType = getRestorationFunction(intent);
       
-      const result = await generatePhoto({
+      if (USE_MOCK_API) {
+        // Mock processing for demo
+        setTimeout(() => {
+          const processingTime = Date.now() - startTime;
+          runOnJS(onComplete)({
+            uri: 'demo-result-uri',
+            processingTime
+          });
+        }, 5000);
+        return;
+      }
+
+      // Use same pipeline as Explore
+      const result = await photoRestoration.mutateAsync({
         imageUri: photo.uri,
         functionType,
-        styleKey: undefined,
         customPrompt: undefined,
-        onProgress: (progress) => {
-          // Could update progress UI here
-          if (__DEV__) {
-            console.log('Restoration progress:', progress);
-          }
-        }
+        imageSource: 'gallery'
       });
 
       const processingTime = Date.now() - startTime;
       
-      if (result.success && result.imageUri) {
-        runOnJS(onComplete)({
-          uri: result.imageUri,
-          processingTime
-        });
-      } else {
-        throw new Error(result.error || 'Restoration failed');
-      }
+      runOnJS(onComplete)({
+        uri: result.restoredImageUri,
+        processingTime
+      });
       
     } catch (error) {
       console.error('Photo restoration error:', error);
-      
-      // For demo purposes, show a fallback result instead of failing
-      const processingTime = Date.now() - startTime;
-      const fallbackResult = {
-        uri: photo?.uri || 'demo-fallback-uri',
-        processingTime
-      };
-      
-      if (__DEV__) {
-        console.log('Using fallback result for demo purposes');
-      }
-      
-      runOnJS(onComplete)(fallbackResult);
+      runOnJS(onError)(error instanceof Error ? error : new Error('Restoration failed'));
     }
-  }, [photo, intent, startTime, onComplete, onError, getRestorationFunction]);
+  }, [photo, intent, startTime, onComplete, onError, getRestorationFunction, photoRestoration]);
 
   React.useEffect(() => {
     // Start scan line animation

@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 
-export type FunctionType = 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'outfit' | 'background' | 'enlighten' | 'custom' | 'restore_repair' | 'memorial' | 'water_damage';
+export type FunctionType = 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'outfit' | 'background' | 'enlighten' | 'custom' | 'restore_repair' | 'memorial' | 'water_damage' | 'nano_banana';
 
 // Webhook-based photo generation service for v2 endpoints
 // This replaces the client-side polling approach with secure server-side generation
@@ -355,6 +355,97 @@ export async function generateWaterDamage(
   });
 }
 
+// Nano-banana generation
+export async function generateNanoBanana(
+  imageUri: string,
+  styleKey?: string,
+  customPrompt?: string,
+  userId?: string
+): Promise<GenerationResponse> {
+  if (__DEV__) {
+    console.log('🍌 Starting nano-banana generation via webhook system');
+    console.log('🍌 NANO-BANANA GENERATION PARAMS:', {
+      styleKey: styleKey,
+      hasCustomPrompt: !!customPrompt,
+      customPrompt: customPrompt,
+      willUseCustomPrompt: !!customPrompt,
+      willUseStyleKey: !customPrompt && !!styleKey
+    });
+  }
+
+  return callGenerationEndpoint('nano-banana-v2', imageUri, {
+    style_key: styleKey,
+    custom_prompt: customPrompt,
+    user_id: userId
+  });
+}
+
+// Nano-repair generation (replaces photo-repair-v2)
+export async function generateNanoRepair(
+  imageUri: string,
+  customPrompt?: string,
+  userId?: string
+): Promise<GenerationResponse> {
+  if (__DEV__) {
+    console.log('🔧 Starting nano-repair generation via webhook system');
+    console.log('🔧 NANO-REPAIR GENERATION PARAMS:', {
+      hasCustomPrompt: !!customPrompt,
+      customPrompt: customPrompt,
+      willUseCustomPrompt: !!customPrompt,
+      willUseDefaultPrompt: !customPrompt
+    });
+  }
+
+  return callGenerationEndpoint('nano-repair-v2', imageUri, {
+    custom_prompt: customPrompt,
+    user_id: userId
+  });
+}
+
+// Nano-restoration generation (replaces photo-restoration-v2)
+export async function generateNanoRestoration(
+  imageUri: string,
+  customPrompt?: string,
+  userId?: string
+): Promise<GenerationResponse> {
+  if (__DEV__) {
+    console.log('🏛️ Starting nano-restoration generation via webhook system');
+    console.log('🏛️ NANO-RESTORATION GENERATION PARAMS:', {
+      hasCustomPrompt: !!customPrompt,
+      customPrompt: customPrompt,
+      willUseCustomPrompt: !!customPrompt,
+      willUseDefaultPrompt: !customPrompt
+    });
+  }
+
+  return callGenerationEndpoint('nano-restoration-v2', imageUri, {
+    custom_prompt: customPrompt,
+    user_id: userId
+  });
+}
+
+// Nano-water-damage generation (replaces photo-water-damage-v2)
+export async function generateNanoWaterDamage(
+  imageUri: string,
+  customPrompt?: string,
+  userId?: string
+): Promise<GenerationResponse> {
+  if (__DEV__) {
+    console.log('💧 Starting nano-water-damage generation via webhook system');
+    console.log('💧 NANO-WATER-DAMAGE GENERATION PARAMS:', {
+      hasCustomPrompt: !!customPrompt,
+      customPrompt: customPrompt,
+      willUseCustomPrompt: !!customPrompt,
+      willUseDefaultPrompt: !customPrompt
+    });
+  }
+
+  return callGenerationEndpoint('nano-water-damage-v2', imageUri, {
+    custom_prompt: customPrompt,
+    user_id: userId
+  });
+}
+
 // Status polling
 export async function pollPhotoStatus(predictionId: string): Promise<StatusResponse> {
   if (!SUPABASE_URL) {
@@ -436,15 +527,22 @@ export async function generatePhoto(
     
     case 'restoration':
       return generateRestoration(imageUri, customPrompt, userId);
+      // NANO MIGRATION: Switch to generateNanoRestoration(imageUri, customPrompt, userId);
     
     case 'repair':
       return generateRepair(imageUri, customPrompt, userId);
+      // NANO MIGRATION: Switch to generateNanoRepair(imageUri, customPrompt, userId);
     
     case 'restore_repair':
       return generateRepair(imageUri, customPrompt, userId);
+      // NANO MIGRATION: Switch to generateNanoRepair(imageUri, customPrompt, userId);
     
     case 'water_damage':
       return generateWaterDamage(imageUri, customPrompt, userId);
+      // NANO MIGRATION: Switch to generateNanoWaterDamage(imageUri, customPrompt, userId);
+    
+    case 'nano_banana':
+      return generateNanoBanana(imageUri, styleKey, customPrompt, userId);
     
     default:
       throw new Error(`Unsupported function type: ${functionType}`);

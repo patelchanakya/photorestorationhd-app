@@ -23,6 +23,7 @@ export function ShowcaseOutfitsScreen({ onContinue, onSkip }: ShowcaseOutfitsScr
   const isMountedRef = React.useRef(true);
   const shouldBePlayingRef = React.useRef(true);
   const playerRef = React.useRef<any>(null);
+  const [isVideoReady, setIsVideoReady] = React.useState(false);
   
   const titleOpacity = useSharedValue(0);
   const subtitleOpacity = useSharedValue(0);
@@ -32,6 +33,9 @@ export function ShowcaseOutfitsScreen({ onContinue, onSkip }: ShowcaseOutfitsScr
     playerRef.current = player;
     player.loop = true;
     player.muted = true;
+    
+    // Mark as ready and start playing
+    setIsVideoReady(true);
     shouldBePlayingRef.current = true;
     
     // Auto-play after a small delay
@@ -43,14 +47,14 @@ export function ShowcaseOutfitsScreen({ onContinue, onSkip }: ShowcaseOutfitsScr
           // Ignore initial play errors
         }
       }
-    }, 100);
+    }, 200);
   });
 
   // Entrance animations
   React.useEffect(() => {
-    titleOpacity.value = withTiming(1, { duration: 600 });
-    subtitleOpacity.value = withDelay(300, withTiming(1, { duration: 500 }));
-    buttonsOpacity.value = withDelay(800, withTiming(1, { duration: 400 }));
+    titleOpacity.value = withTiming(1, { duration: 500 });
+    subtitleOpacity.value = withDelay(200, withTiming(1, { duration: 400 }));
+    buttonsOpacity.value = withDelay(600, withTiming(1, { duration: 400 }));
   }, []);
 
   // Cleanup on unmount
@@ -60,6 +64,7 @@ export function ShowcaseOutfitsScreen({ onContinue, onSkip }: ShowcaseOutfitsScr
     return () => {
       isMountedRef.current = false;
       shouldBePlayingRef.current = false;
+      setIsVideoReady(false);
       if (playerRef.current) {
         try {
           playerRef.current.pause();
@@ -127,8 +132,15 @@ export function ShowcaseOutfitsScreen({ onContinue, onSkip }: ShowcaseOutfitsScr
 
   return (
     <View style={styles.container}>
+      {/* Loading placeholder */}
+      {!isVideoReady && (
+        <View style={[styles.video, { backgroundColor: '#111111', justifyContent: 'center', alignItems: 'center' }]}>
+          <Text style={{ color: '#666', fontSize: 14 }}>Loading...</Text>
+        </View>
+      )}
+      
       {/* Full-screen Video Background */}
-      {player && (
+      {player && isVideoReady && (
         <VideoView
           player={player}
           style={styles.video}
@@ -206,15 +218,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     position: 'relative',
     zIndex: 1,
+    backgroundColor: 'transparent',
   },
   skipContainer: {
     alignSelf: 'flex-end',
     marginBottom: 20,
+    backgroundColor: 'transparent',
   },
   centerContent: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'transparent',
   },
   title: {
     fontSize: 32,
@@ -240,5 +255,6 @@ const styles = StyleSheet.create({
   },
   bottomButton: {
     paddingHorizontal: 8,
+    backgroundColor: 'transparent',
   },
 });

@@ -17,7 +17,7 @@ import Animated, {
 
 import { OnboardingButton } from '@/components/Onboarding/shared/OnboardingButton';
 import { IconSymbol } from '../ui/IconSymbol';
-import { generatePhoto } from '@/services/photoGenerationV2';
+import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 
 // Toggle for mock vs real API - change to false for production
 const USE_MOCK_API = true;
@@ -62,30 +62,30 @@ export function CapabilityDemoScreen({ intent, onContinue }: CapabilityDemoScree
   const buttonOpacity = useSharedValue(0);
 
   React.useEffect(() => {
-    // Entrance animations
+    // Entrance animations - standardized timings
     titleOpacity.value = withTiming(1, { duration: 500 });
     
     setTimeout(() => {
       beforeOpacity.value = withTiming(1, { duration: 400 });
-    }, 300);
+    }, 200);
     
     setTimeout(() => {
-      arrowOpacity.value = withTiming(1, { duration: 300 });
-    }, 700);
+      arrowOpacity.value = withTiming(1, { duration: 400 });
+    }, 400);
     
-    // Show transformation after 1 second
+    // Show transformation after delay
     setTimeout(() => {
       runOnJS(setShowAfter)(true);
-      afterOpacity.value = withTiming(1, { duration: 600 });
-    }, 1000);
+      afterOpacity.value = withTiming(1, { duration: 400 });
+    }, 600);
     
     setTimeout(() => {
       taglineOpacity.value = withTiming(1, { duration: 400 });
-    }, 1600);
+    }, 800);
     
     setTimeout(() => {
       buttonOpacity.value = withTiming(1, { duration: 400 });
-    }, 2000);
+    }, 1000);
   }, []);
 
   const handlePhotoSelection = async () => {
@@ -129,11 +129,16 @@ export function CapabilityDemoScreen({ intent, onContinue }: CapabilityDemoScree
     }
   };
 
+  const photoRestoration = usePhotoRestoration();
+
   const processPhoto = async (photo: PhotoSelection) => {
     try {
       setIsProcessing(true);
       setProcessingError(null);
       setProcessedResult(null);
+
+      // Set global flag for mock mode
+      (global as any).USE_MOCK_API = USE_MOCK_API;
 
       if (USE_MOCK_API) {
         // Mock API processing with delay
@@ -151,25 +156,18 @@ export function CapabilityDemoScreen({ intent, onContinue }: CapabilityDemoScree
           throw new Error('No demo image available for mock result');
         }
       } else {
-        // Real API processing (ready but not used during testing)
+        // Use same pipeline as Explore
         console.log('🚀 Real API processing started for:', intent?.functionType);
         
-        const result = await generatePhoto({
+        const result = await photoRestoration.mutateAsync({
           imageUri: photo.uri,
           functionType: intent?.functionType || 'restore_repair',
-          styleKey: undefined,
-          customPrompt: undefined,
-          onProgress: (progress) => {
-            console.log('Processing progress:', progress);
-          }
+          customPrompt: intent?.customPrompt,
+          imageSource: 'gallery'
         });
 
-        if (result.imageUri) {
-          setProcessedResult(result.imageUri);
-          console.log('✅ Real API processing completed');
-        } else {
-          throw new Error('No result from API');
-        }
+        setProcessedResult(result.restoredImageUri);
+        console.log('✅ Real API processing completed');
       }
     } catch (error) {
       console.error('Processing failed:', error);
@@ -206,20 +204,20 @@ export function CapabilityDemoScreen({ intent, onContinue }: CapabilityDemoScree
           'Demo Mode',
           'This is a demo result. In production, your actual processed photo would be saved.',
           [
-            { text: 'OK', onPress: () => onContinue(selectedPhoto) }
+            { text: 'OK', onPress: () => onContinue(selectedPhoto || undefined) }
           ]
         );
         return;
       }
 
       // Save the image to photos
-      const asset = await MediaLibrary.saveToLibraryAsync(imageUri);
+      await MediaLibrary.saveToLibraryAsync(imageUri);
       
       Alert.alert(
         'Success!',
         'Your restored photo has been saved to your photo library.',
         [
-          { text: 'Continue', onPress: () => onContinue(selectedPhoto) }
+          { text: 'Continue', onPress: () => onContinue(selectedPhoto || undefined) }
         ]
       );
       
@@ -438,6 +436,7 @@ const styles = StyleSheet.create({
   imageWrapper: {
     flex: 1,
     maxWidth: '42%',
+    backgroundColor: 'transparent',
   },
   placeholderImage: {
     aspectRatio: 3/4,
@@ -529,6 +528,7 @@ const styles = StyleSheet.create({
   },
   demoResultContainer: {
     aspectRatio: 3/4,
+    backgroundColor: 'transparent',
   },
   demoImageContainer: {
     position: 'relative',
@@ -536,6 +536,7 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 12,
     overflow: 'hidden',
+    backgroundColor: 'transparent',
   },
   demoImage: {
     width: '100%',

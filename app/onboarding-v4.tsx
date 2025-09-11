@@ -26,7 +26,7 @@ const INTENT_OPTIONS = [
     label: 'Fix Old Family Photos', 
     icon: '📸', 
     demoImages: [], 
-    video: require('../assets/videos/repair.mp4'),
+    video: require('../assets/videos/onboarding/family-photos.mp4'),
     image: require('../assets/images/teared.png'),
     functionType: 'restore_repair' 
   },
@@ -35,7 +35,7 @@ const INTENT_OPTIONS = [
     label: 'Repair Torn & Ripped Photos', 
     icon: '📄', 
     demoImages: [], 
-    video: require('../assets/videos/recreate.mp4'),
+    video: require('../assets/videos/onboarding/torn-photos.mp4'),
     image: require('../assets/images/teared.png'),
     functionType: 'repair',
     customPrompt: 'Repair tears and rips in old photos'
@@ -45,7 +45,7 @@ const INTENT_OPTIONS = [
     label: 'Colorize Black & White', 
     icon: '🎨', 
     demoImages: [], 
-    video: require('../assets/videos/doctor.mp4'),
+    video: require('../assets/videos/onboarding/color-images.mp4'),
     image: require('../assets/images/popular/colorize/pop-1.png'),
     functionType: 'colorize' 
   },
@@ -54,7 +54,7 @@ const INTENT_OPTIONS = [
     label: 'Remove Water Damage', 
     icon: '💧', 
     demoImages: [], 
-    video: require('../assets/videos/ripvid.mp4'),
+    video: require('../assets/videos/repair.mp4'),
     image: require('../assets/images/popular/stain/pop-7.png'),
     functionType: 'water_damage' 
   },
@@ -63,7 +63,7 @@ const INTENT_OPTIONS = [
     label: 'Clear Up Blurry Faces', 
     icon: '🔍', 
     demoImages: [], 
-    video: require('../assets/videos/clouders.mp4'),
+    video: require('../assets/videos/onboarding/blur-photo.mp4'),
     image: require('../assets/images/popular/enhance/pop-3.png'),
     functionType: 'unblur' 
   },
@@ -72,7 +72,7 @@ const INTENT_OPTIONS = [
     label: 'Remove Scratches & Marks', 
     icon: '✨', 
     demoImages: [], 
-    video: require('../assets/videos/repair.mp4'),
+    video: require('../assets/videos/onboarding/descratch-photo.mp4'),
     image: require('../assets/images/popular/descratch/pop-2.png'),
     functionType: 'descratch' 
   },
@@ -81,7 +81,7 @@ const INTENT_OPTIONS = [
     label: 'Brighten Dark Photos', 
     icon: '☀️', 
     demoImages: [], 
-    video: require('../assets/videos/whitening.mp4'),
+    video: require('../assets/videos/onboarding/brighten-photo.mp4'),
     image: require('../assets/images/popular/brighten/pop-4.png'),
     functionType: 'enlighten' 
   },
