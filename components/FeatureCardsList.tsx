@@ -264,8 +264,8 @@ const GridCard = React.memo(({
   const scaleValue = React.useRef(new Animated.Value(1)).current;
   
   // Calculate grid card dimensions
-  // Account for container padding (16*2=32) and gap between cards (8*2=16)
-  const cardWidth = (width - 32 - 16) / 2; // 2 columns with proper spacing
+  // Account for container padding (16*2=32) and gap between cards (4*2=8)
+  const cardWidth = (width - 32 - 8) / 2; // 2 columns with proper spacing
   const cardHeight = cardWidth * 1.2;
 
   const handlePressIn = React.useCallback(() => {
@@ -293,7 +293,7 @@ const GridCard = React.memo(({
       onPressOut={handlePressOut}
       style={{
         width: cardWidth,
-        paddingHorizontal: 8,
+        paddingHorizontal: 4,
         paddingVertical: 8,
       }}
     >
