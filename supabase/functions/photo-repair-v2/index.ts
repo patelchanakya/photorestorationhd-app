@@ -81,6 +81,38 @@ serve(async (req) => {
       }
     }
 
+    // Rate limit for Pro users (40 requests, then 3-hour cooldown)
+    if (isPro) {
+      // Get last 40 requests ordered by time
+      const { data: recentRequests, error: rateError } = await supabase
+        .from('photo_predictions')
+        .select('created_at')
+        .eq('user_id', user_id)
+        .order('created_at', { ascending: false })
+        .limit(40);
+      
+      if (!rateError && recentRequests && recentRequests.length >= 40) {
+        // Check if 3 hours passed since the 40th request
+        const fortiethRequestTime = new Date(recentRequests[39].created_at);
+        const threeHoursLater = new Date(fortiethRequestTime);
+        threeHoursLater.setHours(threeHoursLater.getHours() + 3);
+        
+        if (new Date() < threeHoursLater) {
+          // Still in cooldown
+          console.log('❌ Pro user rate limit exceeded:', user_id);
+          return new Response(JSON.stringify({ 
+            success: false,
+            error: "GPU resources have been exhausted. Please try again later.",
+            code: "SERVICE_BUSY"
+          }), {
+            status: 503,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        // If we're here, cooldown is over - they can continue
+      }
+    }
+
     // Only initialize Replicate AFTER usage check passes
     const replicateApiToken = Deno.env.get('REPLICATE_API_TOKEN')
     if (!replicateApiToken) {
