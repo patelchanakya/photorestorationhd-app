@@ -81,35 +81,27 @@ serve(async (req) => {
       }
     }
 
-    // Rate limit for Pro users (40 requests, then 3-hour cooldown)
+    // Rate limit for Pro users (40 requests per UTC day)
     if (isPro) {
-      // Get last 40 requests ordered by time
-      const { data: recentRequests, error: rateError } = await supabase
-        .from('photo_predictions')
-        .select('created_at')
-        .eq('user_id', user_id)
-        .order('created_at', { ascending: false })
-        .limit(40);
+      const startOfToday = new Date();
+      startOfToday.setUTCHours(0, 0, 0, 0);
       
-      if (!rateError && recentRequests && recentRequests.length >= 40) {
-        // Check if 3 hours passed since the 40th request
-        const fortiethRequestTime = new Date(recentRequests[39].created_at);
-        const threeHoursLater = new Date(fortiethRequestTime);
-        threeHoursLater.setHours(threeHoursLater.getHours() + 3);
-        
-        if (new Date() < threeHoursLater) {
-          // Still in cooldown
-          console.log('❌ Pro user rate limit exceeded:', user_id);
-          return new Response(JSON.stringify({ 
-            success: false,
-            error: "GPU resources have been exhausted. Please try again later.",
-            code: "SERVICE_BUSY"
-          }), {
-            status: 503,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-        // If we're here, cooldown is over - they can continue
+      const { data: todayRequests, error: rateError } = await supabase
+        .from('photo_predictions')
+        .select('id')
+        .eq('user_id', user_id)
+        .gte('created_at', startOfToday.toISOString());
+      
+      if (!rateError && todayRequests && todayRequests.length >= 40) {
+        console.log('❌ Pro user daily limit exceeded:', user_id);
+        return new Response(JSON.stringify({ 
+          success: false,
+          error: "GPU resources exhausted. Team is working on it.",
+          code: "SERVICE_BUSY"
+        }), {
+          status: 503,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
     }
 
