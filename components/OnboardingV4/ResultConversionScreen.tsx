@@ -10,7 +10,8 @@ import Animated, {
   withTiming,
   withSpring,
   withDelay,
-  withSequence
+  withSequence,
+  Easing
 } from 'react-native-reanimated';
 
 import { OnboardingButton } from '@/components/Onboarding/shared/OnboardingButton';
@@ -83,27 +84,19 @@ export function ResultConversionScreen({
   };
 
   React.useEffect(() => {
-    // Success checkmark animation
+    const easing = Easing.out(Easing.cubic);
+    
+    // Optimized success checkmark animation
     checkmarkScale.value = withSequence(
-      withTiming(1.2, { duration: 300 }),
-      withSpring(1, { damping: 8 })
+      withTiming(1.2, { duration: 300, easing }),
+      withSpring(1, { damping: 12, stiffness: 150, mass: 1 })
     );
 
-    setTimeout(() => {
-      titleOpacity.value = withTiming(1, { duration: 400 });
-    }, 200);
-
-    setTimeout(() => {
-      imageOpacity.value = withTiming(1, { duration: 500 });
-    }, 400);
-
-    setTimeout(() => {
-      saveMessageOpacity.value = withTiming(1, { duration: 300 });
-    }, 800);
-
-    setTimeout(() => {
-      buttonsOpacity.value = withTiming(1, { duration: 400 });
-    }, 1000);
+    // Smooth staggered entrance
+    titleOpacity.value = withDelay(150, withTiming(1, { duration: 400, easing }));
+    imageOpacity.value = withDelay(300, withTiming(1, { duration: 400, easing }));
+    saveMessageOpacity.value = withDelay(600, withTiming(1, { duration: 400, easing }));
+    buttonsOpacity.value = withDelay(750, withTiming(1, { duration: 400, easing }));
   }, []);
 
   const checkmarkStyle = useAnimatedStyle(() => ({

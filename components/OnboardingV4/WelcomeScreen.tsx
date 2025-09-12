@@ -8,11 +8,15 @@ import Animated, {
   useAnimatedStyle, 
   useSharedValue, 
   withTiming,
-  withSpring 
+  withSpring,
+  runOnJS,
+  withDelay,
+  Easing
 } from 'react-native-reanimated';
 
 import { OnboardingButton } from '@/components/Onboarding/shared/OnboardingButton';
 import { getWelcomeCopy, trackABTestExposure } from '@/utils/abTesting';
+import * as Haptics from 'expo-haptics';
 
 interface WelcomeScreenV4Props {
   onContinue: () => void;
@@ -23,6 +27,7 @@ export function WelcomeScreenV4({ onContinue }: WelcomeScreenV4Props) {
   const titleOpacity = useSharedValue(0);
   const subtitleOpacity = useSharedValue(0);
   const buttonScale = useSharedValue(0.8);
+  const exitOpacity = useSharedValue(1);
   
   // A/B testing copy
   const welcomeCopy = React.useMemo(() => getWelcomeCopy(), []);
@@ -48,14 +53,15 @@ export function WelcomeScreenV4({ onContinue }: WelcomeScreenV4Props) {
     // Track A/B test exposure
     trackABTestExposure('welcomeScreenCopy', welcomeCopy.variant);
     
-    // Staggered entrance animations - standardized timings
-    titleOpacity.value = withTiming(1, { duration: 500 });
-    setTimeout(() => {
-      subtitleOpacity.value = withTiming(1, { duration: 400 });
-    }, 200);
-    setTimeout(() => {
-      buttonScale.value = withSpring(1, { damping: 12, stiffness: 100 });
-    }, 600);
+    // Optimized staggered entrance animations using withDelay
+    const easing = Easing.out(Easing.cubic);
+    titleOpacity.value = withTiming(1, { duration: 400, easing });
+    subtitleOpacity.value = withDelay(150, withTiming(1, { duration: 400, easing }));
+    buttonScale.value = withDelay(300, withSpring(1, { 
+      damping: 15, 
+      stiffness: 120,
+      mass: 1 
+    }));
     
     return () => {
       isMountedRef.current = false;
@@ -78,7 +84,7 @@ export function WelcomeScreenV4({ onContinue }: WelcomeScreenV4Props) {
       } catch {
         // Ignore initial play errors
       }
-    }, 500); // Give time for animations to start
+    }, 50); // Minimal delay for immediate start
     
     return () => clearTimeout(playTimer);
   }, [player]);
@@ -156,8 +162,37 @@ export function WelcomeScreenV4({ onContinue }: WelcomeScreenV4Props) {
     transform: [{ scale: buttonScale.value }],
   }));
 
+  const containerStyle = useAnimatedStyle(() => ({
+    opacity: exitOpacity.value,
+  }));
+
+  // Optimized smooth exit animation with worklet and haptic feedback
+  const handleContinue = React.useCallback(() => {
+    // Immediate haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    // Button press feedback
+    buttonScale.value = withSpring(0.96, { 
+      damping: 20, 
+      stiffness: 300 
+    }, () => {
+      buttonScale.value = withSpring(1, { damping: 15, stiffness: 120 });
+    });
+
+    // Exit animation
+    exitOpacity.value = withTiming(0, { 
+      duration: 300, 
+      easing: Easing.in(Easing.cubic) 
+    }, (finished) => {
+      'worklet';
+      if (finished) {
+        runOnJS(onContinue)();
+      }
+    });
+  }, [exitOpacity, buttonScale, onContinue]);
+
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, containerStyle]}>
       {/* Full-screen Video Background */}
       <VideoView
         player={player}
@@ -192,14 +227,14 @@ export function WelcomeScreenV4({ onContinue }: WelcomeScreenV4Props) {
           <Animated.View style={buttonStyle}>
             <OnboardingButton
               title="Get Started"
-              onPress={onContinue}
+              onPress={handleContinue}
               variant="primary"
               size="large"
             />
           </Animated.View>
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 

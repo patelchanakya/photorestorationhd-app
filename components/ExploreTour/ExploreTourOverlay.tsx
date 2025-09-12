@@ -7,12 +7,22 @@ import Animated, {
   withSpring,
   withDelay,
   withSequence,
-  runOnJS
+  runOnJS,
+  Easing
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OnboardingButton } from '@/components/Onboarding/shared/OnboardingButton';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { Image as ExpoImage } from 'expo-image';
+import { Image } from 'react-native';
+import { useSavePhoto } from '@/hooks/useSavePhoto';
+import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
+import { SavingModal, type SavingModalRef } from '@/components/SavingModal';
+import { Asset } from 'expo-asset';
+import { LinearGradient } from 'expo-linear-gradient';
+import { presentPaywall } from '@/services/revenuecat';
 
 interface TourStep {
   id: string;
@@ -58,8 +68,79 @@ export function ExploreTourOverlay({
 }: ExploreTourOverlayProps) {
   const safeAreaInsets = useSafeAreaInsets();
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
+  const savePhotoMutation = useSavePhoto();
+  const router = useRouter();
   const [isAutoAdvancing, setIsAutoAdvancing] = React.useState(false); // Disable auto-advance
   const [showSuccess, setShowSuccess] = React.useState(false);
+  const [tourLoading, setTourLoading] = React.useState(false);
+  const [tourProgress, setTourProgress] = React.useState(0);
+  const [tourResult, setTourResult] = React.useState(false);
+  const [showSavingModal, setShowSavingModal] = React.useState(false);
+  const savingModalRef = React.useRef<SavingModalRef>(null);
+  
+  // Progress-based loading messages (matching real QuickEditSheet)
+  const getTourLoadingMessage = (p: number) => {
+    if (p < 20) return 'Uploading photo…';
+    if (p < 40) return 'Running magic…';
+    if (p < 70) return 'Fixing damage…';
+    if (p < 90) return 'Enhancing details…';
+    return 'Almost done…';
+  };
+
+  // Centralized generate action for both buttons
+  const handleGenerateAction = React.useCallback(() => {
+    console.log('🎯 Generate action triggered');
+    
+    // Start loading simulation
+    setTourLoading(true);
+    setTourProgress(0);
+    
+    // 2-second loading timeline (400ms intervals)
+    const startTime = Date.now();
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const totalDuration = 2000; // 2 seconds
+      const progress = Math.min(95, Math.floor((elapsed / totalDuration) * 95));
+      setTourProgress(progress);
+      
+      if (elapsed >= totalDuration) {
+        clearInterval(interval);
+        setTourLoading(false);
+        setTourResult(true);
+        // Advance to step 3 but keep sheet visible
+        console.log('🎯 Loading complete - advancing to step 3');
+        setTimeout(() => onNext(), 200);
+      }
+    }, 400);
+  }, [onNext]);
+
+  // Create tour demo restoration data
+  const createTourRestoration = React.useCallback(async () => {
+    try {
+      // Get image URIs from bundle using proper React Native Image API
+      const originalUri = Image.resolveAssetSource(require('../../assets/images/bw.jpeg')).uri;
+      const restoredUri = Image.resolveAssetSource(require('../../assets/images/clr.jpeg')).uri;
+      
+      // Store tour restoration data for the restoration screen
+      const tourRestorationData = {
+        id: 'tour-demo-colorize',
+        originalImageUri: originalUri,
+        restoredImageUri: restoredUri,
+        functionType: 'colorize' as const,
+        styleName: 'Colorize Photo',
+        createdAt: new Date().toISOString(),
+        isTourDemo: true
+      };
+      
+      // Store in AsyncStorage for the restoration screen to access
+      await AsyncStorage.setItem('tourRestorationData', JSON.stringify(tourRestorationData));
+      console.log('🎯 Tour restoration data stored successfully', { originalUri, restoredUri });
+      return tourRestorationData;
+    } catch (error) {
+      console.error('🎯 Failed to create tour restoration:', error);
+    }
+    return null;
+  }, []);
   
   const overlayOpacity = useSharedValue(0);
   const tooltipOpacity = useSharedValue(0);
@@ -71,12 +152,13 @@ export function ExploreTourOverlay({
   const successOpacity = useSharedValue(0);
   const successScale = useSharedValue(0.8);
   const buttonScale = useSharedValue(1);
+  const exitOpacity = useSharedValue(1);
 
   React.useEffect(() => {
     if (visible) {
-      overlayOpacity.value = withTiming(1, { duration: 400 });
-      tooltipOpacity.value = withDelay(300, withTiming(1, { duration: 500 }));
-      stepTransition.value = withTiming(1, { duration: 400 });
+      overlayOpacity.value = withTiming(1, { duration: 300 });
+      tooltipOpacity.value = withDelay(200, withTiming(1, { duration: 300 }));
+      stepTransition.value = withTiming(1, { duration: 300 });
       
       // Subtle continuous pulse
       const startPulse = () => {
@@ -89,29 +171,28 @@ export function ExploreTourOverlay({
       startPulse();
     } else {
       overlayOpacity.value = withTiming(0, { duration: 300 });
-      tooltipOpacity.value = withTiming(0, { duration: 200 });
-      stepTransition.value = withTiming(0, { duration: 200 });
+      tooltipOpacity.value = withTiming(0, { duration: 300 });
+      stepTransition.value = withTiming(0, { duration: 300 });
       pulseScale.value = 1;
       
       setShowSuccess(false);
+      setTourLoading(false);
+      setTourProgress(0);
+      setTourResult(false);
     }
   }, [visible]);
 
-  // Smooth step transitions
+  // Smooth step transitions - single transition without double fade
   React.useEffect(() => {
     if (visible && currentStep >= 0) {
-      stepTransition.value = withTiming(0, { duration: 200 }, () => {
-        stepTransition.value = withTiming(1, { duration: 400 });
-      });
+      stepTransition.value = withTiming(1, { duration: 300 });
     }
   }, [currentStep]);
 
-  // Animate highlight transitions
+  // Animate highlight transitions - simplified to single transition
   React.useEffect(() => {
     if (highlightArea) {
-      highlightTransition.value = withTiming(0, { duration: 150 }, () => {
-        highlightTransition.value = withTiming(1, { duration: 400 });
-      });
+      highlightTransition.value = withTiming(1, { duration: 300 });
     }
   }, [highlightArea]);
 
@@ -126,14 +207,14 @@ export function ExploreTourOverlay({
     // Hide original content first
     tooltipOpacity.value = withTiming(0, { duration: 300 });
     
-    // Show success state with delay
+    // Show success state with coordinated delay
     setTimeout(() => {
       setShowSuccess(true);
-    }, 200);
+    }, 300);
     
-    // Smooth entrance animations
-    successOpacity.value = withDelay(250, withSpring(1, { damping: 20, stiffness: 80 }));
-    successScale.value = withDelay(250, withSpring(1, { damping: 18, stiffness: 100 }));
+    // Smooth entrance animations with consistent timing
+    successOpacity.value = withDelay(300, withSpring(1, { damping: 20, stiffness: 80 }));
+    successScale.value = withDelay(300, withSpring(1, { damping: 18, stiffness: 100 }));
   }, [buttonScale, successOpacity, successScale, tooltipOpacity]);
   
   // Reset animation values when success state changes
@@ -153,10 +234,10 @@ export function ExploreTourOverlay({
   }));
 
   const tooltipStyle = useAnimatedStyle(() => ({
-    opacity: tooltipOpacity.value * stepTransition.value,
+    opacity: tooltipOpacity.value,
     transform: [
-      { translateY: (1 - tooltipOpacity.value) * 30 + (1 - stepTransition.value) * 20 },
-      { scale: (0.92 + tooltipOpacity.value * 0.08) * (0.95 + stepTransition.value * 0.05) }
+      { translateY: (1 - tooltipOpacity.value) * 20 },
+      { scale: 0.95 + tooltipOpacity.value * 0.05 }
     ],
   }));
 
@@ -176,6 +257,25 @@ export function ExploreTourOverlay({
       { translateY: (1 - successOpacity.value) * 30 }
     ],
   }));
+
+  const exitStyle = useAnimatedStyle(() => ({
+    opacity: exitOpacity.value,
+    transform: [{ scale: exitOpacity.value }]
+  }));
+
+  // Smooth exit animation function
+  const handleSmoothExit = React.useCallback(() => {
+    'worklet';
+    exitOpacity.value = withTiming(0, { 
+      duration: 600, 
+      easing: Easing.in(Easing.cubic) 
+    }, (finished) => {
+      'worklet';
+      if (finished) {
+        runOnJS(onComplete)();
+      }
+    });
+  }, [exitOpacity, onComplete]);
 
 
   if (!visible || !steps[currentStep]) {
@@ -332,15 +432,16 @@ export function ExploreTourOverlay({
           padding: 16, 
           paddingBottom: Math.max(12, usedInsets.bottom + 8) 
         }}>
-          {/* Header */}
+          {/* Header - matching real QuickEditSheet exactly */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <Text style={{ color: '#FFFFFF', fontSize: 18, fontFamily: 'Lexend-SemiBold' }}>
-              Photo Restoration
+            <View style={{ width: 24, height: 24 }} />
+            <Text style={{ color: '#EAEAEA', fontSize: 16, fontFamily: 'Lexend-Bold' }}>
+              Colorize Photo
             </Text>
             <View style={{ width: 24, height: 24 }} />
           </View>
 
-          {/* Demo Photo - matching QuickEditSheet exactly */}
+          {/* Photo Container - matching QuickEditSheet exactly */}
           <View style={{ 
             height: MEDIA_HEIGHT, 
             borderRadius: 16, 
@@ -352,55 +453,191 @@ export function ExploreTourOverlay({
             justifyContent: 'center',
             marginBottom: 20
           }}>
-            <Text style={{ color: '#9CA3AF', fontSize: 14 }}>Demo Photo</Text>
+            {/* Before/After Image */}
+            <ExpoImage 
+              source={tourResult ? require('../../assets/images/clr.jpeg') : require('../../assets/images/bw.jpeg')}
+              style={{ width: '100%', height: '100%' }} 
+              contentFit="contain" 
+              cachePolicy="memory"
+              transition={0}
+            />
+            
+            {/* Loading Overlay - exact copy from real QuickEditSheet */}
+            {tourLoading && (
+              <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.28)', alignItems: 'center', justifyContent: 'center' }}>
+                <View style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.4)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' }}>
+                  <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, textAlign: 'center', marginBottom: 4 }}>Please wait a few seconds</Text>
+                  <Text style={{ color: '#F59E0B', fontSize: 16, fontFamily: 'Lexend-Black', textAlign: 'center' }}>
+                    {getTourLoadingMessage(tourProgress)}
+                  </Text>
+                </View>
+              </View>
+            )}
           </View>
 
-          {/* Buttons - matching QuickEditSheet exactly */}
-          <View style={{ flexDirection: 'row', gap: 12, position: 'relative' }}>
-            <TouchableOpacity style={{
-              flex: 1, 
-              height: 56, 
-              borderRadius: 28, 
-              backgroundColor: 'rgba(255,255,255,0.1)', 
-              borderWidth: 1, 
-              borderColor: 'rgba(255,255,255,0.25)', 
-              alignItems: 'center', 
-              justifyContent: 'center'
-            }}>
-              <Text style={{ color: '#fff', fontWeight: '900', fontSize: 16 }}>Crop</Text>
-            </TouchableOpacity>
-            
-            {/* Generate Button Container with Highlight */}
-            <View style={{ flex: 1, position: 'relative' }}>
-              {/* Highlight Border */}
-              <Animated.View style={[
-                {
-                  position: 'absolute',
-                  top: -3,
-                  left: -3,
-                  right: -3,
-                  bottom: -3,
-                  borderRadius: 31,
-                  borderWidth: 3,
-                  borderColor: '#f97316'
-                },
-                pulseStyle
-              ]} />
+          {/* Buttons - Show different buttons based on tour state */}
+          {!tourResult ? (
+            /* Initial Crop/Generate Buttons */
+            <View style={{ flexDirection: 'row', gap: 12, position: 'relative' }}>
+              <TouchableOpacity 
+                disabled={tourLoading}
+                style={{
+                  flex: 1, 
+                  height: 56, 
+                  borderRadius: 28, 
+                  backgroundColor: 'rgba(255,255,255,0.1)', 
+                  borderWidth: 1, 
+                  borderColor: 'rgba(255,255,255,0.25)', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  opacity: tourLoading ? 0.5 : 1
+                }}
+              >
+                <Text style={{ color: '#fff', fontWeight: '900', fontSize: 16 }}>Crop</Text>
+              </TouchableOpacity>
               
-              <Animated.View style={buttonAnimatedStyle}>
+              {/* Generate Button Container with Highlight */}
+              <View style={{ flex: 1, position: 'relative' }}>
+                {/* Highlight Border - only show when not loading */}
+                {!tourLoading && (
+                  <Animated.View style={[
+                    {
+                      position: 'absolute',
+                      top: -3,
+                      left: -3,
+                      right: -3,
+                      bottom: -3,
+                      borderRadius: 31,
+                      borderWidth: 3,
+                      borderColor: '#10B981'
+                    },
+                    pulseStyle
+                  ]} />
+                )}
+                
+                <Animated.View style={buttonAnimatedStyle}>
+                  <TouchableOpacity
+                    ref={generateButtonRef}
+                    disabled={tourLoading}
+                    style={{
+                      flex: 1, 
+                      height: 56, 
+                      borderRadius: 28, 
+                      overflow: 'hidden', 
+                      borderWidth: 1, 
+                      borderColor: 'rgba(255,255,255,0.25)',
+                      opacity: tourLoading ? 0.7 : 1
+                    }}
+                    onPress={handleGenerateAction}
+                  >
+                    <View style={{ 
+                      position: 'absolute', 
+                      top: 0, 
+                      left: 0, 
+                      right: 0, 
+                      bottom: 0,
+                      backgroundColor: '#F59E0B'
+                    }} />
+                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                      <IconSymbol name="checkmark" size={20} color="#0B0B0F" />
+                    </View>
+                  </TouchableOpacity>
+                </Animated.View>
+              </View>
+            </View>
+          ) : (
+            /* Result Save/View Buttons - matching real QuickEditSheet done state */
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <TouchableOpacity 
+                style={{
+                  flex: 1,
+                  height: 56,
+                  borderRadius: 28,
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  borderWidth: 1,
+                  borderColor: 'rgba(255,255,255,0.25)',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+                onPress={async () => {
+                  console.log('🎯 View Result clicked in tour');
+                  
+                  try {
+                    // Navigate to dedicated tour demo screen
+                    router.push('/restoration/tour-demo?tourComplete=true');
+                    
+                    // Complete the tour overlay
+                    onComplete();
+                  } catch (error) {
+                    console.error('🎯 Failed to navigate to tour demo:', error);
+                    // Fallback to just completing the tour
+                    onComplete();
+                  }
+                }}
+              >
+                <Text style={{ color: '#fff', fontFamily: 'Lexend-Bold', fontSize: 16 }}>View Result</Text>
+              </TouchableOpacity>
+              
+              <Animated.View style={{ flex: 1 }}>
                 <TouchableOpacity
-                  ref={generateButtonRef}
                   style={{
-                    flex: 1, 
-                    height: 56, 
-                    borderRadius: 28, 
-                    overflow: 'hidden', 
-                    borderWidth: 1, 
+                    flex: 1,
+                    height: 56,
+                    borderRadius: 28,
+                    overflow: 'hidden',
+                    borderWidth: 1,
                     borderColor: 'rgba(255,255,255,0.25)'
                   }}
-                  onPress={() => {
-                    console.log('🎯 Tour generate button clicked');
-                    setTimeout(() => startSuccessAnimation(), 100);
+                  onPress={async () => {
+                    console.log('🎯 Save button clicked in tour');
+                    try {
+                      // Show saving modal first
+                      setShowSavingModal(true);
+                      
+                      // Haptic feedback
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+                      
+                      // Load the bundled asset using expo-asset for proper handling
+                      const asset = Asset.fromModule(require('../../assets/images/clr.jpeg'));
+                      await asset.downloadAsync();
+                      
+                      // Use MediaLibrary for direct saving (more reliable than useSavePhoto hook)
+                      const { requestPermissionsAsync, createAssetAsync } = await import('expo-media-library');
+                      const { status } = await requestPermissionsAsync();
+                      
+                      if (status !== 'granted') {
+                        throw new Error('Photo library access denied');
+                      }
+                      
+                      // Save to camera roll
+                      const mediaAsset = await createAssetAsync(asset.localUri || asset.uri);
+                      console.log('🎯 Demo image saved successfully:', mediaAsset.id);
+                      
+                      // Trigger success state in saving modal
+                      savingModalRef.current?.showSuccess();
+                      
+                      // Show success feedback
+                      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                      
+                      // After saving modal completes, show tour success modal
+                      setTimeout(() => {
+                        startSuccessAnimation();
+                      }, 800); // Give saving modal time to complete
+                      
+                    } catch (error) {
+                      console.error('🎯 Failed to save demo image:', error);
+                      
+                      // Hide saving modal on error
+                      setShowSavingModal(false);
+                      
+                      // Show error feedback
+                      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                      
+                      // Still show tour success even if save failed
+                      setTimeout(() => {
+                        startSuccessAnimation();
+                      }, 500);
+                    }
                   }}
                 >
                   <View style={{ 
@@ -409,15 +646,15 @@ export function ExploreTourOverlay({
                     left: 0, 
                     right: 0, 
                     bottom: 0,
-                    backgroundColor: '#F59E0B'
+                    backgroundColor: '#10B981'
                   }} />
                   <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                    <IconSymbol name="checkmark" size={20} color="#0B0B0F" />
+                    <Text style={{ color: '#0B0B0F', fontFamily: 'Lexend-Bold', fontSize: 16 }}>Save</Text>
                   </View>
                 </TouchableOpacity>
               </Animated.View>
             </View>
-          </View>
+          )}
         </View>
       </View>
     );
@@ -465,7 +702,8 @@ export function ExploreTourOverlay({
               // Add subtle backdrop blur effect
               backdropFilter: 'blur(20px)',
             },
-            successCardStyle
+            successCardStyle,
+            exitStyle
           ]}
         >
         {/* Success Icon */}
@@ -538,11 +776,11 @@ Now you know how to use all our tools.
         }}>
           <View style={{ alignItems: 'center', marginBottom: 12 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <IconSymbol name="sparkles" size={18} color="#f97316" />
+              <IconSymbol name="sparkles" size={18} color="#10B981" />
               <Text style={{
                 fontSize: 16,
                 fontFamily: 'Lexend-SemiBold',
-                color: '#f97316',
+                color: '#10B981',
                 marginLeft: 6
               }}>
                 Unlock Pro Features
@@ -564,35 +802,49 @@ Now you know how to use all our tools.
             style={{
               height: 50,
               borderRadius: 25,
-              backgroundColor: '#f97316',
+              overflow: 'hidden',
               alignItems: 'center',
               justifyContent: 'center'
             }}
             onPress={async () => {
               console.log('CTA clicked');
-              if (onCTAPress) {
-                try {
-                  await onCTAPress();
-                } catch (error) {
-                  console.log('CTA error:', error);
-                }
+              try {
+                // Show paywall
+                await presentPaywall();
+                // After paywall, complete the tour
+                onComplete();
+              } catch (error) {
+                console.error('Paywall error:', error);
+                // If paywall fails, still complete the tour
+                onComplete();
               }
-              // Don't call onComplete immediately - let the paywall handle it
             }}
           >
+            <LinearGradient
+              colors={['#FF7A00', '#FFB54D']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                top: 0,
+                bottom: 0,
+              }}
+            />
             <Text style={{
-              color: '#0B0B0F',
+              color: '#FFFFFF',
               fontSize: 15,
               fontFamily: 'Lexend-Bold'
             }}>
-              Save & Continue
+              Get Unlimited
             </Text>
           </TouchableOpacity>
         </View>
 
         {/* Skip option */}
         <TouchableOpacity
-          onPress={() => onComplete()}
+          onPress={handleSmoothExit}
           style={{ paddingVertical: 12 }}
         >
           <Text style={{
@@ -620,8 +872,8 @@ Now you know how to use all our tools.
       supportedOrientations={['portrait']}
     >
       <Animated.View style={[styles.overlay, overlayStyle]}>
-        {/* Backdrop touchable to handle dismissal - disabled when showing success modal */}
-        {!showSuccess && (
+        {/* Backdrop touchable to handle dismissal - only allow on step 1 */}
+        {currentStep === 0 && !showSuccess && (
           <Pressable 
             style={StyleSheet.absoluteFillObject}
             onPress={onSkip}
@@ -636,7 +888,7 @@ Now you know how to use all our tools.
         
         {/* Tooltip - show in different positions based on showSheet */}
         {showSheet && !showSuccess ? (
-          /* Floating tooltip above sheet for step 3 */
+          /* Floating tooltip above sheet for step 2/3 */
           <Animated.View
             style={[
               styles.tooltip,
@@ -677,17 +929,33 @@ Now you know how to use all our tools.
                   style={styles.skipButton}
                   onPress={() => {
                     setIsAutoAdvancing(false);
-                    onSkip();
+                    // Show success modal instead of immediately skipping
+                    startSuccessAnimation();
                   }}
                 >
                   <Text style={styles.skipButtonText}>Skip</Text>
                 </TouchableOpacity>
                 
                 <OnboardingButton
-                  title="Got it!"
+                  title={isLastStep ? "Got it!" : "Next"}
                   onPress={() => {
                     setIsAutoAdvancing(false);
-                    setTimeout(() => startSuccessAnimation(), 100);
+                    if (isLastStep) {
+                      // For result step (step 3), don't auto-trigger success modal
+                      // Let user interact with save/view buttons instead
+                      const currentTourStep = steps[currentStep];
+                      if (currentTourStep?.id === 'result') {
+                        // Stay on result step, user will manually exit via save/view
+                        console.log('🎯 Result step - staying active for user interaction');
+                        return;
+                      } else {
+                        setTimeout(() => startSuccessAnimation(), 100);
+                      }
+                    } else {
+                      // User is in generate step, trigger the generate action
+                      console.log('🎯 Step 2 Next button - triggering generate action');
+                      handleGenerateAction();
+                    }
                   }}
                   variant="primary"
                   size="medium"
@@ -732,7 +1000,8 @@ Now you know how to use all our tools.
                   style={styles.skipButton}
                   onPress={() => {
                     setIsAutoAdvancing(false);
-                    onSkip();
+                    // Show success modal instead of immediately skipping
+                    startSuccessAnimation();
                   }}
                 >
                   <Text style={styles.skipButtonText}>Skip</Text>
@@ -743,7 +1012,16 @@ Now you know how to use all our tools.
                   onPress={() => {
                     setIsAutoAdvancing(false);
                     if (isLastStep) {
-                      setTimeout(() => startSuccessAnimation(), 100);
+                      // For result step, don't auto-trigger success modal
+                      // Let user interact with save/view buttons instead
+                      const currentTourStep = steps[currentStep];
+                      if (currentTourStep?.id === 'result') {
+                        // Stay on result step, user will manually exit via save/view
+                        console.log('🎯 Result step - staying active for user interaction');
+                        return;
+                      } else {
+                        setTimeout(() => startSuccessAnimation(), 100);
+                      }
                     } else {
                       setTimeout(() => onNext(), 100);
                     }
@@ -759,6 +1037,13 @@ Now you know how to use all our tools.
         
         {/* Success card - render last to appear on top of everything */}
         {renderSuccessCard()}
+        
+        {/* Saving Modal */}
+        <SavingModal 
+          ref={savingModalRef}
+          visible={showSavingModal} 
+          onComplete={() => setShowSavingModal(false)}
+        />
       </Animated.View>
     </Modal>
   );
@@ -780,7 +1065,7 @@ const styles = StyleSheet.create({
   highlightBorder: {
     position: 'absolute',
     borderWidth: 3,
-    borderColor: '#f97316',
+    borderColor: '#10B981',
     backgroundColor: 'transparent',
   },
   tooltip: {
@@ -828,7 +1113,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   progressDotActive: {
-    backgroundColor: '#f97316',
+    backgroundColor: '#10B981',
   },
   progressDotInactive: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',

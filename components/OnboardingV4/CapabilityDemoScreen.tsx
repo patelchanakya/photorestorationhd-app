@@ -8,7 +8,8 @@ import Animated, {
   useAnimatedStyle, 
   useSharedValue, 
   withTiming,
-  withDelay
+  withDelay,
+  Easing
 } from 'react-native-reanimated';
 
 import { OnboardingButton } from '@/components/Onboarding/shared/OnboardingButton';
@@ -52,7 +53,7 @@ export function CapabilityDemoScreen({ intent, onContinue }: CapabilityDemoScree
     setIsVideoReady(true);
     shouldBePlayingRef.current = true;
     
-    // Auto-play after a small delay
+    // Auto-play with minimal delay
     setTimeout(() => {
       if (isMountedRef.current && playerRef.current) {
         try {
@@ -61,15 +62,16 @@ export function CapabilityDemoScreen({ intent, onContinue }: CapabilityDemoScree
           // Ignore initial play errors
         }
       }
-    }, 200);
+    }, 50);
   });
 
-  // Entrance animations
+  // Optimized entrance animations
   React.useEffect(() => {
-    titleOpacity.value = withTiming(1, { duration: 500 });
-    videoOpacity.value = withDelay(200, withTiming(1, { duration: 400 }));
-    overlayOpacity.value = withDelay(800, withTiming(1, { duration: 400 }));
-    buttonOpacity.value = withDelay(1200, withTiming(1, { duration: 400 }));
+    const easing = Easing.out(Easing.cubic);
+    titleOpacity.value = withTiming(1, { duration: 400, easing });
+    videoOpacity.value = withDelay(150, withTiming(1, { duration: 400, easing }));
+    overlayOpacity.value = withDelay(600, withTiming(1, { duration: 400, easing }));
+    buttonOpacity.value = withDelay(900, withTiming(1, { duration: 400, easing }));
   }, []);
 
   // Cleanup on unmount

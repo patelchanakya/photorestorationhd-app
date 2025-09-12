@@ -8,7 +8,9 @@ import Animated, {
   withTiming,
   withRepeat,
   withSequence,
-  runOnJS
+  runOnJS,
+  withDelay,
+  Easing
 } from 'react-native-reanimated';
 
 import { useOnboardingV4Analytics } from '@/hooks/useOnboardingV4Analytics';
@@ -54,6 +56,7 @@ export function ProcessingScreen({ photo, intent, onComplete, onError }: Process
   const socialProofOpacity = useSharedValue(0);
   const counterValue = useSharedValue(0);
   const imageOpacity = useSharedValue(1);
+  const stepProgress = useSharedValue(0);
   
   // Function to map intent to restoration function type
   const getRestorationFunction = (intentId: string | null): 'restoration' | 'colorize' => {
@@ -134,41 +137,45 @@ export function ProcessingScreen({ photo, intent, onComplete, onError }: Process
   }, [photo, intent, startTime, onComplete, onError, getRestorationFunction, photoRestoration]);
 
   React.useEffect(() => {
-    // Start scan line animation - continuous scanning for 5 seconds
-    scanLineOpacity.value = withTiming(1, { duration: 300 });
+    const easing = Easing.bezier(0.4, 0, 0.2, 1);
+    
+    // Optimized scan line animation
+    scanLineOpacity.value = withTiming(1, { duration: 300, easing });
     scanLineTranslateY.value = withRepeat(
       withSequence(
-        withTiming(266, { duration: 1500 }), // Scan down full image height
-        withTiming(-10, { duration: 1500 }) // Same speed reset to top for uniform motion
+        withTiming(266, { duration: 1500, easing }),
+        withTiming(-10, { duration: 1500, easing })
       ),
-      -1, // Repeat indefinitely until processing completes
+      -1,
       false
     );
 
-    // Add subtle pulsing effect to image during processing
+    // Optimized pulsing effect
     imageOpacity.value = withRepeat(
       withSequence(
-        withTiming(0.8, { duration: 1000 }),
-        withTiming(1, { duration: 1000 })
+        withTiming(0.85, { duration: 1200, easing }),
+        withTiming(1, { duration: 1200, easing })
       ),
       -1,
       true
     );
 
-    // Show social proof after 1 second
-    setTimeout(() => {
-      socialProofOpacity.value = withTiming(1, { duration: 500 });
-      trackSocialProofShown('counter');
-    }, 1000);
+    // Smooth social proof entrance
+    socialProofOpacity.value = withDelay(800, withTiming(1, { duration: 600, easing }));
+    
+    // Smooth counter animation
+    counterValue.value = withDelay(1000, withTiming(2847293, { duration: 2500, easing }));
 
-    // Animate counter
-    setTimeout(() => {
-      counterValue.value = withTiming(2847293, { duration: 2000 });
-    }, 1500);
+    // Track social proof
+    setTimeout(() => trackSocialProofShown('counter'), 800);
 
-    // Change processing steps
-    setTimeout(() => runOnJS(setProcessingStep)('enhancing'), 1500);
-    setTimeout(() => runOnJS(setProcessingStep)('finalizing'), 3500);
+    // Smooth step transitions
+    stepProgress.value = withTiming(1, { duration: 5000, easing }, (finished) => {
+      'worklet';
+      if (finished) {
+        runOnJS(setProcessingStep)('finalizing');
+      }
+    });
 
     // Start restoration process
     performRestoration();

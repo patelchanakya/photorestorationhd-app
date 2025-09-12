@@ -68,15 +68,12 @@ export function QuickEditSheet({ generateButtonRef }: QuickEditSheetProps = {}) 
   // Tour overlay state
   const [showTourOverlay, setShowTourOverlay] = React.useState(false);
 
-  // Debug logging for tour mode
+  // Debug logging for tour mode - disable tour overlay since ExploreTourOverlay handles it
   React.useEffect(() => {
     if (tourMode) {
       console.log('🎯 QuickEditSheet: Tour mode activated', { visible, stage, functionType });
-      // Show tour overlay after sheet is visible
-      setTimeout(() => {
-        console.log('🎯 Setting showTourOverlay to true');
-        setShowTourOverlay(true);
-      }, 300);
+      // Don't show QuickEditSheet's own tour overlay - ExploreTourOverlay handles tour UI
+      setShowTourOverlay(false);
     } else {
       console.log('🎯 Resetting showTourOverlay to false');
       setShowTourOverlay(false);

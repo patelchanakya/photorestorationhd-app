@@ -180,7 +180,7 @@ function IntentTile({
   return (
     <Animated.View 
       style={styles.tileContainer}
-      entering={FadeIn.delay(index * 100).duration(500)}
+      entering={FadeIn.delay(index * 100).duration(800)}
     >
       <TouchableOpacity
         style={styles.tile}

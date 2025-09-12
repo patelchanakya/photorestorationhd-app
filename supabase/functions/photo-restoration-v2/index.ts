@@ -81,6 +81,31 @@ serve(async (req) => {
       }
     }
 
+    // Rate limit for Pro users (40 requests in 8 hours)
+    if (isPro) {
+      const eightHoursAgo = new Date();
+      eightHoursAgo.setHours(eightHoursAgo.getHours() - 8);
+      
+      const { data: recentRequests, error: rateError } = await supabase
+        .from('photo_predictions')
+        .select('id')
+        .eq('user_id', user_id)
+        .gte('created_at', eightHoursAgo.toISOString());
+      
+      // Only block if we successfully counted AND over limit
+      if (!rateError && recentRequests && recentRequests.length >= 40) {
+        console.log('❌ Pro user rate limit exceeded:', user_id);
+        return new Response(JSON.stringify({ 
+          success: false,
+          error: "GPU resources have been exhausted. Please try again later.",
+          code: "SERVICE_BUSY"
+        }), {
+          status: 503,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     // Only initialize Replicate AFTER usage check passes
     const replicateApiToken = Deno.env.get('REPLICATE_API_TOKEN')
     if (!replicateApiToken) {

@@ -88,6 +88,12 @@ export default function HomeGalleryLikeScreen() {
       description: 'Hit the checkmark to create your result.',
       duration: 5000,
     },
+    {
+      id: 'result',
+      title: 'Save or View Result',
+      description: 'Easily save to your photos or view the full result.',
+      duration: 0, // No auto-advance from this step
+    },
   ];
 
   const [highlightArea, setHighlightArea] = React.useState<{
@@ -173,6 +179,10 @@ export default function HomeGalleryLikeScreen() {
       if (nextStepObj.id === 'generate') {
         console.log('🎯 Step 2 - showing tour sheet inside overlay');
         // Clear highlight area since we'll show the sheet instead
+        setHighlightArea(null);
+      } else if (nextStepObj.id === 'result') {
+        console.log('🎯 Step 3 - showing result with save/view buttons');
+        // Keep highlight area clear, sheet will show result state
         setHighlightArea(null);
       } else {
         measureElementForStep(nextStep);
@@ -813,7 +823,7 @@ export default function HomeGalleryLikeScreen() {
         currentStep={tourStep}
         steps={tourSteps}
         highlightArea={highlightArea}
-        showSheet={tourSteps[tourStep]?.id === 'generate'}
+        showSheet={tourSteps[tourStep]?.id === 'generate' || tourSteps[tourStep]?.id === 'result'}
         generateButtonRef={generateButtonRef}
         insets={insets}
         onNext={handleTourNext}
