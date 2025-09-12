@@ -168,14 +168,27 @@ async function callGenerationEndpoint(
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Generation failed: ${error}`);
+    const errorText = await response.text();
+    let errorData;
+    try {
+      errorData = JSON.parse(errorText);
+    } catch {
+      throw new Error(`Generation failed: ${errorText}`);
+    }
+    
+    // Preserve error code for UI handling
+    const error = new Error(errorData.error || 'Generation failed');
+    (error as any).code = errorData.code;
+    throw error;
   }
 
   const data = await response.json();
   
   if (!data.success) {
-    throw new Error(data.error || 'Generation failed');
+    // Preserve error code for UI handling
+    const error = new Error(data.error || 'Generation failed');
+    (error as any).code = data.code;
+    throw error;
   }
 
   return data;

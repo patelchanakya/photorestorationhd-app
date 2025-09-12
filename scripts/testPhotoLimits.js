@@ -58,7 +58,7 @@ console.log('🎯 Expected Behavior After Implementation:');
 console.log('=========================================\n');
 
 console.log('Free Users:');
-console.log('- 📸 Photos: 5 total (lifetime limit)');
+console.log('- 📸 Photos: 3 total (lifetime limit)');
 console.log('- 🎬 Videos: Completely blocked');
 console.log('- 🔒 Stable tracking prevents reinstall abuse');
 console.log('- 💳 Paywall shown when photo limit reached\n');
@@ -73,10 +73,10 @@ console.log('🔧 Manual Testing Steps:');
 console.log('========================\n');
 
 console.log('1. 🆓 Test Free User Journey:');
-console.log('   a) Fresh install → Should show 0/5 photos used');
-console.log('   b) Process 3 photos → Should show 3/5 photos used');
-console.log('   c) Try 6th photo → Should show paywall');
-console.log('   d) Reinstall app → Should still show 3/5 photos used ✨');
+console.log('   a) Fresh install → Should show 0/3 photos used');
+console.log('   b) Process 3 photos → Should show 3/3 photos used');
+console.log('   c) Try 4th photo → Should show paywall');
+console.log('   d) Reinstall app → Should still show 3/3 photos used ✨');
 console.log('   e) Try video generation → Should be completely blocked\n');
 
 console.log('2. 💎 Test Pro User Journey:');

@@ -10,7 +10,7 @@
  */
 export const getFreePhotoLimit = (): number => {
   const envLimit = process.env.EXPO_PUBLIC_FREE_PHOTO_LIMIT;
-  const limit = envLimit ? parseInt(envLimit, 10) : 5; // Default: 5 photos
+  const limit = envLimit ? parseInt(envLimit, 10) : 3; // Default: 3 photos
   
   if (__DEV__) {
     console.log('📸 Free photo limit:', limit);

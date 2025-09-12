@@ -277,6 +277,9 @@ useEffect(() => {
       if (err?.message?.includes('PHOTO_LIMIT_EXCEEDED') || err?.code === 'PHOTO_LIMIT_EXCEEDED') {
         errorTitle = 'Free Limit Reached';
         errorMessage = 'You\'ve reached your free photo editing limit. Upgrade to Pro for unlimited edits.';
+      } else if (err?.message?.includes('GPU resources exhausted') || err?.code === 'SERVICE_BUSY') {
+        errorTitle = 'Service Busy';
+        errorMessage = err?.message || 'GPU resources exhausted. Team is working on it.';
       } else if (err?.message) {
         errorMessage = err.message;
       }

@@ -611,6 +611,9 @@ export function QuickEditSheet({ generateButtonRef }: QuickEditSheetProps = {}) 
           errorMsg.includes('Unable to process photo')) {
         errorMsg = 'Servers are loaded, please try again later.';
         setIsLimitError(false);
+      } else if (errorMsg.includes('GPU resources exhausted') || e?.code === 'SERVICE_BUSY') {
+        // Keep the original message: "GPU resources exhausted. Team is working on it."
+        setIsLimitError(false);
       } else {
         setIsLimitError(false);
       }

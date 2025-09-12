@@ -321,10 +321,10 @@ export async function verifyAndIncrementUsage(
       if (!canIncrement) {
         return {
           canUse: false,
-          reason: 'Free photo limit reached (5 photos)',
+          reason: 'Free photo limit reached (3 photos)',
           code: 'FREE_PHOTO_LIMIT',
-          currentCount: 5,
-          limit: 5
+          currentCount: 3,
+          limit: 3
         };
       }
 
