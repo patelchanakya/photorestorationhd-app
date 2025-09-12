@@ -6,7 +6,8 @@ import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, AppState, Dimensions, FlatList, Linking, Platform, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, Dimensions, Linking, Platform, Text, TouchableOpacity, View } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 
 interface DeviceTwoRowCarouselProps {
   functionType: FunctionType;
@@ -291,27 +292,34 @@ export function DeviceTwoRowCarousel({ functionType, firstTileRef }: DeviceTwoRo
   }
 
   return (
-    <View style={{ height: 2 * COLUMN_WIDTH + 24, paddingTop: 8 }}>
+    <View style={{ flex: 1, height: 2 * COLUMN_WIDTH + 24, paddingTop: 8 }}>
       {loadingInitial && (
-        <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+        <View style={{ 
+          position: 'absolute', 
+          left: 0, 
+          right: 0, 
+          top: 0, 
+          bottom: 0, 
+          backgroundColor: 'transparent',
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          zIndex: 10 
+        }}>
           <ActivityIndicator color="#888" />
         </View>
       )}
-      <FlatList
+      <FlashList
         horizontal
         data={columns}
         keyExtractor={keyExtractor}
         contentContainerStyle={{ paddingHorizontal: 12 }}
+        estimatedListSize={{ height: 2 * COLUMN_WIDTH, width: SCREEN_WIDTH }}
         showsHorizontalScrollIndicator={false}
         ItemSeparatorComponent={ItemSeparator}
         renderItem={renderItem}
+        estimatedItemSize={COLUMN_WIDTH + 8}
         onEndReachedThreshold={0.6}
         onEndReached={loadNextPage}
-        initialNumToRender={6} // Optimized for device screens
-        maxToRenderPerBatch={4} // Smaller batches for better responsiveness
-        windowSize={6} // Reduced for better memory usage
-        updateCellsBatchingPeriod={50} // Faster updates for smoother scrolling
-        removeClippedSubviews={true}
         getItemLayout={getItemLayout}
         disableIntervalMomentum={true} // Prevent over-scrolling
         decelerationRate="fast" // Faster deceleration
