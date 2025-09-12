@@ -55,9 +55,10 @@ serve(async (req) => {
     supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // CRITICAL: Check usage limits BEFORE initializing Replicate or processing image
+    const isPro = user_id && user_id !== 'anonymous' && 
+      (user_id.startsWith('store:') || user_id.startsWith('orig:') || user_id.startsWith('fallback:'));
+    
     if (user_id && user_id !== 'anonymous') {
-      const isPro = user_id.startsWith('store:') || user_id.startsWith('orig:') || user_id.startsWith('fallback:');
-      
       if (isPro) {
         console.log('✅ Pro user detected - unlimited photos, skipping database check');
       } else {
