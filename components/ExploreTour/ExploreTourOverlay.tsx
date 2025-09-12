@@ -265,12 +265,10 @@ export function ExploreTourOverlay({
 
   // Smooth exit animation function
   const handleSmoothExit = React.useCallback(() => {
-    'worklet';
     exitOpacity.value = withTiming(0, { 
       duration: 600, 
       easing: Easing.in(Easing.cubic) 
     }, (finished) => {
-      'worklet';
       if (finished) {
         runOnJS(onComplete)();
       }

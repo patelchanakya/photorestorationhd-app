@@ -55,7 +55,6 @@ export default function TourDemoScreen() {
   // Success animation values
   const successOpacity = useSharedValue(0);
   const successScale = useSharedValue(0.8);
-  const exitOpacity = useSharedValue(1);
   
   const isTourMode = tourComplete === 'true';
 
@@ -77,22 +76,6 @@ export default function TourDemoScreen() {
   const beforeImage = require('../../assets/images/bw.jpeg');
   const afterImage = require('../../assets/images/clr.jpeg');
 
-  // Smooth exit animation function
-  const handleSmoothExit = React.useCallback(() => {
-    'worklet';
-    exitOpacity.value = withTiming(0, { 
-      duration: 600, 
-      easing: Easing.in(Easing.cubic) 
-    }, (finished) => {
-      'worklet';
-      if (finished) {
-        runOnJS(() => {
-          setShowTourSuccessModal(false);
-          router.dismissTo('/explore');
-        })();
-      }
-    });
-  }, [exitOpacity]);
 
   const handleDismiss = () => {
     router.dismissTo('/explore');
@@ -178,10 +161,6 @@ export default function TourDemoScreen() {
     ],
   }));
 
-  const exitStyle = useAnimatedStyle(() => ({
-    opacity: exitOpacity.value,
-    transform: [{ scale: exitOpacity.value }]
-  }));
 
   const handleShare = async () => {
     try {
@@ -387,8 +366,7 @@ export default function TourDemoScreen() {
                     shadowRadius: 20,
                     elevation: 10,
                   },
-                  successCardStyle,
-                  exitStyle
+                  successCardStyle
                 ]}
               >
                 {/* Success Icon */}
@@ -496,13 +474,11 @@ export default function TourDemoScreen() {
                       try {
                         // Show paywall
                         await presentPaywall();
-                        // After paywall, exit smoothly
-                        handleSmoothExit();
                       } catch (error) {
                         console.error('🎯 Paywall error:', error);
-                        // If paywall fails, still exit gracefully
-                        handleSmoothExit();
                       }
+                      // After paywall (success or error), just close modal - stay on restoration screen
+                      setShowTourSuccessModal(false);
                     }}
                   >
                     <LinearGradient
@@ -529,7 +505,9 @@ export default function TourDemoScreen() {
 
                 {/* Skip option */}
                 <TouchableOpacity
-                  onPress={handleSmoothExit}
+                  onPress={() => {
+                    setShowTourSuccessModal(false);
+                  }}
                   style={{ paddingVertical: 12 }}
                 >
                   <Text style={{
