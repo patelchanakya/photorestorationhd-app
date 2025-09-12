@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OnboardingButton } from '@/components/Onboarding/shared/OnboardingButton';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Image as ExpoImage } from 'expo-image';
-import { Image } from 'react-native';
+import { Image as RNImage } from 'react-native';
 import { useSavePhoto } from '@/hooks/useSavePhoto';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -78,6 +78,41 @@ export function ExploreTourOverlay({
   const [showSavingModal, setShowSavingModal] = React.useState(false);
   const savingModalRef = React.useRef<SavingModalRef>(null);
   
+  // Store timer references for cleanup
+  const timerRefs = React.useRef<ReturnType<typeof setTimeout>[]>([]);
+  const intervalRefs = React.useRef<ReturnType<typeof setInterval>[]>([]);
+  
+  // Helper functions for timer management
+  const addTimeout = React.useCallback((callback: () => void, delay: number) => {
+    const timerId = setTimeout(callback, delay);
+    timerRefs.current.push(timerId);
+    return timerId;
+  }, []);
+  
+  const addInterval = React.useCallback((callback: () => void, delay: number) => {
+    const intervalId = setInterval(callback, delay);
+    intervalRefs.current.push(intervalId);
+    return intervalId;
+  }, []);
+  
+  // Cleanup all timers and cache on unmount
+  React.useEffect(() => {
+    return () => {
+      // Clear all timeouts
+      timerRefs.current.forEach(timerId => clearTimeout(timerId));
+      timerRefs.current = [];
+      
+      // Clear all intervals
+      intervalRefs.current.forEach(intervalId => clearInterval(intervalId));
+      intervalRefs.current = [];
+      
+      // Clear image cache when tour completes (demo images no longer needed)
+      ExpoImage.clearMemoryCache().catch(() => {
+        // Silent fail - not critical
+      });
+    };
+  }, []);
+  
   // Progress-based loading messages (matching real QuickEditSheet)
   const getTourLoadingMessage = (p: number) => {
     if (p < 20) return 'Uploading photo…';
@@ -97,29 +132,37 @@ export function ExploreTourOverlay({
     
     // 2-second loading timeline (400ms intervals)
     const startTime = Date.now();
-    const interval = setInterval(() => {
+    let intervalId: ReturnType<typeof setInterval>;
+    
+    intervalId = addInterval(() => {
       const elapsed = Date.now() - startTime;
       const totalDuration = 2000; // 2 seconds
       const progress = Math.min(95, Math.floor((elapsed / totalDuration) * 95));
       setTourProgress(progress);
       
       if (elapsed >= totalDuration) {
-        clearInterval(interval);
+        // Remove from tracking and clear
+        const index = intervalRefs.current.indexOf(intervalId);
+        if (index > -1) {
+          intervalRefs.current.splice(index, 1);
+        }
+        clearInterval(intervalId);
+        
         setTourLoading(false);
         setTourResult(true);
         // Advance to step 3 but keep sheet visible
         console.log('🎯 Loading complete - advancing to step 3');
-        setTimeout(() => onNext(), 200);
+        addTimeout(() => onNext(), 200);
       }
     }, 400);
-  }, [onNext]);
+  }, [onNext, addTimeout, addInterval]);
 
   // Create tour demo restoration data
   const createTourRestoration = React.useCallback(async () => {
     try {
       // Get image URIs from bundle using proper React Native Image API
-      const originalUri = Image.resolveAssetSource(require('../../assets/images/bw.jpeg')).uri;
-      const restoredUri = Image.resolveAssetSource(require('../../assets/images/clr.jpeg')).uri;
+      const originalUri = RNImage.resolveAssetSource(require('../../assets/images/bw.jpeg')).uri;
+      const restoredUri = RNImage.resolveAssetSource(require('../../assets/images/clr.jpeg')).uri;
       
       // Store tour restoration data for the restoration screen
       const tourRestorationData = {
@@ -199,7 +242,7 @@ export function ExploreTourOverlay({
   // Success animation sequence - smooth and premium
   const startSuccessAnimation = React.useCallback(() => {
     // Immediate feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Success);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     
     // Smooth button feedback
     buttonScale.value = withSpring(0.95, { damping: 20, stiffness: 300 });
@@ -208,14 +251,14 @@ export function ExploreTourOverlay({
     tooltipOpacity.value = withTiming(0, { duration: 300 });
     
     // Show success state with coordinated delay
-    setTimeout(() => {
+    addTimeout(() => {
       setShowSuccess(true);
     }, 300);
     
     // Smooth entrance animations with consistent timing
     successOpacity.value = withDelay(300, withSpring(1, { damping: 20, stiffness: 80 }));
     successScale.value = withDelay(300, withSpring(1, { damping: 18, stiffness: 100 }));
-  }, [buttonScale, successOpacity, successScale, tooltipOpacity]);
+  }, [buttonScale, successOpacity, successScale, tooltipOpacity, addTimeout]);
   
   // Reset animation values when success state changes
   React.useEffect(() => {
@@ -456,7 +499,7 @@ export function ExploreTourOverlay({
               source={tourResult ? require('../../assets/images/clr.jpeg') : require('../../assets/images/bw.jpeg')}
               style={{ width: '100%', height: '100%' }} 
               contentFit="contain" 
-              cachePolicy="memory"
+              cachePolicy="disk"
               transition={0}
             />
             
@@ -618,7 +661,7 @@ export function ExploreTourOverlay({
                       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                       
                       // After saving modal completes, show tour success modal
-                      setTimeout(() => {
+                      addTimeout(() => {
                         startSuccessAnimation();
                       }, 800); // Give saving modal time to complete
                       
@@ -632,7 +675,7 @@ export function ExploreTourOverlay({
                       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
                       
                       // Still show tour success even if save failed
-                      setTimeout(() => {
+                      addTimeout(() => {
                         startSuccessAnimation();
                       }, 500);
                     }
@@ -947,7 +990,7 @@ Now you know how to use all our tools.
                         console.log('🎯 Result step - staying active for user interaction');
                         return;
                       } else {
-                        setTimeout(() => startSuccessAnimation(), 100);
+                        addTimeout(() => startSuccessAnimation(), 100);
                       }
                     } else {
                       // User is in generate step, trigger the generate action
@@ -1018,10 +1061,10 @@ Now you know how to use all our tools.
                         console.log('🎯 Result step - staying active for user interaction');
                         return;
                       } else {
-                        setTimeout(() => startSuccessAnimation(), 100);
+                        addTimeout(() => startSuccessAnimation(), 100);
                       }
                     } else {
-                      setTimeout(() => onNext(), 100);
+                      addTimeout(() => onNext(), 100);
                     }
                   }}
                   variant="primary"

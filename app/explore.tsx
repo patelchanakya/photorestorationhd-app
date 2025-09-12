@@ -21,6 +21,7 @@ import * as StoreReview from 'expo-store-review';
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Image } from 'expo-image';
 import React from 'react';
 import { Alert, Platform, Text, TouchableOpacity, View, useWindowDimensions, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
@@ -549,6 +550,27 @@ export default function HomeGalleryLikeScreen() {
       is_pro: isPro ? 'true' : 'false'
     });
   }, [isTabletLike, isPro]);
+
+  // Memory management - clear image cache periodically on heavy screen
+  React.useEffect(() => {
+    const clearImageCache = async () => {
+      try {
+        await Image.clearMemoryCache();
+        if (__DEV__) {
+          console.log('🧹 Image memory cache cleared on explore screen');
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.warn('⚠️ Failed to clear image memory cache:', error);
+        }
+      }
+    };
+
+    // Clear cache on unmount to free up memory when leaving explore screen
+    return () => {
+      clearImageCache();
+    };
+  }, []);
 
   // Handle recovery after app initialization (centralized in appInitStore)
   React.useEffect(() => {

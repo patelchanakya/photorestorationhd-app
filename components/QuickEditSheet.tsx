@@ -706,7 +706,7 @@ export function QuickEditSheet({ generateButtonRef }: QuickEditSheetProps = {}) 
                             source={{ uri: restoredImageUri }} 
                             style={{ width: '100%', height: '100%' }} 
                             contentFit="contain" 
-                            cachePolicy="memory"
+                            cachePolicy="memory-disk"
                             allowDownscaling
                             transition={0}
                             onLoadStart={() => setMediaLoading(true)}
@@ -734,7 +734,7 @@ export function QuickEditSheet({ generateButtonRef }: QuickEditSheetProps = {}) 
                           source={{ uri: selectedImageUri as string }}
                           style={{ width: '100%', height: '100%' }} 
                           contentFit="contain" 
-                          cachePolicy="memory"
+                          cachePolicy="memory-disk"
                           allowDownscaling
                           transition={0}
                           onLoadStart={() => setMediaLoading(true)}

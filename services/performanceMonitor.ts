@@ -27,6 +27,7 @@ class PerformanceMonitor {
 
   private frameDropCallback: (() => void) | null = null;
   private memoryWarningCallback: (() => void) | null = null;
+  private reportingCleanup: (() => void) | null = null;
 
   start() {
     if (__DEV__) {
@@ -58,6 +59,12 @@ class PerformanceMonitor {
   }
 
   stop() {
+    // Clean up the periodic reporting interval
+    if (this.reportingCleanup) {
+      this.reportingCleanup();
+      this.reportingCleanup = null;
+    }
+
     if (__DEV__) {
       console.log('🛑 Performance monitoring stopped');
     }
@@ -207,11 +214,17 @@ class PerformanceMonitor {
   startPeriodicReporting(intervalMinutes: number = 2) {
     if (!__DEV__) return;
 
+    // Clear existing interval if one exists
+    if (this.reportingCleanup) {
+      this.reportingCleanup();
+    }
+
     const interval = setInterval(() => {
       this.logSummary();
     }, intervalMinutes * 60 * 1000);
 
-    return () => clearInterval(interval);
+    this.reportingCleanup = () => clearInterval(interval);
+    return this.reportingCleanup;
   }
 }
 
