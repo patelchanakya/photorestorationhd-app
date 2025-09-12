@@ -702,7 +702,7 @@ export default function RestorationScreen() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1, backgroundColor: '#0B0B0F' }}>
         {/* Clean Header */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 }}>
           <TouchableOpacity onPress={handleDismiss} style={{ padding: 8, marginLeft: -8 }}>
             <IconSymbol name="chevron.left" size={isSmallDevice ? 20 : 24} color="#EAEAEA" />
           </TouchableOpacity>
@@ -797,76 +797,20 @@ export default function RestorationScreen() {
               />
             </View>
 
-            {/* Primary Actions - 70/30 split */}
+            {/* Primary Actions - Equal sized buttons */}
             <View style={{ paddingBottom: isTinyDevice ? 16 : 24 }}>
-              <View className="flex-row" style={{ gap: 8 }}>
-                {/* Share Button - 30% width */}
-                <TouchableOpacity
-                  style={{
-                    flex: 3,
-                    height: 56,
-                    borderRadius: 28,
-                    backgroundColor: 'rgba(255,255,255,0.1)',
-                    borderWidth: 1,
-                    borderColor: 'rgba(255,255,255,0.2)',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                  onPress={handleShare}
-                  activeOpacity={0.7}
-                >
-                  <Text style={{
-                    color: '#fff',
-                    fontSize: 16,
-                    fontWeight: '600',
-                    letterSpacing: 0.3
-                  }}>
-                    Share
-                  </Text>
+              <View className="flex-row" style={{ gap: 12 }}>
+                {/* Share Button */}
+                <TouchableOpacity style={{ flex: 1, height: 56, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' }} onPress={handleShare}>
+                  <LinearGradient colors={['#059669', '#10b981']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+                  <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ color: '#0B0B0F', fontWeight: '900', fontSize: 16 }}>Share</Text>
+                  </View>
                 </TouchableOpacity>
 
-                {/* Save Button - 70% width */}
-                <TouchableOpacity
-                  style={{
-                    flex: 7,
-                    height: 56,
-                    borderRadius: 28,
-                    overflow: 'hidden',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexDirection: 'row',
-                  }}
-                  onPress={handleExport}
-                  activeOpacity={0.8}
-                >
-                  <LinearGradient
-                    colors={['#FF7A00', '#FFB54D']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={{
-                      position: 'absolute',
-                      left: 0,
-                      right: 0,
-                      top: 0,
-                      bottom: 0,
-                    }}
-                  />
-                  <View>
-                    <IconSymbol 
-                      name="arrow.down.circle.fill" 
-                      size={22} 
-                      color="#fff" 
-                    />
-                  </View>
-                  <Text style={{ 
-                    color: '#fff', 
-                    fontSize: 16, 
-                    fontWeight: '700', 
-                    marginLeft: 8,
-                    letterSpacing: 0.3
-                  }}>
-                    Save to Photos
-                  </Text>
+                {/* Save Button */}
+                <TouchableOpacity style={{ flex: 1, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' }} onPress={handleExport}>
+                  <Text style={{ color: '#fff', fontWeight: '900', fontSize: 16 }}>Save</Text>
                 </TouchableOpacity>
               </View>
             </View>

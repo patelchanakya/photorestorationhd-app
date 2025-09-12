@@ -14,6 +14,7 @@ import { ProUpgradeModal } from '@/components/ProUpgradeModal';
 import { PhotoLimitModal } from '@/components/PhotoLimitModal';
 import { SavingModal, SavingModalRef } from '@/components/SavingModal';
 import { analyticsService } from '@/services/analytics';
+import { restorationService } from '@/services/supabase';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
@@ -115,7 +116,7 @@ export function QuickEditSheet({ generateButtonRef }: QuickEditSheetProps = {}) 
       case 'repair':
         return t('quickEdit.repair');
       case 'restore_repair':
-        return t('quickEdit.autoRestore');
+        return t('quickEdit.modes.restoreRepair');
       case 'descratch':
         return t('quickEdit.descratch');
       case 'unblur':
@@ -483,6 +484,109 @@ export function QuickEditSheet({ generateButtonRef }: QuickEditSheetProps = {}) 
       });
       
       setResult(id, restoredUri);
+      
+      if (__DEV__) {
+        console.log('🔄 [RACE-FIX] Photo restoration completed, setResult called with ID:', id);
+      }
+      
+      // Auto-navigate to restoration screen for auto-restore only
+      if (functionType === 'restore_repair') {
+        if (__DEV__) {
+          console.log('🚀 [RACE-FIX] Auto-restore detected, starting navigation process');
+        }
+        
+        // Track auto view (fire and forget)
+        analyticsService.track('quick_edit_auto_view_result', {
+          function_type: functionType,
+          style_key: styleKey || 'none',
+          restoration_id: id
+        });
+        
+        // Ensure restoration data is persisted before navigation
+        const waitForRestoration = async () => {
+          let retryCount = 0;
+          const maxRetries = 5;
+          const retryDelay = 200; // ms
+          
+          if (__DEV__) {
+            console.log(`🔄 [RACE-FIX] Starting data persistence check for restoration ID: ${id}`);
+          }
+          
+          while (retryCount < maxRetries) {
+            try {
+              if (__DEV__) {
+                console.log(`🔍 [RACE-FIX] Attempt ${retryCount + 1}/${maxRetries} - Checking restoration data existence`);
+              }
+              
+              const restoration = await restorationService.getById(id);
+              if (restoration) {
+                if (__DEV__) {
+                  console.log('✅ [RACE-FIX] Restoration data confirmed! Details:', {
+                    id: restoration.id,
+                    status: restoration.status,
+                    hasReplicateUrl: !!restoration.replicate_url,
+                    hasLocalFiles: !!restoration.restored_filename
+                  });
+                  console.log('🚀 [RACE-FIX] Navigating to restoration screen');
+                }
+                
+                // Clear active prediction state
+                AsyncStorage.removeItem('activePredictionId');
+                
+                close();
+                router.push(`/restoration/${id}`);
+                return;
+              }
+              
+              if (__DEV__) {
+                console.log(`⏳ [RACE-FIX] Restoration not ready yet, retry ${retryCount + 1}/${maxRetries} (waiting ${retryDelay}ms)`);
+              }
+              
+              // Wait before retrying
+              await new Promise(resolve => setTimeout(resolve, retryDelay));
+              retryCount++;
+              
+            } catch (error) {
+              if (__DEV__) {
+                console.error(`❌ [RACE-FIX] Error checking restoration (attempt ${retryCount + 1}):`, error);
+              }
+              retryCount++;
+              await new Promise(resolve => setTimeout(resolve, retryDelay));
+            }
+          }
+          
+          // Fallback: navigate anyway after max retries
+          if (__DEV__) {
+            console.warn(`⚠️ [RACE-FIX] Max retries (${maxRetries}) exceeded for ID: ${id}, navigating anyway as fallback`);
+          }
+          
+          AsyncStorage.removeItem('activePredictionId');
+          close();
+          router.push(`/restoration/${id}`);
+        };
+        
+        if (__DEV__) {
+          console.log('🚀 [RACE-FIX] Starting auto-navigation with enhanced persistence check');
+          console.log('📊 [RACE-FIX] Configuration:', {
+            restorationId: id,
+            functionType,
+            maxRetries: 5,
+            retryDelay: 200,
+            timestamp: new Date().toISOString()
+          });
+        }
+        
+        waitForRestoration().catch((error) => {
+          if (__DEV__) {
+            console.error('❌ [RACE-FIX] Critical error in waitForRestoration:', error);
+            console.error('🔧 [RACE-FIX] Executing emergency fallback navigation');
+          }
+          // Fallback navigation
+          AsyncStorage.removeItem('activePredictionId');
+          close();
+          router.push(`/restoration/${id}`);
+        });
+      }
     } catch (e: any) {
       if (__DEV__) {
         console.log('🚨 QuickEditSheet caught error:', e?.message);
@@ -911,37 +1015,25 @@ export function QuickEditSheet({ generateButtonRef }: QuickEditSheetProps = {}) 
                     </TouchableOpacity>
                   ) : (
                     <>
-                      <Animated.View style={[saveBtnStyle]}>
-                        <TouchableOpacity 
-                          onPress={handleSave} 
-                          disabled={savePhotoMutation.isPending}
-                          style={{ 
-                            paddingHorizontal: 22, 
-                            height: 56, 
-                            borderRadius: 28, 
-                            backgroundColor: 'rgba(255,255,255,0.1)', 
-                            borderWidth: 1, 
-                            borderColor: 'rgba(255,255,255,0.25)', 
-                            alignItems: 'center', 
-                            justifyContent: 'center',
-                            opacity: savePhotoMutation.isPending ? 0.6 : 1
-                          }}
-                        >
-                          {savePhotoMutation.isPending ? (
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                              <ActivityIndicator size="small" color="#fff" />
-                              <Text style={{ color: '#fff', fontFamily: 'Lexend-SemiBold' }}>Saving...</Text>
-                            </View>
-                          ) : (
-                            <Text style={{ color: '#fff', fontFamily: 'Lexend-SemiBold' }}>Save</Text>
-                          )}
-                        </TouchableOpacity>
-                      </Animated.View>
-                      <TouchableOpacity onPress={handleView} style={{ flex: 1, height: 56, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', minWidth: 120 }}>
-                        <LinearGradient colors={['#F59E0B', '#F59E0B']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+                      <TouchableOpacity onPress={handleView} style={{ flex: 1, height: 56, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' }}>
+                        <LinearGradient colors={['#059669', '#10b981']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
                         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                           <Text style={{ color: '#0B0B0F', fontWeight: '900', fontSize: 16 }}>{t('quickEdit.buttons.view')}</Text>
                         </View>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        onPress={handleSave} 
+                        disabled={savePhotoMutation.isPending}
+                        style={{ flex: 1, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center', opacity: savePhotoMutation.isPending ? 0.6 : 1 }}
+                      >
+                        {savePhotoMutation.isPending ? (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <ActivityIndicator size="small" color="#fff" />
+                            <Text style={{ color: '#fff', fontFamily: 'Lexend-SemiBold' }}>Saving...</Text>
+                          </View>
+                        ) : (
+                          <Text style={{ color: '#fff', fontFamily: 'Lexend-SemiBold' }}>Save</Text>
+                        )}
                       </TouchableOpacity>
                     </>
                   )

@@ -1,61 +1,6 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// High-performance debounced storage with error handling and batching
-let persistenceTimeout: ReturnType<typeof setTimeout> | null = null;
-let pendingWrites = new Map<string, string>();
-
-const debouncedStorage = {
-  getItem: async (name: string) => {
-    try {
-      const value = await AsyncStorage.getItem(name);
-      return value ? JSON.parse(value) : null;
-    } catch (error) {
-      if (__DEV__) {
-        console.error('Storage getItem error:', error);
-      }
-      return null;
-    }
-  },
-  setItem: async (name: string, value: string) => {
-    // Batch multiple writes for better performance
-    pendingWrites.set(name, value);
-    
-    if (persistenceTimeout) {
-      clearTimeout(persistenceTimeout);
-    }
-    
-    persistenceTimeout = setTimeout(async () => {
-      try {
-        // Batch write all pending items
-        const writes = Array.from(pendingWrites.entries());
-        pendingWrites.clear();
-        
-        await Promise.all(
-          writes.map(([key, val]) => AsyncStorage.setItem(key, val))
-        );
-      } catch (error) {
-        if (__DEV__) {
-          console.error('Storage batch write error:', error);
-        }
-      } finally {
-        persistenceTimeout = null;
-      }
-    }, 500); // Reduced from 1000ms to 500ms for better responsiveness
-  },
-  removeItem: async (name: string) => {
-    try {
-      // Remove from pending writes if exists
-      pendingWrites.delete(name);
-      await AsyncStorage.removeItem(name);
-    } catch (error) {
-      if (__DEV__) {
-        console.error('Storage removeItem error:', error);
-      }
-    }
-  },
-};
 
 interface RestorationStore {
   restorationCount: number;
@@ -104,7 +49,7 @@ export const useRestorationStore = create<RestorationStore>()(
     }),
     {
       name: 'restoration-storage',
-      storage: debouncedStorage as any,
+      storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         hasShownRatingPrompt: state.hasShownRatingPrompt,
         totalRestorations: state.totalRestorations,
