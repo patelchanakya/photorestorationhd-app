@@ -15,6 +15,7 @@ import { AppState, AppStateStatus, Dimensions, LogBox, Platform, View } from 're
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import { clarityService } from '@/services/clarityService';
 import { memoryManager } from '@/services/memoryManager';
+import { appLifecycleService } from '@/services/appLifecycleService';
 import * as Clarity from '@microsoft/react-native-clarity';
 import NetInfo from '@react-native-community/netinfo';
 import { QueryClient, QueryClientProvider, focusManager, onlineManager } from '@tanstack/react-query';
@@ -163,6 +164,9 @@ export default function RootLayout() {
     const initializeServices = async () => {
       // Initialize Microsoft Clarity via service (prevents double initialization)
       await clarityService.initialize();
+
+      // Initialize app lifecycle service for background restart management
+      appLifecycleService.initialize();
       
       // Set initial app context for Clarity
       try {
@@ -249,6 +253,11 @@ export default function RootLayout() {
     };
 
     initializeServices();
+
+    // Cleanup services on unmount
+    return () => {
+      appLifecycleService.destroy();
+    };
   }, []);
 
   if (!loaded) {

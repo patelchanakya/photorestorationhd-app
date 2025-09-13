@@ -11,6 +11,8 @@
     "newArchEnabled": false,
     "jsEngine": "hermes",
     "splash": {
+      "image": "./assets/images/splasher.png",
+      "resizeMode": "contain",
       "backgroundColor": "#000000"
     },
     "assetBundlePatterns": [

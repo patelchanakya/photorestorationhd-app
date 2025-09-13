@@ -982,16 +982,9 @@ Now you know how to use all our tools.
                   onPress={() => {
                     setIsAutoAdvancing(false);
                     if (isLastStep) {
-                      // For result step (step 3), don't auto-trigger success modal
-                      // Let user interact with save/view buttons instead
-                      const currentTourStep = steps[currentStep];
-                      if (currentTourStep?.id === 'result') {
-                        // Stay on result step, user will manually exit via save/view
-                        console.log('🎯 Result step - staying active for user interaction');
-                        return;
-                      } else {
-                        addTimeout(() => startSuccessAnimation(), 100);
-                      }
+                      // Complete the tour and show success modal
+                      console.log('🎯 Final step completed - showing success modal');
+                      addTimeout(() => startSuccessAnimation(), 100);
                     } else {
                       // User is in generate step, trigger the generate action
                       console.log('🎯 Step 2 Next button - triggering generate action');
@@ -1053,16 +1046,9 @@ Now you know how to use all our tools.
                   onPress={() => {
                     setIsAutoAdvancing(false);
                     if (isLastStep) {
-                      // For result step, don't auto-trigger success modal
-                      // Let user interact with save/view buttons instead
-                      const currentTourStep = steps[currentStep];
-                      if (currentTourStep?.id === 'result') {
-                        // Stay on result step, user will manually exit via save/view
-                        console.log('🎯 Result step - staying active for user interaction');
-                        return;
-                      } else {
-                        addTimeout(() => startSuccessAnimation(), 100);
-                      }
+                      // Complete the tour and show success modal
+                      console.log('🎯 Final step completed - showing success modal');
+                      addTimeout(() => startSuccessAnimation(), 100);
                     } else {
                       addTimeout(() => onNext(), 100);
                     }
