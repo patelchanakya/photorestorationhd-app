@@ -369,7 +369,7 @@ export function MemorialFeatures({ memorialItems = DEFAULT_MEMORIAL_ITEMS }: { m
       category: 'memorial',
       tileName: translatedTitle,
       tileId: memorialItem.id,
-      functionType: 'memorial',
+      functionType: 'nano_memorial',
       customPrompt: memorialItem.memorialPrompt,
       stage: 'selected'
     });
@@ -385,10 +385,10 @@ export function MemorialFeatures({ memorialItems = DEFAULT_MEMORIAL_ITEMS }: { m
     });
     if (!result.canceled && result.assets[0]) {
       try {
-        useQuickEditStore.getState().openWithImage({ functionType: 'memorial' as any, imageUri: result.assets[0].uri, styleKey: memorialItem.id, styleName: translatedTitle, customPrompt: memorialItem.memorialPrompt || translatedTitle });
+        useQuickEditStore.getState().openWithImage({ functionType: 'nano_memorial' as any, imageUri: result.assets[0].uri, styleKey: memorialItem.id, styleName: translatedTitle });
       } catch {
         // fallback: existing flow
-        router.push({ pathname: '/text-edits', params: { imageUri: result.assets[0].uri, prompt: memorialItem.memorialPrompt || translatedTitle, mode: 'memorial' } });
+        router.push({ pathname: '/text-edits', params: { imageUri: result.assets[0].uri, prompt: memorialItem.memorialPrompt || translatedTitle, mode: 'nano_memorial' } });
       }
     }
   };

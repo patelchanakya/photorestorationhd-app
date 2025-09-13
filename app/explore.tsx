@@ -105,6 +105,11 @@ export default function HomeGalleryLikeScreen() {
     borderRadius?: number;
   } | null>(null);
 
+  // CRITICAL: Ensure we're not in mock mode when entering main app (safeguard against onboarding bugs)
+  React.useEffect(() => {
+    (global as any).USE_MOCK_API = false;
+  }, []);
+
   // Request permissions when reaching explore for auto-restore features
   React.useEffect(() => {
     const requestPermissions = async () => {

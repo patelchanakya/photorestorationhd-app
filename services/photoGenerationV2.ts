@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 
-export type FunctionType = 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'outfit' | 'background' | 'enlighten' | 'custom' | 'restore_repair' | 'memorial' | 'water_damage' | 'nano_banana' | 'nano_background' | 'nano_outfit';
+export type FunctionType = 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'outfit' | 'background' | 'enlighten' | 'custom' | 'restore_repair' | 'memorial' | 'water_damage' | 'nano_banana' | 'nano_background' | 'nano_outfit' | 'nano_memorial';
 
 // Webhook-based photo generation service for v2 endpoints
 // This replaces the client-side polling approach with secure server-side generation
@@ -288,6 +288,31 @@ export async function generateNanoOutfit(
   }
 
   return callGenerationEndpoint('nano-outfit-v2', imageUri, {
+    style_key: styleKey,
+    custom_prompt: customPrompt,
+    user_id: userId
+  });
+}
+
+// Nano-memorial generation
+export async function generateNanoMemorial(
+  imageUri: string,
+  styleKey?: string,
+  customPrompt?: string,
+  userId?: string
+): Promise<GenerationResponse> {
+  if (__DEV__) {
+    console.log('🕊️ Starting nano-memorial generation via webhook system');
+    console.log('🕊️ NANO MEMORIAL PARAMS:', {
+      styleKey,
+      customPrompt,
+      hasCustomPrompt: !!customPrompt,
+      willUseCustomPrompt: !!customPrompt,
+      willUseStyleKey: !!styleKey && !customPrompt
+    });
+  }
+
+  return callGenerationEndpoint('nano-memorial-v2', imageUri, {
     style_key: styleKey,
     custom_prompt: customPrompt,
     user_id: userId
@@ -613,6 +638,9 @@ export async function generatePhoto(
 
     case 'nano_outfit':
       return generateNanoOutfit(imageUri, styleKey, customPrompt, userId);
+
+    case 'nano_memorial':
+      return generateNanoMemorial(imageUri, styleKey, customPrompt, userId);
 
     default:
       throw new Error(`Unsupported function type: ${functionType}`);

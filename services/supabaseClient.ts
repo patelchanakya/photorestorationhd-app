@@ -181,7 +181,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string | null;
-          mode: 'repair' | 'outfit' | 'background' | 'enhance' | 'custom' | 'memorial' | 'water_damage' | 'restoration' | 'nano_banana' | 'nano_background' | 'nano_outfit';
+          mode: 'repair' | 'outfit' | 'background' | 'enhance' | 'custom' | 'memorial' | 'water_damage' | 'restoration' | 'nano_banana' | 'nano_background' | 'nano_outfit' | 'nano_memorial';
           style_key: string | null;
           status: 'starting' | 'processing' | 'succeeded' | 'failed' | 'canceled';
           input: any; // JSONB
@@ -194,7 +194,7 @@ export interface Database {
         Insert: {
           id: string;
           user_id?: string | null;
-          mode: 'repair' | 'outfit' | 'background' | 'enhance' | 'custom' | 'memorial' | 'water_damage' | 'restoration' | 'nano_banana' | 'nano_background' | 'nano_outfit';
+          mode: 'repair' | 'outfit' | 'background' | 'enhance' | 'custom' | 'memorial' | 'water_damage' | 'restoration' | 'nano_banana' | 'nano_background' | 'nano_outfit' | 'nano_memorial';
           style_key?: string | null;
           status?: 'starting' | 'processing' | 'succeeded' | 'failed' | 'canceled';
           input?: any; // JSONB

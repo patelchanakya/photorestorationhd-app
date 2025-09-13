@@ -89,6 +89,8 @@ export function ProcessingScreen({ photo, intent, onComplete, onError }: Process
           uri: 'demo-result-uri',
           processingTime
         };
+        // Clear mock flag before completing
+        (global as any).USE_MOCK_API = false;
         runOnJS(onComplete)(mockResult);
       }, 5000);
       return;
@@ -107,6 +109,8 @@ export function ProcessingScreen({ photo, intent, onComplete, onError }: Process
         // Mock processing for demo
         setTimeout(() => {
           const processingTime = Date.now() - startTime;
+          // Clear mock flag before completing
+          (global as any).USE_MOCK_API = false;
           runOnJS(onComplete)({
             uri: 'demo-result-uri',
             processingTime
@@ -124,7 +128,9 @@ export function ProcessingScreen({ photo, intent, onComplete, onError }: Process
       });
 
       const processingTime = Date.now() - startTime;
-      
+
+      // Clear mock flag before completing
+      (global as any).USE_MOCK_API = false;
       runOnJS(onComplete)({
         uri: result.restoredImageUri,
         processingTime
@@ -179,6 +185,11 @@ export function ProcessingScreen({ photo, intent, onComplete, onError }: Process
 
     // Start restoration process
     performRestoration();
+
+    // CRITICAL: Clear mock API flag when component unmounts to prevent breaking main app
+    return () => {
+      (global as any).USE_MOCK_API = false;
+    };
   }, []);
 
   const scanLineStyle = useAnimatedStyle(() => ({
