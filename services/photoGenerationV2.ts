@@ -547,8 +547,9 @@ export async function generatePhoto(
       // NANO MIGRATION: Switch to generateNanoRepair(imageUri, customPrompt, userId);
     
     case 'restore_repair':
-      return generateRepair(imageUri, customPrompt, userId);
-      // NANO MIGRATION: Switch to generateNanoRepair(imageUri, customPrompt, userId);
+      return generateNanoBanana(imageUri, undefined, undefined, userId);
+      // OLD KONTEXT: return generateRepair(imageUri, customPrompt, userId); // Used flux-kontext-apps/restore-image
+      // NANO MIGRATION: Now using nano-banana for modern photo restoration
     
     case 'water_damage':
       return generateWaterDamage(imageUri, customPrompt, userId);

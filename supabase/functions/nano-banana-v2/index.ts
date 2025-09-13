@@ -9,26 +9,9 @@ const corsHeaders = {
 
 interface NanoBananaRequest {
   image_data: string; // base64 image
-  custom_prompt?: string;
-  style_key?: string; // Style presets
   user_id?: string; // For usage tracking
 }
 
-// Style presets for nano-banana transformations
-const NANO_BANANA_STYLES: Record<string, { title: string; prompt: string }> = {
-  'nb-1': {
-    title: 'Artistic Style',
-    prompt: "Transform the image with artistic style effects, maintaining the subject while adding creative visual elements."
-  },
-  'nb-2': {
-    title: 'Natural Enhancement',
-    prompt: "Enhance the image naturally while preserving the original composition and subject."
-  },
-  'nb-3': {
-    title: 'Creative Transform',
-    prompt: "Apply creative transformations to make the image more visually striking."
-  }
-}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -41,7 +24,7 @@ serve(async (req) => {
   
   try {
     // Get request body
-    const { image_data, custom_prompt, style_key, user_id: requestUserId }: NanoBananaRequest = await req.json()
+    const { image_data, user_id: requestUserId }: NanoBananaRequest = await req.json()
     user_id = requestUserId;
 
     if (!image_data) {
@@ -72,9 +55,10 @@ serve(async (req) => {
     supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Pro/Free user check (same as other functions)
+    const isPro = user_id && user_id !== 'anonymous' && 
+      (user_id.startsWith('store:') || user_id.startsWith('orig:') || user_id.startsWith('fallback:'));
+    
     if (user_id && user_id !== 'anonymous') {
-      const isPro = user_id.startsWith('store:') || user_id.startsWith('orig:') || user_id.startsWith('fallback:');
-      
       if (isPro) {
         console.log('✅ Pro user detected - unlimited photos, skipping database check');
       } else {
@@ -97,6 +81,30 @@ serve(async (req) => {
       }
     }
 
+    // Rate limit for Pro users (40 requests per UTC day)
+    if (isPro) {
+      const startOfToday = new Date();
+      startOfToday.setUTCHours(0, 0, 0, 0);
+      
+      const { data: todayRequests, error: rateError } = await supabase
+        .from('photo_predictions')
+        .select('id')
+        .eq('user_id', user_id)
+        .gte('created_at', startOfToday.toISOString());
+      
+      if (!rateError && todayRequests && todayRequests.length >= 40) {
+        console.log('❌ Pro user daily limit exceeded:', user_id);
+        return new Response(JSON.stringify({ 
+          success: false,
+          error: "GPU resources exhausted. Team is working on it.",
+          code: "SERVICE_BUSY"
+        }), {
+          status: 503,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     // Initialize Replicate
     const replicateApiToken = Deno.env.get('REPLICATE_API_TOKEN')
     if (!replicateApiToken) {
@@ -116,19 +124,9 @@ serve(async (req) => {
 
     console.log('🍌 Starting nano-banana generation with webhooks...')
 
-    // Determine the prompt to use
-    let prompt = custom_prompt;
-    let selectedStyle = null;
-    
-    if (!prompt && style_key && NANO_BANANA_STYLES[style_key]) {
-      selectedStyle = NANO_BANANA_STYLES[style_key];
-      prompt = selectedStyle.prompt;
-      console.log(`🍌 Using nano-banana style: ${selectedStyle.title}`);
-    }
-    
-    if (!prompt) {
-      prompt = "Transform the image with creative style effects while maintaining the original subject.";
-    }
+    // Single purpose: Modern photo restoration
+    const prompt = "Make this a modern photo, with modern contrast, natural lens effects, Kodachrome film. Like it was taken yesterday";
+    console.log('🍌 Using nano-banana for modern photo restoration');
 
     // Build input for nano-banana generation
     const input = {
@@ -160,18 +158,17 @@ serve(async (req) => {
         user_id: user_id || 'anonymous',
         mode: 'nano_banana',
         status: 'starting',
-        style_key: style_key || null,
         input: {
           prompt: prompt,
-          style_title: selectedStyle?.title || null,
-          has_custom_prompt: !!custom_prompt,
-          custom_prompt: custom_prompt || null
+          has_custom_prompt: false,
+          custom_prompt: null
         },
         created_at: new Date().toISOString()
       })
 
     if (insertError) {
       console.error('Failed to insert prediction into database:', insertError)
+      throw new Error(`Database insert failed: ${insertError.message}`)
     } else {
       console.log(`✅ Prediction ${prediction.id} inserted into database`)
     }
@@ -183,7 +180,7 @@ serve(async (req) => {
         prediction_id: prediction.id,
         status: prediction.status || 'starting',
         mode: 'nano_banana',
-        style_used: selectedStyle?.title || 'Custom',
+        style_used: 'Modern Photo Restoration',
         estimated_time: '5-10 seconds'
       }),
       {
