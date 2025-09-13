@@ -129,7 +129,7 @@ const StyleSheetBase = ({ type, onClose }: StyleSheetProps) => {
       // Open Quick Edit sheet prefilled, then close the style sheet
       try {
         useQuickEditStore.getState().openWithImage({ 
-          functionType: type === 'bg' ? 'background' : 'outfit', 
+          functionType: type === 'bg' ? 'nano_background' : 'outfit', 
           imageUri: result.assets[0].uri, 
           styleKey,
           styleName: selectedItem?.title 

@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 
-export type FunctionType = 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'outfit' | 'background' | 'enlighten' | 'custom' | 'restore_repair' | 'memorial' | 'water_damage' | 'nano_banana';
+export type FunctionType = 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'outfit' | 'background' | 'enlighten' | 'custom' | 'restore_repair' | 'memorial' | 'water_damage' | 'nano_banana' | 'nano_background';
 
 // Webhook-based photo generation service for v2 endpoints
 // This replaces the client-side polling approach with secure server-side generation
@@ -238,6 +238,31 @@ export async function generateBackground(
   }
 
   return callGenerationEndpoint('background-generation-v2', imageUri, {
+    style_key: styleKey,
+    custom_prompt: customPrompt,
+    user_id: userId
+  });
+}
+
+// Nano Background generation
+export async function generateNanoBackground(
+  imageUri: string,
+  styleKey?: string,
+  customPrompt?: string,
+  userId?: string
+): Promise<GenerationResponse> {
+  if (__DEV__) {
+    console.log('🎨 Starting nano-background generation via webhook system');
+    console.log('🎨 NANO BACKGROUND PARAMS:', {
+      styleKey,
+      customPrompt,
+      hasCustomPrompt: !!customPrompt,
+      willUseCustomPrompt: !!customPrompt,
+      willUseStyleKey: !!styleKey && !customPrompt
+    });
+  }
+
+  return callGenerationEndpoint('nano-background-v2', imageUri, {
     style_key: styleKey,
     custom_prompt: customPrompt,
     user_id: userId
@@ -557,6 +582,9 @@ export async function generatePhoto(
     
     case 'nano_banana':
       return generateNanoBanana(imageUri, styleKey, customPrompt, userId);
+    
+    case 'nano_background':
+      return generateNanoBackground(imageUri, styleKey, customPrompt, userId);
     
     default:
       throw new Error(`Unsupported function type: ${functionType}`);

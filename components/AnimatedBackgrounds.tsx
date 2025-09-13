@@ -396,10 +396,10 @@ export const AnimatedBackgrounds = React.forwardRef<View, AnimatedBackgroundsPro
     if (!result.canceled && result.assets[0]) {
       try {
         useQuickEditStore.getState().openWithImage({ 
-          functionType: 'background', 
+          functionType: 'nano_background', 
           imageUri: result.assets[0].uri, 
           styleName: translatedTitle, 
-          customPrompt: background.backgroundPrompt || translatedTitle 
+          styleKey: background.id
         });
       } catch {
         // fallback: existing flow
@@ -407,8 +407,8 @@ export const AnimatedBackgrounds = React.forwardRef<View, AnimatedBackgroundsPro
           pathname: '/text-edits', 
           params: { 
             imageUri: result.assets[0].uri, 
-            prompt: background.backgroundPrompt || translatedTitle, 
-            mode: 'background' 
+            style_key: background.id,
+            mode: 'nano_background' 
           } 
         });
       }

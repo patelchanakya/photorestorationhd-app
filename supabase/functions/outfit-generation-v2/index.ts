@@ -18,27 +18,27 @@ interface OutfitRequest {
 const OUTFIT_STYLES: Record<string, { title: string; prompt: string }> = {
   'outfit-1': {
     title: 'Fix Clothes',
-    prompt: "Clean ALL clothing completely. Remove ALL stains and dirt from shirt, pants, dress, everything. Keep same colors. Keep same style. Only clean, nothing else changes."
+    prompt: "Clean ALL clothing completely on the person. Remove ALL stains and dirt from every piece of clothing while maintaining original fabric texture and material properties. Keep the same colors, style, and design. Preserve exact facial features, hairstyle, body position, and original lighting conditions with natural shadows. Only clean the clothing - keep background and pose completely unchanged."
   },
   'outfit-2': {
     title: 'Change Color',
-    prompt: "Keep the subject's clothing design, texture, shape, and style exactly the same, but change the color to a random, attractive color that looks natural and flattering. Avoid overly bright or obnoxious colors - choose something stylish and wearable. Make sure the new color appears natural under the existing lighting and shadows. Do not alter the subject's face, hair, background, accessories, or any other aspect of the photo - only change the clothing color."
+    prompt: "Keep the person's clothing design, fabric texture, material properties, shape, and style exactly the same, but change the color to a random, attractive color that looks natural and flattering. Avoid overly bright colors - choose stylish, wearable colors. Ensure the new color appears natural under existing lighting conditions with proper fabric sheen and material behavior. Maintain exact facial features, hairstyle, body position, and original lighting with natural shadows. Do not alter background, accessories, or pose - only change the clothing color."
   },
   'outfit-3': {
     title: 'Job Interview',
-    prompt: "Replace the subject's clothing with smart business casual attire suitable for a job interview: a nice blazer with dark jeans or smart trousers, or a professional dress that's approachable and friendly. Use neutral, professional colors that look confident but not intimidating. Keep the subject's face, hairstyle, pose, lighting, and background unchanged. Ensure clothing appears realistic with natural fabric folds and texture."
+    prompt: "Replace the person's clothing with smart business casual attire: cotton blazer with wool trousers or professional skirt made of quality fabric. Use neutral, professional colors. Maintain exact facial features, hairstyle, body position, and original lighting conditions. Ensure fabric appears realistic with natural cotton weave texture, wool properties, and proper garment drape under existing lighting. Preserve shadows and highlights. Keep background and pose completely unchanged."
   },
   'outfit-4': {
     title: 'Wedding Outfit',
-    prompt: "Replace clothing with wedding attire. Preserve exact head position of all subjects, specifically keeping facial features and head positioning the same, along with pose, background, and lighting. Do not alter any other elements of the image."
+    prompt: "Replace clothing with elegant wedding attire: silk wedding dress with lace details or formal wool suit with silk tie. Preserve exact head position, facial features, and body positioning of all subjects. Maintain original lighting conditions with natural fabric sheen and texture - silk should appear lustrous, lace delicate, wool structured. Ensure proper garment drape under existing lighting. Keep pose, background, and lighting completely unchanged."
   },
   'outfit-5': {
     title: 'Professional',
-    prompt: "Replace ALL of the subject's clothing with a complete professional outfit: a well-tailored black suit with white dress shirt and tie for men, or an elegant professional dress or suit for women. This includes replacing shirts, pants, shorts, dresses, skirts - EVERY piece of clothing. Keep the subject's facial features, hairstyle, pose, lighting, and background exactly the same. Ensure the entire outfit is cohesive, properly fitted, and has natural fabric folds and realistic texture under the existing lighting."
+    prompt: "Replace ALL of the person's clothing with a complete professional business outfit: well-tailored wool suit with cotton dress shirt and silk tie, or elegant professional wool blazer with quality fabric trousers or skirt. Maintain exact facial features, hairstyle, body position, and original lighting conditions. Ensure fabric appears realistic with natural wool texture, cotton weave, and silk properties. Proper suit drape and authentic fabric folds under existing lighting. Preserve shadows and highlights. Keep background and pose completely unchanged."
   },
   'outfit-6': {
     title: 'Casual Day',
-    prompt: "Change the subject's clothing to casual, comfortable wear such as a t-shirt and jeans or a relaxed summer outfit. Keep the subject's face, hairstyle, pose, lighting, and background unchanged. Ensure the clothing appears soft, naturally worn, and fits realistically with natural fabric folds and textures."
+    prompt: "Change the person's clothing to casual, comfortable wear: soft cotton t-shirt with denim jeans or lightweight cotton summer outfit. Maintain exact facial features, hairstyle, body position, and original lighting conditions. Ensure clothing appears realistic with natural cotton weave texture, authentic denim properties, and proper fabric drape under existing lighting. Preserve shadows and highlights. Keep background and pose completely unchanged."
   }
 }
 
