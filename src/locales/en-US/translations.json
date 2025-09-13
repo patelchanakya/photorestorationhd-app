@@ -217,6 +217,7 @@
       "subtitle": "Fix lighting & exposure"
     },
     "fixTornPhotos": "Fix Torn Photos",
+    "changeBackground": "Change Background",
     "removeStains": "Remove Stains",
     "fixFadedPhotos": "Fix Faded Photos",
     "requestIdea": "Request Idea",

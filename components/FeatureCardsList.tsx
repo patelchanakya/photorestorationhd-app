@@ -129,7 +129,7 @@ type CardItem = {
 // Poster-style cards; order sets Featured (first). Prioritize Repair; move Water Damage lower.
 const CARDS: CardItem[] = [
   { id: 'fc_repair', titleKey: 'magic.repair.title', emoji: '🔧', functionType: 'repair', video: require('../assets/videos/repair.mp4') },
-  { id: 'fc_torn_photos', titleKey: 'magic.fixTornPhotos', emoji: '📄', functionType: 'repair', customPrompt: 'Repair tears and rips in old photos', image: require('../assets/images/teared.png') },
+  { id: 'fc_change_background', titleKey: 'magic.changeBackground', emoji: '🌸', route: '/backgrounds', video: require('../assets/videos/memorial/flowers.mp4') },
   { id: 'fc_colorize', titleKey: 'magic.colorize.title', emoji: '🎨', functionType: 'colorize', image: require('../assets/images/popular/colorize/pop-1.png') },
   { id: 'fc_descratch', titleKey: 'magic.descratch.title', emoji: '✨', functionType: 'descratch', image: require('../assets/images/popular/descratch/pop-2.png') },
   { id: 'fc_enlighten', titleKey: 'magic.brighten.title', emoji: '☀️', functionType: 'enlighten', image: require('../assets/images/popular/brighten/pop-4.png') },
@@ -162,17 +162,30 @@ type FeatureCardsListProps = {
 
 
 // Memoize individual card to prevent re-renders
-const FeatureCardBase = React.memo(React.forwardRef<View, { 
-  item: CardItem; 
+const FeatureCardBase = React.memo(React.forwardRef<View, {
+  item: CardItem;
   onPress: (item: CardItem) => void;
   index?: number;
-}>(({ 
-  item, 
+  disabled?: boolean;
+}>(({
+  item,
   onPress,
-  index = 0
+  index = 0,
+  disabled = false
 }, ref) => {
   const { t } = useTranslation();
   const scaleValue = React.useRef(new Animated.Value(1)).current;
+  const opacityValue = React.useRef(new Animated.Value(disabled ? 0.3 : 1)).current;
+
+  React.useEffect(() => {
+    if (!disabled) {
+      Animated.timing(opacityValue, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true
+      }).start();
+    }
+  }, [disabled, opacityValue]);
 
   const handlePressIn = React.useCallback(() => {
     try { Haptics.selectionAsync(); } catch {}
@@ -195,13 +208,15 @@ const FeatureCardBase = React.memo(React.forwardRef<View, {
     <TouchableOpacity
     ref={ref}
     activeOpacity={0.9}
-    onPress={() => onPress(item)}
-    onPressIn={handlePressIn}
-    onPressOut={handlePressOut}
+    onPress={() => !disabled && onPress(item)}
+    onPressIn={!disabled ? handlePressIn : undefined}
+    onPressOut={!disabled ? handlePressOut : undefined}
     style={styles.cardContainer}
+    disabled={disabled}
   >
     <Animated.View style={[styles.cardView, {
-      transform: [{ scale: scaleValue }]
+      transform: [{ scale: scaleValue }],
+      opacity: opacityValue
     }]}>
       {item.video ? (
         <CardVideo video={item.video} />
@@ -240,8 +255,9 @@ const FeatureCardBase = React.memo(React.forwardRef<View, {
     </TouchableOpacity>
   );
 }), (prevProps, nextProps) => {
-  return prevProps.item.id === nextProps.item.id && 
-         prevProps.index === nextProps.index;
+  return prevProps.item.id === nextProps.item.id &&
+         prevProps.index === nextProps.index &&
+         prevProps.disabled === nextProps.disabled;
 });
 
 const Card = React.memo(FeatureCardBase);
@@ -369,8 +385,8 @@ GridCard.displayName = 'GridCard';
 
 
 // Memoize the entire component - export as default function
-export function FeatureCardsList({ 
-  onOpenBackgrounds, 
+export function FeatureCardsList({
+  onOpenBackgrounds,
   onOpenClothes,
   compact = false,
   firstTileRef
@@ -382,6 +398,15 @@ export function FeatureCardsList({
 
   // Track visible grid cards for performance optimization (videos only)
   const [visibleGridIndices, setVisibleGridIndices] = React.useState<Set<number>>(new Set([0, 1, 2, 3])); // Show first 4 initially
+  const [buttonsEnabled, setButtonsEnabled] = React.useState(false);
+
+  // Enable buttons after delay to prevent rapid tapping
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setButtonsEnabled(true);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Handle request idea submission
   const handleRequestIdea = React.useCallback(async () => {
@@ -459,6 +484,8 @@ export function FeatureCardsList({
 
   // Memoize handlePress to prevent re-creation
   const handlePress = React.useCallback(async (item: CardItem) => {
+    if (!buttonsEnabled) return;
+
     if (item.route === '/backgrounds' && onOpenBackgrounds) {
       onOpenBackgrounds();
       return;
@@ -511,17 +538,18 @@ export function FeatureCardsList({
         });
       } catch {}
     }
-  }, [onOpenBackgrounds, onOpenClothes, router, t, currentLanguage]);
+  }, [onOpenBackgrounds, onOpenClothes, router, t, currentLanguage, buttonsEnabled]);
 
   if (!compact) {
     return (
       <View style={{ paddingTop: 8, paddingBottom: 24 }}>
         {CARDS.map((c, index) => (
-          <Card 
-            key={c.id} 
-            item={c} 
-            onPress={handlePress} 
+          <Card
+            key={c.id}
+            item={c}
+            onPress={handlePress}
             ref={index === 0 ? firstTileRef : null}
+            disabled={!buttonsEnabled}
           />
         ))}
         
@@ -705,7 +733,7 @@ export function FeatureCardsList({
   return (
     <View style={{ paddingTop: 8, paddingBottom: 24 }}>
       {/* Featured card - always plays video */}
-      <Card item={featured} onPress={handlePress} ref={firstTileRef} />
+      <Card item={featured} onPress={handlePress} ref={firstTileRef} disabled={!buttonsEnabled} />
       
       {/* Grid cards - 2 columns with viewport optimization */}
       <View 

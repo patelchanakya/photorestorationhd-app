@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Dimensions, Image as RNImage, View } from 'react-native';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedGestureHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const isSmallDevice = SCREEN_WIDTH < 375;
@@ -129,7 +130,6 @@ const BeforeAfterSliderComponent = ({ beforeUri, afterUri, style, simpleSlider =
               }}
             />
           </Animated.View>
-          {/* Single slider line */}
           <Animated.View
             style={[
               {
@@ -137,58 +137,57 @@ const BeforeAfterSliderComponent = ({ beforeUri, afterUri, style, simpleSlider =
                 top: 0,
                 width: 1,
                 height: '100%',
-                backgroundColor: '#f97316',
-                marginLeft: -1,
-                borderRadius: 1,
+                backgroundColor: '#FF4081',
+                marginLeft: -0.5,
               },
               lineStyle,
             ]}
           />
-          {/* Small circle on line - only show if not simple slider */}
           {!simpleSlider && (
             <Animated.View
               style={[
                 {
                   position: 'absolute',
                   top: '50%',
-                  width: 6,
-                  height: 6,
-                  backgroundColor: '#f97316',
-                  borderRadius: 3,
-                  marginTop: -3,
-                  marginLeft: -3,
+                  width: 4,
+                  height: 4,
+                  backgroundColor: '#FF4081',
+                  borderRadius: 2,
+                  marginTop: -2,
+                  marginLeft: -2,
                 },
                 lineStyle,
               ]}
             />
           )}
-          {/* Single slider handle - only show arrows if not simple slider */}
           {!simpleSlider && (
             <Animated.View
               style={[
                 {
                   position: 'absolute',
                   top: '50%',
-                  width: isSmallDevice ? 28 : 32,
-                  height: isSmallDevice ? 28 : 32,
-                  backgroundColor: 'rgba(255,255,255,0.95)',
-                  borderRadius: isSmallDevice ? 14 : 16,
-                  marginTop: isSmallDevice ? -14 : -16,
+                  width: 24,
+                  height: 24,
+                  backgroundColor: '#FF4081',
+                  borderRadius: 12,
+                  marginTop: -12,
                   justifyContent: 'center',
                   alignItems: 'center',
+                  borderWidth: 1.5,
+                  borderColor: 'white',
                 },
                 handleStyle,
               ]}
             >
-              <View style={{ 
-                flexDirection: 'row', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                width: isSmallDevice ? 18 : 20, 
-                height: isSmallDevice ? 18 : 20 
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 14,
+                height: 14
               }}>
-                <IconSymbol name="chevron.left" size={isSmallDevice ? 11 : 12} color="#f97316" style={{ marginRight: -1 }} />
-                <IconSymbol name="chevron.right" size={isSmallDevice ? 11 : 12} color="#f97316" style={{ marginLeft: -1 }} />
+                <IconSymbol name="chevron.left" size={8} color="white" style={{ marginRight: -1 }} />
+                <IconSymbol name="chevron.right" size={8} color="white" style={{ marginLeft: -1 }} />
               </View>
             </Animated.View>
           )}

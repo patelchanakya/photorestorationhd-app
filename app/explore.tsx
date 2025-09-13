@@ -129,20 +129,24 @@ export default function HomeGalleryLikeScreen() {
 
   // Initialize tour when showTour parameter is present
   React.useEffect(() => {
-    if (showTour === 'true') {
-      setTimeout(() => {
+    if (showTour === 'true' && !showTourOverlay) {
+      const tourTimer = setTimeout(() => {
         // Auto-scroll to Photo Restoration section first
         console.log('🎯 Auto-scrolling to Photo Restoration section for tour');
         scrollToSection('magic');
-        
+
         // Show tour overlay and measure after scroll completes
-        setTimeout(() => {
+        const overlayTimer = setTimeout(() => {
           setShowTourOverlay(true);
           measureElementForStep(0);
         }, 800); // Extra delay for scroll to complete
+
+        return () => clearTimeout(overlayTimer);
       }, 500); // Small delay to ensure elements are rendered
+
+      return () => clearTimeout(tourTimer);
     }
-  }, [showTour]);
+  }, [showTour, showTourOverlay]);
 
   // Measure element positions for highlighting
   const measureElementForStep = (stepIndex: number) => {
@@ -203,6 +207,11 @@ export default function HomeGalleryLikeScreen() {
     setShowTourOverlay(false);
     setTourStep(0);
     setHighlightArea(null);
+    // Ensure QuickEdit is closed
+    const quickEditState = useQuickEditStore.getState();
+    if (quickEditState.visible && quickEditState.tourMode) {
+      quickEditState.close();
+    }
   };
 
   const handleTourComplete = () => {
@@ -371,7 +380,10 @@ export default function HomeGalleryLikeScreen() {
       case 'magic':
         return (
           <View style={exploreStyles.sectionHeader}>
-            <Text style={exploreStyles.sectionTitle}>{t('explore.sections.magic')}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+              <Text style={exploreStyles.sectionTitle}>{t('explore.sections.magic')}</Text>
+              <Text style={exploreStyles.byCleverText}>With Clever</Text>
+            </View>
           </View>
         );
       default:
@@ -828,6 +840,7 @@ export default function HomeGalleryLikeScreen() {
         windowSize={3} // Reduce memory window (was 5)
         removeClippedSubviews={true}
         getItemType={() => 'section'} // Help FlashList optimize
+        scrollEnabled={!showTourOverlay} // Disable scrolling during tour
       />
       {/* Bottom quick action rail */}
       <QuickActionRail />

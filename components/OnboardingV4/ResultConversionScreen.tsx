@@ -1,7 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Alert } from 'react-native';
-import * as MediaLibrary from 'expo-media-library';
-import * as FileSystem from 'expo-file-system';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, Share } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { 
@@ -51,33 +49,32 @@ export function ResultConversionScreen({
   const buttonsOpacity = useSharedValue(0);
 
   const handleShareToGallery = async () => {
-    if (isSharing || sharedToGallery) return;
-    
+    if (isSharing) return;
+
     try {
       setIsSharing(true);
-      
-      // Request media library permissions
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission needed', 'Please allow access to save photos to your gallery.');
-        return;
-      }
-      
+
       // Use the restored photo URI, or fallback to before photo
       const imageUri = afterPhoto?.uri || beforePhoto?.uri;
       if (!imageUri) {
-        Alert.alert('Error', 'No photo available to save.');
+        Alert.alert('Error', 'No photo available to share.');
         return;
       }
-      
-      // Save to media library (still saves, but branded as sharing)
-      await MediaLibrary.saveToLibraryAsync(imageUri);
-      setSharedToGallery(true);
-      Alert.alert('Success!', 'Your work has been shared to your gallery.');
-      
+
+      // Open native iOS share sheet
+      const shareResult = await Share.share({
+        url: imageUri,
+        message: 'Check out my restored photo!',
+      });
+
+      // Mark as shared if user completed the share action
+      if (shareResult.action === Share.sharedAction) {
+        setSharedToGallery(true);
+      }
+
     } catch (error) {
       console.error('Failed to share photo:', error);
-      Alert.alert('Error', 'Failed to share photo to gallery.');
+      Alert.alert('Error', 'Failed to share photo.');
     } finally {
       setIsSharing(false);
     }
@@ -178,7 +175,7 @@ export function ResultConversionScreen({
             disabled={isSharing || sharedToGallery}
           >
             <Text style={styles.shareButtonText}>
-              {isSharing ? 'Sharing Your Work...' : sharedToGallery ? '✓ Your Work is Shared' : 'Share Your Work'}
+              {isSharing ? 'Opening Share...' : sharedToGallery ? '✓ Shared' : 'Share Your Work'}
             </Text>
           </TouchableOpacity>
         </Animated.View>

@@ -23,6 +23,7 @@ import { SavingModal, type SavingModalRef } from '@/components/SavingModal';
 import { Asset } from 'expo-asset';
 import { LinearGradient } from 'expo-linear-gradient';
 import { presentPaywall } from '@/services/revenuecat';
+import { VideoView, useVideoPlayer } from 'expo-video';
 
 interface TourStep {
   id: string;
@@ -76,7 +77,15 @@ export function ExploreTourOverlay({
   const [tourProgress, setTourProgress] = React.useState(0);
   const [tourResult, setTourResult] = React.useState(false);
   const [showSavingModal, setShowSavingModal] = React.useState(false);
+  const [buttonsEnabled, setButtonsEnabled] = React.useState(false);
   const savingModalRef = React.useRef<SavingModalRef>(null);
+
+  // Loading video player
+  const loadingVideo = require('../../assets/videos/loading.mp4');
+  const loadingVideoPlayer = useVideoPlayer(loadingVideo, (player) => {
+    player.loop = true;
+    player.muted = true;
+  });
   
   // Store timer references for cleanup
   const timerRefs = React.useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -125,21 +134,25 @@ export function ExploreTourOverlay({
   // Centralized generate action for both buttons
   const handleGenerateAction = React.useCallback(() => {
     console.log('🎯 Generate action triggered');
-    
-    // Start loading simulation
+
+    // Start loading with video
     setTourLoading(true);
     setTourProgress(0);
-    
-    // 2-second loading timeline (400ms intervals)
+    if (loadingVideoPlayer) {
+      loadingVideoPlayer.play();
+    }
+
+    // 4-second loading timeline to match video duration
+    const totalDuration = 4000; // 4 seconds to match video
+    const updateInterval = 100; // Update every 100ms for smooth progress
     const startTime = Date.now();
     let intervalId: ReturnType<typeof setInterval>;
-    
+
     intervalId = addInterval(() => {
       const elapsed = Date.now() - startTime;
-      const totalDuration = 2000; // 2 seconds
       const progress = Math.min(95, Math.floor((elapsed / totalDuration) * 95));
       setTourProgress(progress);
-      
+
       if (elapsed >= totalDuration) {
         // Remove from tracking and clear
         const index = intervalRefs.current.indexOf(intervalId);
@@ -147,15 +160,18 @@ export function ExploreTourOverlay({
           intervalRefs.current.splice(index, 1);
         }
         clearInterval(intervalId);
-        
+
+        if (loadingVideoPlayer) {
+          loadingVideoPlayer.pause();
+        }
         setTourLoading(false);
         setTourResult(true);
         // Advance to step 3 but keep sheet visible
         console.log('🎯 Loading complete - advancing to step 3');
         addTimeout(() => onNext(), 200);
       }
-    }, 400);
-  }, [onNext, addTimeout, addInterval]);
+    }, updateInterval);
+  }, [onNext, addTimeout, addInterval, loadingVideoPlayer]);
 
   // Create tour demo restoration data
   const createTourRestoration = React.useCallback(async () => {
@@ -190,6 +206,17 @@ export function ExploreTourOverlay({
   const pulseScale = useSharedValue(1);
   const highlightTransition = useSharedValue(1);
   const stepTransition = useSharedValue(1);
+
+  // Enable buttons after animation completes
+  React.useEffect(() => {
+    if (visible) {
+      setButtonsEnabled(false);
+      const timer = setTimeout(() => {
+        setButtonsEnabled(true);
+      }, 600); // Wait for animations to complete
+      return () => clearTimeout(timer);
+    }
+  }, [visible, currentStep]);
   
   // Success animation values
   const successOpacity = useSharedValue(0);
@@ -503,9 +530,22 @@ export function ExploreTourOverlay({
               transition={0}
             />
             
-            {/* Loading Overlay - exact copy from real QuickEditSheet */}
+            {/* Loading Overlay with video */}
             {tourLoading && (
-              <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.28)', alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.65)', alignItems: 'center', justifyContent: 'center' }}>
+                {loadingVideoPlayer && (
+                  <VideoView
+                    player={loadingVideoPlayer}
+                    style={{
+                      width: 200,
+                      height: 200,
+                      marginBottom: 20
+                    }}
+                    contentFit="contain"
+                    nativeControls={false}
+                    allowsFullscreen={false}
+                  />
+                )}
                 <View style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.4)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' }}>
                   <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, textAlign: 'center', marginBottom: 4 }}>Please wait a few seconds</Text>
                   <Text style={{ color: '#F59E0B', fontSize: 16, fontFamily: 'Lexend-Black', textAlign: 'center' }}>
@@ -908,7 +948,11 @@ Now you know how to use all our tools.
       transparent
       animationType="none"
       statusBarTranslucent
-      onRequestClose={onSkip}
+      onRequestClose={() => {
+        if (!tourLoading && !showSuccess) {
+          onSkip();
+        }
+      }}
       hardwareAccelerated
       supportedOrientations={['portrait']}
     >
@@ -967,12 +1011,14 @@ Now you know how to use all our tools.
               {/* Action buttons */}
               <View style={styles.buttonContainer}>
                 <TouchableOpacity
-                  style={styles.skipButton}
+                  style={[styles.skipButton, !buttonsEnabled && { opacity: 0.5 }]}
                   onPress={() => {
+                    if (!buttonsEnabled) return;
                     setIsAutoAdvancing(false);
                     // Show success modal instead of immediately skipping
                     startSuccessAnimation();
                   }}
+                  disabled={!buttonsEnabled}
                 >
                   <Text style={styles.skipButtonText}>Skip</Text>
                 </TouchableOpacity>
@@ -980,6 +1026,7 @@ Now you know how to use all our tools.
                 <OnboardingButton
                   title={isLastStep ? "Got it!" : "Next"}
                   onPress={() => {
+                    if (!buttonsEnabled) return;
                     setIsAutoAdvancing(false);
                     if (isLastStep) {
                       // Complete the tour and show success modal
@@ -993,7 +1040,8 @@ Now you know how to use all our tools.
                   }}
                   variant="primary"
                   size="medium"
-                  style={styles.nextButton}
+                  style={[styles.nextButton, !buttonsEnabled && { opacity: 0.5 }]}
+                  disabled={!buttonsEnabled}
                 />
               </View>
             </View>
@@ -1031,12 +1079,14 @@ Now you know how to use all our tools.
               {/* Action buttons */}
               <View style={styles.buttonContainer}>
                 <TouchableOpacity
-                  style={styles.skipButton}
+                  style={[styles.skipButton, !buttonsEnabled && { opacity: 0.5 }]}
                   onPress={() => {
+                    if (!buttonsEnabled) return;
                     setIsAutoAdvancing(false);
                     // Show success modal instead of immediately skipping
                     startSuccessAnimation();
                   }}
+                  disabled={!buttonsEnabled}
                 >
                   <Text style={styles.skipButtonText}>Skip</Text>
                 </TouchableOpacity>
@@ -1044,6 +1094,7 @@ Now you know how to use all our tools.
                 <OnboardingButton
                   title={isLastStep ? "Got it!" : "Next"}
                   onPress={() => {
+                    if (!buttonsEnabled) return;
                     setIsAutoAdvancing(false);
                     if (isLastStep) {
                       // Complete the tour and show success modal
@@ -1055,7 +1106,8 @@ Now you know how to use all our tools.
                   }}
                   variant="primary"
                   size="medium"
-                  style={styles.nextButton}
+                  style={[styles.nextButton, !buttonsEnabled && { opacity: 0.5 }]}
+                  disabled={!buttonsEnabled}
                 />
               </View>
             </View>

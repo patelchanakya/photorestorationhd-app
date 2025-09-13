@@ -46,31 +46,29 @@ export default function TourDemoScreen() {
   const { tourComplete } = useLocalSearchParams();
   const simpleSlider = useRestorationStore((state) => state.simpleSlider);
   const safeAreaInsets = useSafeAreaInsets();
-  
+
   // Modal states
   const [showSavingModal, setShowSavingModal] = useState(false);
   const [showTourSuccessModal, setShowTourSuccessModal] = useState(false);
+  const [hasShownSuccessModal, setHasShownSuccessModal] = useState(false);
   const savingModalRef = useRef<SavingModalRef>(null);
-  
+
   // Success animation values
   const successOpacity = useSharedValue(0);
   const successScale = useSharedValue(0.8);
-  
+
   const isTourMode = tourComplete === 'true';
 
-  // Show tour success modal when entering from tour
-  useEffect(() => {
-    if (isTourMode) {
-      console.log('🎯 Tour completion detected, showing success modal');
-      const timer = setTimeout(() => {
-        setShowTourSuccessModal(true);
-        // Start animation
-        successOpacity.value = withSpring(1, { damping: 20, stiffness: 80 });
-        successScale.value = withSpring(1, { damping: 18, stiffness: 100 });
-      }, 500);
-      return () => clearTimeout(timer);
+  // Helper function to show success modal with animation
+  const showSuccessModal = () => {
+    if (!hasShownSuccessModal) {
+      setShowTourSuccessModal(true);
+      setHasShownSuccessModal(true);
+      // Start animation
+      successOpacity.value = withSpring(1, { damping: 20, stiffness: 80 });
+      successScale.value = withSpring(1, { damping: 18, stiffness: 100 });
     }
-  }, [isTourMode]);
+  };
 
   // Direct asset URIs - no resolution needed
   const beforeImage = require('../../assets/images/bw.jpeg');
@@ -184,6 +182,11 @@ export default function TourDemoScreen() {
         mimeType: 'image/jpeg',
         dialogTitle: 'Share your restored photo',
       });
+
+      // Show success modal after share modal closes (regardless of whether they shared or cancelled)
+      if (isTourMode && !hasShownSuccessModal) {
+        setTimeout(() => showSuccessModal(), 300);
+      }
       
     } catch (error: any) {
       console.error('Expo-sharing failed, trying React Native Share:', error);
@@ -196,6 +199,11 @@ export default function TourDemoScreen() {
           url: imageUri,
           message: 'Check out my restored photo!',
         });
+
+        // Show success modal after share modal closes (regardless of share/cancel)
+        if (isTourMode && !hasShownSuccessModal) {
+          setTimeout(() => showSuccessModal(), 300);
+        }
         
         console.log('📤 React Native Share result:', shareResult);
         
@@ -260,63 +268,44 @@ export default function TourDemoScreen() {
             {/* Primary Actions - 70/30 split */}
             <View style={{ paddingBottom: isTinyDevice ? 16 : 24 }}>
               <View style={{ flexDirection: 'row', gap: 8 }}>
-                {/* Share Button - 30% width */}
+                {/* Share Button - Green gradient like real restoration */}
                 <TouchableOpacity
                   style={{
-                    flex: 3,
-                    height: 56,
-                    borderRadius: 28,
-                    backgroundColor: 'rgba(255,255,255,0.1)',
-                    borderWidth: 1,
-                    borderColor: 'rgba(255,255,255,0.2)',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                  onPress={handleShare}
-                  activeOpacity={0.7}
-                >
-                  <Text style={{
-                    color: '#fff',
-                    fontSize: 16,
-                    fontWeight: '600',
-                    letterSpacing: 0.3
-                  }}>
-                    Share
-                  </Text>
-                </TouchableOpacity>
-
-                {/* Save Button - 70% width - Green style matching tour demo */}
-                <TouchableOpacity
-                  style={{
-                    flex: 7,
+                    flex: 1,
                     height: 56,
                     borderRadius: 28,
                     overflow: 'hidden',
-                    alignItems: 'center',
-                    justifyContent: 'center',
                     borderWidth: 1,
                     borderColor: 'rgba(255,255,255,0.25)'
+                  }}
+                  onPress={handleShare}
+                  activeOpacity={0.8}
+                >
+                  <LinearGradient
+                    colors={['#059669', '#10b981']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                  />
+                  <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ color: '#0B0B0F', fontWeight: '900', fontSize: 16 }}>Share</Text>
+                  </View>
+                </TouchableOpacity>
+
+                {/* Save Button - Transparent like real restoration */}
+                <TouchableOpacity
+                  style={{
+                    flex: 1,
+                    height: 56,
+                    borderRadius: 28,
+                    backgroundColor: 'rgba(255,255,255,0.1)',
+                    alignItems: 'center',
+                    justifyContent: 'center'
                   }}
                   onPress={handleExport}
                   activeOpacity={0.8}
                 >
-                  <View style={{ 
-                    position: 'absolute', 
-                    top: 0, 
-                    left: 0, 
-                    right: 0, 
-                    bottom: 0,
-                    backgroundColor: '#10B981'
-                  }} />
-                  <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ 
-                      color: '#0B0B0F', 
-                      fontSize: 16, 
-                      fontFamily: 'Lexend-Bold'
-                    }}>
-                      Save
-                    </Text>
-                  </View>
+                  <Text style={{ color: '#fff', fontWeight: '900', fontSize: 16 }}>Save</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -324,10 +313,16 @@ export default function TourDemoScreen() {
         </ScrollView>
         
         {/* Saving Modal */}
-        <SavingModal 
+        <SavingModal
           ref={savingModalRef}
-          visible={showSavingModal} 
-          onComplete={() => setShowSavingModal(false)}
+          visible={showSavingModal}
+          onComplete={() => {
+            setShowSavingModal(false);
+            // Show success modal after save completes (only in tour mode)
+            if (isTourMode && !hasShownSuccessModal) {
+              setTimeout(() => showSuccessModal(), 300);
+            }
+          }}
         />
 
         {/* Tour Success Modal - Full Success Card */}

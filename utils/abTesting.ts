@@ -13,23 +13,11 @@ export interface ABTest {
   isActive: boolean;
 }
 
-// Welcome screen copy variants for A/B testing
+// Welcome screen copy - single variant (A/B testing removed)
 export const WELCOME_COPY_VARIANTS = {
   A: {
-    title: "Your memories deserve better",
+    title: "Fix your old photos instantly",
     subtitle: "Professional restoration in seconds"
-  },
-  B: {
-    title: "Fix your old photos instantly", 
-    subtitle: "Professional restoration in seconds"
-  },
-  C: {
-    title: "Restore photos like magic",
-    subtitle: "Professional restoration in seconds"
-  },
-  D: {
-    title: "Restore photos like a pro",
-    subtitle: "Photo restoration and edits instantly"
   }
 };
 
@@ -38,12 +26,9 @@ export const AB_TESTS: Record<string, ABTest> = {
   welcomeScreenCopy: {
     testName: 'welcomeScreenCopy',
     variants: [
-      { id: 'A', name: 'Emotional Quality', weight: 25 },
-      { id: 'B', name: 'Direct Solution', weight: 25 },
-      { id: 'C', name: 'Magic Appeal', weight: 25 },
-      { id: 'D', name: 'Professional Appeal', weight: 25 }
+      { id: 'A', name: 'Magic Appeal', weight: 100 }
     ],
-    isActive: true
+    isActive: false
   }
 };
 

@@ -38,13 +38,33 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
 
   // Simple state
   const [currentVideo, setCurrentVideo] = useState<'loading' | 'done'>('loading');
+  const [isNavigating, setIsNavigating] = useState(false);
+
+  // Fade animation for smooth transition
+  const fadeOpacity = useSharedValue(1);
 
   // Main loading video player - play once only
   const videoPlayer = useVideoPlayer(require('../assets/videos/loading.mp4'), (player) => {
     try {
       player.loop = false;  // Play once only
       player.muted = true;
-      // Don't auto-play - will be triggered when needed
+      // Set up video end listener
+      player.addListener('playingChange', (isPlaying) => {
+        if (!isPlaying && player.currentTime > 0) {
+          // Video has ended, start fade out
+          if (isMountedRef.current && !isNavigating) {
+            setIsNavigating(true);
+            fadeOpacity.value = withTiming(0, { duration: 300 }, () => {
+              // After fade completes, trigger navigation
+              if (isMountedRef.current) {
+                setTimeout(() => {
+                  onLoadingComplete();
+                }, 100);
+              }
+            });
+          }
+        }
+      });
     } catch (error) {
       console.error('Loading video player init error:', error);
     }
@@ -104,9 +124,9 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
           }
         }
         
-        // Wait minimum time (5.8s) and initialize services in parallel
+        // Wait for 4-second video to complete and initialize services in parallel
         const [_] = await Promise.all([
-          new Promise(resolve => setTimeout(resolve, 5800)), // Loading video duration
+          new Promise(resolve => setTimeout(resolve, 4000)), // 4-second loading video duration
           initializeServices()
         ]);
 
@@ -143,7 +163,6 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
               console.log('🔄 [RECOVERY] Text-edit recovery detected - navigating to restoration screen');
             }
             markInitialized();
-            onLoadingComplete();
             // Navigation will be handled by the explore screen checking recovery state
             setInitialRoute('explore');
             return;
@@ -560,27 +579,33 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
     }
   };
 
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: fadeOpacity.value,
+  }));
+
   return (
     <View style={{ flex: 1, backgroundColor: '#000000' }}>
-      {/* Main loading video - shows initially */}
+      {/* Main loading video with fade animation */}
       {currentVideo === 'loading' && (
-        <VideoView
-          player={videoPlayer}
-          style={{ 
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            width: '100%',
-            height: '100%',
-            backgroundColor: '#000000',
-          }}
-          contentFit="contain"
-          nativeControls={false}
-          allowsFullscreen={false}
-          useExoShutter={false}
-        />
+        <Animated.View style={[{ flex: 1 }, animatedStyle]}>
+          <VideoView
+            player={videoPlayer}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100%',
+              height: '100%',
+              backgroundColor: '#000000',
+            }}
+            contentFit="contain"
+            nativeControls={false}
+            allowsFullscreen={false}
+            useExoShutter={false}
+          />
+        </Animated.View>
       )}
 
     </View>

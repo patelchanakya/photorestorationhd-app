@@ -17,7 +17,7 @@ import { useOnboardingV4Analytics } from '@/hooks/useOnboardingV4Analytics';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 
 // Toggle for mock vs real API - change to false for production
-const USE_MOCK_API = true;
+const USE_MOCK_API = false;
 
 interface PhotoData {
   uri: string;
@@ -28,6 +28,7 @@ interface PhotoData {
 interface ProcessingScreenProps {
   photo: PhotoData | null;
   intent: string | null;
+  functionType: string | null;
   onComplete: (result: { uri: string; processingTime: number }) => void;
   onError: (error: Error) => void;
 }
@@ -44,9 +45,17 @@ const SOCIAL_PROOF_DATA = {
   }
 };
 
-export function ProcessingScreen({ photo, intent, onComplete, onError }: ProcessingScreenProps) {
+export function ProcessingScreen({ photo, intent, functionType, onComplete, onError }: ProcessingScreenProps) {
   const insets = useSafeAreaInsets();
   const { trackSocialProofShown } = useOnboardingV4Analytics();
+
+  console.log('📸 [PROCESSING] Screen initialized:', {
+    intent,
+    functionType,
+    hasPhoto: !!photo,
+    USE_MOCK_API,
+    photoUri: photo?.uri
+  });
   
   const [processingStep, setProcessingStep] = React.useState('analyzing');
   const [startTime] = React.useState(Date.now());
@@ -58,21 +67,6 @@ export function ProcessingScreen({ photo, intent, onComplete, onError }: Process
   const imageOpacity = useSharedValue(1);
   const stepProgress = useSharedValue(0);
   
-  // Function to map intent to restoration function type
-  const getRestorationFunction = (intentId: string | null): 'restoration' | 'colorize' => {
-    // Map intent to restoration function
-    switch (intentId) {
-      case 'colorize_memories':
-        return 'colorize';
-      case 'fix_old_family':
-      case 'remove_scratches':
-      case 'restore_grandparents':
-      case 'fix_water_damage':
-      case 'repair_torn':
-      default:
-        return 'restoration';
-    }
-  };
   
   const photoRestoration = usePhotoRestoration();
 
@@ -103,8 +97,14 @@ export function ProcessingScreen({ photo, intent, onComplete, onError }: Process
     }
 
     try {
-      const functionType = getRestorationFunction(intent);
-      
+      const actualFunctionType = functionType || 'restoration';
+
+      console.log('🔧 [PROCESSING] Using functionType:', {
+        received: functionType,
+        actual: actualFunctionType,
+        USE_MOCK_API
+      });
+
       if (USE_MOCK_API) {
         // Mock processing for demo
         setTimeout(() => {
@@ -120,14 +120,27 @@ export function ProcessingScreen({ photo, intent, onComplete, onError }: Process
       }
 
       // Use same pipeline as Explore
+      console.log('🚀 [PROCESSING] Calling API:', {
+        functionType: actualFunctionType,
+        imageUri: photo.uri,
+        customPrompt: undefined,
+        imageSource: 'gallery'
+      });
+
       const result = await photoRestoration.mutateAsync({
         imageUri: photo.uri,
-        functionType,
+        functionType: actualFunctionType,
         customPrompt: undefined,
         imageSource: 'gallery'
       });
 
       const processingTime = Date.now() - startTime;
+
+      console.log('✅ [PROCESSING] API Success:', {
+        resultUri: result.restoredImageUri,
+        processingTime,
+        functionType: actualFunctionType
+      });
 
       // Clear mock flag before completing
       (global as any).USE_MOCK_API = false;
@@ -137,10 +150,16 @@ export function ProcessingScreen({ photo, intent, onComplete, onError }: Process
       });
       
     } catch (error) {
-      console.error('Photo restoration error:', error);
+      console.error('❌ [PROCESSING] API Error:', {
+        error,
+        functionType: functionType,
+        intent,
+        hasPhoto: !!photo,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error'
+      });
       runOnJS(onError)(error instanceof Error ? error : new Error('Restoration failed'));
     }
-  }, [photo, intent, startTime, onComplete, onError, getRestorationFunction, photoRestoration]);
+  }, [photo, intent, functionType, startTime, onComplete, onError, photoRestoration]);
 
   React.useEffect(() => {
     const easing = Easing.bezier(0.4, 0, 0.2, 1);

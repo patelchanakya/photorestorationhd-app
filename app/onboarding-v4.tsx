@@ -33,15 +33,14 @@ const INTENT_OPTIONS = [
     image: require('../assets/images/teared.png'),
     functionType: 'restore_repair' as const 
   },
-  { 
-    id: 'repair-torn', 
-    label: 'Repair Torn & Ripped Photos', 
-    icon: '📄', 
-    demoImages: [], 
+  {
+    id: 'repair-torn',
+    label: 'Repair Torn & Ripped Photos',
+    icon: '📄',
+    demoImages: [],
     video: require('../assets/videos/onboarding/torn-photos.mp4'),
     image: require('../assets/images/teared.png'),
-    functionType: 'repair' as const,
-    customPrompt: 'Repair tears and rips in old photos'
+    functionType: 'nano_banana' as const
   },
   { 
     id: 'colorize-bw', 
@@ -52,14 +51,14 @@ const INTENT_OPTIONS = [
     image: require('../assets/images/popular/colorize/pop-1.png'),
     functionType: 'colorize' as const 
   },
-  { 
-    id: 'remove-water-damage', 
-    label: 'Remove Water Damage', 
-    icon: '💧', 
-    demoImages: [], 
+  {
+    id: 'remove-water-damage',
+    label: 'Remove Water Damage',
+    icon: '💧',
+    demoImages: [],
     video: require('../assets/videos/repair.mp4'),
     image: require('../assets/images/popular/stain/pop-7.png'),
-    functionType: 'water_damage' as const 
+    functionType: 'nano_banana' as const
   },
   { 
     id: 'sharpen-faces', 
@@ -136,6 +135,13 @@ function OnboardingV4Flow() {
 
 
   const handleIntentSelection = async (intentId: string) => {
+    const selectedOption = INTENT_OPTIONS.find(opt => opt.id === intentId);
+    console.log('🎯 [ONBOARDING-V4] Intent selected:', {
+      intentId,
+      functionType: selectedOption?.functionType,
+      label: selectedOption?.label
+    });
+
     await selectIntent(intentId);
     await trackIntentSelected(intentId);
     await trackStepCompleted(3, 'intent', { selected_intent: intentId });
@@ -385,10 +391,18 @@ function OnboardingV4Flow() {
           );
         
         case 'processing':
+          const selectedIntentForProcessing = INTENT_OPTIONS.find(opt => opt.id === onboardingState.selectedIntent);
+          console.log('🎯 [ONBOARDING-V4] ProcessingScreen props:', {
+            intent: onboardingState.selectedIntent,
+            functionType: selectedIntentForProcessing?.functionType,
+            hasPhoto: !!onboardingState.selectedPhoto,
+            photoUri: onboardingState.selectedPhoto?.uri
+          });
           return (
             <ProcessingScreen
               photo={onboardingState.selectedPhoto}
               intent={onboardingState.selectedIntent}
+              functionType={selectedIntentForProcessing?.functionType || null}
               onComplete={handleProcessingComplete}
               onError={(error) => handleError(error, 'processing')}
             />

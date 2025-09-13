@@ -211,10 +211,15 @@ export function WelcomeScreenV4({ onContinue }: WelcomeScreenV4Props) {
       <View style={[styles.content, { paddingTop: insets.top + 20 }]}>
         {/* Main Content */}
         <View style={styles.centerContent}>
+          {/* App Logo */}
+          <View style={styles.logoContainer}>
+            <Text style={styles.logo}>Clever</Text>
+          </View>
+
           <Animated.View style={titleStyle}>
             <Text style={styles.title}>{welcomeCopy.title}</Text>
           </Animated.View>
-          
+
           <Animated.View style={subtitleStyle}>
             <Text style={styles.subtitle}>
               {welcomeCopy.subtitle}
@@ -263,27 +268,40 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 1,
   },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  logo: {
+    fontSize: 28,
+    fontFamily: 'Lexend-Bold',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
   centerContent: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   title: {
-    fontSize: 38,
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: 'rgba(255, 255, 255, 0.85)',
     textAlign: 'center',
     marginBottom: 20,
     letterSpacing: 0.5,
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
-    lineHeight: 44,
+    lineHeight: 38,
     paddingHorizontal: 12,
   },
   subtitle: {
     fontSize: 17,
-    color: '#E5E7EB',
+    color: 'rgba(229, 231, 235, 0.8)',
     textAlign: 'center',
     lineHeight: 24,
     letterSpacing: 0.2,
