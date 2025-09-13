@@ -262,7 +262,7 @@ export default function HomeGalleryLikeScreen() {
       }
     }
   };
-  const openQuick = React.useCallback((functionType: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'background' | 'outfit' | 'custom' | 'restore_repair' | 'water_damage', styleKey?: string | null) => {
+  const openQuick = React.useCallback((functionType: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'background' | 'outfit' | 'custom' | 'restore_repair' | 'water_damage' | 'nano_outfit', styleKey?: string | null) => {
     try {
       useQuickEditStore.getState().open({ functionType, styleKey: styleKey ?? null });
     } catch {}
@@ -391,7 +391,7 @@ export default function HomeGalleryLikeScreen() {
       case 'outfits':
         return <AnimatedOutfits />;
       case 'magic':
-        return <FeatureCardsList compact onOpenBackgrounds={() => openQuick('background')} onOpenClothes={() => openQuick('outfit')} firstTileRef={repairTileRef} />;
+        return <FeatureCardsList compact onOpenBackgrounds={() => openQuick('background')} onOpenClothes={() => openQuick('nano_outfit')} firstTileRef={repairTileRef} />;
       case 'requestFeature':
         return (
           <View style={exploreStyles.requestSection}>

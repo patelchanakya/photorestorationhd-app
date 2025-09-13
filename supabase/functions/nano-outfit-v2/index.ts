@@ -7,15 +7,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface OutfitRequest {
+interface NanoOutfitRequest {
   image_data: string; // base64 image
-  custom_prompt?: string;
-  style_key?: string; // Specific outfit style (outfit-1, outfit-2, etc.)
+  style_key?: string; // Outfit style key
+  custom_prompt?: string; // Optional custom prompt
   user_id?: string; // For usage tracking
 }
 
-// Outfit style prompts - SAME FORMAT AS NANO-BACKGROUND
-const OUTFIT_STYLES: Record<string, { title: string; prompt: string }> = {
+// Outfit styles (7 styles) - SAME FORMAT AS NANO-BACKGROUND
+const NANO_OUTFIT_STYLES: Record<string, { title: string; prompt: string }> = {
   'outfit-1': {
     title: 'Fix Clothes',
     prompt: "Clean ALL clothing completely on the person. Remove ALL stains and dirt from every piece of clothing while maintaining original fabric texture and material properties. Keep the same colors, style, and design. Preserve exact facial features, hairstyle, body position, and original lighting conditions with natural shadows. Only clean the clothing - keep background and pose completely unchanged."
@@ -44,7 +44,7 @@ const OUTFIT_STYLES: Record<string, { title: string; prompt: string }> = {
     title: 'Make Doctor',
     prompt: "Replace the person's clothing with professional medical attire: crisp white cotton doctor's coat over quality dress shirt and trousers, or medical scrubs made of professional cotton blend fabric. Maintain exact facial features, hairstyle, body position, and original lighting conditions. Ensure fabric appears realistic with natural cotton texture, proper coat drape, and authentic medical garment fit under existing lighting. Preserve shadows and highlights. Keep background and pose completely unchanged."
   }
-}
+};
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -52,33 +52,33 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
-  let user_id: string | undefined; // Declare in outer scope for error handler
-  let supabase: any; // Declare in outer scope for error handler
-  
+  let user_id: string | undefined;
+  let supabase: any;
+
   try {
     // Get request body
-    const { image_data, custom_prompt, style_key, user_id: requestUserId }: OutfitRequest = await req.json()
-    user_id = requestUserId; // Store for error handler
+    const { image_data, style_key, custom_prompt, user_id: requestUserId }: NanoOutfitRequest = await req.json()
+    user_id = requestUserId;
 
     if (!image_data) {
       return new Response(
         JSON.stringify({ error: 'image_data is required' }),
-        { 
+        {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
     }
 
-    // Initialize Supabase client early for limits validation
+    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-    
+
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error('Missing Supabase environment variables')
       return new Response(
         JSON.stringify({ error: 'Server configuration error' }),
-        { 
+        {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
@@ -87,7 +87,7 @@ serve(async (req) => {
 
     supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Pro/Free user check (SAME AS NANO-BACKGROUND)
+    // Pro/Free user check (same as other functions)
     const isPro = user_id && user_id !== 'anonymous' &&
       (user_id.startsWith('store:') || user_id.startsWith('orig:') || user_id.startsWith('fallback:'));
 
@@ -114,7 +114,7 @@ serve(async (req) => {
       }
     }
 
-    // Rate limit for Pro users (40 requests per UTC day) - SAME AS NANO-BACKGROUND
+    // Rate limit for Pro users (40 requests per UTC day)
     if (isPro) {
       const startOfToday = new Date();
       startOfToday.setUTCHours(0, 0, 0, 0);
@@ -138,32 +138,31 @@ serve(async (req) => {
       }
     }
 
-    // Initialize Replicate with server-side API key
+    // Initialize Replicate
     const replicateApiToken = Deno.env.get('REPLICATE_API_TOKEN')
     if (!replicateApiToken) {
       console.error('REPLICATE_API_TOKEN not found in environment')
       return new Response(
         JSON.stringify({ error: 'Server configuration error' }),
-        { 
+        {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
     }
 
-    // Supabase client already initialized above for limits validation
     const replicate = new Replicate({
       auth: replicateApiToken,
     })
 
     console.log('👔 Starting nano-outfit generation with webhooks...')
 
-    // Determine the prompt to use (SAME AS NANO-BACKGROUND)
+    // Determine the prompt to use
     let prompt = custom_prompt;
     let selectedStyle = null;
 
-    if (!prompt && style_key && OUTFIT_STYLES[style_key]) {
-      selectedStyle = OUTFIT_STYLES[style_key];
+    if (!prompt && style_key && NANO_OUTFIT_STYLES[style_key]) {
+      selectedStyle = NANO_OUTFIT_STYLES[style_key];
       prompt = selectedStyle.prompt;
       console.log(`👔 Using outfit style: ${selectedStyle.title}`);
     }
@@ -181,7 +180,7 @@ serve(async (req) => {
       output_format: "jpg"
     }
 
-    // Construct webhook URL
+    // Construct webhook URL (same as other functions)
     const webhookUrl = `${supabaseUrl}/functions/v1/photo-webhook`
 
     console.log('🔄 Creating Replicate prediction with webhook...')
@@ -196,13 +195,13 @@ serve(async (req) => {
 
     console.log(`✅ Prediction created: ${prediction.id}`)
 
-    // Upsert prediction into database for status tracking (SAME AS NANO-BACKGROUND)
+    // Upsert prediction into database for status tracking
     const { error: insertError } = await supabase
       .from('photo_predictions')
       .upsert({
         id: prediction.id,
         user_id: user_id || 'anonymous',
-        mode: 'outfit',
+        mode: 'nano_outfit',
         status: 'starting',
         style_key: style_key || null,
         input: {
@@ -227,11 +226,11 @@ serve(async (req) => {
 
     // Return prediction ID to client for polling
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: true,
         prediction_id: prediction.id,
         status: prediction.status || 'starting',
-        mode: 'outfit',
+        mode: 'nano_outfit',
         style_used: selectedStyle?.title || 'Custom Outfit',
         estimated_time: '5-10 seconds'
       }),
@@ -241,9 +240,9 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('❌ Outfit generation error:', error)
-    
-    // Rollback photo usage increment if generation failed after increment
+    console.error('❌ Nano-outfit generation error:', error)
+
+    // Rollback photo usage increment if generation failed
     if (user_id && user_id !== 'anonymous') {
       try {
         await supabase.rpc('rollback_photo_usage', {
@@ -254,13 +253,13 @@ serve(async (req) => {
         console.error('❌ Failed to rollback photo usage after error:', rollbackError);
       }
     }
-    
+
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: 'Failed to start nano-outfit generation',
-        details: error instanceof Error ? error.message : 'Unknown error' 
+        details: error instanceof Error ? error.message : 'Unknown error'
       }),
-      { 
+      {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }

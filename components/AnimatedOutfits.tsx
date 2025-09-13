@@ -323,7 +323,7 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
       category: 'outfit',
       tileName: translatedTitle,
       tileId: outfit.id,
-      functionType: 'outfit',
+      functionType: 'nano_outfit',
       customPrompt: outfit.outfitPrompt,
       stage: 'selected'
     });
@@ -339,7 +339,7 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
     });
     if (!result.canceled && result.assets[0]) {
       try {
-        useQuickEditStore.getState().openWithImage({ functionType: 'outfit' as any, imageUri: result.assets[0].uri, styleName: translatedTitle, customPrompt: outfit.outfitPrompt || translatedTitle });
+        useQuickEditStore.getState().openWithImage({ functionType: 'nano_outfit' as any, imageUri: result.assets[0].uri, styleName: translatedTitle, styleKey: outfit.id });
       } catch {
         // fallback: existing flow
         router.push({ pathname: '/text-edits', params: { imageUri: result.assets[0].uri, prompt: outfit.outfitPrompt || translatedTitle, mode: 'outfit' } });

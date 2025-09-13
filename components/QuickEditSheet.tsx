@@ -25,7 +25,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Helper to determine tile category
 const determineTileCategory = (functionType: string, styleKey?: string | null): 'outfit' | 'background' | 'memorial' | 'popular' | 'feature' | 'style' => {
-  if (functionType === 'outfit') return 'outfit';
+  if (functionType === 'outfit' || functionType === 'nano_outfit') return 'outfit';
   if (functionType === 'background') return 'background';  
   if (functionType === 'memorial') return 'memorial';
   if (functionType === 'custom') return 'popular';
