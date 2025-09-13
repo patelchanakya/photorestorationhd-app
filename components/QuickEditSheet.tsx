@@ -645,8 +645,11 @@ export function QuickEditSheet({ generateButtonRef }: QuickEditSheetProps = {}) 
       clearInterval(interval);
       setIsUploading(false);
       isProcessingRef.current = false;
-      // Clean up global styleKey
+      // Clean up all global state
       (global as any).__quickEditStyleKey = undefined;
+      (global as any).__tileCategory = undefined;
+      (global as any).__tileName = undefined;
+      (global as any).__tileId = undefined;
     }
   };
 

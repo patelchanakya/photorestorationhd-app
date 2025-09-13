@@ -135,6 +135,12 @@ export function usePhotoRestoration() {
       }
       
       // Check for mock mode (for onboarding testing)
+      // Belt-and-suspenders: Force disable mock in production builds
+      if (!__DEV__ && (global as any).USE_MOCK_API) {
+        console.warn('🚨 Mock API was enabled in production build - force disabling');
+        (global as any).USE_MOCK_API = false;
+      }
+
       if (__DEV__ && (global as any).USE_MOCK_API) {
         await new Promise(resolve => setTimeout(resolve, 3000));
         return {
@@ -291,6 +297,9 @@ export function usePhotoRestoration() {
               }
               
               if (statusResponse.is_complete) {
+                // Clear global progress tracking when operation completes
+                (global as any).__currentJobProgress = undefined;
+
                 if (statusResponse.is_successful && statusResponse.output) {
                   // Clear storage on completion
                   await AsyncStorage.removeItem('activePredictionId');
@@ -461,10 +470,12 @@ export function usePhotoRestoration() {
 
         return immediateResult;
       } catch (error) {
-        // Clear progress interval on error
+        // Clear progress interval and global progress tracking on error
         if (progressInterval) {
           clearInterval(progressInterval);
         }
+        (global as any).__currentJobProgress = undefined;
+
         if (__DEV__) {
           console.error('Photo restoration failed:', error);
         }
