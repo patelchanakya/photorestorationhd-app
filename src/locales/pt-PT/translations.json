@@ -9,147 +9,264 @@
     },
     "sections": {
       "popular": "Popular",
-      "fixMyPhoto": "Restore",
-      "backgrounds": "Backgrounds",
-      "backgrounds": "Backgrounds",
+      "fixMyPhoto": "Restauração Automática",
+      "backgrounds": "Fundos",
       "memorial": "Memorial",
+      "faceBody": "Rosto e Corpo",
+      "addRemove": "Adicionar/Remover",
       "outfits": "Roupas",
-      "magic": "Magia",
-      "waterDamage": "Danos de Água",
+      "magic": "Restauração de Foto",
+      "waterDamage": "Danos por Água",
       "clarify": "Clarificar",
-      "repair": "Recriar",
-      "colorize": "Colorir",
+      "repair": "Reparar",
+      "colourise": "Colorir",
       "descratch": "Remover Riscos",
-      "brighten": "Clarear"
+      "brighten": "Iluminar"
+    },
+    "writeYourOwn": "Escreva o seu Próprio",
+    "byClever": "por clever",
+    "rateUs": {
+      "title": "Avalie-nos",
+      "subtitle": "Deixe uma avaliação, isso nos ajuda muito!"
+    },
+    "requestFeature": {
+      "title": "Solicitar Recurso",
+      "subtitle": "Sugira novos recursos para o aplicativo"
+    },
+    "reportBug": {
+      "title": "Relatar Bug",
+      "subtitle": "Ajude-nos a corrigir problemas que você encontrou"
     },
     "alerts": {
       "proMember": {
         "title": "Membro Pro ✓",
-        "message": "A sua subscrição está ativa! Tem acesso ilimitado a todas as funcionalidades.",
+        "message": "Sua assinatura está ativa! Você tem acesso ilimitado a todos os recursos.",
         "button": "Ótimo!"
       },
       "subscriptionStatus": {
-        "title": "Estado da Subscrição",
-        "noActiveMessage": "Nenhuma subscrição ativa encontrada. Terá acesso a funcionalidades gratuitas.",
+        "title": "Status da Assinatura",
+        "noActiveMessage": "Nenhuma assinatura ativa encontrada. Você terá acesso a recursos gratuitos.",
         "button": "OK"
       },
+      "rateClever": {
+        "title": "Avalie o Clever",
+        "message": "Obrigado por usar o Clever! Por favor, visite a App Store para nos avaliar.",
+        "button": "Entendi!"
+      },
+      "requestFeature": {
+        "title": "Solicitar Recurso",
+        "message": "Qual recurso você gostaria de ver adicionado?",
+        "placeholder": "Descreva o recurso que você gostaria de ver...",
+        "thankYou": {
+          "title": "Obrigado!",
+          "message": "Sua solicitação de recurso foi enviada. Nós a revisaremos e consideraremos para futuras atualizações."
+        }
+      },
+      "reportBug": {
+        "title": "Relatar Bug",
+        "message": "Qual bug você encontrou?",
+        "placeholder": "Descreva o bug que você encontrou...",
+        "thankYou": {
+          "title": "Obrigado!",
+          "message": "Seu relatório de bug foi enviado. Vamos investigar e trabalhar em uma correção."
+        }
+      },
       "subscriptionCheck": {
-        "title": "Verificação da Subscrição",
-        "message": "Nenhuma subscrição ativa encontrada neste Apple ID. Por favor, inicie sessão com o Apple ID usado para a compra.",
+        "title": "Verificação de Assinatura",
+        "message": "Por favor, entre com o ID Apple usado para sua compra Pro.",
         "howToFix": "Como Corrigir",
-        "howToFixTitle": "Como Corrigir a Subscrição",
-        "howToFixMessage": "1. Vá para Definições → App Store\n2. Inicie sessão com o Apple ID usado para a compra\n3. Volte ao Clever e toque no emblema PRO novamente",
+        "howToFixTitle": "Como Verificar a Assinatura",
+        "howToFixMessage": "1. Vá para Ajustes → App Store\\n2. Faça login com seu ID Apple\\n3. Retorne ao Clever e tente novamente",
         "gotIt": "Entendi"
       },
       "proStatusCheck": {
-        "title": "Verificação do Estado Pro",
-        "message": "Não é possível verificar o estado da subscrição. Por favor, tente novamente ou verifique a sua ligação à internet."
+        "title": "Verificação do Status Pro",
+        "message": "Não foi possível verificar o status Pro. Por favor, tente novamente ou entre em contato com o suporte se o problema persistir."
       },
       "demoMode": {
-        "title": "Modo Demo",
-        "message": "As compras não estão disponíveis no Expo Go."
+        "title": "Modo de Demonstração",
+        "message": "Compras não estão disponíveis no Expo Go. Construa o aplicativo para testar compras reais."
       },
       "welcomeToPro": {
         "title": "Bem-vindo ao Pro!",
-        "message": "Agora tem acesso ilimitado!",
-        "button": "Fantástico!"
-      }
+        "message": "Agora você tem acesso ilimitado a todos os recursos!",
+        "button": "Incrível!"
+      },
+      "error": "Erro",
+      "failedToSubmit": "Falha ao enviar a solicitação",
+      "unexpectedError": "Ocorreu um erro inesperado"
     }
   },
   "popular": {
-    "clearSkin": "Pele Clara",
-    "addHalo": "Adicionar Halo",
+    "clearSkin": "Pele Limpa",
+    "addHalo": "Adicionar Auréola",
     "fixHair": "Corrigir Cabelo",
-    "slimmer": "Mais Magro",
+    "slimmer": "Mais Magro(a)",
     "angelWings": "Asas de Anjo",
     "younger": "Mais Jovem",
-    "older": "Mais Velho",
+    "older": "Mais Velho(a)",
     "addSmile": "Adicionar Sorriso",
-    "openEyes": "Abrir os olhos",
+    "openEyes": "Abrir Olhos",
     "gardenBackground": "Fundo de Jardim",
     "studioBackground": "Fundo de Estúdio",
     "softLightsBackground": "Fundo de Luzes Suaves",
-    "heavenlyBackground": "Fundo Celestial"
+    "heavenlyBackground": "Fundo Celestial",
+    "beachBackground": "Fundo de Praia",
+    "officeBackground": "Fundo de Escritório",
+    "natureBackground": "Fundo de Natureza",
+    "cityBackground": "Fundo de Cidade",
+    "sunsetBackground": "Fundo de Pôr do Sol",
+    "winterBackground": "Fundo de Inverno",
+    "vintageBackground": "Fundo Vintage",
+    "abstractBackground": "Fundo Abstrato",
+    "cleanBackground": "Fundo Limpo",
+    "blurBackground": "Fundo Borrado"
   },
   "memorial": {
     "lightRays": "Raios de Luz",
     "doveOfPeace": "Pomba da Paz",
     "etherealGlow": "Brilho Etéreo",
-    "heavenGates": "Portões do Céu",
-    "memorialFlowers": "Flores Memorial",
-    "cleanBackground": "Fundo Limpo"
+    "heavenGates": "Portões do Paraíso",
+    "memorialFlowers": "Flores Memoriais",
+    "cleanBackground": "Fundo Limpo",
+    "whiteBackground": "Fundo Branco",
+    "candlelightVigil": "Vigília à Luz de Velas",
+    "restInPeace": "Descanse em Paz",
+    "heavenly": "Celestial ☁️"
+  },
+  "backgrounds": {
+    "blurBackground": "Fundo Borrado"
+  },
+  "faceBody": {
+    "clearSkin": "Pele Limpa",
+    "addSmile": "Adicionar Sorriso",
+    "fixHair": "Corrigir Cabelo",
+    "makeYounger": "Rejuvenescer",
+    "makeSlimmer": "Emagrecer",
+    "teethWhitening": "Clareamento de Dentes",
+    "removeWrinkles": "Remover Rugas",
+    "eyeEnhancement": "Realçar Olhos",
+    "fixClosedEyes": "Corrigir Olhos Fechados",
+    "removeRedEye": "Remover Olho Vermelho"
+  },
+  "addRemove": {
+    "removePerson": {
+      "title": "Remover Pessoa"
+    },
+    "removeObjects": {
+      "title": "Remover Objetos"
+    },
+    "removeText": {
+      "title": "Remover Texto"
+    },
+    "removeWires": {
+      "title": "Remover Fios"
+    },
+    "addPerson": {
+      "title": "Adicionar Pessoa"
+    },
+    "addObjects": {
+      "title": "Adicionar Objetos"
+    },
+    "cloneDuplicate": {
+      "title": "Clonar/Duplicar"
+    },
+    "removeBackground": {
+      "title": "Remover Itens do Fundo"
+    }
   },
   "outfits": {
     "fixClothes": "Corrigir Roupas",
-    "changeColor": "Mudar Cor",
+    "changeColour": "Mudar Cor",
     "jobInterview": "Entrevista de Emprego",
     "weddingOutfit": "Roupa de Casamento",
     "professional": "Profissional",
-    "casualDay": "Dia Casual"
+    "casualDay": "Dia Casual",
+    "makeDoctor": "Tornar Médico"
   },
   "magic": {
     "waterDamage": {
-      "title": "Dano de Água",
-      "subtitle": "Remover dano de água e manchas"
+      "title": "Danos por Água",
+      "subtitle": "Remover danos por água e manchas"
     },
     "clarify": {
       "title": "Clarificar",
-      "subtitle": "Remover desfoque, afiar detalhes"
+      "subtitle": "Remover desfoque, aguçar detalhes"
     },
     "repair": {
-      "title": "Recriar",
-      "subtitle": "Deixe o Clever recriar a sua imagem"
+      "title": "Reparar",
+      "subtitle": "Deixe o Clever reparar sua imagem"
     },
     "colorize": {
       "title": "Colorir",
-      "subtitle": "Adicionar cores a fotos a preto e branco"
+      "subtitle": "Adicionar cores a fotos em P&B"
+    },
+    "colourise": {
+      "title": "Colorir",
+      "subtitle": "Adicionar cores a fotos em P&B"
     },
     "descratch": {
-      "title": "Remover Arranhões",
-      "subtitle": "Remover arranhões e marcas"
+      "title": "Remover Riscos",
+      "subtitle": "Remover riscos e marcas"
     },
     "brighten": {
-      "title": "Clarear",
+      "title": "Iluminar",
       "subtitle": "Corrigir iluminação e exposição"
     },
+    "fixTornPhotos": "Corrigir Fotos Rasgadas",
+    "removeStains": "Remover Manchas",
+    "fixFadedPhotos": "Corrigir Fotos Desbotadas",
+    "requestIdea": "Solicitar Ideia",
+    "requestIdeaSubtitle": "Compartilhe sua ideia de recurso",
+    "send": "Enviar",
+    "reportBugSubtitle": "Encontrou um problema? Nos diga",
+    "report": "Relatar",
     "requestFeature": {
-      "title": "Solicitar Funcionalidade",
-      "prompt": "Que funcionalidade gostaria de ver no Clever?",
+      "title": "Solicitar um Recurso",
+      "prompt": "Qual recurso você gostaria de ver no Clever?",
       "thankYouTitle": "Obrigado!",
-      "thankYouMessage": "O seu pedido de funcionalidade foi submetido. Agradecemos o seu feedback!",
+      "thankYouMessage": "Sua solicitação de recurso foi enviada. Agradecemos seu feedback!",
       "button": "Ótimo!",
-      "errorTitle": "Submissão Falhada",
-      "errorMessage": "Não é possível submeter o seu pedido. Por favor, tente novamente.",
-      "errorGeneric": "Algo correu mal. Por favor, tente novamente."
+      "errorTitle": "Falha no Envio",
+      "errorMessage": "Não foi possível enviar sua solicitação. Por favor, tente novamente.",
+      "errorGeneric": "Algo deu errado. Por favor, tente novamente."
+    },
+    "reportBug": {
+      "title": "Relatar um Bug",
+      "prompt": "Por favor, descreva o bug que você encontrou:",
+      "thankYouTitle": "Relatório de Bug Recebido!",
+      "thankYouMessage": "Obrigado por relatar este bug. Vamos investigar e corrigi-lo o mais rápido possível.",
+      "button": "Obrigado!",
+      "errorTitle": "Falha no Relatório",
+      "errorMessage": "Não foi possível enviar seu relatório de bug. Por favor, tente novamente.",
+      "errorGeneric": "Algo deu errado. Por favor, tente novamente."
     }
   },
   "quickAction": {
-    "photoMagic": "Magia de Fotos"
+    "photoMagic": "Magia da Foto"
   },
   "photoMagic": {
-    "title": "Magia de Fotos",
-    "placeholder": "Descreva o que quer...",
-    "takePhoto": "Tirar Foto",
+    "title": "Magia da Foto",
+    "subtitle": "Digite o que você quer editar e veja acontecer",
     "choosePhoto": "Escolher Foto",
+    "takePhoto": "Tirar Foto",
     "permissionRequired": "Permissão Necessária",
-    "permissionMessage": "Por favor, permita acesso às fotos para continuar.",
-    "photoAccessMessage": "Por favor, permita acesso às fotos para continuar.",
-    "cameraAccessMessage": "Por favor, permita acesso à câmara para continuar."
+    "photoAccessMessage": "Acesso à biblioteca de fotos é necessário para selecionar fotos",
+    "cameraAccessMessage": "Acesso à câmera é necessário para tirar fotos"
   },
   "quickEdit": {
     "modes": {
       "restoration": "Restauração",
-      "repair": "Reparação",
-      "unblur": "Remover Desfoque",
-      "colorize": "Colorir",
-      "descratch": "Remover Arranhões",
-      "enlighten": "Clarear",
+      "repair": "Reparar",
+      "unblur": "Desfocar",
+      "colourise": "Colorir",
+      "descratch": "Remover Riscos",
+      "enlighten": "Iluminar",
       "background": "Fundo",
       "outfit": "Roupa",
       "custom": "Personalizado",
-      "view": "Ver",
-      "restoreRepair": "Restaurar e Reparar",
-      "waterDamage": "Dano de Água"
+      "restoreRepair": "Restaurar & Reparar",
+      "waterDamage": "Danos por Água"
     },
     "processing": {
       "analyzing": "Analisando foto...",
@@ -159,217 +276,836 @@
       "failed": "Falhou"
     },
     "buttons": {
-      "save": "Guardar",
-      "share": "Partilhar",
+      "save": "Salvar",
+      "share": "Compartilhar",
       "cancel": "Cancelar",
       "tryAgain": "Tentar Novamente",
-      "process": "Processar"
+      "process": "Processar",
+      "view": "Ver"
     },
     "errors": {
-      "somethingWrong": "Algo correu mal",
+      "somethingWrong": "Algo deu errado",
       "networkError": "Erro de rede",
       "tryAgainLater": "Por favor, tente novamente mais tarde"
-    }
+    },
+    "editPhoto": "Editar Foto"
   },
-  "settings": {
-    "title": "Definições",
-    "sections": {
-      "account": "Conta",
-      "subscription": "Subscrição",
-      "usage": "Uso",
-      "support": "Suporte",
-      "about": "Acerca de"
-    },
-    "items": {
-      "proMember": "Membro Pro",
-      "freeUser": "Utilizador Gratuito",
-      "photosUsed": "Fotos Usadas",
-      "dailyLimit": "Limite Diário",
-      "lifetimeUsage": "Uso Vitalício",
-      "restorePurchases": "Restaurar Compras",
-      "resetIdentity": "Repor Identidade",
-      "clearCache": "Limpar Cache",
-      "privacyPolicy": "Política de Privacidade",
-      "termsOfService": "Termos de Serviço",
-      "rateUs": "por favor avalie-nos :)",
-      "shareApp": "Partilhar App",
-      "version": "Versão",
-      "language": "Idioma"
-    },
-    "time": {
-      "availableNow": "Disponível agora",
-      "hours": "{{hours}}h {{minutes}}m {{seconds}}s",
-      "minutes": "{{minutes}}m {{seconds}}s",
-      "seconds": "{{seconds}}s"
-    }
+  "photoProcessor": {
+    "choosePhoto": "Escolha uma foto",
+    "pickPhoto": "Escolher Foto",
+    "tryWithPhoto": "Experimente com uma de suas fotos",
+    "photoMagic": "Magia da Foto",
+    "photoMagicDesc": "Digite o que você quer editar e veja acontecer",
+    "pickPhotoError": "Falha ao escolher a foto. Por favor, tente novamente."
   },
   "onboarding": {
     "welcome": {
       "title": "Bem-vindo ao",
       "appName": "Clever!",
-      "subtitle": "Transforme as suas fotos com IA",
-      "getStarted": "Começar",
-      "terms": "Ao continuar, concorda com os nossos",
+      "getStarted": "Começar >",
+      "terms": "Ao continuar, você aceita nossos",
       "termsOfService": "Termos de Serviço",
       "and": "e",
       "privacyPolicy": "Política de Privacidade"
     },
     "permissions": {
-      "title": "Permitir Acesso às Fotos",
-      "subtitle": "Pode saltar este passo se preferir",
-      "photoAccess": "Ativar Acesso a Fotos",
-      "cameraAccess": "Ativar Acesso à Câmara",
-      "notifications": "Ativar Notificações",
-      "continue": "Continuar"
+      "title": "Vamos começar!",
+      "subtitle": "Você pode pular isso se preferir",
+      "note": "Você sempre pode mudar isso nas configurações do seu dispositivo",
+      "continue": "Continuar",
+      "requestingAccess": "Solicitando Acesso..."
     },
     "features": {
-      "title": "What brings you here?",
-      "customPrompt": "Pedido personalizado",
-      "noneAbove": "Nenhum dos acima",
-      "chooseYourOwn": "Choose Your Own",
-      "chooseYourOwnDesc": "Describe what you want to do with your photo",
-      "repair": "Recreate",
-      "repairDesc": "Recreation while staying consistent with features",
-      "clearSkin": "Clear Skin",
-      "clearSkinDesc": "Remove acne, blemishes & imperfections",
-      "addSmile": "Add Smile",
-      "addSmileDesc": "Add a natural, authentic smile",
-      "fixHair": "Fix Hair",
-      "fixHairDesc": "Clean up messy or stray hairs",
-      "makeYounger": "Make Younger",
-      "makeYoungerDesc": "Subtle age reduction while keeping identity",
-      "addWings": "Add Angel Wings",
-      "addWingsDesc": "Beautiful wings that match your photo",
-      "waterStainDamage": "Water/Stain Damage",
-      "waterStainDamageDesc": "Remove water damage, stains, and discoloration",
-      "fixMyPhoto": "Restore",
-      "fixMyPhotoDesc": "Fix tears, scratches, and damage in old photos",
-      "professionalOutfit": "Professional Outfit",
-      "professionalOutfitDesc": "Change to professional business attire",
-      "blurBackground": "Blur Background",
-      "blurBackgroundDesc": "Create professional blurred background effect",
-      "addHalo": "Add Halo",
-      "addHaloDesc": "Subtle glowing halo above head",
-      "lightRays": "Light Rays",
-      "lightRaysDesc": "Add peaceful memorial atmosphere with golden light",
-      "memorialFlowers": "Memorial Flowers",
-      "memorialFlowersDesc": "Cover scene with memorial flowers and petals",
-      "makeSlimmer": "Make Slimmer",
-      "makeSlimmerDesc": "Natural body enhancement",
-      "colorize": "Colorize",
-      "colorizeDesc": "Bring old B&W photos to life with realistic color",
-      "clarify": "Clarify",
-      "clarifyDesc": "Make blurry photos crystal clear",
-      "brighten": "Brighten",
-      "brightenDesc": "Illuminate underexposed images",
-      "beachBackground": "Beach Background",
-      "beachBackgroundDesc": "Beautiful ocean and sand scene",
-      "noneOfAbove": "Explore App",
-      "noneOfAboveDesc": "Skip and explore the app",
-      "subtitle": "Select what you're ready to do",
-      "continue": "Continue",
-      "customPromptPlaceholder": "What would you like to do with your photo?",
-      "customprompt": "Choose Your Own",
-      "custompromptDesc": "Describe what you want to do with your photo",
-      "clearskin": "Clear Skin",
-      "clearskinDesc": "Remove acne, blemishes & imperfections",
-      "addsmile": "Add Smile",
-      "addsmileDesc": "Add a natural, authentic smile",
-      "fixhair": "Fix Hair",
-      "fixhairDesc": "Clean up messy or stray hairs",
-      "makeyounger": "Make Younger",
-      "makeyoungerDesc": "Subtle age reduction while keeping identity",
-      "addwings": "Add Angel Wings",
-      "addwingsDesc": "Beautiful wings that match your photo",
-      "waterstaindamage": "Water/Stain Damage",
-      "waterstaindamageDesc": "Remove water damage, stains, and discoloration",
-      "restorerepair": "Restore",
-      "restorerepairDesc": "Fix tears, scratches, and damage in old photos",
-      "professionaloutfit": "Professional Outfit",
-      "professionaloutfitDesc": "Change to professional business attire",
-      "blurbackground": "Blur Background",
-      "blurbackgroundDesc": "Create professional blurred background effect",
-      "addhalo": "Add Halo",
-      "addhaloDesc": "Subtle glowing halo above head",
-      "lightrays": "Light Rays",
-      "lightraysDesc": "Add peaceful memorial atmosphere with golden light",
-      "memorialflowers": "Memorial Flowers",
-      "memorialflowersDesc": "Cover scene with memorial flowers and petals",
-      "makeslimmer": "Make Slimmer",
-      "makeslimmerDesc": "Natural body enhancement",
-      "addcolorbw": "Colorize",
-      "addcolorbwDesc": "Bring old B&W photos to life with realistic color",
-      "unblursharpen": "Clarify",
-      "unblursharpenDesc": "Make blurry photos crystal clear",
-      "brightenphotos": "Brighten",
-      "brightenphotosDesc": "Illuminate underexposed images",
-      "beachbackground": "Beach Background",
-      "beachbackgroundDesc": "Beautiful ocean and sand scene",
-      "noneabove": "Explore App",
-      "noneaboveDesc": "Skip and explore the app"
+      "title": "O que você quer tentar?",
+      "subtitle": "Selecione o que você está pronto para fazer",
+      "continue": "Continuar",
+      "selectOption": "Escolha seu recurso",
+      "exploreApp": "Explorar App →",
+      "startWith": "Começar com",
+      "customPromptPlaceholder": "O que você gostaria de fazer com sua foto?",
+      "chooseYourOwn": "Escolha o seu Próprio",
+      "chooseYourOwnDesc": "Descreva o que você quer fazer com sua foto",
+      "customprompt": "Escolha o seu Próprio",
+      "custompromptDesc": "Descreva o que você quer fazer com sua foto",
+      "repair": "Reparar",
+      "repairDesc": "Reparar enquanto mantém a consistência com os recursos",
+      "clearSkin": "Pele Limpa",
+      "clearSkinDesc": "Remover acne, manchas e imperfeições",
+      "addSmile": "Adicionar Sorriso",
+      "addSmileDesc": "Adicionar um sorriso natural e autêntico",
+      "fixHair": "Corrigir Cabelo",
+      "fixHairDesc": "Limpar cabelos bagunçados ou soltos",
+      "makeYounger": "Rejuvenescer",
+      "makeYoungerDesc": "Redução sutil de idade, mantendo a identidade",
+      "addWings": "Adicionar Asas de Anjo",
+      "addWingsDesc": "Lindas asas que combinam com sua foto",
+      "waterStainDamage": "Danos por Água/Manchas",
+      "waterStainDamageDesc": "Remover danos por água, manchas e descoloração",
+      "fixMyPhoto": "Restauração Automática",
+      "fixMyPhotoDesc": "Corrigir rasgos, riscos e danos em fotos antigas",
+      "professionalOutfit": "Roupa Profissional",
+      "professionalOutfitDesc": "Mudar para traje profissional de negócios",
+      "blurBackground": "Fundo Borrado",
+      "blurBackgroundDesc": "Criar efeito de fundo borrado profissional",
+      "addHalo": "Adicionar Auréola",
+      "addHaloDesc": "Auréola sutil e brilhante acima da cabeça",
+      "lightRays": "Raios de Luz",
+      "lightRaysDesc": "Adicionar atmosfera memorial pacífica com luz dourada",
+      "memorialFlowers": "Flores Memoriais",
+      "memorialFlowersDesc": "Cobrir a cena com flores e pétalas memoriais",
+      "makeSlimmer": "Emagrecer",
+      "makeSlimmerDesc": "Melhora natural do corpo",
+      "colourise": "Colorir",
+      "colouriseDesc": "Dar vida a fotos antigas em P&B com cores realistas",
+      "clarify": "Clarificar",
+      "clarifyDesc": "Tornar fotos embaçadas cristalinas",
+      "brighten": "Iluminar",
+      "brightenDesc": "Iluminar imagens subexpostas",
+      "beachBackground": "Fundo de Praia",
+      "beachBackgroundDesc": "Cena de oceano e areia bonita",
+      "noneOfAbove": "Explorar App",
+      "noneOfAboveDesc": "Pular e explorar o aplicativo",
+      "customPrompt": "Escolha o seu Próprio",
+      "customPromptDesc": "Descreva o que você quer fazer com sua foto"
     },
     "preview": {
       "tryNow": "Experimente agora",
-      "skip": "Saltar",
+      "skip": "Pular",
       "back": "Voltar",
-      "choosePhoto": "Escolha uma foto para começar",
-      "photoMagic": "Photo Magic",
-      "photoMagicDesc": "Type what you want to edit and watch it happen",
-      "pickPhotoError": "Failed to pick photo. Please try again."
+      "choosePhoto": "Escolher uma foto",
+      "pickPhoto": "Escolher Foto",
+      "tryWithPhoto": "Experimente com uma de suas fotos"
     },
     "community": {
-      "title": "Pronto para trazer as suas fotos\nde volta à vida?",
-      "subtitle": "Conecte-se connosco nas redes sociais",
-      "followFacebook": "Follow us on Facebook"
+      "title": "Pronto para Trazer Suas Fotos\nde Volta à Vida?",
+      "subtitle": "Transforme memórias desbotadas em obras-primas impressionantes",
+      "benefit1": "Nenhuma habilidade de Photoshop necessária",
+      "benefit2": "Corrija décadas de danos em segundos",
+      "benefit3": "Perfeito para iniciantes e profissionais",
+      "showcaseTitle": "Veja a Magia por Si Mesmo",
+      "showcaseSubtitle": "Arraste os controles para ver transformações reais",
+      "memorial": {
+        "title": "Restaurar Memórias Preciosas",
+        "description": "Honre o legado com restauração perfeita"
+      },
+      "repair": {
+        "title": "Corrigir Danos Graves",
+        "description": "Reconstrua partes ausentes como mágica"
+      },
+      "background": {
+        "title": "Mude Qualquer Fundo",
+        "description": "Transporte-os para qualquer lugar instantaneamente"
+      },
+      "custom": {
+        "title": "Ou Simplesmente Digite o Que Você Quer",
+        "description": "\"Adicionar um sorriso\" • \"Corrigir o cabelo\" • \"Tornar ensolarado\" • Tudo o que você imaginar"
+      },
+      "continue": "Continuar",
+      "photosPerfected": "Fotos Perfeitas",
+      "followFacebook": "Siga-nos no Facebook"
     },
     "setup": {
-      "title": "Configurando a sua experiência...",
-      "almostReady": "Quase pronto..."
-    }
-  },
-  "textEdit": {
-    "prompt": "O que gostaria de fazer?",
-    "placeholder": "Descreva a sua edição...",
-    "generate": "Gerar",
-    "processing": "Processando...",
-    "customTextEdits": "Edições de texto personalizadas",
-    "maxEffectsReached": "Efeitos máximos atingidos",
-    "maxEffectsMessage": "Pode selecionar até 3 efeitos de cada vez para melhores resultados. Por favor, desmarque um primeiro."
-  },
-  "restoration": {
-    "processingFailed": "Processamento falhou",
-    "status": {
-      "processing": "Processando...",
-      "completed": "Completo!",
-      "failed": "Falhou",
-      "retry": "Tentar Novamente"
+      "title": "Configurando sua experiência...",
+      "almostReady": "Quase pronto...",
+      "settingUp": "Configurando as coisas para você...",
+      "wontTakeLong": "Isso não vai demorar muito",
+      "settingUpSpace": "Configurando seu espaço",
+      "loadingSystems": "Carregando sistemas",
+      "preparingTools": "Preparando suas ferramentas",
+      "allSet": "Tudo pronto!",
+      "readyToCreate": "Pronto para começar a criar magia com suas fotos"
     },
-    "actions": {
-      "save": "Guardar",
-      "share": "Partilhar"
+    "rating": {
+      "skip": "Pular",
+      "title": "Pronto para a edição da sua foto?",
+      "subtitle": "Uma avaliação rápida nos ajuda muito e leva apenas um momento.",
+      "rateNow": "Avaliar agora"
     }
+  },
+  "textEdits": {
+    "title": "Magia da Foto",
+    "subtitle": "Digite o que você quer editar e veja acontecer",
+    "alerts": {
+      "purchaseError": {
+        "title": "Erro de Compra",
+        "message": "Por favor, tente novamente ou restaure as compras se você já tiver uma assinatura."
+      },
+      "processingFailed": {
+        "title": "Falha no Processamento",
+        "message": "Algo deu errado. Por favor, tente novamente."
+      },
+      "freeLimitReached": {
+        "title": "Limite Gratuito Atingido",
+        "message": "Você atingiu seu limite de edição de fotos gratuito. Atualize para o Pro para edições ilimitadas."
+      },
+      "serviceBusy": {
+        "title": "Serviço Ocupado",
+        "message": "Recursos de GPU esgotados. A equipe está trabalhando nisso."
+      },
+      "maxEffectsReached": {
+        "title": "Número Máximo de Efeitos Atingido",
+        "message": "Você pode selecionar até 3 efeitos de uma vez para melhores resultados."
+      },
+      "noImage": {
+        "title": "Nenhuma Imagem",
+        "message": "Por favor, selecione uma imagem primeiro"
+      },
+      "selectEdits": {
+        "title": "Selecione edições",
+        "message": "Por favor, selecione pelo menos 1 predefinição ou escreva uma edição personalizada."
+      }
+    },
+    "maxEffectsReached": "Número Máximo de Efeitos Atingido",
+    "maxEffectsMessage": "Você pode selecionar até 3 efeitos de uma vez para melhores resultados."
   },
   "deviceCarousel": {
     "allowAccess": "Permitir Acesso",
-    "photoLibraryMessage": "Para selecionar fotos, por favor permita acesso à sua biblioteca de fotos",
-    "openSettings": "Abrir Definições"
+    "photoLibraryMessage": "Para selecionar fotos, por favor, permita o acesso à sua biblioteca de fotos",
+    "photosAccessNeeded": "O acesso às fotos é necessário para mostrar sua galeria",
+    "browsePicsMessage": "Permita o acesso para navegar por suas fotos aqui. Você também pode escolher uma única foto em vez disso.",
+    "fixFromDevice": "Corrigir do Dispositivo",
+    "openSettings": "Abrir Configurações"
   },
   "common": {
     "ok": "OK",
     "cancel": "Cancelar",
     "continue": "Continuar",
     "back": "Voltar",
-    "next": "Seguinte",
+    "next": "Próximo",
     "done": "Concluído",
-    "save": "Guardar",
-    "share": "Partilhar",
-    "delete": "Eliminar",
+    "save": "Salvar",
+    "share": "Compartilhar",
+    "delete": "Excluir",
     "edit": "Editar",
-    "loading": "A carregar...",
+    "loading": "Carregando...",
     "error": "Erro",
     "success": "Sucesso",
     "warning": "Aviso",
     "info": "Informação",
-    "saved": "Guardado"
+    "saved": "Salvo",
+    "choosePhoto": "Escolher Foto",
+    "videoLoading": "Carregando Vídeo...",
+    "buttons": {
+      "tryAgain": "Tentar Novamente",
+      "goBack": "Voltar",
+      "maybeLater": "Talvez Mais Tarde",
+      "gotIt": "Entendi",
+      "dismiss": "Dispensar",
+      "clear": "Limpar",
+      "save": "Salvar",
+      "share": "Compartilhar",
+      "cancel": "Cancelar",
+      "great": "Ótimo!",
+      "awesome": "Incrível!",
+      "howToFix": "Como Corrigir"
+    },
+    "status": {
+      "processing": "Processando...",
+      "checking": "Verificando...",
+  "cleared": "Limpado!",
+  "restoring": "Restaurando...",
+  "loading": "Carregando..."
+},
+"errors": {
+  "somethingWrong": "Algo deu errado",
+  "unexpectedError": "Ocorreu um erro inesperado",
+  "tryAgainLater": "Por favor, tente novamente mais tarde",
+  "error": "Erro"
+},
+"thankYou": "Obrigado!",
+"openSettings": "Abrir Configurações",
+"shareInstead": "Compartilhar em vez disso",
+"shareRestoredPhoto": "Compartilhe sua foto restaurada"
+},
+"photoMagic": {
+  "failedToSelectImage": "Falha ao selecionar a imagem. Por favor, tente novamente.",
+  "failedToTakePhoto": "Falha ao tirar a foto. Por favor, tente novamente."
+},
+"sharing": {
+  "defaultMessage": "Confira minha foto restaurada!"
+},
+"errorBoundary": {
+  "message": "O aplicativo encontrou um erro. Por favor, tente novamente."
+},
+"subscription": {
+  "serviceUnavailable": "Serviço de Assinatura Indisponível",
+  "connectionTrouble": "Estamos com problemas para conectar ao nosso serviço de assinatura. Por favor, tente novamente.",
+  "retryPayment": "Tentar Pagamento Novamente",
+  "restoreFailed": "Falha ao restaurar as compras. Por favor, tente novamente."
+},
+"services": {
+  "generation": {
+    "timedOut": "Geração esgotou o tempo limite. Por favor, tente novamente."
+  },
+  "storage": {
+    "videoSaveFailed": "Falha ao salvar o vídeo. Por favor, tente novamente.",
+    "videoNotFound": "Arquivo de vídeo não encontrado. Por favor, tente novamente.",
+    "videoCameraRollFailed": "Falha ao salvar o vídeo na galeria. Por favor, tente novamente.",
+    "photoNotFound": "Arquivo de foto não encontrado. Por favor, tente novamente.",
+    "photoPermissionError": "Falha ao salvar a foto na biblioteca. Por favor, verifique as permissões da sua biblioteca de fotos."
   }
+},
+"accessibility": {
+  "visitPinterestPage": "Visitar página do Pinterest",
+  "opensPinterestInBrowser": "Abre a página do Pinterest no navegador",
+  "visitFacebookPage": "Visitar página do Facebook",
+  "opensFacebookInBrowser": "Abre a página do Facebook no navegador",
+  "visitInstagramPage": "Visitar página do Instagram",
+  "opensInstagramInBrowser": "Abre a página do Instagram no navegador",
+  "visitTikTokPage": "Visitar página do TikTok",
+  "opensTikTokInBrowser": "Abre a página do TikTok no navegador",
+  "emailSupport": "Suporte por e-mail",
+  "opensEmailToSupport": "Abre e-mail para contatar o suporte",
+  "rateUs": "Avalie-nos",
+  "opensRatingPrompt": "Abre o prompt de avaliação ou a página da loja de aplicativos",
+  "shareApp": "Compartilhar aplicativo",
+  "opensShareSheet": "Abre a folha de compartilhamento para compartilhar o aplicativo com outros"
+},
+"proUpgrade": {
+  "title": "Atualizar para Pro",
+  "message": "Você atingiu seu limite de geração de vídeo"
+},
+"tour": {
+  "restoration": {
+    "title": "Escolha uma Foto",
+    "description": "Escolha qualquer foto para restaurar, aprimorar ou reparar danos."
+  },
+  "permissions": {
+    "alertTitle": "Tire o máximo proveito do Clever",
+    "alertMessage": "Habilite o acesso às fotos para salvar suas fotos aprimoradas.",
+    "notNow": "Agora Não",
+    "openSettings": "Abrir Configurações"
+  },
+  "generate": {
+    "title": "Toque para Gerar",
+    "description": "Pressione a marca de verificação para criar seu resultado."
+  },
+  "result": {
+    "title": "Salvar ou Ver Resultado",
+    "description": "Salve facilmente em suas fotos ou veja o resultado completo."
+  },
+  "buttons": {
+    "skip": "Pular",
+    "next": "Próximo",
+    "gotIt": "Entendi",
+    "viewResult": "Ver Resultado",
+    "save": "Salvar",
+    "crop": "Cortar"
+  },
+  "processing": {
+    "uploadingPhoto": "Enviando foto...",
+    "runningMagic": "Executando magia...",
+    "fixingDamage": "Corrigindo danos...",
+    "enhancingDetails": "Melhorando detalhes...",
+    "almostDone": "Quase pronto...",
+    "pleaseWait": "Por favor, aguarde alguns segundos"
+  },
+  "success": {
+    "title": "É simples assim!",
+    "description": "Agora você sabe como usar todas as nossas ferramentas.",
+    "complete": "✓ Tutorial Concluído",
+    "unlockPro": "Desbloquear Recursos Pro",
+    "features": "Restaurações ilimitadas • Estilos premium • Processamento prioritário",
+    "getUnlimited": "Obter Ilimitado",
+    "maybeLater": "Talvez Mais Tarde"
+  },
+  "sheet": {
+    "colorizePhoto": "Colorir Foto",
+    "restorePhoto": "Restaurar Foto",
+    "repairPhoto": "Reparar Foto",
+    "descratchPhoto": "Remover Riscos da Foto",
+    "brightenPhoto": "Iluminar Foto",
+    "clarifyPhoto": "Clarificar Foto",
+    "unblurPhoto": "Desfocar Foto"
+  },
+  "steps": {
+    "navigation": {
+      "title": "Navegue entre suas ferramentas",
+      "description": "Alterne entre os tipos de restauração"
+    },
+    "selection": {
+      "title": "Escolha seu estilo de restauração",
+      "description": "Escolha a ferramenta para sua foto"
+    },
+    "preview": {
+      "title": "Sua foto aparece aqui → Comece a criar",
+      "description": "Toque para iniciar sua restauração"
+    }
+  }
+},
+"alerts": {
+  "settings": {
+    "clearVideo": {
+      "title": "Limpar Vídeo Travado?",
+      "message": "Isso irá redefinir qualquer processamento de vídeo travado. Use isso se um vídeo parecer estar processando, mas nada está acontecendo.",
+      "buttons": {
+        "cancel": "Cancelar",
+        "clear": "Limpar"
+      },
+      "success": {
+        "title": "Limpado!",
+        "message": "O estado de processamento do vídeo foi redefinido. Agora você pode tentar gerar vídeos novamente."
+      },
+      "error": {
+        "title": "Erro",
+        "message": "Falha ao limpar o estado do vídeo. Tente reiniciar o aplicativo."
+      }
+    },
+    "deleteAllPhotos": {
+      "title": "Excluir Todas as Fotos",
+      "message": "Isso excluirá permanentemente todas as fotos em sua galeria. Esta ação não pode ser desfeita.",
+      "buttons": {
+        "cancel": "Cancelar",
+        "delete": "Excluir Tudo"
+      },
+      "success": {
+        "title": "Fotos Excluídas",
+        "message": "{{count}} fotos excluídas com sucesso."
+      },
+      "error": {
+        "title": "Erro",
+        "message": "Falha ao excluir todas as fotos. Por favor, tente novamente."
+      }
+    },
+    "restoreInterrupted": {
+      "title": "Operação Interrompida",
+      "message": "A restauração foi interrompida. Por favor, tente novamente."
+    },
+    "noSubscription": {
+      "title": "Nenhuma Assinatura Encontrada",
+      "message": "Nenhuma assinatura ativa encontrada neste ID Apple. Por favor, entre com o ID Apple usado para a compra."
+    },
+    "howToRestore": {
+      "title": "Como Restaurar Compras",
+      "message": "1. Vá para Ajustes → App Store\\n2. Faça login com o ID Apple usado para a compra\\n3. Retorne ao Clever e toque em Restaurar Compras novamente"
+    },
+    "resetIdentity": {
+      "title": "Redefinir Identidade da Assinatura",
+      "message": "Isso irá redefinir sua identidade do RevenueCat e sincronizar com o ID Apple atual. Use isso se você estiver com problemas de assinatura. Continuar?",
+      "buttons": {
+        "cancel": "Cancelar",
+        "reset": "Redefinir"
+      },
+      "success": {
+        "title": "Redefinição Concluída",
+        "message": "A identidade da assinatura foi redefinida e sincronizada com seu ID Apple atual."
+      },
+      "error": {
+        "title": "Falha na Redefinição",
+        "message": "Não foi possível redefinir a identidade da assinatura. Por favor, tente novamente."
+      }
+    },
+    "demoMode": {
+      "title": "Modo de Demonstração",
+      "message": "Compras não estão disponíveis no Expo Go. Construa um cliente de desenvolvimento para testar compras reais."
+    },
+    "welcomeToPro": {
+      "title": "Bem-vindo ao Pro!",
+      "message": "Agora você tem restaurações de fotos ilimitadas!"
+    },
+    "paywallerror": {
+      "title": "Erro",
+      "message": "Não foi possível mostrar as opções de assinatura. Por favor, tente novamente."
+    },
+    "notAvailable": {
+      "title": "Não Disponível",
+      "message": "Este recurso não está disponível no Expo Go."
+    },
+    "restore": {
+      "success": {
+        "title": "Restaurado!",
+        "message": "Suas compras foram restauradas com sucesso!"
+      },
+      "noPurchases": {
+        "title": "Nenhuma Compra Encontrada",
+        "message": "Nenhuma compra anterior encontrada nesta conta."
+      },
+      "failed": {
+        "title": "Falha na Restauração",
+        "message": "Não foi possível restaurar as compras. Por favor, tente novamente."
+      },
+      "noSubscription": {
+        "title": "Nenhuma Assinatura Encontrada",
+        "message": "Nenhuma assinatura ativa encontrada neste ID Apple. Por favor, entre com o ID Apple usado para a compra."
+      },
+      "howToFix": {
+        "title": "Como Restaurar Compras",
+        "message": "1. Vá para Ajustes → App Store\n2. Faça login com o ID Apple usado para a compra\n3. Retorne ao Clever e toque em Restaurar Compras novamente"
+      }
+    },
+    "reset": {
+      "title": "Redefinir Identidade da Assinatura",
+      "message": "Isso irá redefinir sua identidade do RevenueCat e sincronizar com o ID Apple atual. Use isso se você estiver com problemas de assinatura. Continuar?",
+      "success": {
+        "title": "Redefinição Concluída",
+        "message": "A identidade da assinatura foi redefinida e sincronizada com seu ID Apple atual."
+      },
+      "failed": {
+        "title": "Falha na Redefinição",
+        "message": "Não foi possível redefinir a identidade da assinatura. Por favor, tente novamente."
+      }
+    }
+  },
+  "errors": {
+    "network": {
+      "title": "Sem Conexão com a Internet",
+      "message": "Você precisa de uma conexão com a internet para continuar",
+      "tryAgain": "Tentar Novamente",
+      "checking": "Verificando...",
+      "cancel": "Cancelar"
+    },
+    "permissions": {
+      "camera": {
+        "title": "Permissão da Câmera Necessária",
+        "message": "Por favor, conceda permissão da câmera para usar este recurso."
+      },
+      "photos": {
+        "title": "Acesso às Fotos Necessário",
+        "message": "Para salvar fotos, por favor, permita o acesso à sua biblioteca de fotos em Ajustes > Privacidade e Segurança > Fotos."
+      }
+    },
+    "processing": {
+      "failed": "Falha no Processamento",
+      "generic": "Algo deu errado. Por favor, tente novamente.",
+      "retry": "Tentar Novamente"
+    },
+    "sharing": {
+      "failed": "Falha no Compartilhamento",
+      "message": "Não foi possível compartilhar a foto. Por favor, tente novamente."
+    },
+    "noPhotoAvailable": "Nenhuma foto disponível para compartilhar."
+  },
+  "explore": {
+    "rate": {
+      "title": "Avalie o Clever",
+      "message": "Obrigado por usar o Clever! Por favor, visite a App Store para nos avaliar."
+    },
+    "feature": {
+      "requestTitle": "Solicitar Recurso",
+      "requestPrompt": "Qual recurso você gostaria de ver adicionado?",
+      "successMessage": "Sua solicitação de recurso foi enviada. Nós a revisaremos e consideraremos para futuras atualizações.",
+      "errorMessage": "Falha ao enviar a solicitação"
+    },
+    "bug": {
+      "reportTitle": "Relatar Bug",
+      "reportPrompt": "Qual bug você encontrou?",
+      "successMessage": "Seu relatório de bug foi enviado. Vamos investigar e trabalhar em uma correção.",
+      "errorMessage": "Falha ao enviar o relatório de bug"
+    }
+  }
+},
+"modals": {
+  "photoLimit": {
+    "title": "Restaurações Gratuitas Atingidas",
+    "message": "Usamos computadores caros para executar essas transformações. Por favor, considere assinar para remover os limites de fotos!",
+    "badge": "EXPERIMENTE GRÁTIS POR 3 DIAS",
+    "buttons": {
+      "startTrial": "Iniciar Teste Gratuito",
+      "later": "Talvez Mais Tarde"
+    },
+    "features": {
+      "unlimited": {
+        "title": "Restaurações de Fotos Ilimitadas",
+        "description": "Sem limites no processamento de fotos"
+      },
+      "priority": {
+        "title": "Processamento Prioritário",
+        "description": "Suas fotos são processadas mais rapidamente"
+      },
+      "advanced": {
+        "title": "Recursos Avançados",
+        "description": "Edições de texto e ferramentas premium"
+      },
+      "download": {
+        "title": "Baixar e Manter para Sempre",
+        "description": "Salve todas as suas fotos restauradas permanentemente"
+      }
+    }
+  },
+  "upgrade": {
+    "title": "Atualizar para Pro",
+    "videoLimit": "Você atingiu seu limite de geração de vídeo",
+    "cta": "Obter Pro Agora",
+    "buttons": {
+      "later": "Talvez Mais Tarde"
+    },
+    "features": {
+      "backToLife": {
+        "title": "Vídeos Animados 'De Volta à Vida'",
+        "description": "Crie vídeos animados a partir de suas fotos"
+      },
+      "priority": {
+        "title": "Processamento Prioritário",
+        "description": "Suas fotos e vídeos são processados mais rapidamente"
+      },
+      "textEdits": {
+        "title": "Magia de Edições de Texto",
+        "description": "Desbloqueie o recurso mágico de Edições de Texto"
+      }
+    }
+  },
+  "networkError": {
+    "title": "Sem Conexão com a Internet",
+    "message": "Você precisa de uma conexão com a internet para continuar",
+    "buttons": {
+      "tryAgain": "Tentar Novamente",
+      "checking": "Verificando...",
+      "cancel": "Cancelar"
+    }
+  },
+  "jobBlocking": {
+    "title": "Ainda estamos gerando seus resultados",
+    "message": "Você precisa esperar sua geração atual terminar antes de solicitar conteúdo adicional. Por favor, tente novamente mais tarde!",
+    "button": "OK, Entendi"
+  }
+},
+"restoration": {
+  "alerts": {
+    "loadFailed": {
+      "title": "Erro",
+      "message": "Falha ao carregar os detalhes da restauração"
+    },
+    "processingFailed": {
+      "title": "Falha no Processamento",
+      "message": "Algo deu errado. Por favor, tente novamente."
+    },
+    "photoAccessRequired": {
+      "title": "Acesso às Fotos Necessário",
+      "message": "Para salvar fotos, por favor, permita o acesso à sua biblioteca de fotos em Ajustes > Privacidade e Segurança > Fotos.",
+      "buttons": {
+        "openSettings": "Abrir Configurações",
+        "shareInstead": "Compartilhar em vez disso",
+        "cancel": "Cancelar"
+      }
+    },
+    "unableToShare": {
+      "title": "Incapaz de Compartilhar",
+      "message": "Por favor, tente o botão Compartilhar em vez disso, ou verifique as configurações do seu dispositivo.",
+      "buttons": {
+        "tryShareButton": "Tentar Botão Compartilhar",
+        "ok": "OK"
+      }
+    },
+    "shareFailed": {
+      "title": "Falha no Compartilhamento",
+      "message": "Não foi possível compartilhar a foto. Por favor, tente novamente."
+    },
+    "deleteFailed": {
+      "title": "Erro",
+      "message": "Falha ao excluir a restauração"
+    },
+    "deleteConfirmation": {
+      "title": "Excluir Restauração",
+      "message": "Tem certeza de que deseja excluir esta restauração? Esta ação não pode ser desfeita.",
+      "buttons": {
+        "cancel": "Cancelar",
+        "delete": "Excluir"
+      }
+    }
+  },
+  "errors": {
+    "cannotGenerate": {
+      "title": "Não é possível gerar a imagem",
+      "message": "Por favor, tente novamente com uma imagem diferente"
+    },
+    "notFound": "Restauração não encontrada",
+    "photoNotFound": "Foto Não Encontrada",
+    "photoNotFoundMessage": "Os arquivos de foto foram excluídos ou movidos. Este registro de restauração será limpo.",
+    "resultNotAvailable": {
+      "title": "Resultado Não Disponível",
+      "message": "A imagem restaurada não está mais disponível. Isso pode acontecer se o resultado tiver expirado."
+    },
+    "creditRefunded": "✓ Seu crédito gratuito foi reembolsado"
+  },
+  "status": {
+    "stillProcessing": "Ainda processando...",
+    "processingGuidance": "Isso geralmente leva alguns segundos. Por favor, tente novamente em breve."
+  },
+  "types": {
+    "repair": "Foto Reparada",
+    "unblur": "Foto Aprimorada",
+    "colorize": "Foto Colorida",
+    "descratch": "Foto Restaurada",
+    "enlighten": "Foto Iluminada",
+    "outfit": "Roupa Trocada",
+    "background": "Fundo Trocado",
+    "custom": "Foto Editada",
+    "water_damage": "Danos por Água Corrigidos"
+  }
+},
+"settings": {
+  "title": "Configurações",
+  "sections": {
+    "account": "Conta",
+    "subscription": "Assinatura",
+    "usage": "Uso",
+    "support": "Suporte",
+    "about": "Sobre",
+    "connectSupport": "Conectar & Suporte",
+    "accountLegal": "Conta & Legal",
+    "followUs": "Siga-nos"
+  },
+  "items": {
+    "proMember": "Membro Pro",
+    "freeUser": "Usuário Gratuito",
+    "photosUsed": "Fotos Usadas",
+    "dailyLimit": "Limite Diário",
+    "lifetimeUsage": "Uso Vitalício",
+    "restorePurchases": "Restaurar Compras",
+    "resetIdentity": "Redefinir Identidade",
+    "clearCache": "Limpar Cache",
+    "privacyPolicy": "Política de Privacidade",
+    "termsOfService": "Termos de Serviço",
+    "rateUs": "por favor, nos avalie :)",
+    "shareApp": "Compartilhar Aplicativo",
+    "version": "Versão",
+    "language": "Idioma",
+    "emailSupport": "Suporte por E-mail",
+    "appVersionLabel": "Versão do App"
+  },
+  "status": {
+    "checkingAppStore": "Verificando com a App Store...",
+    "verifying": "Verificando sua assinatura",
+    "syncPurchases": "Sincronizar suas compras com este dispositivo"
+  },
+  "time": {
+    "availableNow": "Disponível agora",
+    "hours": "{{hours}}h {{minutes}}m {{seconds}}s",
+    "minutes": "{{minutes}}m {{seconds}}s",
+    "seconds": "{{seconds}}s"
+  }
+},
+"onboardingV4": {
+  "welcome": {
+    "appName": "Clever",
+    "title": "Corrija suas fotos antigas",
+    "subtitle": "Restauração e edições de fotos profissionais em segundos",
+    "getStarted": "Começar"
+  },
+  "intentCapture": {
+    "title": "O que te trouxe aqui?",
+    "subtitle": "Junte-se a milhares que estão se tornando especialistas em fotos com o Clever",
+    "previewUnavailable": "Prévia indisponível",
+    "loading": "Carregando...",
+    "options": {
+      "fixOldPhotos": "Corrigir Fotos de Família Antigas",
+      "repairTorn": "Reparar Fotos Rasgadas & Danificadas",
+      "colorizeBlackWhite": "Colorir Preto & Branco",
+      "removeWaterDamage": "Remover Danos por Água",
+      "sharpenFaces": "Clarificar Rostos Borrados",
+      "removeScratches": "Remover Riscos & Marcas",
+      "brightenDark": "Iluminar Fotos Escuras",
+      "justExplore": "Apenas Explorando o Aplicativo"
+    },
+    "actions": {
+      "tryThis": "Tentar Isso",
+      "continue": "Continuar"
+    }
+  },
+  "demo": {
+    "overlayText": "Você fará isso em segundos",
+    "selectPhoto": "Selecione Sua Foto",
+    "loadingDemo": "Carregando demonstração..."
+  },
+  "processing": {
+    "analyzing": "Você está analisando os danos...",
+    "enhancing": "Você está aprimorando os detalhes...",
+    "finalizing": "Você está dando vida novamente...",
+    "working": "Você está trabalhando em sua foto...",
+    "demoPhoto": "Processando Foto de Demonstração",
+    "socialProof": {
+      "photosRestored": "{{count}} fotos restauradas",
+      "recentActivity": "Alguém em {{city}} acabou de {{action}}",
+      "testimonial": "{{quote}} - {{author}}"
+    }
+  },
+  "result": {
+    "title": "Olha o Que VOCÊ Acabou de Fazer!",
+    "before": "Antes",
+    "after": "Depois",
+    "enhancementComplete": "Aprimoramento de Foto Concluído!",
+    "shareWork": "Compartilhe Seu Trabalho",
+    "openingShare": "Abrindo Compartilhamento...",
+    "shared": "✓ Compartilhado",
+    "startTrial": "Iniciar Teste Gratuito",
+    "maybeLater": "Talvez mais tarde"
+  },
+  "savePermission": {
+    "title": "Salvar Sua Restauração?",
+    "description": "Precisamos de permissão para salvar seu\ntrabalho em suas fotos.",
+    "saveWork": "Salvar Meu Trabalho",
+    "notNow": "Agora Não"
+  },
+  "showcase": {
+    "sectionHeader": "Com o Clever:",
+    "skip": "Pular",
+    "seeMore": "Ver Mais",
+    "startExploring": "Começar a Explorar",
+    "loading": "Carregando...",
+    "backgrounds": {
+      "title": "Mudar Fundos & Roupas",
+      "subtitle": "Estúdio, praia, natureza, ou remover completamente"
+    },
+    "outfits": {
+      "title": "Melhorar Momentos Especiais",
+      "subtitle": "Casamentos, formaturas & celebrações"
+    },
+    "memorial": {
+      "title": "Preservar Memórias",
+      "subtitle": "Fotos de família, tributos memoriais, herança"
+    }
+  }
+},
+"sharing": {
+  "linkCopied": {
+    "title": "Link Copiado",
+    "message": "O link do aplicativo foi copiado para sua área de transferência!"
+  },
+  "emailCopied": {
+    "title": "E-mail Copiado",
+    "message": "O endereço de e-mail de suporte foi copiado para sua área de transferência!\\n\\nphotorestorationhd@gmail.com"
+  },
+  "contactSupport": {
+    "title": "Contatar Suporte",
+    "message": "Por favor, entre em contato conosco em: photorestorationhd@gmail.com"
+  },
+  "rateUs": {
+    "title": "Avalie-nos",
+    "message": "Obrigado por usar o Clever! Por favor, nos avalie na App Store."
+  }
+},
+"photoPicker": {
+  "title": "Selecione uma foto para restaurar",
+  "buttons": {
+    "takePhoto": "Tirar Foto",
+    "fromGallery": "Da Galeria",
+    "changePhoto": "Mudar Foto"
+  },
+  "status": {
+    "processing": "Processando..."
+  },
+  "alerts": {
+    "cameraPermissionRequired": {
+      "title": "Permissão da Câmera Necessária",
+      "message": "Por favor, conceda permissão da câmera para usar este recurso."
+    }
+  }
+},
+"imageSelector": {
+  "selectPhoto": "Toque para selecionar uma foto",
+  "chooseFromLibrary": "Escolha da sua biblioteca de fotos",
+  "changePhoto": "Mudar Foto"
+},
+"imageCropper": {
+  "status": {
+    "processing": "Processando...",
+    "openingCropper": "Abrindo cortador..."
+  },
+  "alerts": {
+    "cropError": {
+      "title": "Erro",
+      "message": "Falha ao cortar a imagem. Por favor, tente novamente."
+    }
+  }
+}
 }

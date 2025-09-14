@@ -8,6 +8,7 @@ import * as MediaLibrary from 'expo-media-library';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, AppState, Dimensions, Linking, Platform, Text, TouchableOpacity, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
+import { useTranslation } from 'react-i18next';
 
 interface DeviceTwoRowCarouselProps {
   functionType: FunctionType;
@@ -99,6 +100,7 @@ const LoadingFooter = React.memo(() => (
 const EmptyFooter = React.memo(() => <View style={{ width: 8 }} />);
 
 export function DeviceTwoRowCarousel({ functionType, firstTileRef }: DeviceTwoRowCarouselProps) {
+  const { t } = useTranslation();
   const [columns, setColumns] = useState<AssetColumn[]>([]);
   const [loadingInitial, setLoadingInitial] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -256,14 +258,14 @@ export function DeviceTwoRowCarousel({ functionType, firstTileRef }: DeviceTwoRo
     return (
       <View style={{ paddingHorizontal: 16 }}>
         <View style={{ backgroundColor: '#ffffff', borderRadius: 24, padding: 16 }}>
-          <Text style={{ color: '#111', fontFamily: 'Lexend-Black', fontSize: 17, marginBottom: 6 }}>Photos access is needed to show your gallery.</Text>
-          <Text style={{ color: '#374151', fontSize: 14, marginBottom: 14 }}>Allow access to browse your photos here. You can also pick a single photo instead.</Text>
+          <Text style={{ color: '#111', fontFamily: 'Lexend-Black', fontSize: 17, marginBottom: 6 }}>{t('deviceCarousel.photosAccessNeeded')}</Text>
+          <Text style={{ color: '#374151', fontSize: 14, marginBottom: 14 }}>{t('deviceCarousel.browsePicsMessage')}</Text>
           <TouchableOpacity
             onPress={handlePermissionPress}
             style={{ backgroundColor: '#111', paddingVertical: 12, borderRadius: 24, alignItems: 'center' }}
           >
             <Text style={{ color: '#fff', fontFamily: 'Lexend-Black' }}>
-              Give Access
+              {t('deviceCarousel.allowAccess')}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -284,7 +286,7 @@ export function DeviceTwoRowCarousel({ functionType, firstTileRef }: DeviceTwoRo
             }}
             style={{ marginTop: 12 }}
           >
-            <Text style={{ color: '#111827', textAlign: 'center', fontFamily: 'Lexend-Bold', textDecorationLine: 'underline' }}>Fix from Device</Text>
+            <Text style={{ color: '#111827', textAlign: 'center', fontFamily: 'Lexend-Bold', textDecorationLine: 'underline' }}>{t('deviceCarousel.fixFromDevice')}</Text>
           </TouchableOpacity>
         </View>
       </View>

@@ -8,83 +8,181 @@
       "pro": "PRO"
     },
     "sections": {
-      "popular": "Populært",
-      "fixMyPhoto": "Restore",
-      "backgrounds": "Backgrounds",
+      "popular": "Populær",
+      "fixMyPhoto": "Auto-genopret",
+      "backgrounds": "Baggrunde",
       "memorial": "Mindesmærke",
+      "faceBody": "Ansigt & krop",
+      "addRemove": "Tilføj/fjern",
       "outfits": "Tøj",
-      "magic": "Magi",
+      "magic": "Fotorestauration",
       "waterDamage": "Vandskade",
-      "clarify": "Tydeliggør",
-      "repair": "Genskab",
-      "colorize": "Farvelæg",
-      "descratch": "Fjern Ridser",
-      "brighten": "Gør Lysere"
+      "clarify": "Klarhed",
+      "repair": "Reparer",
+      "colourise": "Farvelæg",
+      "descratch": "Fjern ridser",
+      "brighten": "Gør lysere"
+    },
+    "writeYourOwn": "Skriv dit eget",
+    "byClever": "af clever",
+    "rateUs": {
+      "title": "Bedøm os",
+      "subtitle": "Skriv en anmeldelse, det hjælper os meget!"
+    },
+    "requestFeature": {
+      "title": "Anmod om funktion",
+      "subtitle": "Foreslå nye funktioner til appen"
+    },
+    "reportBug": {
+      "title": "Rapportér fejl",
+      "subtitle": "Hjælp os med at løse problemer, du har oplevet"
     },
     "alerts": {
       "proMember": {
-        "title": "Pro Medlem ✓",
+        "title": "Pro-medlem ✓",
         "message": "Dit abonnement er aktivt! Du har ubegrænset adgang til alle funktioner.",
-        "button": "Fantastisk!"
+        "button": "Fedt!"
       },
       "subscriptionStatus": {
         "title": "Abonnementsstatus",
-        "noActiveMessage": "Intet aktivt abonnement fundet. Du vil have adgang til gratis funktioner.",
+        "noActiveMessage": "Intet aktivt abonnement fundet. Du har adgang til gratis funktioner.",
         "button": "OK"
       },
+      "rateClever": {
+        "title": "Bedøm Clever",
+        "message": "Tak fordi du bruger Clever! Besøg venligst App Store for at bedømme os.",
+        "button": "Forstået!"
+      },
+      "requestFeature": {
+        "title": "Anmod om funktion",
+        "message": "Hvilken funktion vil du gerne have tilføjet?",
+        "placeholder": "Beskriv den funktion, du gerne vil se...",
+        "thankYou": {
+          "title": "Tak!",
+          "message": "Din anmodning om en funktion er blevet sendt. Vi vil gennemgå den og overveje den til fremtidige opdateringer."
+        }
+      },
+      "reportBug": {
+        "title": "Rapportér fejl",
+        "message": "Hvilken fejl oplevede du?",
+        "placeholder": "Beskriv den fejl, du oplevede...",
+        "thankYou": {
+          "title": "Tak!",
+          "message": "Din fejlrapport er blevet sendt. Vi vil undersøge det og arbejde på en løsning."
+        }
+      },
       "subscriptionCheck": {
-        "title": "Abonnementskontrol",
-        "message": "Intet aktivt abonnement fundet på denne Apple ID. Log venligst ind med den Apple ID, der blev brugt til købet.",
-        "howToFix": "Sådan Retter Du",
-        "howToFixTitle": "Sådan Retter Du Abonnement",
-        "howToFixMessage": "1. Gå til Indstillinger → App Store\n2. Log ind med den Apple ID, der blev brugt til købet\n3. Vend tilbage til Clever og tryk på PRO-mærket igen",
+        "title": "Abonnementstjek",
+        "message": "Log venligst ind med det Apple ID, der blev brugt til dit Pro-køb.",
+        "howToFix": "Sådan løser du det",
+        "howToFixTitle": "Sådan tjekker du abonnement",
+        "howToFixMessage": "1. Gå til Indstillinger → App Store\n2. Log ind med dit Apple ID\n3. Vend tilbage til Clever og prøv igen",
         "gotIt": "Forstået"
       },
       "proStatusCheck": {
-        "title": "Pro Statuskontrol",
-        "message": "Kan ikke verificere abonnementsstatus. Prøv venligst igen eller tjek din internetforbindelse."
+        "title": "Tjek af Pro-status",
+        "message": "Kan ikke bekræfte Pro-status. Prøv venligst igen, eller kontakt support, hvis problemet fortsætter."
       },
       "demoMode": {
-        "title": "Demo Tilstand",
-        "message": "Køb er ikke tilgængelige i Expo Go."
+        "title": "Demo-tilstand",
+        "message": "Køb er ikke tilgængelige i Expo Go. Byg appen for at teste rigtige køb."
       },
       "welcomeToPro": {
         "title": "Velkommen til Pro!",
-        "message": "Du har nu ubegrænset adgang!",
+        "message": "Du har nu ubegrænset adgang til alle funktioner!",
         "button": "Fantastisk!"
-      }
+      },
+      "error": "Fejl",
+      "failedToSubmit": "Kunne ikke sende anmodning",
+      "unexpectedError": "Der opstod en uventet fejl"
     }
   },
   "popular": {
-    "clearSkin": "Klar Hud",
-    "addHalo": "Tilføj Glorie",
-    "fixHair": "Ret Hår",
-    "slimmer": "Smalere",
+    "clearSkin": "Klar hud",
+    "addHalo": "Tilføj glorie",
+    "fixHair": "Ret hår",
+    "slimmer": "Slankere",
     "angelWings": "Englevinger",
     "younger": "Yngre",
     "older": "Ældre",
-    "addSmile": "Tilføj Smil",
-    "openEyes": "Åbn øjnene",
-    "gardenBackground": "Have Baggrund",
-    "studioBackground": "Studie Baggrund",
-    "softLightsBackground": "Blød Belysning Baggrund",
-    "heavenlyBackground": "Himlensk Baggrund"
+    "addSmile": "Tilføj smil",
+    "openEyes": "Åbn øjne",
+    "gardenBackground": "Havebaggrund",
+    "studioBackground": "Studiobaggrund",
+    "softLightsBackground": "Blødt lys baggrund",
+    "heavenlyBackground": "Himmelsk baggrund",
+    "beachBackground": "Strandbaggrund",
+    "officeBackground": "Kontorbaggrund",
+    "natureBackground": "Naturbaggrund",
+    "cityBackground": "Bybaggrund",
+    "sunsetBackground": "Solnedgangsbaggrund",
+    "winterBackground": "Vinterbaggrund",
+    "vintageBackground": "Vintagebaggrund",
+    "abstractBackground": "Abstrakt baggrund",
+    "cleanBackground": "Ren baggrund",
+    "blurBackground": "Sløret baggrund"
   },
   "memorial": {
     "lightRays": "Lysstråler",
-    "doveOfPeace": "Fredens Due",
-    "etherealGlow": "Æterisk Glød",
-    "heavenGates": "Himmelens Porte",
-    "memorialFlowers": "Mindesmærke Blomster",
-    "cleanBackground": "Ren Baggrund"
+    "doveOfPeace": "Fredsdue",
+    "etherealGlow": "Æterisk glød",
+    "heavenGates": "Himlens porte",
+    "memorialFlowers": "Mindesmærke blomster",
+    "cleanBackground": "Ren baggrund",
+    "whiteBackground": "Hvid baggrund",
+    "candlelightVigil": "Lysvåge",
+    "restInPeace": "Hvil i fred",
+    "heavenly": "Himmelsk ☁️"
+  },
+  "backgrounds": {
+    "blurBackground": "Sløret baggrund"
+  },
+  "faceBody": {
+    "clearSkin": "Klar hud",
+    "addSmile": "Tilføj smil",
+    "fixHair": "Ret hår",
+    "makeYounger": "Gør yngre",
+    "makeSlimmer": "Gør slankere",
+    "teethWhitening": "Tandblegning",
+    "removeWrinkles": "Fjern rynker",
+    "eyeEnhancement": "Forbedring af øjne",
+    "fixClosedEyes": "Ret lukkede øjne",
+    "removeRedEye": "Fjern røde øjne"
+  },
+  "addRemove": {
+    "removePerson": {
+      "title": "Fjern person"
+    },
+    "removeObjects": {
+      "title": "Fjern objekter"
+    },
+    "removeText": {
+      "title": "Fjern tekst"
+    },
+    "removeWires": {
+      "title": "Fjern ledninger"
+    },
+    "addPerson": {
+      "title": "Tilføj person"
+    },
+    "addObjects": {
+      "title": "Tilføj objekter"
+    },
+    "cloneDuplicate": {
+      "title": "Klon/Duplikér"
+    },
+    "removeBackground": {
+      "title": "Fjern baggrundselementer"
+    }
   },
   "outfits": {
-    "fixClothes": "Ret Tøj",
-    "changeColor": "Skift Farve",
+    "fixClothes": "Ret tøj",
+    "changeColour": "Skift farve",
     "jobInterview": "Jobsamtale",
     "weddingOutfit": "Bryllupstøj",
     "professional": "Professionel",
-    "casualDay": "Hverdagsdag"
+    "casualDay": "Afslappet dag",
+    "makeDoctor": "Gør til læge"
   },
   "magic": {
     "waterDamage": {
@@ -92,33 +190,55 @@
       "subtitle": "Fjern vandskade og pletter"
     },
     "clarify": {
-      "title": "Afklare",
-      "subtitle": "Fjern sløring, skærpe detaljer"
+      "title": "Klarhed",
+      "subtitle": "Fjern sløring, skarpere detaljer"
     },
     "repair": {
-      "title": "Genskab",
-      "subtitle": "Lad Clever genskabe dit billede"
+      "title": "Reparer",
+      "subtitle": "Lad Clever reparere dit billede"
     },
     "colorize": {
       "title": "Farvelæg",
-      "subtitle": "Tilføj farver til sort/hvide fotos"
+      "subtitle": "Tilføj farver til sort-hvide fotos"
+    },
+    "colourise": {
+      "title": "Farvelæg",
+      "subtitle": "Tilføj farver til sort-hvide fotos"
     },
     "descratch": {
-      "title": "Fjern Rids",
+      "title": "Fjern ridser",
       "subtitle": "Fjern ridser og mærker"
     },
     "brighten": {
-      "title": "Gør Lysere",
+      "title": "Gør lysere",
       "subtitle": "Ret belysning og eksponering"
     },
+    "fixTornPhotos": "Ret revnede fotos",
+    "removeStains": "Fjern pletter",
+    "fixFadedPhotos": "Ret falmede fotos",
+    "requestIdea": "Anmod om idé",
+    "requestIdeaSubtitle": "Del din funktion idé",
+    "send": "Send",
+    "reportBugSubtitle": "Fandt du et problem? Fortæl os det",
+    "report": "Rapportér",
     "requestFeature": {
-      "title": "Anmod om Funktion",
+      "title": "Anmod om en funktion",
       "prompt": "Hvilken funktion vil du gerne se i Clever?",
       "thankYouTitle": "Tak!",
-      "thankYouMessage": "Din funktionsanmodning er blevet indsendt. Vi sætter pris på din feedback!",
-      "button": "Fantastisk!",
-      "errorTitle": "Indsendelse Mislykkedes",
-      "errorMessage": "Kan ikke indsende din anmodning. Prøv venligst igen.",
+      "thankYouMessage": "Din anmodning om en funktion er blevet sendt. Vi sætter pris på din feedback!",
+      "button": "Fedt!",
+      "errorTitle": "Indsendelse mislykkedes",
+      "errorMessage": "Kunne ikke indsende din anmodning. Prøv venligst igen.",
+      "errorGeneric": "Noget gik galt. Prøv venligst igen."
+    },
+    "reportBug": {
+      "title": "Rapportér en fejl",
+      "prompt": "Beskriv venligst den fejl, du oplevede:",
+      "thankYouTitle": "Fejlrapport modtaget!",
+      "thankYouMessage": "Tak fordi du rapporterer denne fejl. Vi vil undersøge det og rette det så hurtigt som muligt.",
+      "button": "Tak!",
+      "errorTitle": "Rapportering mislykkedes",
+      "errorMessage": "Kunne ikke indsende din fejlrapport. Prøv venligst igen.",
       "errorGeneric": "Noget gik galt. Prøv venligst igen."
     }
   },
@@ -127,243 +247,228 @@
   },
   "photoMagic": {
     "title": "Foto Magi",
-    "placeholder": "Beskriv hvad du vil...",
-    "takePhoto": "Tag Foto",
-    "choosePhoto": "Vælg Foto",
-    "permissionRequired": "Tilladelse Påkrævet",
-    "permissionMessage": "Tillad venligst foto adgang for at fortsætte.",
-    "photoAccessMessage": "Tillad venligst foto adgang for at fortsætte.",
-    "cameraAccessMessage": "Tillad venligst kamera adgang for at fortsætte."
+    "subtitle": "Skriv hvad du vil redigere og se det ske",
+    "choosePhoto": "Vælg foto",
+    "takePhoto": "Tag foto",
+    "permissionRequired": "Tilladelse påkrævet",
+    "photoAccessMessage": "Adgang til fotobibliotek er påkrævet for at vælge fotos",
+    "cameraAccessMessage": "Adgang til kamera er påkrævet for at tage fotos"
   },
   "quickEdit": {
     "modes": {
       "restoration": "Restaurering",
-      "repair": "Reparation",
-      "unblur": "Fjern Sløring",
-      "colorize": "Farvelæg",
-      "descratch": "Fjern Rids",
-      "enlighten": "Gør Lysere",
+      "repair": "Reparer",
+      "unblur": "Fjern sløring",
+      "colourise": "Farvelæg",
+      "descratch": "Fjern ridser",
+      "enlighten": "Gør lysere",
       "background": "Baggrund",
       "outfit": "Tøj",
-      "custom": "Brugerdefineret",
-      "view": "Vis",
-      "restoreRepair": "Restaurer og Reparer",
+      "custom": "Tilpasset",
+      "restoreRepair": "Genopret & reparer",
       "waterDamage": "Vandskade"
     },
     "processing": {
-      "analyzing": "Analyserer foto...",
+      "analyzing": "Analyser foto...",
       "processing": "Behandler...",
       "enhancing": "Forbedrer detaljer...",
-      "complete": "Fuldført",
+      "complete": "Færdig",
       "failed": "Mislykkedes"
     },
     "buttons": {
       "save": "Gem",
       "share": "Del",
-      "cancel": "Annuller",
-      "tryAgain": "Prøv Igen",
-      "process": "Behandl"
+      "cancel": "Annullér",
+      "tryAgain": "Prøv igen",
+      "process": "Behandl",
+      "view": "Vis"
     },
     "errors": {
       "somethingWrong": "Noget gik galt",
       "networkError": "Netværksfejl",
       "tryAgainLater": "Prøv venligst igen senere"
-    }
+    },
+    "editPhoto": "Rediger foto"
   },
-  "settings": {
-    "title": "Indstillinger",
-    "sections": {
-      "account": "Konto",
-      "subscription": "Abonnement",
-      "usage": "Brug",
-      "support": "Support",
-      "about": "Om"
-    },
-    "items": {
-      "proMember": "Pro Medlem",
-      "freeUser": "Gratis Bruger",
-      "photosUsed": "Fotos Brugt",
-      "dailyLimit": "Daglig Grænse",
-      "lifetimeUsage": "Livstids Brug",
-      "restorePurchases": "Gendan Køb",
-      "resetIdentity": "Nulstil Identitet",
-      "clearCache": "Ryd Cache",
-      "privacyPolicy": "Privatlivspolitik",
-      "termsOfService": "Servicevilkår",
-      "rateUs": "bedøm os venligst :)",
-      "shareApp": "Del App",
-      "version": "Version",
-      "language": "Sprog"
-    },
-    "time": {
-      "availableNow": "Tilgængelig nu",
-      "hours": "{{hours}}t {{minutes}}m {{seconds}}s",
-      "minutes": "{{minutes}}m {{seconds}}s",
-      "seconds": "{{seconds}}s"
-    }
+  "photoProcessor": {
+    "choosePhoto": "Vælg et foto",
+    "pickPhoto": "Vælg foto",
+    "tryWithPhoto": "Prøv det med et af dine fotos",
+    "photoMagic": "Foto Magi",
+    "photoMagicDesc": "Skriv hvad du vil redigere og se det ske",
+    "pickPhotoError": "Kunne ikke vælge foto. Prøv venligst igen."
   },
   "onboarding": {
     "welcome": {
       "title": "Velkommen til",
       "appName": "Clever!",
-      "subtitle": "Transformer dine fotos med AI",
-      "getStarted": "Kom i Gang",
+      "getStarted": "Kom i gang >",
       "terms": "Ved at fortsætte accepterer du vores",
-      "termsOfService": "Servicevilkår",
+      "termsOfService": "Brugervilkår",
       "and": "og",
       "privacyPolicy": "Privatlivspolitik"
     },
     "permissions": {
-      "title": "Tillad Adgang til Fotos",
-      "subtitle": "Du kan springe dette over hvis du foretrækker",
-      "photoAccess": "Aktivér Foto Adgang",
-      "cameraAccess": "Aktivér Kamera Adgang",
-      "notifications": "Aktivér Notifikationer",
-      "continue": "Fortsæt"
+      "title": "Lad os få dig\n i gang!",
+      "subtitle": "Du kan springe dette over, hvis du foretrækker det",
+      "note": "Du kan altid ændre dette i dine enhedsindstillinger",
+      "continue": "Fortsæt",
+      "requestingAccess": "Anmoder om adgang..."
     },
     "features": {
-      "title": "What brings you here?",
-      "customPrompt": "Brugerdefineret prompt",
-      "noneAbove": "Ingen af ovenstående",
-      "chooseYourOwn": "Choose Your Own",
-      "chooseYourOwnDesc": "Describe what you want to do with your photo",
-      "repair": "Recreate",
-      "repairDesc": "Recreation while staying consistent with features",
-      "clearSkin": "Clear Skin",
-      "clearSkinDesc": "Remove acne, blemishes & imperfections",
-      "addSmile": "Add Smile",
-      "addSmileDesc": "Add a natural, authentic smile",
-      "fixHair": "Fix Hair",
-      "fixHairDesc": "Clean up messy or stray hairs",
-      "makeYounger": "Make Younger",
-      "makeYoungerDesc": "Subtle age reduction while keeping identity",
-      "addWings": "Add Angel Wings",
-      "addWingsDesc": "Beautiful wings that match your photo",
-      "waterStainDamage": "Water/Stain Damage",
-      "waterStainDamageDesc": "Remove water damage, stains, and discoloration",
-      "fixMyPhoto": "Restore",
-      "fixMyPhotoDesc": "Fix tears, scratches, and damage in old photos",
-      "professionalOutfit": "Professional Outfit",
-      "professionalOutfitDesc": "Change to professional business attire",
-      "blurBackground": "Blur Background",
-      "blurBackgroundDesc": "Create professional blurred background effect",
-      "addHalo": "Add Halo",
-      "addHaloDesc": "Subtle glowing halo above head",
-      "lightRays": "Light Rays",
-      "lightRaysDesc": "Add peaceful memorial atmosphere with golden light",
-      "memorialFlowers": "Memorial Flowers",
-      "memorialFlowersDesc": "Cover scene with memorial flowers and petals",
-      "makeSlimmer": "Make Slimmer",
-      "makeSlimmerDesc": "Natural body enhancement",
-      "colorize": "Colorize",
-      "colorizeDesc": "Bring old B&W photos to life with realistic color",
-      "clarify": "Clarify",
-      "clarifyDesc": "Make blurry photos crystal clear",
-      "brighten": "Brighten",
-      "brightenDesc": "Illuminate underexposed images",
-      "beachBackground": "Beach Background",
-      "beachBackgroundDesc": "Beautiful ocean and sand scene",
-      "noneOfAbove": "Explore App",
-      "noneOfAboveDesc": "Skip and explore the app",
-      "subtitle": "Select what you're ready to do",
-      "continue": "Continue",
-      "customPromptPlaceholder": "What would you like to do with your photo?",
-      "customprompt": "Choose Your Own",
-      "custompromptDesc": "Describe what you want to do with your photo",
-      "clearskin": "Clear Skin",
-      "clearskinDesc": "Remove acne, blemishes & imperfections",
-      "addsmile": "Add Smile",
-      "addsmileDesc": "Add a natural, authentic smile",
-      "fixhair": "Fix Hair",
-      "fixhairDesc": "Clean up messy or stray hairs",
-      "makeyounger": "Make Younger",
-      "makeyoungerDesc": "Subtle age reduction while keeping identity",
-      "addwings": "Add Angel Wings",
-      "addwingsDesc": "Beautiful wings that match your photo",
-      "waterstaindamage": "Water/Stain Damage",
-      "waterstaindamageDesc": "Remove water damage, stains, and discoloration",
-      "restorerepair": "Restore",
-      "restorerepairDesc": "Fix tears, scratches, and damage in old photos",
-      "professionaloutfit": "Professional Outfit",
-      "professionaloutfitDesc": "Change to professional business attire",
-      "blurbackground": "Blur Background",
-      "blurbackgroundDesc": "Create professional blurred background effect",
-      "addhalo": "Add Halo",
-      "addhaloDesc": "Subtle glowing halo above head",
-      "lightrays": "Light Rays",
-      "lightraysDesc": "Add peaceful memorial atmosphere with golden light",
-      "memorialflowers": "Memorial Flowers",
-      "memorialflowersDesc": "Cover scene with memorial flowers and petals",
-      "makeslimmer": "Make Slimmer",
-      "makeslimmerDesc": "Natural body enhancement",
-      "addcolorbw": "Colorize",
-      "addcolorbwDesc": "Bring old B&W photos to life with realistic color",
-      "unblursharpen": "Clarify",
-      "unblursharpenDesc": "Make blurry photos crystal clear",
-      "brightenphotos": "Brighten",
-      "brightenphotosDesc": "Illuminate underexposed images",
-      "beachbackground": "Beach Background",
-      "beachbackgroundDesc": "Beautiful ocean and sand scene",
-      "noneabove": "Explore App",
-      "noneaboveDesc": "Skip and explore the app"
+      "title": "Hvad vil du prøve?",
+      "subtitle": "Vælg hvad du er klar til at gøre",
+      "continue": "Fortsæt",
+      "selectOption": "Vælg din funktion",
+      "exploreApp": "Udforsk app →",
+      "startWith": "Start med",
+      "customPromptPlaceholder": "Hvad vil du gerne gøre med dit foto?",
+      "chooseYourOwn": "Vælg dit eget",
+      "chooseYourOwnDesc": "Beskriv hvad du vil gøre med dit foto",
+      "customprompt": "Vælg dit eget",
+      "custompromptDesc": "Beskriv hvad du vil gøre med dit foto",
+      "repair": "Reparer",
+      "repairDesc": "Reparer, mens du forbliver konsekvent med funktioner",
+      "clearSkin": "Klar hud",
+      "clearSkinDesc": "Fjern akne, pletter & ufuldkommenheder",
+      "addSmile": "Tilføj smil",
+      "addSmileDesc": "Tilføj et naturligt, autentisk smil",
+      "fixHair": "Ret hår",
+      "fixHairDesc": "Rydd op i rodet eller vildfarne hår",
+      "makeYounger": "Gør yngre",
+      "makeYoungerDesc": "Subtil aldersreduktion, mens identiteten bevares",
+      "addWings": "Tilføj englevinger",
+      "addWingsDesc": "Smukke vinger, der matcher dit foto",
+      "waterStainDamage": "Vand-/pletter skade",
+      "waterStainDamageDesc": "Fjern vandskade, pletter og misfarvning",
+      "fixMyPhoto": "Auto-genopret",
+      "fixMyPhotoDesc": "Ret rifter, ridser og skader i gamle fotos",
+      "professionalOutfit": "Professionelt tøj",
+      "professionalOutfitDesc": "Skift til professionelt forretningstøj",
+      "blurBackground": "Sløret baggrund",
+      "blurBackgroundDesc": "Skab en professionel sløret baggrundseffekt",
+      "addHalo": "Tilføj glorie",
+      "addHaloDesc": "Subtil glødende glorie over hovedet",
+      "lightRays": "Lysstråler",
+      "lightRaysDesc": "Tilføj fredelig mindesmærke-atmosfære med gyldent lys",
+      "memorialFlowers": "Mindesmærke blomster",
+      "memorialFlowersDesc": "Dæk scenen med mindesmærke blomster og kronblade",
+      "makeSlimmer": "Gør slankere",
+      "makeSlimmerDesc": "Naturlig kropsforbedring",
+      "colourise": "Farvelæg",
+      "colouriseDesc": "Giv gamle sort-hvide fotos liv med realistiske farver",
+      "clarify": "Klarhed",
+      "clarifyDesc": "Gør slørede fotos krystalklare",
+      "brighten": "Gør lysere",
+      "brightenDesc": "Oplys undereksponerede billeder",
+      "beachBackground": "Strandbaggrund",
+      "beachBackgroundDesc": "Smuk hav- og sandscene",
+      "noneOfAbove": "Udforsk app",
+      "noneOfAboveDesc": "Spring over og udforsk appen",
+      "customPrompt": "Vælg dit eget",
+      "customPromptDesc": "Beskriv hvad du vil gøre med dit foto"
     },
     "preview": {
       "tryNow": "Prøv det nu",
       "skip": "Spring over",
       "back": "Tilbage",
-      "choosePhoto": "Vælg et foto for at komme i gang",
-      "photoMagic": "Photo Magic",
-      "photoMagicDesc": "Type what you want to edit and watch it happen",
-      "pickPhotoError": "Failed to pick photo. Please try again."
+      "choosePhoto": "Vælg et foto",
+      "pickPhoto": "Vælg foto",
+      "tryWithPhoto": "Prøv det med et af dine fotos"
     },
     "community": {
-      "title": "Klar til at bringe dine fotos\ntilbage til livet?",
-      "subtitle": "Forbind med os på sociale medier",
-      "followFacebook": "Follow us on Facebook"
+      "title": "Klar til at bringe dine fotos\n tilbage til livet?",
+      "subtitle": "Forvandl falmede minder til fantastiske mesterværker",
+      "benefit1": "Ingen Photoshop-færdigheder nødvendige",
+      "benefit2": "Ret årtiers skader på få sekunder",
+      "benefit3": "Perfekt for både begyndere og professionelle",
+      "showcaseTitle": "Se magien selv",
+      "showcaseSubtitle": "Træk i skyderne for at se virkelige forvandlinger",
+      "memorial": {
+        "title": "Genopret dyrebare minder",
+        "description": "Ær deres arv med perfekt genopretning"
+      },
+      "repair": {
+        "title": "Ret alvorlige skader",
+        "description": "Genopbyg manglende stykker som magi"
+      },
+      "background": {
+        "title": "Skift enhver baggrund",
+        "description": "Flyt dem hvor som helst øjeblikkeligt"
+      },
+      "custom": {
+        "title": "Eller skriv blot hvad du vil",
+        "description": "\"Tilføj et smil\" • \"Ret håret\" • \"Gør det solrigt\" • Alt hvad du forestiller dig"
+      },
+      "continue": "Fortsæt",
+      "photosPerfected": "Fotos perfektioneret",
+      "followFacebook": "Følg os på Facebook"
     },
     "setup": {
-      "title": "Opsætter din oplevelse...",
-      "almostReady": "Næsten klar..."
-    }
-  },
-  "textEdit": {
-    "prompt": "Hvad vil du gerne gøre?",
-    "placeholder": "Beskriv din redigering...",
-    "generate": "Generer",
-    "processing": "Behandler...",
-    "customTextEdits": "Brugerdefinerede tekstredigeringer",
-    "maxEffectsReached": "Maksimale effekter nået",
-    "maxEffectsMessage": "Du kan vælge op til 3 effekter ad gangen for bedste resultater. Fjern venligst markeringen af en først."
-  },
-  "restoration": {
-    "processingFailed": "Behandling mislykkedes",
-    "status": {
-      "processing": "Behandler...",
-      "completed": "Fuldført!",
-      "failed": "Mislykkedes",
-      "retry": "Prøv Igen"
+      "title": "Indstiller din oplevelse...",
+      "almostReady": "Næsten klar...",
+      "settingUp": "Indstiller tingene for dig...",
+      "wontTakeLong": "Dette tager ikke lang tid",
+      "settingUpSpace": "Indstiller dit rum",
+      "loadingSystems": "Indlæser systemer",
+      "preparingTools": "Forbereder dine værktøjer",
+      "allSet": "Du er klar!",
+      "readyToCreate": "Klar til at begynde at skabe magi med dine fotos"
     },
-    "actions": {
-      "save": "Gem",
-      "share": "Del"
+    "rating": {
+      "skip": "Spring over",
+      "title": "Klar til din fotoredigering?",
+      "subtitle": "En hurtig bedømmelse hjælper os meget og tager kun et øjeblik.",
+      "rateNow": "Bedøm nu"
     }
+  },
+  "textEdits": {
+    "title": "Foto Magi",
+    "subtitle": "Skriv hvad du vil redigere og se det ske",
+    "alerts": {
+      "purchaseError": {
+        "title": "Købsfejl",
+        "message": "Prøv venligst igen, eller gendan køb, hvis du allerede har et abonnement."
+      },
+      "processingFailed": {
+        "title": "Behandling mislykkedes",
+        "message": "Noget gik galt. Prøv venligst igen."
+      },
+      "freeLimitReached": {
+        "title": "Gratis grænse nået",
+        "message": "Du har nået din gratis fotoredigeringsgrænse. Opgrader til Pro for ubegrænsede redigeringer."
+      },
+      "serviceBusy": {
+        "title": "Tjenesten er optaget",
+        "message": "GPU-ressourcer er opbrugt. Teamet arbejder på det."
+      },
+      "maxEffectsReached": {
+        "title": "Maksimum effekter nået",
+        "message": "Du kan vælge op til 3 effekter ad gangen for de bedste resultater."
+      },
+      "noImage": {
+        "title": "Intet billede",
+        "message": "Vælg venligst et billede først"
+      },
+      "selectEdits": {
+        "title": "Vælg redigeringer",
+        "message": "Vælg venligst mindst 1 forudindstilling eller skriv en tilpasset redigering."
+      }
+    },
+    "maxEffectsReached": "Maksimum effekter nået",
+    "maxEffectsMessage": "Du kan vælge op til 3 effekter ad gangen for de bedste resultater."
   },
   "deviceCarousel": {
     "allowAccess": "Tillad Adgang",
     "photoLibraryMessage": "For at vælge fotos, tillad venligst adgang til dit fotobibliotek",
+    "photosAccessNeeded": "Fotoadgang er nødvendig for at vise dit galleri",
+    "browsePicsMessage": "Tillad adgang til at gennemse dine fotos her. Du kan også vælge et enkelt foto i stedet.",
+    "fixFromDevice": "Reparer fra Enhed",
     "openSettings": "Åbn Indstillinger"
-  },
-  "tour": {
-    "permissions": {
-      "alertTitle": "Get the most out of Clever",
-      "alertMessage": "Enable photo access to save your enhanced photos.",
-      "notNow": "Not Now",
-      "openSettings": "Open Settings"
-    }
   },
   "common": {
     "ok": "OK",
-    "cancel": "Annuller",
+    "cancel": "Annullér",
     "continue": "Fortsæt",
     "back": "Tilbage",
     "next": "Næste",
@@ -377,6 +482,630 @@
     "success": "Succes",
     "warning": "Advarsel",
     "info": "Info",
-    "saved": "Gemt"
+    "saved": "Gemt",
+    "choosePhoto": "Vælg foto",
+    "videoLoading": "Indlæser video...",
+    "buttons": {
+      "tryAgain": "Prøv igen",
+      "goBack": "Gå tilbage",
+      "maybeLater": "Måske senere",
+      "gotIt": "Forstået",
+      "dismiss": "Afvis",
+      "clear": "Ryd",
+      "save": "Gem",
+      "share": "Del",
+      "cancel": "Annullér",
+      "great": "Fedt!",
+      "awesome": "Fantastisk!",
+      "howToFix": "Sådan løser du det"
+    },
+    "status": {
+      "processing": "Behandler...",
+      "checking": "Kontrollerer...",
+      "cleared": "Renset!",
+      "restoring": "Gendanner...",
+      "loading": "Indlæser...",
+      "errors": {
+        "somethingWrong": "Noget gik galt",
+        "unexpectedError": "Der opstod en uventet fejl",
+        "tryAgainLater": "Prøv venligst igen senere",
+        "error": "Fejl"
+      },
+      "thankYou": "Tak!",
+      "openSettings": "Åbn Indstillinger",
+      "shareInstead": "Del i stedet",
+      "shareRestoredPhoto": "Del dit gendannede foto"
+    },
+    "photoMagic": {
+      "failedToSelectImage": "Kunne ikke vælge billede. Prøv venligst igen.",
+      "failedToTakePhoto": "Kunne ikke tage foto. Prøv venligst igen."
+    },
+    "sharing": {
+      "defaultMessage": "Tjek mit gendannede foto ud!"
+    },
+    "errorBoundary": {
+      "message": "Appen stødte på en fejl. Prøv venligst igen."
+    },
+    "subscription": {
+      "serviceUnavailable": "Abonnementsservice er ikke tilgængelig",
+      "connectionTrouble": "Vi har problemer med at oprette forbindelse til vores abonnementsservice. Prøv venligst igen.",
+      "retryPayment": "Forsøg betaling igen",
+      "restoreFailed": "Kunne ikke gendanne køb. Prøv venligst igen."
+    },
+    "services": {
+      "generation": {
+        "timedOut": "Generering timet ud. Prøv venligst igen."
+      },
+      "storage": {
+        "videoSaveFailed": "Kunne ikke gemme video. Prøv venligst igen.",
+        "videoNotFound": "Videofil ikke fundet. Prøv venligst igen.",
+        "videoCameraRollFailed": "Kunne ikke gemme video i Kamerarulle. Prøv venligst igen.",
+        "photoNotFound": "Fotofil ikke fundet. Prøv venligst igen.",
+        "photoPermissionError": "Kunne ikke gemme foto i biblioteket. Kontroller venligst dine fotobibliotekstilladelser."
+      }
+    },
+    "accessibility": {
+      "visitPinterestPage": "Besøg Pinterest side",
+      "opensPinterestInBrowser": "Åbner Pinterest-side i browser",
+      "visitFacebookPage": "Besøg Facebook side",
+      "opensFacebookInBrowser": "Åbner Facebook-side i browser",
+      "visitInstagramPage": "Besøg Instagram side",
+      "opensInstagramInBrowser": "Åbner Instagram-side i browser",
+      "visitTikTokPage": "Besøg TikTok side",
+      "opensTikTokInBrowser": "Åbner TikTok-side i browser",
+      "emailSupport": "E-mail support",
+      "opensEmailToSupport": "Åbner e-mail for at kontakte support",
+      "rateUs": "Bedøm os",
+      "opensRatingPrompt": "Åbner bedømmelsesprompt eller app-butikside",
+      "shareApp": "Del app",
+      "opensShareSheet": "Åbner delingsark for at dele app med andre"
+    },
+    "proUpgrade": {
+      "title": "Opgrader til Pro",
+      "message": "Du har nået din grænse for videogenerering"
+    },
+    "tour": {
+      "restoration": {
+        "title": "Vælg et foto",
+        "description": "Vælg et foto at gendanne, forbedre eller reparere skader på."
+      },
+      "permissions": {
+        "alertTitle": "Få mest muligt ud af Clever",
+        "alertMessage": "Aktivér fotoadgang for at gemme dine forbedrede fotos.",
+        "notNow": "Ikke nu",
+        "openSettings": "Åbn Indstillinger"
+      },
+      "generate": {
+        "title": "Tryk for at generere",
+        "description": "Tryk på fluebenet for at oprette dit resultat."
+      },
+      "result": {
+        "title": "Gem eller se resultat",
+        "description": "Gem nemt på dine fotos eller se det fulde resultat."
+      },
+      "buttons": {
+        "skip": "Spring over",
+        "next": "Næste",
+        "gotIt": "Forstået",
+        "viewResult": "Se resultat",
+        "save": "Gem",
+        "crop": "Beskær"
+      },
+      "processing": {
+        "uploadingPhoto": "Uploader foto…",
+        "runningMagic": "Kører magi…",
+        "fixingDamage": "Reparerer skader…",
+        "enhancingDetails": "Forbedrer detaljer…",
+        "almostDone": "Næsten færdig…",
+        "pleaseWait": "Vent venligst et par sekunder"
+      },
+      "success": {
+        "title": "Det er så let!",
+        "description": "Nu ved du, hvordan du bruger alle vores værktøjer.",
+        "complete": "✓ Vejledning fuldført",
+        "unlockPro": "Lås op for Pro-funktioner",
+        "features": "Ubegrænset gendannelse • Premium stilarter • Prioriteret behandling",
+        "getUnlimited": "Få ubegrænset",
+        "maybeLater": "Måske senere"
+      },
+      "sheet": {
+        "colorizePhoto": "Farvelæg foto",
+        "restorePhoto": "Gendan foto",
+        "repairPhoto": "Reparer foto",
+        "descratchPhoto": "Fjern ridser foto",
+        "brightenPhoto": "Lysne foto",
+        "clarifyPhoto": "Klarificer foto",
+        "unblurPhoto": "Fjern sløring foto"
+      },
+      "steps": {
+        "navigation": {
+          "title": "Naviger mellem dine værktøjer",
+          "description": "Skift mellem gendannelsestyper"
+        },
+        "selection": {
+          "title": "Vælg din gendannelsesstil",
+          "description": "Vælg værktøjet til dit foto"
+        },
+        "preview": {
+          "title": "Dit foto vises her → Start med at skabe",
+          "description": "Tryk for at starte din gendannelse"
+        }
+      }
+    },
+    "alerts": {
+      "settings": {
+        "clearVideo": {
+          "title": "Ryd fastlåst video?",
+          "message": "Dette nulstiller enhver fastlåst videobehandling. Brug dette, hvis en video ser ud til at behandle, men der ikke sker noget.",
+          "buttons": {
+            "cancel": "Annuller",
+            "clear": "Ryd"
+          },
+          "success": {
+            "title": "Renset!",
+            "message": "Videobehandlingsstatus er blevet nulstillet. Du kan nu prøve at generere videoer igen."
+          },
+          "error": {
+            "title": "Fejl",
+            "message": "Kunne ikke rydde videotilstand. Prøv at genstarte appen."
+          }
+        },
+        "deleteAllPhotos": {
+          "title": "Slet alle fotos",
+          "message": "Dette vil permanent slette alle fotos i dit galleri. Denne handling kan ikke fortrydes.",
+          "buttons": {
+            "cancel": "Annuller",
+            "delete": "Slet alle"
+          },
+          "success": {
+            "title": "Fotos slettet",
+            "message": "Slettede {{count}} fotos med succes."
+          },
+          "error": {
+            "title": "Fejl",
+            "message": "Kunne ikke slette alle fotos. Prøv venligst igen."
+          }
+        },
+        "restoreInterrupted": {
+          "title": "Handling afbrudt",
+          "message": "Gendannelsen blev afbrudt. Prøv venligst igen."
+        },
+        "noSubscription": {
+          "title": "Intet abonnement fundet",
+          "message": "Intet aktivt abonnement fundet på dette Apple ID. Log venligst ind med det Apple ID, der blev brugt til købet."
+        },
+        "howToRestore": {
+          "title": "Sådan gendannes køb",
+          "message": "1. Gå til Indstillinger → App Store\\n2. Log ind med det Apple ID, der blev brugt til købet\\n3. Vend tilbage til Clever og tryk på Gendan køb igen"
+        },
+        "resetIdentity": {
+          "title": "Nulstil abonnementsidentitet",
+          "message": "Dette nulstiller din RevenueCat-identitet og synkroniserer med det nuværende Apple ID. Brug dette, hvis du har abonnementsproblemer. Fortsæt?",
+          "buttons": {
+            "cancel": "Annuller",
+            "reset": "Nulstil"
+          },
+          "success": {
+            "title": "Nulstilling fuldført",
+            "message": "Abonnementsidentitet er blevet nulstillet og synkroniseret med dit nuværende Apple ID."
+          },
+          "error": {
+            "title": "Nulstilling mislykkedes",
+            "message": "Kunne ikke nulstille abonnementsidentitet. Prøv venligst igen."
+          }
+        },
+        "demoMode": {
+          "title": "Demotilstand",
+          "message": "Køb er ikke tilgængelige i Expo Go. Byg en udviklingsklient for at teste rigtige køb."
+        },
+        "welcomeToPro": {
+          "title": "Velkommen til Pro!",
+          "message": "Du har nu ubegrænset fotogendannelse!"
+        },
+        "paywallerror": {
+          "title": "Fejl",
+          "message": "Kunne ikke vise abonnementsmuligheder. Prøv venligst igen."
+        },
+        "notAvailable": {
+          "title": "Ikke tilgængelig",
+          "message": "Denne funktion er ikke tilgængelig i Expo Go."
+        },
+        "restore": {
+          "success": {
+            "title": "Gendannet!",
+            "message": "Dine køb er blevet gendannet med succes!"
+          },
+          "noPurchases": {
+            "title": "Ingen køb fundet",
+            "message": "Ingen tidligere køb fundet på denne konto."
+          },
+          "failed": {
+            "title": "Gendannelse mislykkedes",
+            "message": "Kunne ikke gendanne køb. Prøv venligst igen."
+          },
+          "noSubscription": {
+            "title": "Intet abonnement fundet",
+            "message": "Intet aktivt abonnement fundet på dette Apple ID. Log venligst ind med det Apple ID, der blev brugt til købet."
+          },
+          "howToFix": {
+            "title": "Sådan gendannes køb",
+            "message": "1. Gå til Indstillinger → App Store\n2. Log ind med det Apple ID, der blev brugt til købet\n3. Vend tilbage til Clever og tryk på Gendan køb igen"
+          }
+        },
+        "reset": {
+          "title": "Nulstil abonnementsidentitet",
+          "message": "Dette nulstiller din RevenueCat-identitet og synkroniserer med det nuværende Apple ID. Brug dette, hvis du har abonnementsproblemer. Fortsæt?",
+          "success": {
+            "title": "Nulstilling fuldført",
+            "message": "Abonnementsidentitet er blevet nulstillet og synkroniseret med dit nuværende Apple ID."
+          },
+          "failed": {
+            "title": "Nulstilling mislykkedes",
+            "message": "Kunne ikke nulstille abonnementsidentitet. Prøv venligst igen."
+          }
+        }
+      },
+      "errors": {
+        "network": {
+          "title": "Ingen internetforbindelse",
+          "message": "Du skal have en internetforbindelse for at fortsætte",
+          "tryAgain": "Prøv igen",
+          "checking": "Kontrollerer...",
+          "cancel": "Annuller"
+        },
+        "permissions": {
+          "camera": {
+            "title": "Kameratilladelse påkrævet",
+            "message": "Giv venligst kameratilladelse for at bruge denne funktion."
+          },
+          "photos": {
+            "title": "Fototilladelse påkrævet",
+            "message": "For at gemme fotos skal du tillade adgang til dit fotobibliotek i Indstillinger > Beskyttelse af personlige oplysninger og sikkerhed > Fotos."
+          }
+        },
+        "processing": {
+          "failed": "Behandling mislykkedes",
+          "generic": "Noget gik galt. Prøv venligst igen.",
+          "retry": "Prøv igen"
+        },
+        "sharing": {
+          "failed": "Deling mislykkedes",
+          "message": "Kunne ikke dele foto. Prøv venligst igen."
+        },
+        "noPhotoAvailable": "Intet foto tilgængeligt at dele."
+      },
+      "explore": {
+        "rate": {
+          "title": "Bedøm Clever",
+          "message": "Tak, fordi du bruger Clever! Besøg venligst App Store for at bedømme os."
+        },
+        "feature": {
+          "requestTitle": "Anmod om funktion",
+          "requestPrompt": "Hvilken funktion vil du gerne se tilføjet?",
+          "successMessage": "Din funktionsanmodning er blevet indsendt. Vi vil gennemgå den og overveje den til fremtidige opdateringer.",
+          "errorMessage": "Kunne ikke indsende anmodning"
+        },
+        "bug": {
+          "reportTitle": "Rapportér fejl",
+          "reportPrompt": "Hvilken fejl stødte du på?",
+          "successMessage": "Din fejlrapport er blevet indsendt. Vi vil undersøge den og arbejde på en løsning.",
+          "errorMessage": "Kunne ikke indsende fejlrapport"
+        }
+      }
+    }
+  },
+  "modals": {
+    "photoLimit": {
+      "title": "Gratis gendannelser nået",
+      "message": "Vi bruger dyre computere til at udføre disse transformationer. Overvej venligst at abonnere for at fjerne fotogrænser!",
+      "badge": "PRØV GRATIS I 3 DAGE",
+      "buttons": {
+        "startTrial": "Start gratis prøveperiode",
+        "later": "Måske senere"
+      },
+      "features": {
+        "unlimited": {
+          "title": "Ubegrænset fotogendannelse",
+          "description": "Ingen grænser for fotobehandling"
+        },
+        "priority": {
+          "title": "Prioriteret behandling",
+          "description": "Dine fotos behandles hurtigere"
+        },
+        "advanced": {
+          "title": "Avancerede funktioner",
+          "description": "Tekstredigering og premium-værktøjer"
+        },
+        "download": {
+          "title": "Download og behold for altid",
+          "description": "Gem alle dine gendannede fotos permanent"
+        }
+      }
+    },
+    "upgrade": {
+      "title": "Opgrader til Pro",
+      "videoLimit": "Du har nået din grænse for videogenerering",
+      "cta": "Få Pro nu",
+      "buttons": {
+        "later": "Måske senere"
+      },
+      "features": {
+        "backToLife": {
+          "title": "Tilbage til livet animerede videoer",
+          "description": "Opret animerede videoer fra dine fotos"
+        },
+        "priority": {
+          "title": "Prioriteret behandling",
+          "description": "Dine fotos og videoer behandles hurtigere"
+        },
+        "textEdits": {
+          "title": "Tekstredigering magi",
+          "description": "Lås op for funktionen Tekstredigering magi"
+        }
+      }
+    },
+    "networkError": {
+      "title": "Ingen internetforbindelse",
+      "message": "Du skal have en internetforbindelse for at fortsætte",
+      "buttons": {
+        "tryAgain": "Prøv igen",
+        "checking": "Kontrollerer...",
+        "cancel": "Annuller"
+      }
+    },
+    "jobBlocking": {
+      "title": "Vi genererer stadig dine resultater",
+      "message": "Du skal vente på, at din nuværende generering er færdig, før du anmoder om yderligere indhold. Prøv venligst igen senere!",
+      "button": "OK, Forstået"
+    }
+  },
+  "restoration": {
+    "alerts": {
+      "loadFailed": {
+        "title": "Fejl",
+        "message": "Kunne ikke indlæse gendannelsesdetaljer"
+      },
+      "processingFailed": {
+        "title": "Behandling mislykkedes",
+        "message": "Noget gik galt. Prøv venligst igen."
+      },
+      "photoAccessRequired": {
+        "title": "Fototilladelse påkrævet",
+        "message": "For at gemme fotos skal du tillade adgang til dit fotobibliotek i Indstillinger > Beskyttelse af personlige oplysninger og sikkerhed > Fotos.",
+        "buttons": {
+          "openSettings": "Åbn Indstillinger",
+          "shareInstead": "Del i stedet",
+          "cancel": "Annuller"
+        }
+      },
+      "unableToShare": {
+        "title": "Ikke i stand til at dele",
+        "message": "Prøv venligst Del-knappen i stedet, eller kontroller dine enhedsindstillinger.",
+        "buttons": {
+          "tryShareButton": "Prøv Del-knappen",
+          "ok": "OK"
+        }
+      },
+      "shareFailed": {
+        "title": "Deling mislykkedes",
+        "message": "Kunne ikke dele foto. Prøv venligst igen."
+      },
+      "deleteFailed": {
+        "title": "Fejl",
+        "message": "Kunne ikke slette gendannelse"
+      },
+      "deleteConfirmation": {
+        "title": "Slet gendannelse",
+        "message": "Er du sikker på, at du vil slette denne gendannelse? Denne handling kan ikke fortrydes.",
+        "buttons": {
+          "cancel": "Annuller",
+          "delete": "Slet"
+        }
+      }
+    },
+    "errors": {
+      "cannotGenerate": {
+        "title": "Kan ikke generere billede",
+        "message": "Prøv venligst igen med et andet billede"
+      },
+      "notFound": "Gendannelse ikke fundet",
+      "photoNotFound": "Foto ikke fundet",
+      "photoNotFoundMessage": "Fotofilerne er blevet slettet eller flyttet. Denne gendannelsespost vil blive ryddet op.",
+      "resultNotAvailable": {
+        "title": "Resultat ikke tilgængeligt",
+        "message": "Det gendannede billede er ikke længere tilgængeligt. Dette kan ske, hvis resultatet er udløbet."
+      },
+      "creditRefunded": "✓ Din gratis kredit er blevet refunderet"
+    },
+    "status": {
+      "stillProcessing": "Behandler stadig...",
+      "processingGuidance": "Dette tager normalt et par sekunder. Prøv venligst igen om et øjeblik."
+    },
+    "types": {
+      "repair": "Repareret foto",
+      "unblur": "Forbedret foto",
+      "colorize": "Farvelagt foto",
+      "descratch": "Gendannet foto",
+      "enlighten": "Lysnet foto",
+      "outfit": "Tøj skiftet",
+      "background": "Baggrund skiftet",
+      "custom": "Redigeret foto",
+      "water_damage": "Vandskade repareret"
+    }
+  },
+  "settings": {
+    "title": "Indstillinger",
+    "sections": {
+      "account": "Konto",
+      "subscription": "Abonnement",
+      "usage": "Brug",
+      "support": "Support",
+      "about": "Om",
+      "connectSupport": "Forbind & Support",
+      "accountLegal": "Konto & Juridisk",
+      "followUs": "Følg os"
+    },
+    "items": {
+      "proMember": "Pro-medlem",
+      "freeUser": "Gratis bruger",
+      "photosUsed": "Fotos brugt",
+      "dailyLimit": "Daglig grænse",
+      "lifetimeUsage": "Livstidsbrug",
+      "restorePurchases": "Gendan køb",
+      "resetIdentity": "Nulstil identitet",
+      "clearCache": "Ryd cache",
+      "privacyPolicy": "Privatlivspolitik",
+      "termsOfService": "Servicevilkår",
+      "rateUs": "Bedøm os venligst :)",
+      "shareApp": "Del app",
+      "version": "Version",
+      "language": "Sprog",
+      "emailSupport": "E-mail support",
+      "appVersionLabel": "App-version"
+    },
+    "status": {
+      "checkingAppStore": "Kontrollerer med App Store...",
+      "verifying": "Verificerer dit abonnement",
+      "syncPurchases": "Synkroniser dine køb med denne enhed"
+    },
+    "time": {
+      "availableNow": "Tilgængelig nu",
+      "hours": "{{hours}}t {{minutes}}m {{seconds}}s",
+      "minutes": "{{minutes}}m {{seconds}}s",
+      "seconds": "{{seconds}}s"
+    }
+  },
+  "onboardingV4": {
+    "welcome": {
+      "appName": "Clever",
+      "title": "Reparer dine gamle fotos",
+      "subtitle": "Professionel fotogendannelse og redigering på få sekunder",
+      "getStarted": "Kom i gang"
+    },
+    "intentCapture": {
+      "title": "Hvad bragte dig her?",
+      "subtitle": "Bliv en af tusinder, der bliver smarte fotoeksperter",
+      "previewUnavailable": "Forhåndsvisning ikke tilgængelig",
+      "loading": "Indlæser...",
+      "options": {
+        "fixOldPhotos": "Reparer gamle familiefotos",
+        "repairTorn": "Reparer revnede og flænsede fotos",
+        "colorizeBlackWhite": "Farvelæg sort/hvid",
+        "removeWaterDamage": "Fjern vandskader",
+        "sharpenFaces": "Gør slørede ansigter skarpe",
+        "removeScratches": "Fjern ridser og mærker",
+        "brightenDark": "Lysne mørke fotos",
+        "justExplore": "Bare udforsker appen"
+      },
+      "actions": {
+        "tryThis": "Prøv dette",
+        "continue": "Fortsæt"
+      }
+    },
+    "demo": {
+      "overlayText": "Du vil gøre dette på få sekunder",
+      "selectPhoto": "Vælg dit foto",
+      "loadingDemo": "Indlæser demo..."
+    },
+    "processing": {
+      "analyzing": "Du analyserer skaden...",
+      "enhancing": "Du forbedrer detaljerne...",
+      "finalizing": "Du bringer det tilbage til livet...",
+      "working": "Du arbejder på dit foto...",
+      "demoPhoto": "Behandler demofoto",
+      "socialProof": {
+        "photosRestored": "{{count}} fotos gendannet",
+        "recentActivity": "Nogen i {{city}} har lige {{action}}",
+        "testimonial": "{{quote}} - {{author}}"
+      }
+    },
+    "result": {
+      "title": "Se, hvad DU lige gjorde!",
+      "before": "Før",
+      "after": "Efter",
+      "enhancementComplete": "Fotoforbedring fuldført!",
+      "shareWork": "Del dit arbejde",
+      "openingShare": "Åbner deling...",
+      "shared": "✓ Delt",
+      "startTrial": "Start gratis prøveperiode",
+      "maybeLater": "Måske senere"
+    },
+    "savePermission": {
+      "title": "Gem din gendannelse?",
+      "description": "Vi har brug for tilladelse til at gemme dit\narbejde på dine fotos.",
+      "saveWork": "Gem mit arbejde",
+      "notNow": "Ikke nu"
+    },
+    "showcase": {
+      "sectionHeader": "Med Clever:",
+      "skip": "Spring over",
+      "seeMore": "Se mere",
+      "startExploring": "Start udforskning",
+      "loading": "Indlæser...",
+      "backgrounds": {
+        "title": "Skift baggrunde og tøj",
+        "subtitle": "Studio, strand, natur eller fjern helt"
+      },
+      "outfits": {
+        "title": "Forbedr specielle øjeblikke",
+        "subtitle": "Bryllupper, dimissioner og fejringer"
+      },
+      "memorial": {
+        "title": "Bevar minder",
+        "subtitle": "Familiefotos, mindesmærker, arv"
+      }
+    }
+  },
+  "sharing": {
+    "linkCopied": {
+      "title": "Link kopieret",
+      "message": "App-linket er blevet kopieret til dit udklipsholder!"
+    },
+    "emailCopied": {
+      "title": "E-mail kopieret",
+      "message": "Supportens e-mailadresse er blevet kopieret til dit udklipsholder!\n\nphotorestorationhd@gmail.com"
+    },
+    "contactSupport": {
+      "title": "Kontakt support",
+      "message": "Kontakt os venligst på: photorestorationhd@gmail.com"
+    },
+    "rateUs": {
+      "title": "Bedøm os",
+      "message": "Tak fordi du bruger Clever! Bedøm os venligst i App Store."
+    }
+  },
+  "photoPicker": {
+    "title": "Vælg et foto at gendanne",
+    "buttons": {
+      "takePhoto": "Tag foto",
+      "fromGallery": "Fra galleri",
+      "changePhoto": "Skift foto"
+    },
+    "status": {
+      "processing": "Behandler..."
+    },
+    "alerts": {
+      "cameraPermissionRequired": {
+        "title": "Kameratilladelse påkrævet",
+        "message": "Giv venligst kameratilladelse for at bruge denne funktion."
+      }
+    }
+  },
+  "imageSelector": {
+    "selectPhoto": "Tryk for at vælge et foto",
+    "chooseFromLibrary": "Vælg fra dit fotobibliotek",
+    "changePhoto": "Skift foto"
+  },
+  "imageCropper": {
+    "status": {
+      "processing": "Behandler...",
+      "openingCropper": "Åbner beskærer..."
+    },
+    "alerts": {
+      "cropError": {
+        "title": "Fejl",
+        "message": "Kunne ikke beskære billede. Prøv venligst igen."
+      }
+    }
   }
 }

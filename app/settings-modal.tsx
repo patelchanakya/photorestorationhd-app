@@ -68,7 +68,26 @@ export default function SettingsModalScreen() {
   const currentLanguage = i18n.language as AvailableLanguage;
   
   const setLanguage = async (language: AvailableLanguage) => {
-    await i18n.changeLanguage(language);
+    try {
+      console.log('🔍 DEBUG: Attempting to change to:', language);
+      console.log('🔍 DEBUG: Current language before:', i18n.language);
+      console.log('🔍 DEBUG: Available resources:', Object.keys(i18n.store.data));
+      console.log('🔍 DEBUG: Has Danish resource?', i18n.hasResourceBundle('da', 'translation'));
+
+      // Change language in i18n
+      await i18n.changeLanguage(language);
+
+      console.log('🔍 DEBUG: Language after changeLanguage:', i18n.language);
+      console.log('🔍 DEBUG: Test translation:', i18n.t('settings.items.emailSupport'));
+
+      // Persist to AsyncStorage as manual selection
+      await AsyncStorage.setItem('@app_language', language);
+      await AsyncStorage.setItem('@app_language_manual', 'true');
+
+      console.log('🔍 DEBUG: Saved to AsyncStorage:', language);
+    } catch (error) {
+      console.error('🔍 DEBUG: Failed to set language:', error);
+    }
   };
   
   // Language flag mappings

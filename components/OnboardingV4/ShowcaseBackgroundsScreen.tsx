@@ -20,7 +20,16 @@ interface ShowcaseBackgroundsScreenProps {
 }
 
 export function ShowcaseBackgroundsScreen({ onContinue, onSkip }: ShowcaseBackgroundsScreenProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+  // Debug logging for showcase translations
+  React.useEffect(() => {
+    if (__DEV__) {
+      console.log('🌍 [ShowcaseBackgrounds] Current language:', i18n.language);
+      console.log('🌍 [ShowcaseBackgrounds] Title translation:', t('onboardingV4.showcase.backgrounds.title'));
+      console.log('🌍 [ShowcaseBackgrounds] Subtitle translation:', t('onboardingV4.showcase.backgrounds.subtitle'));
+    }
+  }, [i18n.language, t]);
   const insets = useSafeAreaInsets();
   const isMountedRef = React.useRef(true);
   const shouldBePlayingRef = React.useRef(true);

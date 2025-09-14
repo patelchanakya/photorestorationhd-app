@@ -20,7 +20,16 @@ interface ShowcaseOutfitsScreenProps {
 }
 
 export function ShowcaseOutfitsScreen({ onContinue, onSkip }: ShowcaseOutfitsScreenProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+  // Debug logging for showcase translations
+  React.useEffect(() => {
+    if (__DEV__) {
+      console.log('🌍 [ShowcaseOutfits] Current language:', i18n.language);
+      console.log('🌍 [ShowcaseOutfits] Title translation:', t('onboardingV4.showcase.outfits.title'));
+      console.log('🌍 [ShowcaseOutfits] Subtitle translation:', t('onboardingV4.showcase.outfits.subtitle'));
+    }
+  }, [i18n.language, t]);
   const insets = useSafeAreaInsets();
   const isMountedRef = React.useRef(true);
   const shouldBePlayingRef = React.useRef(true);
