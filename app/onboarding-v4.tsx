@@ -1,8 +1,6 @@
 import React from 'react';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as ImagePicker from 'expo-image-picker';
-import * as MediaLibrary from 'expo-media-library';
 
 import { OnboardingV4Provider, useOnboardingV4Context } from '@/contexts/OnboardingV4Context';
 import { useOnboardingV4Analytics } from '@/hooks/useOnboardingV4Analytics';
@@ -18,7 +16,6 @@ import { CapabilityDemoScreen } from '@/components/OnboardingV4/CapabilityDemoSc
 import { ShowcaseBackgroundsScreen } from '@/components/OnboardingV4/ShowcaseBackgroundsScreen';
 import { ShowcaseOutfitsScreen } from '@/components/OnboardingV4/ShowcaseOutfitsScreen';
 import { ShowcaseMemorialScreen } from '@/components/OnboardingV4/ShowcaseMemorialScreen';
-import { SavePermissionScreen } from '@/components/OnboardingV4/SavePermissionScreen';
 import { ProcessingScreen } from '@/components/OnboardingV4/ProcessingScreen';
 import { ResultConversionScreen } from '@/components/OnboardingV4/ResultConversionScreen';
 
@@ -194,46 +191,6 @@ function OnboardingV4Flow() {
     }
   };
 
-  const handleSavePermissionAllow = async () => {
-    try {
-      // Request media library permissions
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
-      if (status === 'granted' && onboardingState.selectedPhoto) {
-        // Simulate photo restoration and save
-        const selectedIntent = INTENT_OPTIONS.find(opt => opt.id === onboardingState.selectedIntent);
-        
-        // For demo purposes, just save the original photo
-        // In real implementation, this would be the processed result
-        await MediaLibrary.saveToLibraryAsync(onboardingState.selectedPhoto.uri);
-        
-        await trackStepCompleted(5, 'savePermission', { 
-          permission_granted: true,
-          photo_saved: true 
-        });
-        
-        navigateToStep('showcase1');
-      } else {
-        await trackStepCompleted(5, 'savePermission', { 
-          permission_granted: false,
-          photo_saved: false 
-        });
-        navigateToStep('showcase1');
-      }
-    } catch (error) {
-      console.error('Save permission failed:', error);
-      navigateToStep('showcase1');
-    }
-  };
-
-  const handleSavePermissionSkip = async () => {
-    await trackStepCompleted(5, 'savePermission', { 
-      permission_granted: false,
-      photo_saved: false,
-      skipped: true 
-    });
-    navigateToStep('showcase1');
-  };
 
   const handleShowcase1Continue = async () => {
     await trackStepCompleted(6, 'showcase1');
@@ -418,13 +375,6 @@ function OnboardingV4Flow() {
             />
           );
         
-        case 'savePermission':
-          return (
-            <SavePermissionScreen
-              onAllowAndSave={handleSavePermissionAllow}
-              onNotNow={handleSavePermissionSkip}
-            />
-          );
         
         case 'showcase1':
           return (
