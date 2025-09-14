@@ -13,6 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { OnboardingButton } from '@/components/Onboarding/shared/OnboardingButton';
+import { useTranslation } from 'react-i18next';
 
 
 interface IntentOption {
@@ -32,7 +33,23 @@ interface CapabilityDemoScreenProps {
   onContinue: () => void;
 }
 
+// Map intent IDs to translation keys
+const getIntentTranslationKey = (intentId: string): string => {
+  const keyMap: Record<string, string> = {
+    'fix-old-photos': 'onboardingV4.intentCapture.options.fixOldPhotos',
+    'repair-torn': 'onboardingV4.intentCapture.options.repairTorn',
+    'colorize-bw': 'onboardingV4.intentCapture.options.colorizeBlackWhite',
+    'remove-water-damage': 'onboardingV4.intentCapture.options.removeWaterDamage',
+    'sharpen-faces': 'onboardingV4.intentCapture.options.sharpenFaces',
+    'remove-scratches': 'onboardingV4.intentCapture.options.removeScratches',
+    'brighten-dark': 'onboardingV4.intentCapture.options.brightenDark',
+    'just-explore': 'onboardingV4.intentCapture.options.justExplore'
+  };
+  return keyMap[intentId] || 'onboardingV4.intentCapture.options.fixOldPhotos';
+};
+
 export function CapabilityDemoScreen({ intent, onContinue }: CapabilityDemoScreenProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const isMountedRef = React.useRef(true);
   const shouldBePlayingRef = React.useRef(true);
@@ -165,7 +182,7 @@ export function CapabilityDemoScreen({ intent, onContinue }: CapabilityDemoScree
       >
         <View style={[styles.content, { paddingTop: insets.top + 40 }]}>
           <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>Loading demo...</Text>
+            <Text style={styles.loadingText}>{t('onboardingV4.demo.loadingDemo')}</Text>
           </View>
         </View>
       </LinearGradient>
@@ -180,7 +197,7 @@ export function CapabilityDemoScreen({ intent, onContinue }: CapabilityDemoScree
       <View style={[styles.content, { paddingTop: insets.top + 40 }]}>
         {/* Header */}
         <Animated.View style={titleStyle}>
-          <Text style={styles.title}>{intent.label}</Text>
+          <Text style={styles.title}>{intent ? t(getIntentTranslationKey(intent.id)) : ''}</Text>
         </Animated.View>
 
         {/* Full Screen Video Demo */}
@@ -195,7 +212,7 @@ export function CapabilityDemoScreen({ intent, onContinue }: CapabilityDemoScree
           
           {/* Overlay Text */}
           <Animated.View style={[styles.videoOverlay, overlayStyle]}>
-            <Text style={styles.overlayText}>You'll do this in seconds</Text>
+            <Text style={styles.overlayText}>{t('onboardingV4.demo.overlayText')}</Text>
           </Animated.View>
         </Animated.View>
 
@@ -203,7 +220,7 @@ export function CapabilityDemoScreen({ intent, onContinue }: CapabilityDemoScree
         <View style={[styles.bottomContent, { paddingBottom: insets.bottom + 20 }]}>
           <Animated.View style={buttonStyle}>
             <OnboardingButton
-              title="Select Your Photo"
+              title={t('onboardingV4.demo.selectPhoto')}
               onPress={onContinue}
               variant="primary"
               size="large"

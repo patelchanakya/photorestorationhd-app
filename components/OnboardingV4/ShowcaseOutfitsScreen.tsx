@@ -12,6 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { OnboardingButton } from '@/components/Onboarding/shared/OnboardingButton';
+import { useTranslation } from 'react-i18next';
 
 interface ShowcaseOutfitsScreenProps {
   onContinue: () => void;
@@ -19,6 +20,7 @@ interface ShowcaseOutfitsScreenProps {
 }
 
 export function ShowcaseOutfitsScreen({ onContinue, onSkip }: ShowcaseOutfitsScreenProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const isMountedRef = React.useRef(true);
   const shouldBePlayingRef = React.useRef(true);
@@ -29,7 +31,7 @@ export function ShowcaseOutfitsScreen({ onContinue, onSkip }: ShowcaseOutfitsScr
   const subtitleOpacity = useSharedValue(0);
   const buttonsOpacity = useSharedValue(0);
 
-  const player = useVideoPlayer(require('../../assets/videos/wrinkles.mp4'), (player: any) => {
+  const player = useVideoPlayer(require('../../assets/videos/candle.mp4'), (player: any) => {
     playerRef.current = player;
     player.loop = true;
     player.muted = true;
@@ -135,7 +137,7 @@ export function ShowcaseOutfitsScreen({ onContinue, onSkip }: ShowcaseOutfitsScr
       {/* Loading placeholder */}
       {!isVideoReady && (
         <View style={[styles.video, { backgroundColor: '#111111', justifyContent: 'center', alignItems: 'center' }]}>
-          <Text style={{ color: '#666', fontSize: 14 }}>Loading...</Text>
+          <Text style={{ color: '#666', fontSize: 14 }}>{t('onboardingV4.showcase.loading')}</Text>
         </View>
       )}
       
@@ -160,7 +162,7 @@ export function ShowcaseOutfitsScreen({ onContinue, onSkip }: ShowcaseOutfitsScr
         {/* Skip button - top right */}
         <View style={styles.skipContainer}>
           <OnboardingButton
-            title="Skip"
+            title={t('onboardingV4.showcase.skip')}
             onPress={onSkip}
             variant="secondary"
             size="small"
@@ -170,13 +172,13 @@ export function ShowcaseOutfitsScreen({ onContinue, onSkip }: ShowcaseOutfitsScr
         {/* Center content */}
         <View style={styles.centerContent}>
           <Animated.View style={titleStyle}>
-            <Text style={styles.sectionHeader}>With Clever You Can:</Text>
-            <Text style={styles.title}>Enhance Special Moments</Text>
+            <Text style={styles.sectionHeader}>{t('onboardingV4.showcase.sectionHeader')}</Text>
+            <Text style={styles.title}>{t('onboardingV4.showcase.outfits.title')}</Text>
           </Animated.View>
-          
+
           <Animated.View style={subtitleStyle}>
             <Text style={styles.subtitle}>
-              Weddings, graduations, celebrations
+              {t('onboardingV4.showcase.outfits.subtitle')}
             </Text>
           </Animated.View>
         </View>
@@ -184,7 +186,7 @@ export function ShowcaseOutfitsScreen({ onContinue, onSkip }: ShowcaseOutfitsScr
         {/* Bottom button */}
         <Animated.View style={[styles.bottomButton, buttonsStyle]}>
           <OnboardingButton
-            title="See More"
+            title={t('onboardingV4.showcase.seeMore')}
             onPress={onContinue}
             variant="primary"
             size="large"

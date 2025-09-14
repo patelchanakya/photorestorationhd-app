@@ -15,6 +15,7 @@ import Animated, {
 
 import { useOnboardingV4Analytics } from '@/hooks/useOnboardingV4Analytics';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
+import { useTranslation } from 'react-i18next';
 
 // Toggle for mock vs real API - change to false for production
 const USE_MOCK_API = false;
@@ -46,6 +47,7 @@ const SOCIAL_PROOF_DATA = {
 };
 
 export function ProcessingScreen({ photo, intent, functionType, onComplete, onError }: ProcessingScreenProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { trackSocialProofShown } = useOnboardingV4Analytics();
 
@@ -231,13 +233,13 @@ export function ProcessingScreen({ photo, intent, functionType, onComplete, onEr
   const getProcessingText = () => {
     switch (processingStep) {
       case 'analyzing':
-        return 'You\'re analyzing the damage...';
+        return t('onboardingV4.processing.analyzing');
       case 'enhancing':
-        return 'You\'re enhancing the details...';
+        return t('onboardingV4.processing.enhancing');
       case 'finalizing':
-        return 'You\'re bringing it back to life...';
+        return t('onboardingV4.processing.finalizing');
       default:
-        return 'You\'re working on your photo...';
+        return t('onboardingV4.processing.working');
     }
   };
 
@@ -264,7 +266,7 @@ export function ProcessingScreen({ photo, intent, functionType, onComplete, onEr
             </View>
           ) : (
             <View style={styles.placeholderImage}>
-              <Text style={styles.placeholderText}>Processing Demo Photo</Text>
+              <Text style={styles.placeholderText}>{t('onboardingV4.processing.demoPhoto')}</Text>
             </View>
           )}
         </View>
@@ -279,15 +281,17 @@ export function ProcessingScreen({ photo, intent, functionType, onComplete, onEr
           {/* Photo counter */}
           <Animated.View style={[styles.statItem, counterStyle]}>
             <Text style={styles.statIcon}>📊</Text>
-            <Text style={styles.statText}>{SOCIAL_PROOF_DATA.totalPhotos} photos restored</Text>
+            <Text style={styles.statText}>{t('onboardingV4.processing.socialProof.photosRestored', { count: SOCIAL_PROOF_DATA.totalPhotos })}</Text>
           </Animated.View>
 
           {/* Recent activity */}
           <View style={styles.statItem}>
             <Text style={styles.statIcon}>📍</Text>
             <Text style={styles.statText}>
-              Someone in {SOCIAL_PROOF_DATA.recentActivity.city} just{'\n'}
-              {SOCIAL_PROOF_DATA.recentActivity.action}
+              {t('onboardingV4.processing.socialProof.recentActivity', {
+                city: SOCIAL_PROOF_DATA.recentActivity.city,
+                action: SOCIAL_PROOF_DATA.recentActivity.action
+              })}
             </Text>
           </View>
 
@@ -295,7 +299,10 @@ export function ProcessingScreen({ photo, intent, functionType, onComplete, onEr
           <View style={styles.statItem}>
             <Text style={styles.statIcon}>⭐</Text>
             <Text style={styles.statText}>
-              {SOCIAL_PROOF_DATA.testimonial.text} - {SOCIAL_PROOF_DATA.testimonial.author}
+              {t('onboardingV4.processing.socialProof.testimonial', {
+                quote: SOCIAL_PROOF_DATA.testimonial.text,
+                author: SOCIAL_PROOF_DATA.testimonial.author
+              })}
             </Text>
           </View>
         </Animated.View>

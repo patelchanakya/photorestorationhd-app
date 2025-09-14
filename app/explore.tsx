@@ -79,20 +79,20 @@ export default function HomeGalleryLikeScreen() {
   const tourSteps = [
     {
       id: 'restoration',
-      title: 'Choose a Photo',
-      description: 'Pick any photo to restore, enhance, or repair damage.',
+      title: t('tour.restoration.title'),
+      description: t('tour.restoration.description'),
       duration: 4000,
     },
     {
       id: 'generate',
-      title: 'Tap to Generate',
-      description: 'Hit the checkmark to create your result.',
+      title: t('tour.generate.title'),
+      description: t('tour.generate.description'),
       duration: 5000,
     },
     {
       id: 'result',
-      title: 'Save or View Result',
-      description: 'Easily save to your photos or view the full result.',
+      title: t('tour.result.title'),
+      description: t('tour.result.description'),
       duration: 0, // No auto-advance from this step
     },
   ];

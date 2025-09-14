@@ -7,6 +7,22 @@ import { VideoView, useVideoPlayer } from 'expo-video';
 import { useFocusEffect } from '@react-navigation/native';
 import Animated, { FadeIn, useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { IconSymbol } from '../ui/IconSymbol';
+import { useTranslation } from 'react-i18next';
+
+// Map intent IDs to translation keys
+const getIntentTranslationKey = (intentId: string): string => {
+  const keyMap: Record<string, string> = {
+    'fix-old-photos': 'onboardingV4.intentCapture.options.fixOldPhotos',
+    'repair-torn': 'onboardingV4.intentCapture.options.repairTorn',
+    'colorize-bw': 'onboardingV4.intentCapture.options.colorizeBlackWhite',
+    'remove-water-damage': 'onboardingV4.intentCapture.options.removeWaterDamage',
+    'sharpen-faces': 'onboardingV4.intentCapture.options.sharpenFaces',
+    'remove-scratches': 'onboardingV4.intentCapture.options.removeScratches',
+    'brighten-dark': 'onboardingV4.intentCapture.options.brightenDark',
+    'just-explore': 'onboardingV4.intentCapture.options.justExplore'
+  };
+  return keyMap[intentId] || 'onboardingV4.intentCapture.options.fixOldPhotos';
+};
 
 interface IntentOption {
   id: string;
@@ -26,6 +42,7 @@ interface IntentCaptureScreenProps {
 
 // Video content component for tiles - improved with fast refresh support
 const TileVideo = React.memo(({ video, isVisible = true }: { video: any; isVisible?: boolean }) => {
+  const { t } = useTranslation();
   const isMountedRef = React.useRef(true);
   const shouldBePlayingRef = React.useRef(false);
   const playerRef = React.useRef<any>(null);
@@ -136,7 +153,7 @@ const TileVideo = React.memo(({ video, isVisible = true }: { video: any; isVisib
   if (hasError) {
     return (
       <View style={[styles.tileMedia, { backgroundColor: '#2a1a1a', justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ color: '#999', fontSize: 11 }}>Preview unavailable</Text>
+        <Text style={{ color: '#999', fontSize: 11 }}>{t('onboardingV4.intentCapture.previewUnavailable')}</Text>
       </View>
     );
   }
@@ -144,7 +161,7 @@ const TileVideo = React.memo(({ video, isVisible = true }: { video: any; isVisib
   if (!player || !isReady) {
     return (
       <View style={[styles.tileMedia, { backgroundColor: '#1a1a1a', justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ color: '#666', fontSize: 12 }}>Loading...</Text>
+        <Text style={{ color: '#666', fontSize: 12 }}>{t('onboardingV4.intentCapture.loading')}</Text>
       </View>
     );
   }
@@ -160,15 +177,17 @@ const TileVideo = React.memo(({ video, isVisible = true }: { video: any; isVisib
   );
 });
 
-function IntentTile({ 
-  option, 
-  index, 
-  onPress 
-}: { 
-  option: IntentOption; 
-  index: number; 
-  onPress: () => void; 
+function IntentTile({
+  option,
+  index,
+  onPress
+}: {
+  option: IntentOption;
+  index: number;
+  onPress: () => void;
 }) {
+  const { t } = useTranslation();
+
   const handlePressIn = React.useCallback(() => {
     // Visual feedback handled by TouchableOpacity activeOpacity
   }, []);
@@ -211,11 +230,11 @@ function IntentTile({
           />
           
           <View style={styles.tileTextContent}>
-            <Text style={styles.tileLabel}>{option.label}</Text>
-            
+            <Text style={styles.tileLabel}>{t(getIntentTranslationKey(option.id))}</Text>
+
             <View style={styles.tileActionButton}>
               <Text style={styles.tileActionText} numberOfLines={1}>
-                {option.id === 'just-explore' ? 'Continue' : 'Try This'}
+                {option.id === 'just-explore' ? t('onboardingV4.intentCapture.actions.continue') : t('onboardingV4.intentCapture.actions.tryThis')}
               </Text>
               <IconSymbol name="chevron.right" size={12} color="#FFFFFF" />
             </View>
@@ -227,6 +246,7 @@ function IntentTile({
 }
 
 export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   
@@ -251,7 +271,7 @@ export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenPr
   const tileWidth = availableWidth / columnsCount;
   const tileHeight = tileWidth * 1.2;
 
-  // Default intent options - photo restoration focused with "Just Explore" option
+  // Default intent options - photo restoration focused with "Just Exploring" option
   const defaultOptions: IntentOption[] = [
     {
       id: 'fix-old-photos',
@@ -311,7 +331,7 @@ export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenPr
     },
     {
       id: 'just-explore',
-      label: 'Just Explore the App',
+      label: 'Just Exploring the App',
       icon: '✨',
       demoImages: [],
       video: require('../../assets/videos/welcome.mp4'),
@@ -329,8 +349,8 @@ export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenPr
       <View style={[styles.content, { paddingTop: insets.top + 40 }]}>
         {/* Header */}
         <Animated.View style={[styles.header, headerStyle]}>
-          <Text style={styles.title}>What brought you here?</Text>
-          <Text style={styles.subtitle}>Join thousands becoming the family photo expert</Text>
+          <Text style={styles.title}>{t('onboardingV4.intentCapture.title')}</Text>
+          <Text style={styles.subtitle}>{t('onboardingV4.intentCapture.subtitle')}</Text>
         </Animated.View>
 
         {/* Intent Options Grid */}

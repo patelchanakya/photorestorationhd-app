@@ -22,7 +22,7 @@ import { SavePermissionScreen } from '@/components/OnboardingV4/SavePermissionSc
 import { ProcessingScreen } from '@/components/OnboardingV4/ProcessingScreen';
 import { ResultConversionScreen } from '@/components/OnboardingV4/ResultConversionScreen';
 
-// Intent options for user selection - photo restoration focused with "Just Explore" option
+// Intent options for user selection - photo restoration focused with "Just Exploring" option
 const INTENT_OPTIONS = [
   { 
     id: 'fix-old-photos', 
@@ -87,14 +87,14 @@ const INTENT_OPTIONS = [
     image: require('../assets/images/popular/brighten/pop-4.png'),
     functionType: 'enlighten' as const 
   },
-  { 
-    id: 'just-explore', 
-    label: 'Just Explore the App', 
-    icon: '✨', 
-    demoImages: [], 
+  {
+    id: 'just-explore',
+    label: 'Just Exploring the App',
+    icon: '✨',
+    demoImages: [],
     video: require('../assets/videos/welcome.mp4'),
     image: require('../assets/images/popular/enhance/pop-3.png'),
-    functionType: null 
+    functionType: null
   }
 ];
 

@@ -13,6 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { OnboardingButton } from '@/components/Onboarding/shared/OnboardingButton';
+import { useTranslation } from 'react-i18next';
 
 interface PhotoData {
   uri: string;
@@ -38,6 +39,7 @@ export function ResultConversionScreen({
   onStartTrial,
   onMaybeLater
 }: ResultConversionScreenProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [isSharing, setIsSharing] = React.useState(false);
   const [sharedToGallery, setSharedToGallery] = React.useState(false);
@@ -129,7 +131,7 @@ export function ResultConversionScreen({
           </Animated.View>
           
           <Animated.View style={titleStyle}>
-            <Text style={styles.title}>Look What YOU Just Did!</Text>
+            <Text style={styles.title}>{t('onboardingV4.result.title')}</Text>
           </Animated.View>
         </View>
 
@@ -139,13 +141,13 @@ export function ResultConversionScreen({
             <View style={styles.imageComparison}>
               {/* Before */}
               <View style={styles.imageSection}>
-                <Text style={styles.imageLabel}>Before</Text>
+                <Text style={styles.imageLabel}>{t('onboardingV4.result.before')}</Text>
                 <Image source={{ uri: beforePhoto.uri }} style={styles.comparisonImage} />
               </View>
 
               {/* After - Use beforePhoto if no afterPhoto for demo */}
               <View style={styles.imageSection}>
-                <Text style={styles.imageLabel}>After</Text>
+                <Text style={styles.imageLabel}>{t('onboardingV4.result.after')}</Text>
                 <View style={styles.afterImageWrapper}>
                   <Image 
                     source={{ uri: afterPhoto?.uri || beforePhoto.uri }} 
@@ -159,7 +161,7 @@ export function ResultConversionScreen({
             </View>
           ) : (
             <View style={styles.placeholderComparison}>
-              <Text style={styles.placeholderText}>Photo Enhancement Complete!</Text>
+              <Text style={styles.placeholderText}>{t('onboardingV4.result.enhancementComplete')}</Text>
             </View>
           )}
         </Animated.View>
@@ -175,7 +177,7 @@ export function ResultConversionScreen({
             disabled={isSharing || sharedToGallery}
           >
             <Text style={styles.shareButtonText}>
-              {isSharing ? 'Opening Share...' : sharedToGallery ? '✓ Shared' : 'Share Your Work'}
+              {isSharing ? t('onboardingV4.result.openingShare') : sharedToGallery ? t('onboardingV4.result.shared') : t('onboardingV4.result.shareWork')}
             </Text>
           </TouchableOpacity>
         </Animated.View>
@@ -184,15 +186,15 @@ export function ResultConversionScreen({
         <View style={[styles.bottomContent, { paddingBottom: insets.bottom + 20 }]}>
           <Animated.View style={buttonsStyle}>
             <OnboardingButton
-              title="Start Free Trial"
+              title={t('onboardingV4.result.startTrial')}
               onPress={onStartTrial}
               variant="primary"
               size="large"
               style={styles.primaryButton}
             />
-            
+
             <OnboardingButton
-              title="Maybe later"
+              title={t('onboardingV4.result.maybeLater')}
               onPress={onMaybeLater}
               variant="secondary"
               size="medium"

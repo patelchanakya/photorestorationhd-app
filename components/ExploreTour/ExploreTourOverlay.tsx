@@ -23,7 +23,7 @@ import { SavingModal, type SavingModalRef } from '@/components/SavingModal';
 import { Asset } from 'expo-asset';
 import { LinearGradient } from 'expo-linear-gradient';
 import { presentPaywall } from '@/services/revenuecat';
-import { VideoView, useVideoPlayer } from 'expo-video';
+import { useTranslation } from 'react-i18next';
 
 interface TourStep {
   id: string;
@@ -67,6 +67,7 @@ export function ExploreTourOverlay({
   onComplete,
   onCTAPress
 }: ExploreTourOverlayProps) {
+  const { t } = useTranslation();
   const safeAreaInsets = useSafeAreaInsets();
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
   const savePhotoMutation = useSavePhoto();
@@ -80,12 +81,7 @@ export function ExploreTourOverlay({
   const [buttonsEnabled, setButtonsEnabled] = React.useState(false);
   const savingModalRef = React.useRef<SavingModalRef>(null);
 
-  // Loading video player
-  const loadingVideo = require('../../assets/videos/loading.mp4');
-  const loadingVideoPlayer = useVideoPlayer(loadingVideo, (player) => {
-    player.loop = true;
-    player.muted = true;
-  });
+  // No video needed - using text-based loading animation
   
   // Store timer references for cleanup
   const timerRefs = React.useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -135,12 +131,9 @@ export function ExploreTourOverlay({
   const handleGenerateAction = React.useCallback(() => {
     console.log('🎯 Generate action triggered');
 
-    // Start loading with video
+    // Start loading animation
     setTourLoading(true);
     setTourProgress(0);
-    if (loadingVideoPlayer) {
-      loadingVideoPlayer.play();
-    }
 
     // 4-second loading timeline to match video duration
     const totalDuration = 4000; // 4 seconds to match video
@@ -161,9 +154,6 @@ export function ExploreTourOverlay({
         }
         clearInterval(intervalId);
 
-        if (loadingVideoPlayer) {
-          loadingVideoPlayer.pause();
-        }
         setTourLoading(false);
         setTourResult(true);
         // Advance to step 3 but keep sheet visible
@@ -171,7 +161,7 @@ export function ExploreTourOverlay({
         addTimeout(() => onNext(), 200);
       }
     }, updateInterval);
-  }, [onNext, addTimeout, addInterval, loadingVideoPlayer]);
+  }, [onNext, addTimeout, addInterval]);
 
   // Create tour demo restoration data
   const createTourRestoration = React.useCallback(async () => {
@@ -530,22 +520,9 @@ export function ExploreTourOverlay({
               transition={0}
             />
             
-            {/* Loading Overlay with video */}
+            {/* Loading Overlay with text animation */}
             {tourLoading && (
               <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.65)', alignItems: 'center', justifyContent: 'center' }}>
-                {loadingVideoPlayer && (
-                  <VideoView
-                    player={loadingVideoPlayer}
-                    style={{
-                      width: 200,
-                      height: 200,
-                      marginBottom: 20
-                    }}
-                    contentFit="contain"
-                    nativeControls={false}
-                    allowsFullscreen={false}
-                  />
-                )}
                 <View style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.4)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' }}>
                   <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, textAlign: 'center', marginBottom: 4 }}>Please wait a few seconds</Text>
                   <Text style={{ color: '#F59E0B', fontSize: 16, fontFamily: 'Lexend-Black', textAlign: 'center' }}>
@@ -1020,11 +997,11 @@ Now you know how to use all our tools.
                   }}
                   disabled={!buttonsEnabled}
                 >
-                  <Text style={styles.skipButtonText}>Skip</Text>
+                  <Text style={styles.skipButtonText}>{t('tour.buttons.skip')}</Text>
                 </TouchableOpacity>
                 
                 <OnboardingButton
-                  title={isLastStep ? "Got it!" : "Next"}
+                  title={isLastStep ? t('tour.buttons.gotIt') : t('tour.buttons.next')}
                   onPress={() => {
                     if (!buttonsEnabled) return;
                     setIsAutoAdvancing(false);
@@ -1088,11 +1065,11 @@ Now you know how to use all our tools.
                   }}
                   disabled={!buttonsEnabled}
                 >
-                  <Text style={styles.skipButtonText}>Skip</Text>
+                  <Text style={styles.skipButtonText}>{t('tour.buttons.skip')}</Text>
                 </TouchableOpacity>
                 
                 <OnboardingButton
-                  title={isLastStep ? "Got it!" : "Next"}
+                  title={isLastStep ? t('tour.buttons.gotIt') : t('tour.buttons.next')}
                   onPress={() => {
                     if (!buttonsEnabled) return;
                     setIsAutoAdvancing(false);

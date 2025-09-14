@@ -2,12 +2,13 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { 
-  useAnimatedStyle, 
-  useSharedValue, 
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
   withTiming,
   withDelay
 } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 
 import { OnboardingButton } from '@/components/Onboarding/shared/OnboardingButton';
 import { IconSymbol } from '../ui/IconSymbol';
@@ -18,6 +19,7 @@ interface SavePermissionScreenProps {
 }
 
 export function SavePermissionScreen({ onAllowAndSave, onNotNow }: SavePermissionScreenProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   
   const iconOpacity = useSharedValue(0);
@@ -62,14 +64,13 @@ export function SavePermissionScreen({ onAllowAndSave, onNotNow }: SavePermissio
 
         {/* Title */}
         <Animated.View style={titleStyle}>
-          <Text style={styles.title}>Save Your Restoration?</Text>
+          <Text style={styles.title}>{t('onboardingV4.savePermission.title')}</Text>
         </Animated.View>
 
         {/* Description */}
         <Animated.View style={descriptionStyle}>
           <Text style={styles.description}>
-            We need permission to save your{'\n'}
-            work to your photos.
+            {t('onboardingV4.savePermission.description')}
           </Text>
         </Animated.View>
 
@@ -77,15 +78,15 @@ export function SavePermissionScreen({ onAllowAndSave, onNotNow }: SavePermissio
         <View style={[styles.bottomContent, { paddingBottom: insets.bottom + 20 }]}>
           <Animated.View style={buttonsStyle}>
             <OnboardingButton
-              title="Save My Work"
+              title={t('onboardingV4.savePermission.saveWork')}
               onPress={onAllowAndSave}
               variant="primary"
               size="large"
               style={styles.primaryButton}
             />
-            
+
             <OnboardingButton
-              title="Not Now"
+              title={t('onboardingV4.savePermission.notNow')}
               onPress={onNotNow}
               variant="secondary"
               size="medium"

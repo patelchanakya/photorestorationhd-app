@@ -399,7 +399,7 @@
       "brightenDesc": "Illuminate underexposed images",
       "beachBackground": "Beach Background",
       "beachBackgroundDesc": "Beautiful ocean and sand scene",
-      "noneOfAbove": "Explore App",
+      "noneOfAbove": "Exploring the App",
       "noneOfAboveDesc": "Skip and explore the app",
       "customPrompt": "Choose Your Own",
       "customPromptDesc": "Describe what you want to do with your photo"
@@ -542,5 +542,105 @@
   "proUpgrade": {
     "title": "Upgrade to Pro",
     "message": "You've reached your video generation limit"
+  },
+  "tour": {
+    "restoration": {
+      "title": "Choose a Photo",
+      "description": "Pick any photo to restore, enhance, or repair damage."
+    },
+    "generate": {
+      "title": "Tap to Generate",
+      "description": "Hit the checkmark to create your result."
+    },
+    "result": {
+      "title": "Save or View Result",
+      "description": "Easily save to your photos or view the full result."
+    },
+    "buttons": {
+      "skip": "Skip",
+      "next": "Next",
+      "gotIt": "Got it"
+    }
+  },
+  "onboardingV4": {
+    "welcome": {
+      "appName": "Clever",
+      "title": "Fix your old photos",
+      "subtitle": "Professional photo restoration & edits in seconds",
+      "getStarted": "Get Started"
+    },
+    "intentCapture": {
+      "title": "What brought you here?",
+      "subtitle": "Join thousands becoming clever photo experts",
+      "previewUnavailable": "Preview unavailable",
+      "loading": "Loading...",
+      "options": {
+        "fixOldPhotos": "Fix Old Family Photos",
+        "repairTorn": "Repair Torn & Ripped Photos",
+        "colorizeBlackWhite": "Colorize Black & White",
+        "removeWaterDamage": "Remove Water Damage",
+        "sharpenFaces": "Clear Up Blurry Faces",
+        "removeScratches": "Remove Scratches & Marks",
+        "brightenDark": "Brighten Dark Photos",
+        "justExplore": "Just Exploring the App"
+      },
+      "actions": {
+        "tryThis": "Try This",
+        "continue": "Continue"
+      }
+    },
+    "demo": {
+      "overlayText": "You'll do this in seconds",
+      "selectPhoto": "Select Your Photo",
+      "loadingDemo": "Loading demo..."
+    },
+    "processing": {
+      "analyzing": "You're analyzing the damage...",
+      "enhancing": "You're enhancing the details...",
+      "finalizing": "You're bringing it back to life...",
+      "working": "You're working on your photo...",
+      "demoPhoto": "Processing Demo Photo",
+      "socialProof": {
+        "photosRestored": "{{count}} photos restored",
+        "recentActivity": "Someone in {{city}} just {{action}}",
+        "testimonial": "{{quote}} - {{author}}"
+      }
+    },
+    "result": {
+      "title": "Look What YOU Just Did!",
+      "before": "Before",
+      "after": "After",
+      "enhancementComplete": "Photo Enhancement Complete!",
+      "shareWork": "Share Your Work",
+      "openingShare": "Opening Share...",
+      "shared": "✓ Shared",
+      "startTrial": "Start Free Trial",
+      "maybeLater": "Maybe later"
+    },
+    "savePermission": {
+      "title": "Save Your Restoration?",
+      "description": "We need permission to save your\nwork to your photos.",
+      "saveWork": "Save My Work",
+      "notNow": "Not Now"
+    },
+    "showcase": {
+      "sectionHeader": "With Clever:",
+      "skip": "Skip",
+      "seeMore": "See More",
+      "startExploring": "Start Exploring",
+      "loading": "Loading...",
+      "backgrounds": {
+        "title": "Change Backgrounds",
+        "subtitle": "Studio, beach, nature, or remove entirely"
+      },
+      "outfits": {
+        "title": "Enhance Special Moments",
+        "subtitle": "Weddings, graduations, celebrations"
+      },
+      "memorial": {
+        "title": "Preserve Memories",
+        "subtitle": "Family photos, memorial tributes, heritage"
+      }
+    }
   }
 }

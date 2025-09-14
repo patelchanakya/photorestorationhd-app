@@ -1,5 +1,5 @@
-import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
 export interface ABTestVariant {
   id: string;
@@ -13,11 +13,11 @@ export interface ABTest {
   isActive: boolean;
 }
 
-// Welcome screen copy - single variant (A/B testing removed)
+// Welcome screen copy - using translation keys
 export const WELCOME_COPY_VARIANTS = {
   A: {
-    title: "Fix your old photos instantly",
-    subtitle: "Professional restoration in seconds"
+    titleKey: "onboardingV4.welcome.title",
+    subtitleKey: "onboardingV4.welcome.subtitle"
   }
 };
 
@@ -104,15 +104,15 @@ export async function trackABTestExposure(testName: string, variant: string) {
 }
 
 /**
- * Get welcome screen copy based on A/B test variant
+ * Get welcome screen copy translation keys based on A/B test variant
  */
-export function getWelcomeCopy(): { title: string; subtitle: string; variant: string } {
+export function getWelcomeCopy(): { titleKey: string; subtitleKey: string; variant: string } {
   const variant = getABTestVariant('welcomeScreenCopy');
   const copy = WELCOME_COPY_VARIANTS[variant as keyof typeof WELCOME_COPY_VARIANTS] || WELCOME_COPY_VARIANTS.A;
-  
+
   return {
-    title: copy.title,
-    subtitle: copy.subtitle,
+    titleKey: copy.titleKey,
+    subtitleKey: copy.subtitleKey,
     variant
   };
 }

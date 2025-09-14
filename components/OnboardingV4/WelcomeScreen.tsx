@@ -16,6 +16,7 @@ import Animated, {
 
 import { OnboardingButton } from '@/components/Onboarding/shared/OnboardingButton';
 import { getWelcomeCopy, trackABTestExposure } from '@/utils/abTesting';
+import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
 
 interface WelcomeScreenV4Props {
@@ -23,12 +24,13 @@ interface WelcomeScreenV4Props {
 }
 
 export function WelcomeScreenV4({ onContinue }: WelcomeScreenV4Props) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const titleOpacity = useSharedValue(0);
   const subtitleOpacity = useSharedValue(0);
   const buttonScale = useSharedValue(0.8);
   const exitOpacity = useSharedValue(1);
-  
+
   // A/B testing copy
   const welcomeCopy = React.useMemo(() => getWelcomeCopy(), []);
   
@@ -213,16 +215,16 @@ export function WelcomeScreenV4({ onContinue }: WelcomeScreenV4Props) {
         <View style={styles.centerContent}>
           {/* App Logo */}
           <View style={styles.logoContainer}>
-            <Text style={styles.logo}>Clever</Text>
+            <Text style={styles.logo}>{t('onboardingV4.welcome.appName')}</Text>
           </View>
 
           <Animated.View style={titleStyle}>
-            <Text style={styles.title}>{welcomeCopy.title}</Text>
+            <Text style={styles.title}>{t(welcomeCopy.titleKey)}</Text>
           </Animated.View>
 
           <Animated.View style={subtitleStyle}>
             <Text style={styles.subtitle}>
-              {welcomeCopy.subtitle}
+              {t(welcomeCopy.subtitleKey)}
             </Text>
           </Animated.View>
         </View>
@@ -231,7 +233,7 @@ export function WelcomeScreenV4({ onContinue }: WelcomeScreenV4Props) {
         <View style={[styles.bottomContent, { paddingBottom: insets.bottom + 20 }]}>
           <Animated.View style={buttonStyle}>
             <OnboardingButton
-              title="Get Started"
+              title={t('onboardingV4.welcome.getStarted')}
               onPress={handleContinue}
               variant="primary"
               size="large"
