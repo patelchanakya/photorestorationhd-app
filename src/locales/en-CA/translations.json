@@ -5,7 +5,9 @@
   "explore": {
     "header": {
       "title": "Clever",
-      "pro": "PRO"
+      "pro": "PRO",
+      "upgrade": "Upgrade",
+      "rateUs": "Rate Us"
     },
     "sections": {
       "popular": "Popular",
@@ -24,7 +26,7 @@
       "brighten": "Brighten"
     },
     "writeYourOwn": "Write Your Own",
-    "byClever": "by clever",
+    "byClever": "with Clever",
     "rateUs": {
       "title": "Rate us",
       "subtitle": "Leave a review, it helps us a lot!"
@@ -761,7 +763,7 @@
         },
         "photos": {
           "title": "Photo Access Required",
-          "message": "To save photos, please allow access to your photo library in Settings > Privacy & Security > Photos."
+          "message": "Tap \"Open Settings\" or go to Settings → Clever → Photos."
         }
       },
       "processing": {
@@ -1035,6 +1037,26 @@
       "description": "We need permission to save your\nwork to your photos.",
       "saveWork": "Save My Work",
       "notNow": "Not Now"
+    },
+    "tourDemo": {
+      "screen": {
+        "title": "Colorized Photo"
+      },
+      "actions": {
+        "share": "Share",
+        "save": "Save"
+      },
+      "success": {
+        "title": "It's that easy!",
+        "description": "Now you know how to use all our tools.",
+        "complete": "✓ Tutorial Complete"
+      },
+      "upgrade": {
+        "title": "Unlock Pro Features",
+        "features": "Unlimited restorations • Premium styles • Priority processing",
+        "action": "Get Unlimited",
+        "skip": "Maybe Later"
+      }
     },
     "showcase": {
       "sectionHeader": "With Clever:",

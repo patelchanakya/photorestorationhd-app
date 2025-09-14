@@ -792,7 +792,7 @@ Issue Description:
 
 SUPPORT ID: ${supportId}
 Device: ${Platform.OS} ${Platform.Version}
-App Version: 2.0.2
+App Version: 2.0.4
 
 Please include the Support ID above in your message so we can assist you quickly.
 
@@ -966,8 +966,8 @@ Best regards`;
                   </View>
                 )}
 
-                {/* Photo Usage - Show for all users (free users have limits) */}
-                {photoUsage && (
+                {/* Photo Usage - Show for free users only (Pro users already have Pro Member section) */}
+                {!isPro && photoUsage && (
                   <TouchableOpacity 
                     className="flex-row items-center p-4 border-b border-white/10"
                     onPress={async () => {
@@ -1254,7 +1254,7 @@ Best regards`;
                       {t('settings.items.version')}
                     </Text>
                     <Text className="text-white/60 text-sm">
-                      2.0.2
+                      2.0.4
                     </Text>
                   </View>
                 </View>

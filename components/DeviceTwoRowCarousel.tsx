@@ -239,7 +239,7 @@ export function DeviceTwoRowCarousel({ functionType, firstTileRef }: DeviceTwoRo
             // User permanently denied, need to go to settings
             Alert.alert(
               'Permission Required',
-              'Photo access was permanently denied. Please enable it in Settings to use this feature.',
+              'Tap "Open Settings" or go to Settings → Clever → Photos.',
               [
                 { text: 'Cancel', style: 'cancel' },
                 { text: 'Open Settings', onPress: openSettings }

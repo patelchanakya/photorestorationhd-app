@@ -5,7 +5,9 @@
 "explore": {
 "header": {
 "title": "Clever",
-"pro": "PRO"
+"pro": "PRO",
+"upgrade": "Upgrade",
+"rateUs": "Bewerte Uns"
 },
 "sections": {
 "popular": "Beliebt",
@@ -24,7 +26,7 @@
 "brighten": "Aufhellen"
 },
 "writeYourOwn": "Schreib dein eigenes",
-"byClever": "von clever",
+"byClever": "mit Clever",
 "rateUs": {
 "title": "Bewerte uns",
 "subtitle": "Hinterlasse eine Bewertung, das hilft uns sehr!"
@@ -761,7 +763,7 @@
 },
 "photos": {
 "title": "Fotozugriff erforderlich",
-"message": "Um Fotos zu speichern, erlaube bitte den Zugriff auf deine Fotobibliothek unter Einstellungen > Datenschutz & Sicherheit > Fotos."
+"message": "Tippe auf \"Einstellungen öffnen\" oder gehe zu Einstellungen → Clever → Fotos."
 }
 },
 "processing": {
@@ -1035,6 +1037,26 @@
 "description": "Wir benötigen die Berechtigung, deine\nArbeit in deinen Fotos zu speichern.",
 "saveWork": "Meine Arbeit speichern",
 "notNow": "Jetzt nicht"
+},
+"tourDemo": {
+  "screen": {
+    "title": "Koloriertes Foto"
+  },
+  "actions": {
+    "share": "Teilen",
+    "save": "Speichern"
+  },
+  "success": {
+    "title": "So einfach ist das!",
+    "description": "Jetzt weißt du, wie du alle unsere Tools verwendest.",
+    "complete": "✓ Tutorial Abgeschlossen"
+  },
+  "upgrade": {
+    "title": "Pro-Funktionen freischalten",
+    "features": "Unbegrenzte Wiederherstellungen • Premium-Stile • Prioritätsverarbeitung",
+    "action": "Unbegrenzt Erhalten",
+    "skip": "Vielleicht Später"
+  }
 },
 "showcase": {
 "sectionHeader": "Mit Clever:",

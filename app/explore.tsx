@@ -382,7 +382,6 @@ export default function HomeGalleryLikeScreen() {
           <View style={exploreStyles.sectionHeader}>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
               <Text style={exploreStyles.sectionTitle}>{t('explore.sections.magic')}</Text>
-              <Text style={exploreStyles.byCleverText}>With Clever</Text>
             </View>
           </View>
         );
@@ -641,86 +640,40 @@ export default function HomeGalleryLikeScreen() {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <TouchableOpacity 
             onPress={async () => {
-              // Track Pro button click (fire and forget)
-              analyticsService.track('explore_pro_button_clicked', {
-                is_pro: isPro ? 'true' : 'false',
-                section: 'header'
-              });
-
               if (isPro) {
-                // Pro users: refresh subscription status with cache invalidation
-                console.log('🔒 [SECURITY] Pro icon tapped - refreshing subscription status...');
-                
+                // Pro users: Open app store rating
+                analyticsService.track('explore_rate_us_clicked', {
+                  is_pro: 'true',
+                  section: 'header'
+                });
+
                 try {
-                  // Force refresh RevenueCat context first
-                  await forceRefresh();
-                  
-                  // Then validate with fresh data 
-                  const hasValidAccess = await validatePremiumAccess(true);
-                  
-                  if (hasValidAccess) {
-                    Alert.alert(
-                      t('explore.alerts.proMember.title'),
-                      t('explore.alerts.proMember.message'),
-                      [{ text: t('explore.alerts.proMember.button') }]
-                    );
+                  const isAvailable = await StoreReview.isAvailableAsync();
+                  if (isAvailable) {
+                    await StoreReview.requestReview();
                   } else {
-                    // If validation fails, try restore as fallback
-                    console.log('🔄 Pro status validation failed, trying restore...');
-                    const result = await restorePurchasesSecure();
-                    
-                    if (result.success && result.hasActiveEntitlements) {
-                      // Refresh context to update UI state
-                      await refreshCustomerInfo();
-                      
-                      Alert.alert(
-                        t('explore.alerts.proMember.title'),
-                        t('explore.alerts.proMember.message'),
-                        [{ text: t('explore.alerts.proMember.button') }]
-                      );
-                    } else if (result.success && !result.hasActiveEntitlements) {
-                      Alert.alert(
-                        t('explore.alerts.subscriptionStatus.title'),
-                        t('explore.alerts.subscriptionStatus.noActiveMessage'),
-                        [{ text: t('explore.alerts.subscriptionStatus.button') }]
-                      );
-                    } else if (result.error === 'cancelled' && result.errorMessage?.includes('Apple ID')) {
-                      Alert.alert(
-                        t('explore.alerts.subscriptionCheck.title'),
-                        t('explore.alerts.subscriptionCheck.message'),
-                        [
-                          { text: t('common.ok'), style: 'default' },
-                          {
-                            text: t('explore.alerts.subscriptionCheck.howToFix'),
-                            style: 'default',
-                            onPress: () => {
-                              Alert.alert(
-                                t('explore.alerts.subscriptionCheck.howToFixTitle'),
-                                t('explore.alerts.subscriptionCheck.howToFixMessage'),
-                                [{ text: t('explore.alerts.subscriptionCheck.gotIt'), style: 'default' }]
-                              );
-                            }
-                          }
-                        ]
-                      );
-                    } else {
-                      Alert.alert(
-                        t('explore.alerts.proStatusCheck.title'),
-                        t('explore.alerts.proStatusCheck.message'),
-                        [{ text: t('common.ok') }]
-                      );
-                    }
+                    // Fallback for when store review is not available
+                    Alert.alert(
+                      t('explore.rate.title'),
+                      t('explore.rate.message'),
+                      [{ text: t('common.ok') }]
+                    );
                   }
                 } catch (error) {
-                  console.error('❌ [SECURITY] Pro icon status check failed:', error);
+                  console.error('Rate us failed:', error);
                   Alert.alert(
-                    t('explore.alerts.proMember.title'),
-                    t('explore.alerts.proMember.message'),
-                    [{ text: t('explore.alerts.proMember.button') }]
+                    t('explore.rate.title'),
+                    t('explore.rate.message'),
+                    [{ text: t('common.ok') }]
                   );
                 }
               } else {
-                // Non-Pro users: show paywall
+                // Non-Pro users: Show upgrade paywall
+                analyticsService.track('explore_upgrade_clicked', {
+                  is_pro: 'false',
+                  section: 'header'
+                });
+
                 const isExpoGo = Constants.appOwnership === 'expo';
                 if (isExpoGo) {
                   Alert.alert(
@@ -740,19 +693,25 @@ export default function HomeGalleryLikeScreen() {
                 }
               }
             }}
-            style={{ 
-              backgroundColor: isPro ? 'rgba(249,115,22,0.15)' : 'rgba(249,115,22,0.9)', 
-              borderRadius: 16, 
-              paddingHorizontal: 12, 
+            style={isPro ? {
+              // Pro users: Plain text styling, no button appearance
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 4
+            } : {
+              // Non-Pro users: Button styling
+              backgroundColor: 'rgba(249,115,22,0.9)',
+              borderRadius: 16,
+              paddingHorizontal: 12,
               paddingVertical: 6,
-              borderWidth: isPro ? 1 : 0,
-              borderColor: '#f97316',
               flexDirection: 'row',
               alignItems: 'center',
               gap: 4
             }}>
-            {isPro && <IconSymbol name="checkmark.circle.fill" size={14} color="#f97316" />}
-            <Text style={{ color: isPro ? '#f97316' : '#fff', fontFamily: 'Lexend-SemiBold', fontSize: 12 }}>{t('explore.header.pro')}</Text>
+            <IconSymbol name="sparkle" size={14} color={isPro ? '#f97316' : '#fff'} />
+            <Text style={{ color: isPro ? '#f97316' : '#fff', fontFamily: 'Lexend-SemiBold', fontSize: 12 }}>
+              {isPro ? t('explore.header.rateUs') : t('explore.header.upgrade')}
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={async () => {

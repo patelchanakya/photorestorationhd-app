@@ -239,7 +239,7 @@ export default function TourDemoScreen() {
               color: '#FFFFFF', 
               textAlign: 'center' 
             }} numberOfLines={1}>
-              Colorized Photo
+              {t('tourDemo.screen.title')}
             </Text>
           </View>
           {/* Placeholder for right side */}
@@ -290,7 +290,7 @@ export default function TourDemoScreen() {
                     style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
                   />
                   <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ color: '#0B0B0F', fontWeight: '900', fontSize: 16 }}>Share</Text>
+                    <Text style={{ color: '#0B0B0F', fontWeight: '900', fontSize: 16 }}>{t('tourDemo.actions.share')}</Text>
                   </View>
                 </TouchableOpacity>
 
@@ -307,7 +307,7 @@ export default function TourDemoScreen() {
                   onPress={handleExport}
                   activeOpacity={0.8}
                 >
-                  <Text style={{ color: '#fff', fontWeight: '900', fontSize: 16 }}>Save</Text>
+                  <Text style={{ color: '#fff', fontWeight: '900', fontSize: 16 }}>{t('tourDemo.actions.save')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -387,7 +387,7 @@ export default function TourDemoScreen() {
                     textAlign: 'center',
                     marginBottom: 8
                   }}>
-                    It's that easy!
+                    {t('tourDemo.success.title')}
                   </Text>
                   
                   <Text style={{
@@ -396,7 +396,7 @@ export default function TourDemoScreen() {
                     textAlign: 'center',
                     lineHeight: 20
                   }}>
-                    Now you know how to use all our tools.
+                    {t('tourDemo.success.description')}
                   </Text>
                 </View>
 
@@ -420,7 +420,7 @@ export default function TourDemoScreen() {
                       textAlign: 'center',
                       fontFamily: 'Lexend-Medium'
                     }}>
-                      ✓ Tutorial Complete
+                      {t('tourDemo.success.complete')}
                     </Text>
                   </View>
                 </View>
@@ -443,7 +443,7 @@ export default function TourDemoScreen() {
                         color: '#10B981',
                         marginLeft: 6
                       }}>
-                        Unlock Pro Features
+                        {t('tourDemo.upgrade.title')}
                       </Text>
                     </View>
                   </View>
@@ -455,7 +455,7 @@ export default function TourDemoScreen() {
                     marginBottom: 16,
                     textAlign: 'center'
                   }}>
-                    Unlimited restorations • Premium styles • Priority processing
+                    {t('tourDemo.upgrade.features')}
                   </Text>
                   
                   <TouchableOpacity
@@ -495,7 +495,7 @@ export default function TourDemoScreen() {
                       fontSize: 15,
                       fontFamily: 'Lexend-Bold'
                     }}>
-                      Get Unlimited
+                      {t('tourDemo.upgrade.action')}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -513,7 +513,7 @@ export default function TourDemoScreen() {
                     textAlign: 'center',
                     fontFamily: 'Lexend-Medium'
                   }}>
-                    Maybe Later
+                    {t('tourDemo.upgrade.skip')}
                   </Text>
                 </TouchableOpacity>
               </Animated.View>

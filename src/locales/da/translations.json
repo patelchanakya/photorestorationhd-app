@@ -5,7 +5,9 @@
   "explore": {
     "header": {
       "title": "Clever",
-      "pro": "PRO"
+      "pro": "PRO",
+      "upgrade": "Opgradering",
+      "rateUs": "Vurder Os"
     },
     "sections": {
       "popular": "Populær",
@@ -24,7 +26,7 @@
       "brighten": "Gør lysere"
     },
     "writeYourOwn": "Skriv dit eget",
-    "byClever": "af clever",
+    "byClever": "med Clever",
     "rateUs": {
       "title": "Bedøm os",
       "subtitle": "Skriv en anmeldelse, det hjælper os meget!"
@@ -760,7 +762,7 @@
           },
           "photos": {
             "title": "Fototilladelse påkrævet",
-            "message": "For at gemme fotos skal du tillade adgang til dit fotobibliotek i Indstillinger > Beskyttelse af personlige oplysninger og sikkerhed > Fotos."
+            "message": "Tryk på \"Åbn indstillinger\" eller gå til Indstillinger → Clever → Fotos."
           }
         },
         "processing": {
@@ -1035,6 +1037,26 @@
       "description": "Vi har brug for tilladelse til at gemme dit\narbejde på dine fotos.",
       "saveWork": "Gem mit arbejde",
       "notNow": "Ikke nu"
+    },
+    "tourDemo": {
+      "screen": {
+        "title": "Farvelagt Foto"
+      },
+      "actions": {
+        "share": "Del",
+        "save": "Gem"
+      },
+      "success": {
+        "title": "Det er så nemt!",
+        "description": "Nu ved du, hvordan du bruger alle vores værktøjer.",
+        "complete": "✓ Tutorial Fuldført"
+      },
+      "upgrade": {
+        "title": "Lås Pro-funktioner op",
+        "features": "Ubegrænset gendannelse • Premium stile • Prioritetsbehandling",
+        "action": "Få Ubegrænset",
+        "skip": "Måske Senere"
+      }
     },
     "showcase": {
       "sectionHeader": "Med Clever:",

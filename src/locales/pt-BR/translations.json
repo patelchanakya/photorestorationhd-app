@@ -5,7 +5,9 @@
   "explore": {
     "header": {
       "title": "Clever",
-      "pro": "PRO"
+      "pro": "PRO",
+      "upgrade": "Upgrade",
+      "rateUs": "Avalie-nos"
     },
     "sections": {
       "popular": "Popular",
@@ -24,7 +26,7 @@
       "brighten": "Iluminar"
     },
     "writeYourOwn": "Escreva o seu Próprio",
-    "byClever": "por clever",
+    "byClever": "com Clever",
     "rateUs": {
       "title": "Avalie-nos",
       "subtitle": "Deixe uma avaliação, isso nos ajuda muito!"
@@ -761,7 +763,7 @@
       },
       "photos": {
         "title": "Acesso às Fotos Necessário",
-        "message": "Para salvar fotos, por favor, permita o acesso à sua biblioteca de fotos em Ajustes > Privacidade e Segurança > Fotos."
+        "message": "Toque em \"Abrir Configurações\" ou vá para Configurações → Clever → Fotos."
       }
     },
     "processing": {
@@ -1035,6 +1037,26 @@
     "description": "Precisamos de permissão para salvar seu\ntrabalho em suas fotos.",
     "saveWork": "Salvar Meu Trabalho",
     "notNow": "Agora Não"
+  },
+  "tourDemo": {
+    "screen": {
+      "title": "Foto Colorizada"
+    },
+    "actions": {
+      "share": "Compartilhar",
+      "save": "Salvar"
+    },
+    "success": {
+      "title": "É assim mesmo!",
+      "description": "Agora você sabe como usar todas as nossas ferramentas.",
+      "complete": "✓ Tutorial Concluído"
+    },
+    "upgrade": {
+      "title": "Desbloquear Recursos Pro",
+      "features": "Restaurações ilimitadas • Estilos premium • Processamento prioritário",
+      "action": "Obter Ilimitado",
+      "skip": "Talvez Mais Tarde"
+    }
   },
   "showcase": {
     "sectionHeader": "Com o Clever:",
