@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, ActivityIndicator, Text, Alert } from 'react-native';
 import ExpoImageCropTool, { OpenCropperResult } from 'expo-image-crop-tool';
+import { useTranslation } from 'react-i18next';
 
 interface CustomImageCropperProps {
   imageUri: string;
@@ -13,6 +14,7 @@ export function CustomImageCropper({
   onEditingComplete,
   onEditingCancel,
 }: CustomImageCropperProps) {
+  const { t } = useTranslation();
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
@@ -60,7 +62,7 @@ export function CustomImageCropper({
         }
 
         // Show error alert for other errors
-        Alert.alert('Error', 'Failed to crop image. Please try again.');
+        Alert.alert(t('imageCropper.alerts.cropError.title'), t('imageCropper.alerts.cropError.message'));
         onEditingCancel();
       } finally {
         setIsProcessing(false);
@@ -75,7 +77,7 @@ export function CustomImageCropper({
     <View className="flex-1 bg-black justify-center items-center">
       <ActivityIndicator size="large" color="#f97316" />
       <Text className="text-white mt-4 text-center">
-        {isProcessing ? 'Processing...' : 'Opening cropper...'}
+        {isProcessing ? t('imageCropper.status.processing') : t('imageCropper.status.openingCropper')}
       </Text>
     </View>
   );

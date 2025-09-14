@@ -122,7 +122,7 @@ export default function RestorationScreen() {
       }
     } catch (error) {
       console.error('Failed to load restoration:', error);
-      Alert.alert('Error', 'Failed to load restoration details');
+      Alert.alert(t('restoration.alerts.loadFailed.title'), t('restoration.alerts.loadFailed.message'));
     } finally {
       setLoading(false);
     }
@@ -275,9 +275,9 @@ export default function RestorationScreen() {
       clearProcessingProgress();
       setIsProcessing(false);
       Alert.alert(
-        t('restoration.processingFailed'),
-        photoRestoration.error?.message || 'Something went wrong. Please try again.',
-        [{ text: 'OK' }]
+        t('restoration.alerts.processingFailed.title'),
+        photoRestoration.error?.message || t('restoration.alerts.processingFailed.message'),
+        [{ text: t('common.ok') }]
       );
     }
   }, [photoRestoration.isError, photoRestoration.error, clearProcessingProgress, setIsProcessing]);
@@ -358,25 +358,25 @@ export default function RestorationScreen() {
       // Check if it's a permission error and show helpful dialog
       if (err.message?.includes('Photo library access denied') || err.message?.includes('permission')) {
         Alert.alert(
-          'Photo Access Required',
-          'To save photos, please allow access to your photo library in Settings > Privacy & Security > Photos.',
+          t('restoration.alerts.photoAccessRequired.title'),
+          t('restoration.alerts.photoAccessRequired.message'),
           [
-            { 
-              text: 'Open Settings', 
+            {
+              text: t('restoration.alerts.photoAccessRequired.buttons.openSettings'),
               onPress: () => {
                 if (Platform.OS === 'ios') {
                   Linking.openURL('app-settings:');
                 }
               }
             },
-            { 
-              text: 'Share Instead', 
+            {
+              text: t('restoration.alerts.photoAccessRequired.buttons.shareInstead'),
               onPress: () => {
                 // Auto-trigger share as fallback
                 handleShare();
               }
             },
-            { text: 'Cancel', style: 'cancel' }
+            { text: t('restoration.alerts.photoAccessRequired.buttons.cancel'), style: 'cancel' }
           ]
         );
       } else {
@@ -422,7 +422,7 @@ export default function RestorationScreen() {
             
             const shareResult = await Share.share({
               url: shareUrl,
-              message: 'Check out my restored photo!',
+              message: t('sharing.defaultMessage'),
             });
             
             if (__DEV__) {
@@ -436,11 +436,11 @@ export default function RestorationScreen() {
             
             // Show a simple error with option to try again
             Alert.alert(
-              'Unable to Share', 
-              'Please try the Share button instead, or check your device settings.',
+              t('restoration.alerts.unableToShare.title'),
+              t('restoration.alerts.unableToShare.message'),
               [
-                { text: 'Try Share Button', onPress: handleShare },
-                { text: 'OK', style: 'cancel' }
+                { text: t('restoration.alerts.unableToShare.buttons.tryShareButton'), onPress: handleShare },
+                { text: t('restoration.alerts.unableToShare.buttons.ok'), style: 'cancel' }
               ]
             );
           }
@@ -485,7 +485,7 @@ export default function RestorationScreen() {
         
         const shareResult = await Share.share({
           url: shareUrl,
-          message: 'Check out my restored photo!',
+          message: t('sharing.defaultMessage'),
         });
         
         if (__DEV__) {
@@ -496,7 +496,7 @@ export default function RestorationScreen() {
         
       } catch (rnShareError: any) {
         console.error('Both share methods failed:', rnShareError);
-        Alert.alert('Share Failed', 'Unable to share photo. Please try again.');
+        Alert.alert(t('restoration.alerts.shareFailed.title'), t('restoration.alerts.shareFailed.message'));
       }
     }
   };
@@ -518,7 +518,7 @@ export default function RestorationScreen() {
       router.back();
     } catch (error) {
       console.error('Failed to delete restoration:', error);
-      Alert.alert('Error', 'Failed to delete restoration');
+      Alert.alert(t('restoration.alerts.deleteFailed.title'), t('restoration.alerts.deleteFailed.message'));
     }
   };
 
@@ -541,11 +541,11 @@ export default function RestorationScreen() {
     } else {
       // Fallback for Android
       Alert.alert(
-        'Delete Restoration',
-        'Are you sure you want to delete this restoration? This action cannot be undone.',
+        t('restoration.alerts.deleteConfirmation.title'),
+        t('restoration.alerts.deleteConfirmation.message'),
         [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Delete', style: 'destructive', onPress: handleDelete },
+          { text: t('restoration.alerts.deleteConfirmation.buttons.cancel'), style: 'cancel' },
+          { text: t('restoration.alerts.deleteConfirmation.buttons.delete'), style: 'destructive', onPress: handleDelete },
         ]
       );
     }

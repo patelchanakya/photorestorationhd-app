@@ -139,7 +139,7 @@ export default function HomeGalleryLikeScreen() {
         const overlayTimer = setTimeout(() => {
           setShowTourOverlay(true);
           measureElementForStep(0);
-        }, 800); // Extra delay for scroll to complete
+        }, 500); // Delay for scroll to complete
 
         return () => clearTimeout(overlayTimer);
       }, 500); // Small delay to ensure elements are rendered
@@ -429,9 +429,9 @@ export default function HomeGalleryLikeScreen() {
                 } catch {
                   // If native review fails, show fallback
                   Alert.alert(
-                    'Rate Clever',
-                    'Thank you for using Clever! Please visit the App Store to rate us.',
-                    [{ text: 'Got it!' }]
+                    t('explore.alerts.rateClever.title'),
+                    t('explore.alerts.rateClever.message'),
+                    [{ text: t('explore.alerts.rateClever.button') }]
                   );
                 }
               }}
@@ -459,28 +459,28 @@ export default function HomeGalleryLikeScreen() {
                 });
                 
                 Alert.prompt(
-                  'Request Feature',
-                  'What feature would you like to see added?',
+                  t('explore.alerts.requestFeature.title'),
+                  t('explore.alerts.requestFeature.message'),
                   async (text) => {
                     if (text && text.trim()) {
                       try {
                         const result = await featureRequestService.submitRequest(text, undefined, isPro, 'feature');
                         if (result.success) {
                           Alert.alert(
-                            'Thank You!',
-                            'Your feature request has been submitted. We\'ll review it and consider it for future updates.'
+                            t('explore.alerts.requestFeature.thankYou.title'),
+                            t('explore.alerts.requestFeature.thankYou.message')
                           );
                         } else {
-                          Alert.alert('Error', result.error || 'Failed to submit request');
+                          Alert.alert(t('explore.alerts.error'), result.error || t('explore.alerts.failedToSubmit'));
                         }
                       } catch (error) {
-                        Alert.alert('Error', 'An unexpected error occurred');
+                        Alert.alert(t('explore.alerts.error'), t('explore.alerts.unexpectedError'));
                       }
                     }
                   },
                   'plain-text',
                   '',
-                  'Describe the feature you\'d like to see...'
+                  t('explore.alerts.requestFeature.placeholder')
                 );
               }}
             >
@@ -507,28 +507,28 @@ export default function HomeGalleryLikeScreen() {
                 });
                 
                 Alert.prompt(
-                  'Report Bug',
-                  'What bug did you encounter?',
+                  t('explore.alerts.reportBug.title'),
+                  t('explore.alerts.reportBug.message'),
                   async (text) => {
                     if (text && text.trim()) {
                       try {
                         const result = await featureRequestService.submitRequest(text, undefined, isPro, 'bug');
                         if (result.success) {
                           Alert.alert(
-                            'Thank You!',
-                            'Your bug report has been submitted. We\'ll investigate and work on a fix.'
+                            t('explore.alerts.reportBug.thankYou.title'),
+                            t('explore.alerts.reportBug.thankYou.message')
                           );
                         } else {
-                          Alert.alert('Error', result.error || 'Failed to submit bug report');
+                          Alert.alert(t('explore.alerts.error'), result.error || t('explore.alerts.failedToSubmit'));
                         }
                       } catch (error) {
-                        Alert.alert('Error', 'An unexpected error occurred');
+                        Alert.alert(t('explore.alerts.error'), t('explore.alerts.unexpectedError'));
                       }
                     }
                   },
                   'plain-text',
                   '',
-                  'Describe the bug you encountered...'
+                  t('explore.alerts.reportBug.placeholder')
                 );
               }}
             >

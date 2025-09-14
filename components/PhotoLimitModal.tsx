@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Modal, Platform, Dimensions } from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { useTranslation } from 'react-i18next';
 import { presentPaywall } from '@/services/revenuecat';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,6 +30,7 @@ export function PhotoLimitModal({
   onClose, 
   onTrialStart
 }: PhotoLimitModalProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = Dimensions.get('window');
   
@@ -125,23 +127,23 @@ export function PhotoLimitModal({
   const proFeatures = [
     {
       icon: '🚀',
-      title: 'Unlimited Photo Restorations',
-      description: 'No limits on photo processing'
+      title: t('modals.photoLimit.features.unlimited.title'),
+      description: t('modals.photoLimit.features.unlimited.description')
     },
     {
       icon: '⚡',
-      title: 'Priority Processing',
-      description: 'Your photos process faster'
+      title: t('modals.photoLimit.features.priority.title'),
+      description: t('modals.photoLimit.features.priority.description')
     },
     {
       icon: '🪄',
-      title: 'Advanced Features',
-      description: 'Text edits and premium tools'
+      title: t('modals.photoLimit.features.advanced.title'),
+      description: t('modals.photoLimit.features.advanced.description')
     },
     {
       icon: '💾',
-      title: 'Download and Keep Forever',
-      description: 'Save all your restored photos permanently'
+      title: t('modals.photoLimit.features.download.title'),
+      description: t('modals.photoLimit.features.download.description')
     }
   ];
 
@@ -205,35 +207,35 @@ export function PhotoLimitModal({
                       borderColor: 'rgba(255,255,255,0.2)'
                     }}
                   >
-                    <Text style={{ 
-                      color: '#0B0B0F', 
+                    <Text style={{
+                      color: '#0B0B0F',
                       fontFamily: 'Lexend-Black',
                       fontSize: 14,
                       textAlign: 'center'
                     }}>
-                      TRY FREE FOR 3 DAYS
+                      {t('modals.photoLimit.badge')}
                     </Text>
                   </LinearGradient>
                 </Animated.View>
 
-                <Text style={{ 
-                  fontSize: 24, 
-                  fontFamily: 'Lexend-Bold', 
+                <Text style={{
+                  fontSize: 24,
+                  fontFamily: 'Lexend-Bold',
                   color: '#FFFFFF',
                   textAlign: 'center',
                   marginBottom: 12
                 }}>
-                  Free Restorations Reached
+                  {t('modals.photoLimit.title')}
                 </Text>
 
-                <Text style={{ 
-                  fontSize: 16, 
+                <Text style={{
+                  fontSize: 16,
                   fontFamily: 'Lexend-Regular',
                   color: 'rgba(255, 255, 255, 0.85)',
                   textAlign: 'center',
                   lineHeight: 22
                 }}>
-                  We use expensive computers to run these transformations. Please consider subscribing to remove photo limits!
+                  {t('modals.photoLimit.message')}
                 </Text>
               </View>
 
@@ -303,12 +305,12 @@ export function PhotoLimitModal({
                       alignItems: 'center'
                     }}
                   >
-                    <Text style={{ 
-                      color: '#0B0B0F', 
-                      fontFamily: 'Lexend-Bold', 
+                    <Text style={{
+                      color: '#0B0B0F',
+                      fontFamily: 'Lexend-Bold',
                       fontSize: 17
                     }}>
-                      Start Free Trial
+                      {t('modals.photoLimit.buttons.startTrial')}
                     </Text>
                   </LinearGradient>
                 </TouchableOpacity>
@@ -327,12 +329,12 @@ export function PhotoLimitModal({
                   }}
                   activeOpacity={0.7}
                 >
-                  <Text style={{ 
-                    color: 'rgba(255,255,255,0.9)', 
-                    fontSize: 16, 
+                  <Text style={{
+                    color: 'rgba(255,255,255,0.9)',
+                    fontSize: 16,
                     fontFamily: 'Lexend-SemiBold'
                   }}>
-                    Maybe Later
+                    {t('modals.photoLimit.buttons.later')}
                   </Text>
                 </TouchableOpacity>
               </View>

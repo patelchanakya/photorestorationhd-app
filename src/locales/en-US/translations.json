@@ -548,6 +548,12 @@
       "title": "Choose a Photo",
       "description": "Pick any photo to restore, enhance, or repair damage."
     },
+    "permissions": {
+      "alertTitle": "Get the most out of Clever",
+      "alertMessage": "Enable photo access to save your enhanced photos.",
+      "notNow": "Not Now",
+      "openSettings": "Open Settings"
+    },
     "generate": {
       "title": "Tap to Generate",
       "description": "Hit the checkmark to create your result."
@@ -559,7 +565,30 @@
     "buttons": {
       "skip": "Skip",
       "next": "Next",
-      "gotIt": "Got it"
+      "gotIt": "Got it",
+      "viewResult": "View Result",
+      "save": "Save",
+      "crop": "Crop"
+    },
+    "processing": {
+      "uploadingPhoto": "Uploading photo…",
+      "runningMagic": "Running magic…",
+      "fixingDamage": "Fixing damage…",
+      "enhancingDetails": "Enhancing details…",
+      "almostDone": "Almost done…",
+      "pleaseWait": "Please wait a few seconds"
+    },
+    "success": {
+      "title": "It's that easy!",
+      "description": "Now you know how to use all our tools.",
+      "complete": "✓ Tutorial Complete",
+      "unlockPro": "Unlock Pro Features",
+      "features": "Unlimited restorations • Premium styles • Priority processing",
+      "getUnlimited": "Get Unlimited",
+      "maybeLater": "Maybe Later"
+    },
+    "sheet": {
+      "colorizePhoto": "Colorize Photo"
     }
   },
   "onboardingV4": {
@@ -630,12 +659,12 @@
       "startExploring": "Start Exploring",
       "loading": "Loading...",
       "backgrounds": {
-        "title": "Change Backgrounds",
+        "title": "Change Backgrounds & Outfits",
         "subtitle": "Studio, beach, nature, or remove entirely"
       },
       "outfits": {
         "title": "Enhance Special Moments",
-        "subtitle": "Weddings, graduations, celebrations"
+        "subtitle": "Weddings, graduations & celebrations"
       },
       "memorial": {
         "title": "Preserve Memories",

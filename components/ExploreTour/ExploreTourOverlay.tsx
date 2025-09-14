@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, useWindowDimensions, Pressable } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, useWindowDimensions, Pressable, Alert, Linking } from 'react-native';
 import Animated, { 
   useAnimatedStyle, 
   useSharedValue, 
@@ -24,6 +24,7 @@ import { Asset } from 'expo-asset';
 import { LinearGradient } from 'expo-linear-gradient';
 import { presentPaywall } from '@/services/revenuecat';
 import { useTranslation } from 'react-i18next';
+import * as MediaLibrary from 'expo-media-library';
 
 interface TourStep {
   id: string;
@@ -67,8 +68,11 @@ export function ExploreTourOverlay({
   onComplete,
   onCTAPress
 }: ExploreTourOverlayProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const safeAreaInsets = useSafeAreaInsets();
+
+  // Force re-render when language changes (matches explore.tsx pattern)
+  const currentLanguage = i18n.language;
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
   const savePhotoMutation = useSavePhoto();
   const router = useRouter();
@@ -120,11 +124,11 @@ export function ExploreTourOverlay({
   
   // Progress-based loading messages (matching real QuickEditSheet)
   const getTourLoadingMessage = (p: number) => {
-    if (p < 20) return 'Uploading photo…';
-    if (p < 40) return 'Running magic…';
-    if (p < 70) return 'Fixing damage…';
-    if (p < 90) return 'Enhancing details…';
-    return 'Almost done…';
+    if (p < 20) return t('tour.processing.uploadingPhoto');
+    if (p < 40) return t('tour.processing.runningMagic');
+    if (p < 70) return t('tour.processing.fixingDamage');
+    if (p < 90) return t('tour.processing.enhancingDetails');
+    return t('tour.processing.almostDone');
   };
 
   // Centralized generate action for both buttons
@@ -176,7 +180,7 @@ export function ExploreTourOverlay({
         originalImageUri: originalUri,
         restoredImageUri: restoredUri,
         functionType: 'colorize' as const,
-        styleName: 'Colorize Photo',
+        styleName: t('tour.sheet.colorizePhoto'),
         createdAt: new Date().toISOString(),
         isTourDemo: true
       };
@@ -256,22 +260,55 @@ export function ExploreTourOverlay({
     }
   }, [highlightArea]);
 
+  // Check and request photo permissions if needed
+  const checkPhotoPermissions = React.useCallback(async () => {
+    try {
+      const { status } = await MediaLibrary.getPermissionsAsync();
+
+      if (status === 'denied') {
+        // Previously denied - show alert to go to settings
+        Alert.alert(
+          t('tour.permissions.alertTitle'),
+          t('tour.permissions.alertMessage'),
+          [
+            { text: t('tour.permissions.notNow'), style: 'cancel' },
+            {
+              text: t('tour.permissions.openSettings'),
+              onPress: () => Linking.openSettings()
+            }
+          ]
+        );
+      } else if (status !== 'granted') {
+        // Never asked before - request permissions
+        await MediaLibrary.requestPermissionsAsync();
+      }
+    } catch (error) {
+      console.log('Photo permission check failed:', error);
+    }
+  }, []);
+
+  // Combined handler for completion with permission check
+  const handleCompletionWithPermissions = React.useCallback(async () => {
+    await checkPhotoPermissions();
+    onComplete();
+  }, [checkPhotoPermissions, onComplete]);
+
   // Success animation sequence - smooth and premium
   const startSuccessAnimation = React.useCallback(() => {
     // Immediate feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    
+
     // Smooth button feedback
     buttonScale.value = withSpring(0.95, { damping: 20, stiffness: 300 });
-    
+
     // Hide original content first
     tooltipOpacity.value = withTiming(0, { duration: 300 });
-    
+
     // Show success state with coordinated delay
     addTimeout(() => {
       setShowSuccess(true);
     }, 300);
-    
+
     // Smooth entrance animations with consistent timing
     successOpacity.value = withDelay(300, withSpring(1, { damping: 20, stiffness: 80 }));
     successScale.value = withDelay(300, withSpring(1, { damping: 18, stiffness: 100 }));
@@ -325,15 +362,16 @@ export function ExploreTourOverlay({
 
   // Smooth exit animation function
   const handleSmoothExit = React.useCallback(() => {
-    exitOpacity.value = withTiming(0, { 
-      duration: 600, 
-      easing: Easing.in(Easing.cubic) 
+    exitOpacity.value = withTiming(0, {
+      duration: 600,
+      easing: Easing.in(Easing.cubic)
     }, (finished) => {
       if (finished) {
-        runOnJS(onComplete)();
+        // Check photo permissions when success modal closes
+        runOnJS(handleCompletionWithPermissions)();
       }
     });
-  }, [exitOpacity, onComplete]);
+  }, [exitOpacity, handleCompletionWithPermissions]);
 
 
   if (!visible || !steps[currentStep]) {
@@ -494,7 +532,7 @@ export function ExploreTourOverlay({
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <View style={{ width: 24, height: 24 }} />
             <Text style={{ color: '#EAEAEA', fontSize: 16, fontFamily: 'Lexend-Bold' }}>
-              Colorize Photo
+              {t('tour.sheet.colorizePhoto')}
             </Text>
             <View style={{ width: 24, height: 24 }} />
           </View>
@@ -524,7 +562,7 @@ export function ExploreTourOverlay({
             {tourLoading && (
               <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.65)', alignItems: 'center', justifyContent: 'center' }}>
                 <View style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.4)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' }}>
-                  <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, textAlign: 'center', marginBottom: 4 }}>Please wait a few seconds</Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, textAlign: 'center', marginBottom: 4 }}>{t('tour.processing.pleaseWait')}</Text>
                   <Text style={{ color: '#F59E0B', fontSize: 16, fontFamily: 'Lexend-Black', textAlign: 'center' }}>
                     {getTourLoadingMessage(tourProgress)}
                   </Text>
@@ -551,7 +589,7 @@ export function ExploreTourOverlay({
                   opacity: tourLoading ? 0.5 : 1
                 }}
               >
-                <Text style={{ color: '#fff', fontWeight: '900', fontSize: 16 }}>Crop</Text>
+                <Text style={{ color: '#fff', fontWeight: '900', fontSize: 16 }}>{t('tour.buttons.crop')}</Text>
               </TouchableOpacity>
               
               {/* Generate Button Container with Highlight */}
@@ -633,7 +671,7 @@ export function ExploreTourOverlay({
                   }
                 }}
               >
-                <Text style={{ color: '#fff', fontFamily: 'Lexend-Bold', fontSize: 16 }}>View Result</Text>
+                <Text style={{ color: '#fff', fontFamily: 'Lexend-Bold', fontSize: 16 }}>{t('tour.buttons.viewResult')}</Text>
               </TouchableOpacity>
               
               <Animated.View style={{ flex: 1 }}>
@@ -648,49 +686,83 @@ export function ExploreTourOverlay({
                   }}
                   onPress={async () => {
                     console.log('🎯 Save button clicked in tour');
+
+                    // Check and request photo permissions first using the existing function
                     try {
+                      const { status: currentStatus } = await MediaLibrary.getPermissionsAsync();
+
+                      if (currentStatus === 'denied') {
+                        // Previously denied - show alert to go to settings
+                        Alert.alert(
+                          t('tour.permissions.alertTitle'),
+                          t('tour.permissions.alertMessage'),
+                          [
+                            {
+                              text: t('tour.permissions.notNow'),
+                              style: 'cancel',
+                              onPress: () => {
+                                // Still show tour success even if permissions denied
+                                startSuccessAnimation();
+                              }
+                            },
+                            {
+                              text: t('tour.permissions.openSettings'),
+                              onPress: () => {
+                                Linking.openSettings();
+                                // Show tour success after user returns from settings
+                                addTimeout(() => {
+                                  startSuccessAnimation();
+                                }, 1000);
+                              }
+                            }
+                          ]
+                        );
+                        return;
+                      } else if (currentStatus !== 'granted') {
+                        // Never asked before - request permissions
+                        const { status: newStatus } = await MediaLibrary.requestPermissionsAsync();
+                        if (newStatus !== 'granted') {
+                          // User denied permission request - show tour success anyway
+                          startSuccessAnimation();
+                          return;
+                        }
+                      }
+
+                      // Permissions granted - proceed with save
                       // Show saving modal first
                       setShowSavingModal(true);
-                      
+
                       // Haptic feedback
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-                      
+
                       // Load the bundled asset using expo-asset for proper handling
                       const asset = Asset.fromModule(require('../../assets/images/clr.jpeg'));
                       await asset.downloadAsync();
-                      
-                      // Use MediaLibrary for direct saving (more reliable than useSavePhoto hook)
-                      const { requestPermissionsAsync, createAssetAsync } = await import('expo-media-library');
-                      const { status } = await requestPermissionsAsync();
-                      
-                      if (status !== 'granted') {
-                        throw new Error('Photo library access denied');
-                      }
-                      
+
                       // Save to camera roll
-                      const mediaAsset = await createAssetAsync(asset.localUri || asset.uri);
+                      const mediaAsset = await MediaLibrary.createAssetAsync(asset.localUri || asset.uri);
                       console.log('🎯 Demo image saved successfully:', mediaAsset.id);
-                      
+
                       // Trigger success state in saving modal
                       savingModalRef.current?.showSuccess();
-                      
+
                       // Show success feedback
                       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                      
+
                       // After saving modal completes, show tour success modal
                       addTimeout(() => {
                         startSuccessAnimation();
                       }, 800); // Give saving modal time to complete
-                      
+
                     } catch (error) {
                       console.error('🎯 Failed to save demo image:', error);
-                      
+
                       // Hide saving modal on error
                       setShowSavingModal(false);
-                      
+
                       // Show error feedback
                       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                      
+
                       // Still show tour success even if save failed
                       addTimeout(() => {
                         startSuccessAnimation();
@@ -707,7 +779,7 @@ export function ExploreTourOverlay({
                     backgroundColor: '#10B981'
                   }} />
                   <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ color: '#0B0B0F', fontFamily: 'Lexend-Bold', fontSize: 16 }}>Save</Text>
+                    <Text style={{ color: '#0B0B0F', fontFamily: 'Lexend-Bold', fontSize: 16 }}>{t('tour.buttons.save')}</Text>
                   </View>
                 </TouchableOpacity>
               </Animated.View>
@@ -785,7 +857,7 @@ export function ExploreTourOverlay({
             textAlign: 'center',
             marginBottom: 8
           }}>
-It's that easy!
+{t('tour.success.title')}
           </Text>
           
           <Text style={{
@@ -794,7 +866,7 @@ It's that easy!
             textAlign: 'center',
             lineHeight: 20
           }}>
-Now you know how to use all our tools.
+{t('tour.success.description')}
           </Text>
         </View>
 
@@ -818,7 +890,7 @@ Now you know how to use all our tools.
               textAlign: 'center',
               fontFamily: 'Lexend-Medium'
             }}>
-              ✓ Tutorial Complete
+              {t('tour.success.complete')}
             </Text>
           </View>
         </View>
@@ -841,7 +913,7 @@ Now you know how to use all our tools.
                 color: '#10B981',
                 marginLeft: 6
               }}>
-                Unlock Pro Features
+                {t('tour.success.unlockPro')}
               </Text>
             </View>
           </View>
@@ -853,7 +925,7 @@ Now you know how to use all our tools.
             marginBottom: 16,
             textAlign: 'center'
           }}>
-            Unlimited restorations • Premium styles • Priority processing
+            {t('tour.success.features')}
           </Text>
           
           <TouchableOpacity
@@ -869,12 +941,12 @@ Now you know how to use all our tools.
               try {
                 // Show paywall
                 await presentPaywall();
-                // After paywall, complete the tour
-                onComplete();
+                // After paywall, check permissions and complete the tour
+                await handleCompletionWithPermissions();
               } catch (error) {
                 console.error('Paywall error:', error);
-                // If paywall fails, still complete the tour
-                onComplete();
+                // If paywall fails, still check permissions and complete the tour
+                await handleCompletionWithPermissions();
               }
             }}
           >
@@ -895,7 +967,7 @@ Now you know how to use all our tools.
               fontSize: 15,
               fontFamily: 'Lexend-Bold'
             }}>
-              Get Unlimited
+              {t('tour.success.getUnlimited')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -911,7 +983,7 @@ Now you know how to use all our tools.
             textAlign: 'center',
             fontFamily: 'Lexend-Medium'
           }}>
-            Maybe Later
+            {t('tour.success.maybeLater')}
           </Text>
         </TouchableOpacity>
         </Animated.View>

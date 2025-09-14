@@ -59,14 +59,14 @@ export function ResultConversionScreen({
       // Use the restored photo URI, or fallback to before photo
       const imageUri = afterPhoto?.uri || beforePhoto?.uri;
       if (!imageUri) {
-        Alert.alert('Error', 'No photo available to share.');
+        Alert.alert(t('common.error'), t('alerts.noPhotoAvailable'));
         return;
       }
 
       // Open native iOS share sheet
       const shareResult = await Share.share({
         url: imageUri,
-        message: 'Check out my restored photo!',
+        message: t('sharing.defaultMessage'),
       });
 
       // Mark as shared if user completed the share action
@@ -76,7 +76,7 @@ export function ResultConversionScreen({
 
     } catch (error) {
       console.error('Failed to share photo:', error);
-      Alert.alert('Error', 'Failed to share photo.');
+      Alert.alert(t('common.error'), t('alerts.errors.sharing.message'));
     } finally {
       setIsSharing(false);
     }

@@ -38,30 +38,35 @@ const TOUR_STYLE_TILES = [
   { id: 'enlighten', title: 'Brighten', image: '☀️' },
 ];
 
-const TOUR_STEPS = [
+// Tour steps with translation keys
+const getTourSteps = (t: any) => [
   {
     id: 'navigation',
-    title: 'Navigate between your tools',
-    description: 'Switch between restoration types',
+    title: t('tour.steps.navigation.title'),
+    description: t('tour.steps.navigation.description'),
     duration: 2000,
   },
   {
     id: 'selection',
-    title: 'Choose your restoration style',
-    description: 'Pick the tool for your photo',
+    title: t('tour.steps.selection.title'),
+    description: t('tour.steps.selection.description'),
     duration: 3000,
   },
   {
     id: 'preview',
-    title: 'Your photo appears here → Start creating',
-    description: 'Tap to begin your restoration',
+    title: t('tour.steps.preview.title'),
+    description: t('tour.steps.preview.description'),
     duration: 5000,
   },
 ];
 
 export function QuickTourScreen({ onComplete, onSkip }: QuickTourScreenProps) {
   const insets = useSafeAreaInsets();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+  // Force re-render when language changes (matches explore.tsx pattern)
+  const currentLanguage = i18n.language;
+  const TOUR_STEPS = getTourSteps(t);
   const [currentStep, setCurrentStep] = React.useState(0);
   const [isAutoAdvancing, setIsAutoAdvancing] = React.useState(true);
   const [isExiting, setIsExiting] = React.useState(false);
@@ -231,7 +236,7 @@ export function QuickTourScreen({ onComplete, onSkip }: QuickTourScreenProps) {
         <View style={styles.header}>
           <Animated.View style={buttonsStyle}>
             <OnboardingButton
-              title="Skip"
+              title={t('tour.buttons.skip')}
               onPress={handleSkip}
               variant="ghost"
               size="small"
@@ -345,7 +350,7 @@ export function QuickTourScreen({ onComplete, onSkip }: QuickTourScreenProps) {
         <View style={[styles.bottomContent, { paddingBottom: insets.bottom + 20 }]}>
           <Animated.View style={buttonsStyle}>
             <OnboardingButton
-              title="Got it!"
+              title={t('tour.buttons.gotIt')}
               onPress={handleComplete}
               variant="primary"
               size="large"

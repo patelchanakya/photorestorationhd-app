@@ -1,545 +1,595 @@
 {
   "app": {
-  "name": "كليفر"
+    "name": "Clever"
   },
   "explore": {
-  "header": {
-  "title": "كليفر",
-  "pro": "برو"
-  },
-  "sections": {
-  "popular": "شائع",
-  "fixMyPhoto": "استعادة تلقائية",
-  "backgrounds": "الخلفيات",
-  "memorial": "نصب تذكاري",
-  "faceBody": "الوجه والجسم",
-  "addRemove": "إضافة/إزالة",
-  "outfits": "الملابس",
-  "magic": "ترميم الصور",
-  "waterDamage": "أضرار المياه",
-  "clarify": "توضيح",
-  "repair": "إصلاح",
-  "colourise": "تلوين",
-  "descratch": "إزالة الخدوش",
-  "brighten": "تفتيح"
-  },
-  "writeYourOwn": "اكتب بنفسك",
-  "byClever": "بواسطة كليفر",
-  "rateUs": {
-  "title": "قيمنا",
-  "subtitle": "اترك تقييماً، إنه يساعدنا كثيراً!"
-  },
-  "requestFeature": {
-  "title": "اطلب ميزة",
-  "subtitle": "اقترح ميزات جديدة للتطبيق"
-  },
-  "reportBug": {
-  "title": "أبلغ عن خطأ",
-  "subtitle": "ساعدنا في إصلاح المشكلات التي واجهتها"
-  },
-  "alerts": {
-  "proMember": {
-  "title": "عضو برو ✓",
-  "message": "اشتراكك نشط! لديك وصول غير محدود لجميع الميزات.",
-  "button": "رائع!"
-  },
-  "subscriptionStatus": {
-  "title": "حالة الاشتراك",
-  "noActiveMessage": "لم يتم العثور على اشتراك نشط. سيكون لديك وصول إلى الميزات المجانية.",
-  "button": "حسناً"
-  },
-  "subscriptionCheck": {
-  "title": "فحص الاشتراك",
-  "message": "لم يتم العثور على اشتراك نشط على معرف Apple هذا. الرجاء تسجيل الدخول باستخدام معرف Apple المستخدم للشراء.",
-  "howToFix": "كيفية الإصلاح",
-  "howToFixTitle": "كيفية إصلاح الاشتراك",
-  "howToFixMessage": "1. انتقل إلى الإعدادات ← App Store\n2. قم بتسجيل الدخول باستخدام معرف Apple المستخدم للشراء\n3. ارجع إلى كليفر واضغط على شارة برو مرة أخرى",
-  "gotIt": "فهمت"
-  },
-  "proStatusCheck": {
-  "title": "فحص حالة برو",
-  "message": "غير قادر على التحقق من حالة الاشتراك. الرجاء المحاولة مرة أخرى أو التحقق من اتصالك بالإنترنت."
-  },
-  "demoMode": {
-  "title": "الوضع التجريبي",
-  "message": "المشتريات غير متاحة في Expo Go."
-  },
-  "welcomeToPro": {
-  "title": "مرحباً بك في برو!",
-  "message": "الآن لديك وصول غير محدود!",
-  "button": "رائع!"
-  },
-  "rateClever": {
-  "title": "قيم كليفر",
-  "message": "شكراً لاستخدامك كليفر! هل تود تقييمنا على متجر التطبيقات؟",
-  "cancel": "إلغاء",
-  "rateApp": "قيم التطبيق",
-  "thankYou": "شكراً لك!",
-  "visitAppStore": "يرجى زيارة متجر التطبيقات لتقييمنا.",
-  "appreciateFeedback": "نحن نقدر ملاحظاتك! إنها تساعدنا كثيراً! يرجى زيارة متجر التطبيقات لتقييمنا."
-  },
-  "requestFeature": {
-  "title": "اطلب ميزة",
-  "message": "ما هي الميزة التي تود إضافتها؟",
-  "placeholder": "صف الميزة التي تود رؤيتها...",
-  "success": "تم تقديم طلب الميزة الخاص بك. سنقوم بمراجعته والنظر فيه للتحديثات المستقبلية.",
-  "thankYou": "شكراً لك!"
-  },
-  "reportBug": {
-  "title": "أبلغ عن خطأ",
-  "message": "ما هو الخطأ الذي واجهته؟",
-  "placeholder": "صف الخطأ الذي واجهته...",
-  "success": "تم تقديم تقرير الخطأ الخاص بك. سنقوم بالتحقيق فيه والعمل على إصلاحه.",
-  "thankYou": "شكراً لك!"
-  },
-  "error": {
-  "title": "خطأ",
-  "failedSubmitRequest": "فشل في إرسال الطلب",
-  "failedSubmitBugReport": "فشل في إرسال تقرير الخطأ",
-  "unexpectedError": "حدث خطأ غير متوقع"
-  }
-  }
+    "header": {
+      "title": "Clever",
+      "pro": "احترافي"
+    },
+    "sections": {
+      "popular": "شائع",
+      "fixMyPhoto": "استعادة تلقائية",
+      "backgrounds": "خلفيات",
+      "memorial": "تذكاري",
+      "faceBody": "الوجه والجسم",
+      "addRemove": "إضافة/إزالة",
+      "outfits": "ملابس",
+      "magic": "استعادة الصور",
+      "waterDamage": "ضرر الماء",
+      "clarify": "توضيح",
+      "repair": "إصلاح",
+      "colourise": "تلوين",
+      "descratch": "إزالة الخدوش",
+      "brighten": "تفتيح"
+    },
+    "writeYourOwn": "اكتب بنفسك",
+    "byClever": "بواسطة clever",
+    "rateUs": {
+      "title": "قيمنا",
+      "subtitle": "اترك مراجعة، فهي تساعدنا كثيراً!"
+    },
+    "requestFeature": {
+      "title": "اقتراح ميزة",
+      "subtitle": "اقترح ميزات جديدة للتطبيق"
+    },
+    "reportBug": {
+      "title": "الإبلاغ عن خطأ",
+      "subtitle": "ساعدنا في إصلاح المشاكل التي واجهتها"
+    },
+    "alerts": {
+      "proMember": {
+        "title": "عضو احترافي ✓",
+        "message": "اشتراكك نشط! لديك وصول غير محدود لجميع الميزات.",
+        "button": "رائع!"
+      },
+      "subscriptionStatus": {
+        "title": "حالة الاشتراك",
+        "noActiveMessage": "لم يتم العثور على اشتراك نشط. سيكون لديك وصول إلى الميزات المجانية.",
+        "button": "موافق"
+      },
+      "rateClever": {
+        "title": "قيم Clever",
+        "message": "شكراً لاستخدامك Clever! يرجى زيارة متجر التطبيقات لتقييمنا.",
+        "button": "فهمت!"
+      },
+      "requestFeature": {
+        "title": "اقتراح ميزة",
+        "message": "ما هي الميزة التي ترغب في رؤيتها مضافة؟",
+        "placeholder": "صف الميزة التي ترغب في رؤيتها...",
+        "thankYou": {
+          "title": "شكراً لك!",
+          "message": "تم إرسال طلب الميزة الخاص بك. سنقوم بمراجعته والنظر فيه للتحديثات المستقبلية."
+        }
+      },
+      "reportBug": {
+        "title": "الإبلاغ عن خطأ",
+        "message": "ما هو الخطأ الذي واجهته؟",
+        "placeholder": "صف الخطأ الذي واجهته...",
+        "thankYou": {
+          "title": "شكراً لك!",
+          "message": "تم إرسال تقرير الخطأ الخاص بك. سنقوم بالتحقيق والعمل على إصلاحه."
+        }
+      },
+      "subscriptionCheck": {
+        "title": "التحقق من الاشتراك",
+        "message": "يرجى تسجيل الدخول باستخدام Apple ID المستخدم لشراء Pro.",
+        "howToFix": "كيفية الإصلاح",
+        "howToFixTitle": "كيفية التحقق من الاشتراك",
+        "howToFixMessage": "1. انتقل إلى الإعدادات → App Store\n2. قم بتسجيل الدخول باستخدام Apple ID الخاص بك\n3. ارجع إلى Clever وحاول مرة أخرى",
+        "gotIt": "فهمت"
+      },
+      "proStatusCheck": {
+        "title": "التحقق من حالة Pro",
+        "message": "تعذر التحقق من حالة Pro. يرجى المحاولة مرة أخرى أو الاتصال بالدعم إذا استمرت المشكلة."
+      },
+      "demoMode": {
+        "title": "وضع العرض التوضيحي",
+        "message": "المشتريات غير متاحة في Expo Go. قم ببناء التطبيق لاختبار عمليات الشراء الحقيقية."
+      },
+      "welcomeToPro": {
+        "title": "مرحباً بك في Pro!",
+        "message": "لديك الآن وصول غير محدود لجميع الميزات!",
+        "button": "رائع!"
+      },
+      "error": "خطأ",
+      "failedToSubmit": "فشل إرسال الطلب",
+      "unexpectedError": "حدث خطأ غير متوقع"
+    }
   },
   "popular": {
-  "clearSkin": "بشرة صافية",
-  "addHalo": "إضافة هالة",
-  "fixHair": "إصلاح الشعر",
-  "slimmer": "نحافة",
-  "angelWings": "أجنحة ملاك",
-  "younger": "أصغر سناً",
-  "older": "أكبر سناً",
-  "addSmile": "إضافة ابتسامة",
-  "openEyes": "افتح العيون",
-  "gardenBackground": "خلفية حديقة",
-  "studioBackground": "خلفية استوديو",
-  "softLightsBackground": "خلفية إضاءة ناعمة",
-  "heavenlyBackground": "خلفية سماوية",
-  "beachBackground": "خلفية شاطئ",
-  "officeBackground": "خلفية مكتب",
-  "natureBackground": "خلفية طبيعة",
-  "cityBackground": "خلفية مدينة",
-  "sunsetBackground": "خلفية غروب الشمس",
-  "winterBackground": "خلفية شتاء",
-  "vintageBackground": "خلفية عتيقة",
-  "abstractBackground": "خلفية مجردة",
-  "cleanBackground": "خلفية نظيفة",
-  "blurBackground": "تمويه الخلفية"
+    "clearSkin": "بشرة صافية",
+    "addHalo": "إضافة هالة",
+    "fixHair": "إصلاح الشعر",
+    "slimmer": "أكثر نحافة",
+    "angelWings": "أجنحة ملاك",
+    "younger": "أصغر سناً",
+    "older": "أكبر سناً",
+    "addSmile": "إضافة ابتسامة",
+    "openEyes": "فتح العيون",
+    "gardenBackground": "خلفية حديقة",
+    "studioBackground": "خلفية استوديو",
+    "softLightsBackground": "خلفية إضاءة ناعمة",
+    "heavenlyBackground": "خلفية سماوية",
+    "beachBackground": "خلفية شاطئ",
+    "officeBackground": "خلفية مكتب",
+    "natureBackground": "خلفية طبيعة",
+    "cityBackground": "خلفية مدينة",
+    "sunsetBackground": "خلفية غروب الشمس",
+    "winterBackground": "خلفية شتوية",
+    "vintageBackground": "خلفية قديمة",
+    "abstractBackground": "خلفية تجريدية",
+    "cleanBackground": "خلفية نظيفة",
+    "blurBackground": "خلفية ضبابية"
   },
   "memorial": {
-  "lightRays": "أشعة ضوئية",
-  "doveOfPeace": "حمامة السلام",
-  "etherealGlow": "توهج أثيري",
-  "heavenGates": "بوابات السماء",
-  "memorialFlowers": "زهور تذكارية",
-  "cleanBackground": "خلفية نظيفة",
-  "whiteBackground": "خلفية بيضاء",
-  "candlelightVigil": "سهر الشموع",
-  "restInPeace": "ارقد بسلام",
-  "heavenly": "سماوي ☁️"
+    "lightRays": "أشعة الضوء",
+    "doveOfPeace": "حمامة السلام",
+    "etherealGlow": "توهج أثيري",
+    "heavenGates": "بوابات السماء",
+    "memorialFlowers": "زهور تذكارية",
+    "cleanBackground": "خلفية نظيفة",
+    "whiteBackground": "خلفية بيضاء",
+    "candlelightVigil": "شمعة تذكارية",
+    "restInPeace": "ارقد بسلام",
+    "heavenly": "سماوي ☁️"
   },
   "backgrounds": {
-  "blurBackground": "تمويه الخلفية"
+    "blurBackground": "خلفية ضبابية"
   },
   "faceBody": {
-  "clearSkin": "بشرة صافية",
-  "addSmile": "إضافة ابتسامة",
-  "fixHair": "إصلاح الشعر",
-  "makeYounger": "اجعلني أصغر سناً",
-  "makeSlimmer": "اجعلني أنحف",
-  "teethWhitening": "تبييض الأسنان",
-  "removeWrinkles": "إزالة التجاعيد",
-  "eyeEnhancement": "تحسين العيون",
-  "fixClosedEyes": "إصلاح العيون المغلقة",
-  "removeRedEye": "إزالة العين الحمراء"
+    "clearSkin": "بشرة صافية",
+    "addSmile": "إضافة ابتسامة",
+    "fixHair": "إصلاح الشعر",
+    "makeYounger": "جعل أصغر سناً",
+    "makeSlimmer": "جعل أكثر نحافة",
+    "teethWhitening": "تبييض الأسنان",
+    "removeWrinkles": "إزالة التجاعيد",
+    "eyeEnhancement": "تحسين العين",
+    "fixClosedEyes": "إصلاح العيون المغلقة",
+    "removeRedEye": "إزالة احمرار العين"
   },
   "addRemove": {
-  "removePerson": {
-  "title": "إزالة شخص"
-  },
-  "removeObjects": {
-  "title": "إزالة كائنات"
-  },
-  "removeText": {
-  "title": "إزالة نص"
-  },
-  "removeWires": {
-  "title": "إزالة الأسلاك"
-  },
-  "addPerson": {
-  "title": "إضافة شخص"
-  },
-  "addObjects": {
-  "title": "إضافة كائنات"
-  },
-  "cloneDuplicate": {
-  "title": "استنساخ/تكرار"
-  },
-  "removeBackground": {
-  "title": "إزالة كائنات الخلفية"
-  }
+    "removePerson": {
+      "title": "إزالة شخص"
+    },
+    "removeObjects": {
+      "title": "إزالة الأشياء"
+    },
+    "removeText": {
+      "title": "إزالة نص"
+    },
+    "removeWires": {
+      "title": "إزالة الأسلاك"
+    },
+    "addPerson": {
+      "title": "إضافة شخص"
+    },
+    "addObjects": {
+      "title": "إضافة أشياء"
+    },
+    "cloneDuplicate": {
+      "title": "استنساخ/مضاعفة"
+    },
+    "removeBackground": {
+      "title": "إزالة عناصر الخلفية"
+    }
   },
   "outfits": {
-  "fixClothes": "إصلاح الملابس",
-  "changeColor": "تغيير اللون",
-  "jobInterview": "مقابلة عمل",
-  "weddingOutfit": "ملابس زفاف",
-  "professional": "احترافي",
-  "casualDay": "يوم عادي",
-  "makeDoctor": "اجعلني طبيباً"
+    "fixClothes": "إصلاح الملابس",
+    "changeColour": "تغيير اللون",
+    "jobInterview": "مقابلة عمل",
+    "weddingOutfit": "ملابس زفاف",
+    "professional": "احترافي",
+    "casualDay": "يوم عادي",
+    "makeDoctor": "جعله طبيباً"
   },
   "magic": {
-  "waterDamage": {
-  "title": "أضرار المياه",
-  "subtitle": "إزالة أضرار المياه والبقع"
-  },
-  "clarify": {
-  "title": "توضيح",
-  "subtitle": "إزالة التمويه، شحذ التفاصيل"
-  },
-  "repair": {
-  "title": "إصلاح",
-  "subtitle": "دع كليفر يصلح صورتك"
-  },
-  "colorize": {
-  "title": "تلوين",
-  "subtitle": "أضف ألواناً للصور بالأبيض والأسود"
-  },
-  "colourise": {
-  "title": "تلوين",
-  "subtitle": "أضف ألواناً للصور بالأبيض والأسود"
-  },
-  "descratch": {
-  "title": "إزالة الخدوش",
-  "subtitle": "إزالة الخدوش والعلامات"
-  },
-  "brighten": {
-  "title": "تفتيح",
-  "subtitle": "إصلاح الإضاءة والتعرض"
-  },
-  "fixTornPhotos": "إصلاح الصور الممزقة",
-  "removeStains": "إزالة البقع",
-  "fixFadedPhotos": "إصلاح الصور الباهتة",
-  "requestIdea": "طلب فكرة",
-  "requestIdeaSubtitle": "شارك بفكرة ميزة",
-  "send": "إرسال",
-  "reportBugSubtitle": "هل وجدت مشكلة؟ أخبرنا",
-  "report": "إبلاغ",
-  "requestFeature": {
-  "title": "اطلب ميزة",
-  "prompt": "ما هي الميزة التي تود رؤيتها في كليفر؟",
-  "thankYouTitle": "شكراً لك!",
-  "thankYouMessage": "تم إرسال طلب الميزة الخاص بك. سنراجعه ونأخذه بعين الاعتبار في التحديثات المستقبلية.",
-  "button": "رائع!",
-  "errorTitle": "فشل الإرسال",
-  "errorMessage": "تعذر إرسال طلبك. يرجى المحاولة مرة أخرى.",
-  "errorGeneric": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
-  },
-  "reportBug": {
-  "title": "أبلغ عن خطأ",
-  "prompt": "يرجى وصف الخطأ الذي واجهته:",
-  "thankYouTitle": "تم استلام تقرير الخطأ!",
-  "thankYouMessage": "شكراً لك على إبلاغنا بهذا الخطأ. سنقوم بالتحقيق فيه وإصلاحه في أقرب وقت ممكن.",
-  "button": "شكراً!",
-  "errorTitle": "فشل التقرير",
-  "errorMessage": "تعذر إرسال تقرير الخطأ الخاص بك. يرجى المحاولة مرة أخرى.",
-  "errorGeneric": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
-  }
+    "waterDamage": {
+      "title": "ضرر الماء",
+      "subtitle": "إزالة ضرر الماء والبقع"
+    },
+    "clarify": {
+      "title": "توضيح",
+      "subtitle": "إزالة الضباب، شحذ التفاصيل"
+    },
+    "repair": {
+      "title": "إصلاح",
+      "subtitle": "دع Clever يصلح صورتك"
+    },
+    "colorize": {
+      "title": "تلوين",
+      "subtitle": "إضافة ألوان للصور بالأبيض والأسود"
+    },
+    "colourise": {
+      "title": "تلوين",
+      "subtitle": "إضافة ألوان للصور بالأبيض والأسود"
+    },
+    "descratch": {
+      "title": "إزالة الخدوش",
+      "subtitle": "إزالة الخدوش والعلامات"
+    },
+    "brighten": {
+      "title": "تفتيح",
+      "subtitle": "إصلاح الإضاءة والتعرض"
+    },
+    "fixTornPhotos": "إصلاح الصور الممزقة",
+    "removeStains": "إزالة البقع",
+    "fixFadedPhotos": "إصلاح الصور الباهتة",
+    "requestIdea": "اقتراح فكرة",
+    "requestIdeaSubtitle": "شارك فكرة ميزتك",
+    "send": "إرسال",
+    "reportBugSubtitle": "وجدت مشكلة؟ أخبرنا",
+    "report": "إبلاغ",
+    "requestFeature": {
+      "title": "طلب ميزة",
+      "prompt": "ما هي الميزة التي ترغب في رؤيتها في Clever؟",
+      "thankYouTitle": "شكراً لك!",
+      "thankYouMessage": "تم إرسال طلب الميزة الخاص بك. نقدر ملاحظاتك!",
+      "button": "رائع!",
+      "errorTitle": "فشل الإرسال",
+      "errorMessage": "تعذر إرسال طلبك. يرجى المحاولة مرة أخرى.",
+      "errorGeneric": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+    },
+    "reportBug": {
+      "title": "الإبلاغ عن خطأ",
+      "prompt": "يرجى وصف الخطأ الذي واجهته:",
+      "thankYouTitle": "تم استلام تقرير الخطأ!",
+      "thankYouMessage": "شكراً للإبلاغ عن هذا الخطأ. سنقوم بالتحقيق وإصلاحه في أقرب وقت ممكن.",
+      "button": "شكراً!",
+      "errorTitle": "فشل الإبلاغ",
+      "errorMessage": "تعذر إرسال تقرير الخطأ الخاص بك. يرجى المحاولة مرة أخرى.",
+      "errorGeneric": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+    }
   },
   "quickAction": {
-  "photoMagic": "سحر الصور"
+    "photoMagic": "سحر الصورة"
   },
   "photoMagic": {
-  "title": "سحر الصور",
-  "subtitle": "اكتب ما تريد تعديله وشاهد ما سيحدث",
-  "choosePhoto": "اختر صورة",
-  "takePhoto": "التقط صورة",
-  "permissionRequired": "الوصول مطلوب",
-  "photoAccessMessage": "الوصول إلى مكتبة الصور مطلوب لاختيار الصور",
-  "cameraAccessMessage": "الوصول إلى الكاميرا مطلوب لالتقاط الصور"
+    "title": "سحر الصورة",
+    "subtitle": "اكتب ما تريد تعديله وشاهده يحدث",
+    "choosePhoto": "اختر صورة",
+    "takePhoto": "التقط صورة",
+    "permissionRequired": "إذن مطلوب",
+    "photoAccessMessage": "مطلوب الوصول إلى مكتبة الصور لتحديد الصور",
+    "cameraAccessMessage": "مطلوب الوصول إلى الكاميرا لالتقاط الصور"
   },
   "quickEdit": {
-  "modes": {
-  "restoration": "ترميم",
-  "repair": "إصلاح",
-  "unblur": "إزالة التمويه",
-  "colourise": "تلوين",
-  "descratch": "إزالة الخدوش",
-  "enlighten": "تفتيح",
-  "background": "الخلفية",
-  "outfit": "الملابس",
-  "custom": "مخصص",
-  "restoreRepair": "ترميم وإصلاح",
-  "waterDamage": "أضرار المياه"
-  },
-  "processing": {
-  "analyzing": "تحليل الصورة...",
-  "processing": "جارٍ المعالجة...",
-  "enhancing": "تحسين التفاصيل...",
-  "complete": "اكتمل",
-  "failed": "فشل"
-  },
-  "buttons": {
-  "save": "حفظ",
-  "share": "مشاركة",
-  "cancel": "إلغاء",
-  "tryAgain": "حاول مجدداً",
-  "process": "معالجة",
-  "view": "عرض"
-  },
-  "errors": {
-  "somethingWrong": "حدث خطأ ما",
-  "networkError": "خطأ في الشبكة",
-  "tryAgainLater": "يرجى المحاولة مرة أخرى لاحقاً"
-  },
-  "editPhoto": "تعديل الصورة"
+    "modes": {
+      "restoration": "استعادة",
+      "repair": "إصلاح",
+      "unblur": "إزالة الضباب",
+      "colourise": "تلوين",
+      "descratch": "إزالة الخدوش",
+      "enlighten": "تفتيح",
+      "background": "خلفية",
+      "outfit": "ملابس",
+      "custom": "مخصص",
+      "restoreRepair": "استعادة وإصلاح",
+      "waterDamage": "ضرر الماء"
+    },
+    "processing": {
+      "analyzing": "تحليل الصورة...",
+      "processing": "معالجة...",
+      "enhancing": "تحسين التفاصيل...",
+      "complete": "مكتمل",
+      "failed": "فشل"
+    },
+    "buttons": {
+      "save": "حفظ",
+      "share": "مشاركة",
+      "cancel": "إلغاء",
+      "tryAgain": "جرب مرة أخرى",
+      "process": "معالجة",
+      "view": "عرض"
+    },
+    "errors": {
+      "somethingWrong": "حدث خطأ ما",
+      "networkError": "خطأ في الشبكة",
+      "tryAgainLater": "يرجى المحاولة مرة أخرى لاحقاً"
+    },
+    "editPhoto": "تعديل الصورة"
   },
   "photoProcessor": {
-  "choosePhoto": "اختر صورة",
-  "pickPhoto": "اختر صورة",
-  "tryWithPhoto": "جربها مع إحدى صورك",
-  "photoMagic": "سحر الصور",
-  "photoMagicDesc": "اكتب ما تريد تعديله وشاهد ما سيحدث",
-  "pickPhotoError": "فشل اختيار الصورة. يرجى المحاولة مرة أخرى."
-  },
-  "settings": {
-  "title": "الإعدادات",
-  "sections": {
-  "account": "الحساب",
-  "subscription": "الاشتراك",
-  "usage": "الاستخدام",
-  "support": "الدعم",
-  "about": "حول"
-  },
-  "items": {
-  "proMember": "عضو برو",
-  "freeUser": "مستخدم مجاني",
-  "photosUsed": "الصور المستخدمة",
-  "dailyLimit": "الحد اليومي",
-  "lifetimeUsage": "الاستخدام مدى الحياة",
-  "restorePurchases": "استعادة المشتريات",
-  "resetIdentity": "إعادة تعيين الهوية",
-  "clearCache": "مسح الذاكرة المؤقتة",
-  "privacyPolicy": "سياسة الخصوصية",
-  "termsOfService": "شروط الخدمة",
-  "rateUs": "يرجى تقييمنا :)",
-  "shareApp": "مشاركة التطبيق",
-  "version": "الإصدار",
-  "language": "اللغة"
-  },
-  "time": {
-  "availableNow": "متاح الآن",
-  "hours": "{{hours}}س {{minutes}}د {{seconds}}ث",
-  "minutes": "{{minutes}}د {{seconds}}ث",
-  "seconds": "{{seconds}}ث"
-  }
+    "choosePhoto": "اختر صورة",
+    "pickPhoto": "اختيار صورة",
+    "tryWithPhoto": "جربها مع إحدى صورك",
+    "photoMagic": "سحر الصورة",
+    "photoMagicDesc": "اكتب ما تريد تعديله وشاهده يحدث",
+    "pickPhotoError": "فشل اختيار الصورة. يرجى المحاولة مرة أخرى."
   },
   "onboarding": {
-  "welcome": {
-  "title": "مرحباً بك في",
-  "appName": "كليفر!",
-  "getStarted": "ابدأ الآن >",
-  "terms": "من خلال الاستمرار، أنت توافق على",
-  "termsOfService": "شروط الخدمة",
-  "and": "و",
-  "privacyPolicy": "سياسة الخصوصية"
+    "welcome": {
+      "title": "مرحباً بك في",
+      "appName": "Clever!",
+      "getStarted": "ابدأ >",
+      "terms": "بالاستمرار، فإنك تقبل",
+      "termsOfService": "شروط الخدمة",
+      "and": "و",
+      "privacyPolicy": "سياسة الخصوصية"
+    },
+    "permissions": {
+      "title": "لنبدأ\nرحلتك!",
+      "subtitle": "يمكنك تخطي هذا إذا كنت تفضل",
+      "note": "يمكنك دائماً تغيير هذا في إعدادات جهازك",
+      "continue": "متابعة",
+      "requestingAccess": "طلب الوصول..."
+    },
+    "features": {
+      "title": "ماذا تريد أن تجرب؟",
+      "subtitle": "حدد ما أنت مستعد لفعله",
+      "continue": "متابعة",
+      "selectOption": "اختر ميزتك",
+      "exploreApp": "استكشف التطبيق →",
+      "startWith": "ابدأ بـ",
+      "customPromptPlaceholder": "ماذا تريد أن تفعل بصورتك؟",
+      "chooseYourOwn": "اختر بنفسك",
+      "chooseYourOwnDesc": "صف ما تريد أن تفعله بصورتك",
+      "customprompt": "اختر بنفسك",
+      "custompromptDesc": "صف ما تريد أن تفعله بصورتك",
+      "repair": "إصلاح",
+      "repairDesc": "إصلاح مع الحفاظ على الاتساق مع الميزات",
+      "clearSkin": "بشرة صافية",
+      "clearSkinDesc": "إزالة حب الشباب، الشوائب والعيوب",
+      "addSmile": "إضافة ابتسامة",
+      "addSmileDesc": "أضف ابتسامة طبيعية وأصيلة",
+      "fixHair": "إصلاح الشعر",
+      "fixHairDesc": "تنظيف الشعر الفوضوي أو المتناثر",
+      "makeYounger": "جعل أصغر سناً",
+      "makeYoungerDesc": "تقليل العمر بشكل خفي مع الحفاظ على الهوية",
+      "addWings": "إضافة أجنحة ملاك",
+      "addWingsDesc": "أجنحة جميلة تتناسب مع صورتك",
+      "waterStainDamage": "ضرر الماء/البقع",
+      "waterStainDamageDesc": "إزالة ضرر الماء، البقع، وتغير اللون",
+      "fixMyPhoto": "استعادة تلقائية",
+      "fixMyPhotoDesc": "إصلاح التمزقات، الخدوش، والأضرار في الصور القديمة",
+      "professionalOutfit": "ملابس احترافية",
+      "professionalOutfitDesc": "تغيير إلى ملابس عمل احترافية",
+      "blurBackground": "ضبابية الخلفية",
+      "blurBackgroundDesc": "إنشاء تأثير خلفية ضبابية احترافية",
+      "addHalo": "إضافة هالة",
+      "addHaloDesc": "هالة متوهجة خفية فوق الرأس",
+      "lightRays": "أشعة الضوء",
+      "lightRaysDesc": "إضافة جو تذكاري هادئ مع ضوء ذهبي",
+      "memorialFlowers": "زهور تذكارية",
+      "memorialFlowersDesc": "تغطية المشهد بالزهور والبتلات التذكارية",
+      "makeSlimmer": "جعل أكثر نحافة",
+      "makeSlimmerDesc": "تحسين الجسم بشكل طبيعي",
+      "colourise": "تلوين",
+      "colouriseDesc": "إضفاء الحيوية على صور الأبيض والأسود القديمة بألوان واقعية",
+      "clarify": "توضيح",
+      "clarifyDesc": "جعل الصور الضبابية واضحة كالكريستال",
+      "brighten": "تفتيح",
+      "brightenDesc": "إضاءة الصور المعرضة للإضاءة المنخفضة",
+      "beachBackground": "خلفية شاطئ",
+      "beachBackgroundDesc": "مشهد جميل للمحيط والرمال",
+      "noneOfAbove": "استكشف التطبيق",
+      "noneOfAboveDesc": "تخطي واستكشف التطبيق",
+      "customPrompt": "اختر بنفسك",
+      "customPromptDesc": "صف ما تريد أن تفعله بصورتك"
+    },
+    "preview": {
+      "tryNow": "جرب الآن",
+      "skip": "تخطي",
+      "back": "رجوع",
+      "choosePhoto": "اختر صورة",
+      "pickPhoto": "اختيار صورة",
+      "tryWithPhoto": "جربها مع إحدى صورك"
+    },
+    "community": {
+      "title": "هل أنت مستعد لإعادة صورك\nإلى الحياة؟",
+      "subtitle": "حول الذكريات الباهتة إلى روائع مذهلة",
+      "benefit1": "لا حاجة لمهارات الفوتوشوب",
+      "benefit2": "إصلاح عقود من الأضرار في ثوانٍ",
+      "benefit3": "مثالي للمبتدئين والمحترفين على حد سواء",
+      "showcaseTitle": "شاهد السحر بنفسك",
+      "showcaseSubtitle": "اسحب الأشرطة لرؤية التحولات الحقيقية",
+      "memorial": {
+        "title": "استعادة الذكريات الثمينة",
+        "description": "كرّم إرثهم بالاستعادة المثالية"
+      },
+      "repair": {
+        "title": "إصلاح الأضرار الجسيمة",
+        "description": "أعد بناء الأجزاء المفقودة بسحر"
+      },
+      "background": {
+        "title": "تغيير أي خلفية",
+        "description": "انقلهم إلى أي مكان فوراً"
+      },
+      "custom": {
+        "title": "أو ببساطة اكتب ما تريده",
+        "description": "\"أضف ابتسامة\" • \"أصلح الشعر\" • \"اجعل الجو مشمساً\" • أي شيء تتخيله"
+      },
+      "continue": "متابعة",
+      "photosPerfected": "صور مثالية",
+      "followFacebook": "تابعنا على فيسبوك"
+    },
+    "setup": {
+      "title": "جاري إعداد تجربتك...",
+      "almostReady": "جاهز تقريباً...",
+      "settingUp": "جاري إعداد كل شيء لك...",
+      "wontTakeLong": "لن يستغرق هذا وقتاً طويلاً",
+      "settingUpSpace": "جاري إعداد مساحتك",
+      "loadingSystems": "جاري تحميل الأنظمة",
+      "preparingTools": "جاري تجهيز أدواتك",
+      "allSet": "كل شيء جاهز!",
+      "readyToCreate": "جاهز لبدء إنشاء السحر بصورك"
+    },
+    "rating": {
+      "skip": "تخطي",
+      "title": "هل أنت جاهز لتعديل صورتك؟",
+      "subtitle": "تقييم سريع يساعدنا كثيراً ويستغرق لحظة واحدة.",
+      "rateNow": "قيم الآن"
+    },
+    "textEdits": {
+      "title": "سحر الصورة",
+      "subtitle": "اكتب ما تريد تعديله وشاهده يحدث",
+      "alerts": {
+        "purchaseError": {
+          "title": "خطأ في الشراء",
+          "message": "يرجى المحاولة مرة أخرى أو استعادة المشتريات إذا كان لديك اشتراك بالفعل."
+        },
+        "processingFailed": {
+          "title": "فشل المعالجة",
+          "message": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+        },
+        "freeLimitReached": {
+          "title": "تم الوصول إلى الحد المجاني",
+          "message": "لقد وصلت إلى حد التعديل المجاني للصور. قم بالترقية إلى Pro لتعديلات غير محدودة."
+        },
+        "serviceBusy": {
+          "title": "الخدمة مزدحمة",
+          "message": "موارد وحدة معالجة الرسومات مستنفدة. الفريق يعمل على ذلك."
+        },
+        "maxEffectsReached": {
+          "title": "تم الوصول إلى الحد الأقصى للتأثيرات",
+          "message": "يمكنك تحديد ما يصل إلى 3 تأثيرات في المرة الواحدة للحصول على أفضل النتائج."
+        },
+        "noImage": {
+          "title": "لا توجد صورة",
+          "message": "يرجى تحديد صورة أولاً"
+        },
+        "selectEdits": {
+          "title": "تحديد التعديلات",
+          "message": "يرجى تحديد ما لا يقل عن 1 معاينة أو كتابة تعديل مخصص."
+        }
+      },
+      "maxEffectsReached": "تم الوصول إلى الحد الأقصى للتأثيرات",
+      "maxEffectsMessage": "يمكنك تحديد ما يصل إلى 3 تأثيرات في المرة الواحدة للحصول على أفضل النتائج."
+    },
+    "deviceCarousel": {
+      "allowAccess": "السماح بالوصول",
+      "photoLibraryMessage": "لتحديد الصور، يرجى السماح بالوصول إلى مكتبة الصور الخاصة بك",
+      "openSettings": "فتح الإعدادات"
+    },
+    "common": {
+      "ok": "موافق",
+      "cancel": "إلغاء",
+      "continue": "متابعة",
+      "back": "رجوع",
+      "next": "التالي",
+      "done": "تم",
+      "save": "حفظ",
+      "share": "مشاركة",
+      "delete": "حذف",
+      "edit": "تعديل",
+      "loading": "جارٍ التحميل...",
+      "error": "خطأ",
+      "success": "نجاح",
+      "warning": "تحذير",
+      "info": "معلومات",
+      "saved": "تم الحفظ",
+      "choosePhoto": "اختر صورة",
+      "videoLoading": "جارٍ تحميل الفيديو...",
+      "buttons": {
+        "tryAgain": "جرب مرة أخرى",
+        "goBack": "العودة",
+        "maybeLater": "ربما لاحقاً",
+        "gotIt": "فهمت",
+        "dismiss": "تجاهل",
+        "clear": "مسح",
+        "save": "حفظ",
+        "share": "مشاركة",
+        "cancel": "إلغاء",
+        "great": "رائع!",
+        "awesome": "رائع!",
+        "howToFix": "كيفية الإصلاح"
+      }
+    },
+    "status": {
+      "processing": "جاري المعالجة...",
+      "checking": "جار التحقق...",
+      "cleared": "تم المسح!",
+      "restoring": "جارِ الاستعادة...",
+      "loading": "جار التحميل..."
+    },
+    "errors": {
+      "somethingWrong": "حدث خطأ ما",
+      "unexpectedError": "حدث خطأ غير متوقع",
+      "tryAgainLater": "يرجى المحاولة مرة أخرى لاحقًا",
+      "error": "خطأ"
+    },
+    "thankYou": "شكرًا لك!",
+    "openingShare": "جارٍ فتح المشاركة...",
+    "shared": "✓ تمت المشاركة",
+    "startTrial": "بدء التجربة المجانية",
+    "maybeLater": "ربما لاحقًا"
   },
-  "permissions": {
-  "title": "لنبدأ!",
-  "subtitle": "يمكنك تخطي هذا إذا أردت",
-  "note": "يمكنك دائماً تغيير هذا في إعدادات جهازك",
-  "continue": "متابعة",
-  "requestingAccess": "طلب الوصول..."
+  "savePermission": {
+    "title": "حفظ الاستعادة الخاصة بك؟",
+    "description": "نحن بحاجة إلى إذن لحفظ عملك في صورك.",
+    "saveWork": "احفظ عملي",
+    "notNow": "ليس الآن"
   },
-  "features": {
-  "title": "ماذا تريد أن تجرب؟",
-  "subtitle": "اختر ما أنت مستعد لفعله",
-  "continue": "متابعة",
-  "selectOption": "اختر ميزتك",
-  "exploreApp": "استكشف التطبيق →",
-  "startWith": "ابدأ بـ",
-  "customPromptPlaceholder": "ماذا تريد أن تفعل بصورتك؟",
-  "chooseYourOwn": "اختر بنفسك",
-  "chooseYourOwnDesc": "صف ما تريد فعله بصورتك",
-  "customprompt": "اختر بنفسك",
-  "custompromptDesc": "صف ما تريد فعله بصورتك",
-  "repair": "إصلاح",
-  "repairDesc": "إصلاح مع الحفاظ على الاتساق مع الميزات",
-  "clearSkin": "بشرة صافية",
-  "clearSkinDesc": "إزالة حب الشباب، الشوائب والعيوب",
-  "addSmile": "إضافة ابتسامة",
-  "addSmileDesc": "إضافة ابتسامة طبيعية، حقيقية",
-  "fixHair": "إصلاح الشعر",
-  "fixHairDesc": "تنظيف الشعر الفوضوي أو المتطاير",
-  "makeYounger": "اجعلني أصغر سناً",
-  "makeYoungerDesc": "تقليل العمر بشكل دقيق مع الحفاظ على الهوية",
-  "addWings": "إضافة أجنحة ملاك",
-  "addWingsDesc": "أجنحة جميلة تتناسب مع صورتك",
-  "waterStainDamage": "أضرار المياه/البقع",
-  "waterStainDamageDesc": "إزالة أضرار المياه، البقع، وتغير اللون",
-  "fixMyPhoto": "استعادة تلقائية",
-  "fixMyPhotoDesc": "إصلاح التمزقات، الخدوش، والأضرار في الصور القديمة",
-  "professionalOutfit": "ملابس احترافية",
-  "professionalOutfitDesc": "التغيير إلى ملابس عمل احترافية",
-  "blurBackground": "تمويه الخلفية",
-  "blurBackgroundDesc": "إنشاء تأثير خلفية احترافي مموه",
-  "addHalo": "إضافة هالة",
-  "addHaloDesc": "هالة متوهجة دقيقة فوق الرأس",
-  "lightRays": "أشعة ضوئية",
-  "lightRaysDesc": "إضافة جو تذكاري هادئ مع ضوء ذهبي",
-  "memorialFlowers": "زهور تذكارية",
-  "memorialFlowersDesc": "تغطية المشهد بالزهور والبتلات التذكارية",
-  "makeSlimmer": "اجعلني أنحف",
-  "makeSlimmerDesc": "تحسين طبيعي للجسم",
-  "colourise": "تلوين",
-  "colouriseDesc": "إحياء الصور القديمة بالأبيض والأسود بألوان واقعية",
-  "clarify": "توضيح",
-  "clarifyDesc": "اجعل الصور الضبابية واضحة جداً",
-  "brighten": "تفتيح",
-  "brightenDesc": "إضاءة الصور ذات الإضاءة المنخفضة",
-  "beachBackground": "خلفية شاطئ",
-  "beachBackgroundDesc": "مشهد جميل للمحيط والرمل",
-  "noneOfAbove": "استكشف التطبيق",
-  "noneOfAboveDesc": "تخطي واستكشف التطبيق",
-  "customPrompt": "اختر بنفسك",
-  "customPromptDesc": "صف ما تريد فعله بصورتك"
+  "showcase": {
+    "sectionHeader": "مع Clever:",
+    "skip": "تخطي",
+    "seeMore": "شاهد المزيد",
+    "startExploring": "ابدأ الاستكشاف",
+    "loading": "جار التحميل...",
+    "backgrounds": {
+      "title": "تغيير الخلفيات",
+      "subtitle": "استوديو، شاطئ، طبيعة، أو إزالتها تمامًا"
+    },
+    "outfits": {
+      "title": "تعزيز المناسبات الخاصة",
+      "subtitle": "حفلات الزفاف، التخرج، الاحتفالات"
+    },
+    "memorial": {
+      "title": "الحفاظ على الذكريات",
+      "subtitle": "صور العائلة، تذكارات النصب التذكاري، التراث"
+    }
   },
-  "preview": {
-  "tryNow": "جربها الآن",
-  "skip": "تخطي",
-  "back": "رجوع",
-  "choosePhoto": "اختر صورة",
-  "pickPhoto": "اختر صورة",
-  "tryWithPhoto": "جربها مع إحدى صورك"
+  "sharing": {
+    "linkCopied": {
+      "title": "تم نسخ الرابط",
+      "message": "تم نسخ رابط التطبيق إلى الحافظة الخاصة بك!"
+    },
+    "emailCopied": {
+      "title": "تم نسخ البريد الإلكتروني",
+      "message": "تم نسخ عنوان البريد الإلكتروني للدعم إلى الحافظة الخاصة بك!\n\nphotorestorationhd@gmail.com"
+    },
+    "contactSupport": {
+      "title": "الاتصال بالدعم",
+      "message": "يرجى الاتصال بنا على: photorestorationhd@gmail.com"
+    },
+    "rateUs": {
+      "title": "قيمنا",
+      "message": "شكرًا لاستخدامك Clever! يرجى تقييمنا على متجر التطبيقات."
+    }
   },
-  "community": {
-  "title": "جاهز لإعادة الحياة لصورك؟",
-  "subtitle": "حول الذكريات الباهتة إلى روائع مذهلة",
-  "benefit1": "لا حاجة لمهارات فوتوشوب",
-  "benefit2": "أصلح عقوداً من الأضرار في ثوانٍ",
-  "benefit3": "مثالي للمبتدئين والمحترفين على حد سواء",
-  "showcaseTitle": "شاهد السحر بنفسك",
-  "showcaseSubtitle": "اسحب أشرطة التمرير لترى تحولات حقيقية",
-  "memorial": {
-  "title": "ترميم ذكريات ثمينة",
-  "description": "كرم إرثهم بترميم مثالي"
+  "photoPicker": {
+    "title": "حدد صورة للاستعادة",
+    "buttons": {
+      "takePhoto": "التقاط صورة",
+      "fromGallery": "من المعرض",
+      "changePhoto": "تغيير الصورة"
+    },
+    "status": {
+      "processing": "جاري المعالجة..."
+    },
+    "alerts": {
+      "cameraPermissionRequired": {
+        "title": "إذن الكاميرا مطلوب",
+        "message": "يرجى منح إذن الكاميرا لاستخدام هذه الميزة."
+      }
+    }
   },
-  "repair": {
-  "title": "إصلاح الأضرار الشديدة",
-  "description": "إعادة بناء الأجزاء المفقودة كالسحر"
+  "imageSelector": {
+    "selectPhoto": "اضغط لتحديد صورة",
+    "chooseFromLibrary": "اختر من مكتبة الصور الخاصة بك",
+    "changePhoto": "تغيير الصورة"
   },
-  "background": {
-  "title": "تغيير أي خلفية",
-  "description": "انقلهم إلى أي مكان على الفور"
-  },
-  "custom": {
-  "title": "أو ببساطة اكتب ما تريد",
-  "description": "\"أضف ابتسامة\" • \"أصلح الشعر\" • \"اجعلها مشمسة\" • أي شيء تتخيله"
-  },
-  "continue": "متابعة",
-  "photosPerfected": "صور محسنة",
-  "followFacebook": "تابعنا على فيسبوك"
-  },
-  "setup": {
-  "title": "جارٍ إعداد تجربتك...",
-  "almostReady": "على وشك أن تكون جاهزاً...",
-  "settingUp": "جارٍ إعداد الأمور لك...",
-  "wontTakeLong": "هذا لن يستغرق وقتاً طويلاً",
-  "settingUpSpace": "إعداد مساحتك",
-  "loadingSystems": "تحميل الأنظمة",
-  "preparingTools": "تحضير أدواتك",
-  "allSet": "أنت جاهز تماماً!",
-  "readyToCreate": "جاهز لبدء إنشاء السحر بصورك"
-  },
-  "rating": {
-  "skip": "تخطي",
-  "title": "جاهز لتعديل صورتك؟",
-  "subtitle": "تقييم سريع يساعدنا كثيراً ويستغرق لحظة فقط.",
-  "rateNow": "قيم الآن"
+  "imageCropper": {
+    "status": {
+      "processing": "جاري المعالجة...",
+      "openingCropper": "جارٍ فتح أداة القص..."
+    },
+    "alerts": {
+      "cropError": {
+        "title": "خطأ",
+        "message": "فشل قص الصورة. يرجى المحاولة مرة أخرى."
+      }
+    }
   }
-  },
-  "textEdit": {
-  "customTextEdits": "تعديلات نصية مخصصة",
-  "maxEffectsReached": "تم الوصول إلى الحد الأقصى للتأثيرات",
-  "maxEffectsMessage": "يمكنك تطبيق ما يصل إلى 3 تأثيرات في نفس الوقت",
-  "placeholder": "صف بدقة ما تريد تغييره أو تحسينه في صورتك...",
-  "noImage": "لا توجد صورة",
-  "selectImageFirst": "يرجى اختيار صورة أولاً",
-  "selectEdits": "اختر التعديلات",
-  "selectAtLeastOne": "يرجى اختيار إعداد مسبق واحد على الأقل أو كتابة تعديل مخصص.",
-  "purchaseError": "خطأ في الشراء",
-  "tryAgainOrRestore": "يرجى المحاولة مرة أخرى أو استعادة المشتريات إذا كان لديك اشتراك بالفعل."
-  },
-  "textEdits": {
-  "title": "تعديلات نصية مخصصة",
-  "subtitle": "صف بدقة ما تريد تغييره أو تحسينه في صورتك"
-  },
-  "restoration": {
-  "processingFailed": "فشلت المعالجة",
-  "status": {
-  "processing": "جارٍ المعالجة...",
-  "completed": "اكتمل!",
-  "failed": "فشل",
-  "retry": "إعادة المحاولة"
-  },
-  "actions": {
-  "save": "حفظ",
-  "share": "مشاركة"
-  },
-  "alerts": {
-  "error": "خطأ",
-  "failedToLoad": "فشل في تحميل تفاصيل الترميم",
-  "processingTitle": "معالجة الصورة",
-  "processingMessage": "صورتك قيد المعالجة. يمكنك العودة هنا للتحقق من النتيجة.",
-  "got": "فهمت",
-  "sharePhoto": "مشاركة الصورة",
-  "shareWith": "شارك هذه الصورة المرممة مع الأصدقاء والعائلة!",
-  "shareFailed": "فشلت المشاركة",
-  "shareFailedMessage": "تعذر مشاركة الصورة. يرجى المحاولة مرة أخرى."
-  }
-  },
-  "deviceCarousel": {
-  "allowAccess": "السماح بالوصول",
-  "photoLibraryMessage": "لاختيار الصور، يرجى السماح بالوصول إلى مكتبة الصور الخاصة بك",
-  "openSettings": "فتح الإعدادات"
-  },
-  "common": {
-  "ok": "حسناً",
-  "cancel": "إلغاء",
-  "continue": "متابعة",
-  "back": "رجوع",
-  "next": "التالي",
-  "done": "تم",
-  "save": "حفظ",
-  "share": "مشاركة",
-  "delete": "حذف",
-  "edit": "تعديل",
-  "loading": "جارٍ التحميل...",
-  "error": "خطأ",
-  "success": "نجاح",
-  "warning": "تحذير",
-  "info": "معلومات",
-  "saved": "تم الحفظ",
-  "choosePhoto": "اختر صورة",
-  "videoLoading": "جارٍ تحميل الفيديو..."
-  },
-  "accessibility": {
-  "visitPinterestPage": "زيارة صفحة بنترست",
-  "opensPinterestInBrowser": "يفتح صفحة بنترست في المتصفح",
-  "visitFacebookPage": "زيارة صفحة فيسبوك",
-  "opensFacebookInBrowser": "يفتح صفحة فيسبوك في المتصفح",
-  "visitInstagramPage": "زيارة صفحة انستغرام",
-  "opensInstagramInBrowser": "يفتح صفحة انستغرام في المتصفح",
-  "visitTikTokPage": "زيارة صفحة تيك توك",
-  "opensTikTokInBrowser": "يفتح صفحة تيك توك في المتصفح",
-  "emailSupport": "دعم عبر البريد الإلكتروني",
-  "opensEmailToSupport": "يفتح بريداً إلكترونياً للتواصل مع الدعم",
-  "rateUs": "قيمنا",
-  "opensRatingPrompt": "يفتح نافذة التقييم أو صفحة متجر التطبيقات",
-  "shareApp": "مشاركة التطبيق",
-  "opensShareSheet": "يفتح نافذة المشاركة لمشاركة التطبيق مع الآخرين"
-  },
-  "proUpgrade": {
-  "title": "الترقية إلى برو",
-  "message": "لقد وصلت إلى الحد الأقصى لتوليد الفيديو"
-  }
-  }
+}

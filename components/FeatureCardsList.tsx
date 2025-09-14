@@ -129,7 +129,7 @@ type CardItem = {
 // Poster-style cards; order sets Featured (first). Prioritize Repair; move Water Damage lower.
 const CARDS: CardItem[] = [
   { id: 'fc_repair', titleKey: 'magic.repair.title', emoji: '🔧', functionType: 'repair', video: require('../assets/videos/repair.mp4') },
-  { id: 'fc_change_background', titleKey: 'magic.changeBackground', emoji: '🌸', route: '/backgrounds', video: require('../assets/videos/memorial/flowers.mp4') },
+  { id: 'fc_torn_photos', titleKey: 'magic.fixTornPhotos', emoji: '📄', functionType: 'repair', customPrompt: 'Repair tears and rips in old photos', image: require('../assets/images/teared.png') },
   { id: 'fc_colorize', titleKey: 'magic.colorize.title', emoji: '🎨', functionType: 'colorize', image: require('../assets/images/popular/colorize/pop-1.png') },
   { id: 'fc_descratch', titleKey: 'magic.descratch.title', emoji: '✨', functionType: 'descratch', image: require('../assets/images/popular/descratch/pop-2.png') },
   { id: 'fc_enlighten', titleKey: 'magic.brighten.title', emoji: '☀️', functionType: 'enlighten', image: require('../assets/images/popular/brighten/pop-4.png') },

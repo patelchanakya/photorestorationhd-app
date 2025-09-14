@@ -377,6 +377,14 @@
     "photoLibraryMessage": "To select photos, please allow access to your photo library",
     "openSettings": "Open Settings"
   },
+  "tour": {
+    "permissions": {
+      "alertTitle": "Get the most out of Clever",
+      "alertMessage": "Enable photo access to save your enhanced photos.",
+      "notNow": "Not Now",
+      "openSettings": "Open Settings"
+    }
+  },
   "common": {
     "ok": "OK",
     "cancel": "Cancel",

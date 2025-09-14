@@ -18,7 +18,7 @@ export const WELCOME_COPY_VARIANTS = {
   A: {
     titleKey: "onboardingV4.welcome.title",
     subtitleKey: "onboardingV4.welcome.subtitle"
-  }
+    }
 };
 
 // Define A/B tests

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Modal, Dimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { useTranslation } from 'react-i18next';
 import Animated, { 
   useAnimatedStyle, 
   useSharedValue, 
@@ -17,13 +18,15 @@ interface NetworkErrorModalProps {
   message?: string;
 }
 
-export function NetworkErrorModal({ 
-  visible, 
-  onClose, 
-  onRetry, 
-  message = "You need an internet connection to continue" 
+export function NetworkErrorModal({
+  visible,
+  onClose,
+  onRetry,
+  message
 }: NetworkErrorModalProps) {
+  const { t } = useTranslation();
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+  const modalMessage = message || t('modals.networkError.message');
   const scale = useSharedValue(0.8);
   const opacity = useSharedValue(0);
   const [isRetrying, setIsRetrying] = React.useState(false);
@@ -113,26 +116,26 @@ export function NetworkErrorModal({
               </View>
 
               {/* Title */}
-              <Text style={{ 
-                fontSize: 20, 
-                fontFamily: 'Lexend-Bold', 
+              <Text style={{
+                fontSize: 20,
+                fontFamily: 'Lexend-Bold',
                 color: '#FFFFFF',
                 textAlign: 'center',
                 marginBottom: 8
               }}>
-                No Internet Connection
+                {t('modals.networkError.title')}
               </Text>
 
               {/* Message */}
-              <Text style={{ 
-                fontSize: 16, 
+              <Text style={{
+                fontSize: 16,
                 fontFamily: 'Lexend-Regular',
                 color: 'rgba(255, 255, 255, 0.8)',
                 textAlign: 'center',
                 lineHeight: 22,
                 marginBottom: 24
               }}>
-                {message}
+                {modalMessage}
               </Text>
 
               {/* Buttons */}
@@ -166,12 +169,12 @@ export function NetworkErrorModal({
                         marginRight: 8
                       }} />
                     )}
-                    <Text style={{ 
-                      color: '#0B0B0F', 
-                      fontSize: 16, 
-                      fontFamily: 'Lexend-Bold' 
+                    <Text style={{
+                      color: '#0B0B0F',
+                      fontSize: 16,
+                      fontFamily: 'Lexend-Bold'
                     }}>
-                      {isRetrying ? 'Checking...' : 'Try Again'}
+                      {isRetrying ? t('modals.networkError.buttons.checking') : t('modals.networkError.buttons.tryAgain')}
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -189,13 +192,13 @@ export function NetworkErrorModal({
                   }}
                   activeOpacity={0.7}
                 >
-                  <Text style={{ 
-                    color: 'rgba(255, 255, 255, 0.9)', 
-                    fontSize: 16, 
+                  <Text style={{
+                    color: 'rgba(255, 255, 255, 0.9)',
+                    fontSize: 16,
                     fontFamily: 'Lexend-Medium',
                     textAlign: 'center'
                   }}>
-                    Cancel
+                    {t('modals.networkError.buttons.cancel')}
                   </Text>
                 </TouchableOpacity>
               </View>

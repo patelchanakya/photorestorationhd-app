@@ -3,6 +3,7 @@ import { BlurView } from 'expo-blur';
 import { Image as ExpoImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { Alert, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
@@ -15,6 +16,7 @@ interface ImageSelectorProps {
 }
 
 export function ImageSelector({ selectedImage, onImageSelected, disabled = false, showReadyIndicator = false }: ImageSelectorProps) {
+  const { t } = useTranslation();
   const scale = useSharedValue(1);
   const borderOpacity = useSharedValue(0.12);
 
@@ -130,7 +132,7 @@ export function ImageSelector({ selectedImage, onImageSelected, disabled = false
                     }}>
                       <IconSymbol name="arrow.2.squarepath" size={16} color="#FFFFFF" />
                       <Text style={{ color: '#FFFFFF', fontSize: 13, fontFamily: 'Lexend-SemiBold' }}>
-                        Change Photo
+                        {t('imageSelector.changePhoto')}
                       </Text>
                     </View>
                   </BlurView>
@@ -157,23 +159,23 @@ export function ImageSelector({ selectedImage, onImageSelected, disabled = false
                   <IconSymbol name="photo.on.rectangle.angled" size={28} color="rgba(255,255,255,0.6)" />
                 </View>
                 
-                <Text style={{ 
-                  color: 'rgba(255,255,255,0.8)', 
-                  fontSize: 16, 
+                <Text style={{
+                  color: 'rgba(255,255,255,0.8)',
+                  fontSize: 16,
                   fontFamily: 'Lexend-SemiBold',
                   textAlign: 'center',
                   marginBottom: 6,
                 }}>
-                  Tap to select a photo
+                  {t('imageSelector.selectPhoto')}
                 </Text>
-                
-                <Text style={{ 
-                  color: 'rgba(255,255,255,0.5)', 
+
+                <Text style={{
+                  color: 'rgba(255,255,255,0.5)',
                   fontSize: 13,
                   textAlign: 'center',
                   lineHeight: 18,
                 }}>
-                  Choose from your photo library
+                  {t('imageSelector.chooseFromLibrary')}
                 </Text>
 
                 {/* Decorative elements */}

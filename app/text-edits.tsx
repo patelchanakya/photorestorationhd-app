@@ -202,7 +202,7 @@ useEffect(() => {
         const updatedIsPro = await validatePremiumAccess();
         
         if (!updatedIsPro) {
-          Alert.alert('Purchase Error', 'Please try again or restore purchases if you already have a subscription.');
+          Alert.alert(t('textEdits.alerts.purchaseError.title'), t('textEdits.alerts.purchaseError.message'));
           router.back();
           return;
         }
@@ -271,19 +271,19 @@ useEffect(() => {
       await AsyncStorage.removeItem('isTextEditsFlow');
       
       // Handle photo limit exceeded error with user-friendly message
-      let errorTitle = 'Processing Failed';
-      let errorMessage = 'Something went wrong. Please try again.';
-      
+      let errorTitle = t('textEdits.alerts.processingFailed.title');
+      let errorMessage = t('textEdits.alerts.processingFailed.message');
+
       if (err?.message?.includes('PHOTO_LIMIT_EXCEEDED') || err?.code === 'PHOTO_LIMIT_EXCEEDED') {
-        errorTitle = 'Free Limit Reached';
-        errorMessage = 'You\'ve reached your free photo editing limit. Upgrade to Pro for unlimited edits.';
+        errorTitle = t('textEdits.alerts.freeLimitReached.title');
+        errorMessage = t('textEdits.alerts.freeLimitReached.message');
       } else if (err?.message?.includes('GPU resources exhausted') || err?.code === 'SERVICE_BUSY') {
-        errorTitle = 'Service Busy';
-        errorMessage = err?.message || 'GPU resources exhausted. Team is working on it.';
+        errorTitle = t('textEdits.alerts.serviceBusy.title');
+        errorMessage = err?.message || t('textEdits.alerts.serviceBusy.message');
       } else if (err?.message) {
         errorMessage = err.message;
       }
-      
+
       Alert.alert(errorTitle, errorMessage);
     }
   }, [router, photoRestoration, spinValue]);
@@ -344,9 +344,9 @@ useEffect(() => {
       // If trying to select and already at max (3), prevent it
       if (!already && prev.length >= 3) {
         Alert.alert(
-          t('textEdit.maxEffectsReached'),
-          t('textEdit.maxEffectsMessage'),
-          [{ text: 'OK' }]
+          t('textEdits.alerts.maxEffectsReached.title'),
+          t('textEdits.alerts.maxEffectsReached.message'),
+          [{ text: t('common.ok') }]
         );
         return prev;
       }
@@ -495,14 +495,14 @@ useEffect(() => {
     
     if (!selectedImage) {
       applyLockRef.current = false;
-      Alert.alert('No Image', 'Please select an image first');
+      Alert.alert(t('textEdits.alerts.noImage.title'), t('textEdits.alerts.noImage.message'));
       return;
     }
     
     const finalPrompt = buildPromptFromSelections();
     if (!finalPrompt) {
       applyLockRef.current = false;
-      Alert.alert('Select edits', 'Please select at least 1 preset or write a custom edit.');
+      Alert.alert(t('textEdits.alerts.selectEdits.title'), t('textEdits.alerts.selectEdits.message'));
       return;
     }
     

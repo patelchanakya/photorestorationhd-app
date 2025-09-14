@@ -353,6 +353,14 @@
     "photoLibraryMessage": "For at vælge fotos, tillad venligst adgang til dit fotobibliotek",
     "openSettings": "Åbn Indstillinger"
   },
+  "tour": {
+    "permissions": {
+      "alertTitle": "Get the most out of Clever",
+      "alertMessage": "Enable photo access to save your enhanced photos.",
+      "notNow": "Not Now",
+      "openSettings": "Open Settings"
+    }
+  },
   "common": {
     "ok": "OK",
     "cancel": "Annuller",

@@ -27,6 +27,7 @@ import {
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import Animated, { 
   useAnimatedStyle, 
   useSharedValue, 
@@ -46,6 +47,7 @@ export default function TourDemoScreen() {
   const { tourComplete } = useLocalSearchParams();
   const simpleSlider = useRestorationStore((state) => state.simpleSlider);
   const safeAreaInsets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   // Modal states
   const [showSavingModal, setShowSavingModal] = useState(false);
@@ -123,24 +125,24 @@ export default function TourDemoScreen() {
       // Check if it's a permission error and show helpful dialog
       if (err.message?.includes('Photo library access denied') || err.message?.includes('permission')) {
         Alert.alert(
-          'Photo Access Required',
-          'To save photos, please allow access to your photo library in Settings > Privacy & Security > Photos.',
+          t('alerts.errors.permissions.photos.title'),
+          t('alerts.errors.permissions.photos.message'),
           [
-            { 
-              text: 'Open Settings', 
+            {
+              text: t('common.openSettings'),
               onPress: () => {
                 if (Platform.OS === 'ios') {
                   Linking.openURL('app-settings:');
                 }
               }
             },
-            { 
-              text: 'Share Instead', 
+            {
+              text: t('common.shareInstead'),
               onPress: () => {
                 handleShare();
               }
             },
-            { text: 'Cancel', style: 'cancel' }
+            { text: t('common.cancel'), style: 'cancel' }
           ]
         );
       } else {
@@ -180,7 +182,7 @@ export default function TourDemoScreen() {
       // Use expo-sharing directly with local file
       await Sharing.shareAsync(imageUri, {
         mimeType: 'image/jpeg',
-        dialogTitle: 'Share your restored photo',
+        dialogTitle: t('common.shareRestoredPhoto'),
       });
 
       // Show success modal after share modal closes (regardless of whether they shared or cancelled)
@@ -197,7 +199,7 @@ export default function TourDemoScreen() {
         
         const shareResult = await Share.share({
           url: imageUri,
-          message: 'Check out my restored photo!',
+          message: t('sharing.defaultMessage'),
         });
 
         // Show success modal after share modal closes (regardless of share/cancel)
@@ -209,7 +211,7 @@ export default function TourDemoScreen() {
         
       } catch (rnShareError: any) {
         console.error('Both share methods failed:', rnShareError);
-        Alert.alert('Share Failed', 'Unable to share photo. Please try again.');
+        Alert.alert(t('alerts.errors.sharing.failed'), t('alerts.errors.sharing.message'));
       }
     }
   };

@@ -3,6 +3,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { useQuickEditStore } from '@/store/quickEditStore';
 import { analyticsService } from '@/services/analytics';
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
@@ -21,6 +22,7 @@ interface PhotoPickerProps {
 }
 
 const PhotoPickerComponent = ({ onPhotoSelected, isProcessing = false, functionType = 'restoration' }: PhotoPickerProps) => {
+  const { t } = useTranslation();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   // Reset state when screen comes into focus (e.g., when returning from restoration screen)
@@ -58,9 +60,9 @@ const PhotoPickerComponent = ({ onPhotoSelected, isProcessing = false, functionT
         });
         
         Alert.alert(
-          'Camera Permission Required',
-          'Please grant camera permission to use this feature.',
-          [{ text: 'OK' }]
+          t('photoPicker.alerts.cameraPermissionRequired.title'),
+          t('photoPicker.alerts.cameraPermissionRequired.message'),
+          [{ text: t('common.ok') }]
         );
         return;
       } else {
@@ -144,20 +146,20 @@ const PhotoPickerComponent = ({ onPhotoSelected, isProcessing = false, functionT
               className="absolute bottom-4 self-center bg-blue-600 px-6 py-3 rounded-full shadow-lg"
               onPress={() => setSelectedImage(null)}
             >
-              <Text className="text-white text-sm font-semibold">Change Photo</Text>
+              <Text className="text-white text-sm font-semibold">{t('photoPicker.buttons.changePhoto')}</Text>
             </TouchableOpacity>
           )}
           {isProcessing && (
             <View className="absolute inset-0 bg-black/70 justify-center items-center rounded-xl">
               <ActivityIndicator size="large" color="#fff" />
-              <Text className="text-white text-lg mt-3">Processing...</Text>
+              <Text className="text-white text-lg mt-3">{t('photoPicker.status.processing')}</Text>
             </View>
           )}
         </View>
       ) : (
         <View className="flex-1 justify-center items-center px-4">
           <Text className="text-xl sm:text-2xl font-bold mb-8 text-center dark:text-white">
-            Select a photo to restore
+            {t('photoPicker.title')}
           </Text>
           
           <View className="flex-col sm:flex-row gap-4 w-full max-w-sm">
@@ -166,7 +168,7 @@ const PhotoPickerComponent = ({ onPhotoSelected, isProcessing = false, functionT
               onPress={() => pickImage('camera')}
             >
               <IconSymbol name="camera" size={32} color="#fff" />
-              <Text className="text-white text-sm mt-2 font-semibold">Take Photo</Text>
+              <Text className="text-white text-sm mt-2 font-semibold">{t('photoPicker.buttons.takePhoto')}</Text>
             </TouchableOpacity>
             
             <TouchableOpacity
@@ -174,7 +176,7 @@ const PhotoPickerComponent = ({ onPhotoSelected, isProcessing = false, functionT
               onPress={() => pickImage('gallery')}
             >
               <IconSymbol name="photo.stack" size={32} color="#fff" />
-              <Text className="text-white text-sm mt-2 font-semibold">From Gallery</Text>
+              <Text className="text-white text-sm mt-2 font-semibold">{t('photoPicker.buttons.fromGallery')}</Text>
             </TouchableOpacity>
           </View>
         </View>

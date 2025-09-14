@@ -182,7 +182,7 @@ export default function SettingsModalScreen() {
   // Format time remaining with seconds for live countdown
   const formatTimeWithSeconds = (ms: number): string => {
     if (ms === 0) {
-      return 'Available now';
+      return t('settings.time.availableNow');
     }
     
     const hours = Math.floor(ms / (1000 * 60 * 60));
@@ -240,12 +240,12 @@ export default function SettingsModalScreen() {
       
       // Show confirmation alert
       Alert.alert(
-        'Clear Stuck Video?',
-        'This will reset any stuck video processing. Use this if a video appears to be processing but nothing is happening.',
+        t('alerts.settings.clearVideo.title'),
+        t('alerts.settings.clearVideo.message'),
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: t('common.cancel'), style: 'cancel' },
           {
-            text: 'Clear', 
+            text: t('alerts.settings.clearVideo.buttons.clear'),
             style: 'destructive',
             onPress: () => {
               try {
@@ -259,16 +259,16 @@ export default function SettingsModalScreen() {
                 console.log('✅ [DEBUG] Video processing state cleared');
                 
                 Alert.alert(
-                  'Cleared!',
-                  'Video processing state has been reset. You can now try generating videos again.',
-                  [{ text: 'OK' }]
+                  t('alerts.settings.clearVideo.success.title'),
+                  t('alerts.settings.clearVideo.success.message'),
+                  [{ text: t('common.ok') }]
                 );
               } catch (error) {
                 console.error('❌ [DEBUG] Failed to clear video state:', error);
                 Alert.alert(
-                  'Error',
-                  'Failed to clear video state. Try restarting the app.',
-                  [{ text: 'OK' }]
+                  t('alerts.settings.clearVideo.error.title'),
+                  t('alerts.settings.clearVideo.error.message'),
+                  [{ text: t('common.ok') }]
                 );
               }
             }
@@ -293,15 +293,15 @@ export default function SettingsModalScreen() {
   // Delete all photos handler
   const handleDeleteAllPhotos = async () => {
     Alert.alert(
-      'Delete All Photos',
-      'This will permanently delete all photos in your gallery. This action cannot be undone.',
+      t('alerts.settings.deleteAllPhotos.title'),
+      t('alerts.settings.deleteAllPhotos.message'),
       [
         {
-          text: 'Cancel',
+          text: t('alerts.settings.deleteAllPhotos.buttons.cancel'),
           style: 'cancel',
         },
         {
-          text: 'Delete All',
+          text: t('alerts.settings.deleteAllPhotos.buttons.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -336,9 +336,9 @@ export default function SettingsModalScreen() {
               await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
               
               Alert.alert(
-                'Photos Deleted',
-                `Successfully deleted ${recordsResult.deletedCount} photos.`,
-                [{ text: 'OK', style: 'default' }]
+                t('alerts.settings.deleteAllPhotos.success.title'),
+                t('alerts.settings.deleteAllPhotos.success.message', { count: recordsResult.deletedCount }),
+                [{ text: t('common.ok'), style: 'default' }]
               );
             } catch (error) {
               if (__DEV__) {
@@ -347,9 +347,9 @@ export default function SettingsModalScreen() {
               await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
               
               Alert.alert(
-                'Error',
-                'Failed to delete all photos. Please try again.',
-                [{ text: 'OK', style: 'default' }]
+                t('alerts.settings.deleteAllPhotos.error.title'),
+                t('alerts.settings.deleteAllPhotos.error.message'),
+                [{ text: t('common.ok'), style: 'default' }]
               );
             }
           },
@@ -404,9 +404,9 @@ export default function SettingsModalScreen() {
       if (restoreOperationRef.current.cancelled) {
         console.log('🚫 Restore operation was cancelled due to app backgrounding');
         Alert.alert(
-          'Operation Interrupted',
-          'The restore was interrupted. Please try again.',
-          [{ text: 'OK' }]
+          t('alerts.settings.restoreInterrupted.title'),
+          t('alerts.settings.restoreInterrupted.message'),
+          [{ text: t('common.ok') }]
         );
         return;
       }
@@ -425,9 +425,9 @@ export default function SettingsModalScreen() {
           await refreshCustomerInfo();
           
           Alert.alert(
-            'Restored!',
-'Your purchases have been restored successfully!',
-            [{ text: 'Great!' }]
+            t('alerts.settings.restore.success.title'),
+            t('alerts.settings.restore.success.message'),
+            [{ text: t('common.buttons.great') }]
           );
         } else {
           console.log('ℹ️ [SECURITY] Restore completed but no active subscriptions found');
@@ -438,9 +438,9 @@ export default function SettingsModalScreen() {
           });
           
           Alert.alert(
-            'No Purchases Found',
-'No previous purchases found on this account.',
-            [{ text: 'OK' }]
+            t('alerts.settings.restore.noPurchases.title'),
+            t('alerts.settings.restore.noPurchases.message'),
+            [{ text: t('common.ok') }]
           );
         }
       } else {
@@ -449,18 +449,18 @@ export default function SettingsModalScreen() {
           console.log('🚨 [SECURITY] Restore blocked - no subscription on current Apple ID');
           
           Alert.alert(
-            'No Subscription Found',
-            'No active subscription found on this Apple ID. Please sign in with the Apple ID used for purchase.',
+            t('alerts.settings.noSubscription.title'),
+            t('alerts.settings.noSubscription.message'),
             [
-              { text: 'OK', style: 'default' },
+              { text: t('common.ok'), style: 'default' },
               {
-                text: 'How to Fix',
+                text: t('common.buttons.howToFix'),
                 style: 'default',
                 onPress: () => {
                   Alert.alert(
-                    'How to Restore Purchases',
-                    '1. Go to Settings → App Store\n2. Sign in with the Apple ID used for purchase\n3. Return to Clever and tap Restore Purchases again',
-                    [{ text: 'Got it', style: 'default' }]
+                    t('alerts.settings.howToRestore.title'),
+                    t('alerts.settings.howToRestore.message'),
+                    [{ text: t('common.buttons.gotIt'), style: 'default' }]
                   );
                 }
               }
@@ -470,9 +470,9 @@ export default function SettingsModalScreen() {
           // Only show error alert for actual errors, not security blocks
           if (result.error !== 'cancelled') {
             Alert.alert(
-              'Restore Failed',
-              result.errorMessage || 'Unable to restore purchases. Please try again.',
-              [{ text: 'OK' }]
+              t('alerts.settings.restore.failed.title'),
+              result.errorMessage || t('alerts.settings.restore.failed.message'),
+              [{ text: t('common.ok') }]
             );
           }
         }
@@ -483,9 +483,9 @@ export default function SettingsModalScreen() {
         console.error('Error restoring purchases:', error);
       }
       Alert.alert(
-'Error',
-        'Failed to restore purchases. Please try again.',
-        [{ text: 'OK' }]
+        t('alerts.settings.restore.failed.title'),
+        t('alerts.settings.restore.failed.message'),
+        [{ text: t('common.ok') }]
       );
     } finally {
       setIsRestoring(false);
@@ -496,17 +496,17 @@ export default function SettingsModalScreen() {
   const handleResetSubscriptionIdentity = async () => {
     const isExpoGo = Constants.appOwnership === 'expo';
     if (isExpoGo) {
-      Alert.alert('Not Available', 'This feature is not available in Expo Go.');
+      Alert.alert(t('alerts.settings.notAvailable.title'), t('alerts.settings.notAvailable.message'));
       return;
     }
 
     Alert.alert(
-      'Reset Subscription Identity',
-      'This will reset your RevenueCat identity and sync with the current Apple ID. Use this if you\'re having subscription issues. Continue?',
+      t('alerts.settings.resetIdentity.title'),
+      t('alerts.settings.resetIdentity.message'),
       [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Reset', 
+        { text: t('alerts.settings.resetIdentity.buttons.cancel'), style: 'cancel' },
+        {
+          text: t('alerts.settings.resetIdentity.buttons.reset'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -563,9 +563,9 @@ export default function SettingsModalScreen() {
               }
 
               Alert.alert(
-                'Reset Complete',
-                'Subscription identity has been reset and synced with your current Apple ID.',
-                [{ text: 'OK' }]
+                t('alerts.settings.resetIdentity.success.title'),
+                t('alerts.settings.resetIdentity.success.message'),
+                [{ text: t('common.ok') }]
               );
               
             } catch (error) {
@@ -573,9 +573,9 @@ export default function SettingsModalScreen() {
                 console.error('❌ Manual subscription reset failed:', error);
               }
               Alert.alert(
-                'Reset Failed',
-                'Unable to reset subscription identity. Please try again.',
-                [{ text: 'OK' }]
+                t('alerts.settings.resetIdentity.error.title'),
+                t('alerts.settings.resetIdentity.error.message'),
+                [{ text: t('common.ok') }]
               );
             } finally {
               setIsResettingIdentity(false);
@@ -597,9 +597,9 @@ export default function SettingsModalScreen() {
       const isExpoGo = Constants.appOwnership === 'expo';
       if (isExpoGo) {
         Alert.alert(
-          'Demo Mode',
-          'Purchases are not available in Expo Go. Build a development client to test real purchases.',
-          [{ text: 'OK' }]
+          t('alerts.settings.demoMode.title'),
+          t('alerts.settings.demoMode.message'),
+          [{ text: t('common.ok') }]
         );
         return;
       }
@@ -611,9 +611,9 @@ export default function SettingsModalScreen() {
           console.log('✅ Pro subscription activated via native paywall!');
         }
         Alert.alert(
-          'Welcome to Pro!',
-          'You now have unlimited photo restorations!',
-          [{ text: 'Awesome!' }]
+          t('alerts.settings.welcomeToPro.title'),
+          t('alerts.settings.welcomeToPro.message'),
+          [{ text: t('common.buttons.awesome') }]
         );
       }
     } catch (error) {
@@ -621,9 +621,9 @@ export default function SettingsModalScreen() {
         console.error('❌ Failed to present paywall:', error);
       }
       Alert.alert(
-        'Error',
-        'Unable to show subscription options. Please try again.',
-        [{ text: 'OK' }]
+        t('alerts.settings.paywallerror.title'),
+        t('alerts.settings.paywallerror.message'),
+        [{ text: t('common.ok') }]
       );
     }
   };
@@ -718,9 +718,9 @@ export default function SettingsModalScreen() {
         const appStoreUrl = 'https://apps.apple.com/app/photo-restoration-hd/id6748838784';
         await Clipboard.setStringAsync(appStoreUrl);
         Alert.alert(
-          'Link Copied',
-          'The app link has been copied to your clipboard!',
-          [{ text: 'OK', style: 'default' }]
+          t('sharing.linkCopied.title'),
+          t('sharing.linkCopied.message'),
+          [{ text: t('common.ok'), style: 'default' }]
         );
       } catch (clipboardError) {
         if (__DEV__) {
@@ -788,9 +788,9 @@ Best regards`;
         // Fallback: copy email to clipboard
         await Clipboard.setStringAsync('photorestorationhd@gmail.com');
         Alert.alert(
-          'Email Copied',
-          'Support email address has been copied to your clipboard!\n\nphotorestorationhd@gmail.com',
-          [{ text: 'OK', style: 'default' }]
+          t('sharing.emailCopied.title'),
+          t('sharing.emailCopied.message'),
+          [{ text: t('common.ok'), style: 'default' }]
         );
       }
       
@@ -805,18 +805,18 @@ Best regards`;
       try {
         await Clipboard.setStringAsync('photorestorationhd@gmail.com');
         Alert.alert(
-          'Email Copied',
-          'Support email address has been copied to your clipboard!\n\nphotorestorationhd@gmail.com',
-          [{ text: 'OK', style: 'default' }]
+          t('sharing.emailCopied.title'),
+          t('sharing.emailCopied.message'),
+          [{ text: t('common.ok'), style: 'default' }]
         );
       } catch (clipboardError) {
         if (__DEV__) {
           console.error('Error copying email to clipboard:', clipboardError);
         }
         Alert.alert(
-          'Contact Support',
-          'Please contact us at: photorestorationhd@gmail.com',
-          [{ text: 'OK', style: 'default' }]
+          t('sharing.contactSupport.title'),
+          t('sharing.contactSupport.message'),
+          [{ text: t('common.ok'), style: 'default' }]
         );
       }
     }
@@ -845,9 +845,9 @@ Best regards`;
           await Linking.openURL(appStoreUrl);
         } else {
           Alert.alert(
-            'Rate Us',
-            'Thank you for using Clever! Please rate us on the App Store.',
-            [{ text: 'OK', style: 'default' }]
+            t('sharing.rateUs.title'),
+            t('sharing.rateUs.message'),
+            [{ text: t('common.ok'), style: 'default' }]
           );
         }
       }
@@ -860,9 +860,9 @@ Best regards`;
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       
       Alert.alert(
-        'Rate Us',
-        'Thank you for using Clever! Please rate us on the App Store.',
-        [{ text: 'OK', style: 'default' }]
+        t('sharing.rateUs.title'),
+        t('sharing.rateUs.message'),
+        [{ text: t('common.ok'), style: 'default' }]
       );
     }
   };
@@ -1013,10 +1013,10 @@ Best regards`;
                   </View>
                   <View className="flex-1">
                     <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium' }}>
-                      {isRestoring ? 'Checking with App Store...' : t('settings.items.restorePurchases')}
+                      {isRestoring ? t('settings.status.checkingAppStore') : t('settings.items.restorePurchases')}
                     </Text>
                     <Text className="text-white/60 text-sm">
-                      {isRestoring ? 'Verifying your subscription' : 'Sync your purchases with this device'}
+                      {isRestoring ? t('settings.status.verifying') : t('settings.status.syncPurchases')}
                     </Text>
                   </View>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
@@ -1060,7 +1060,7 @@ Best regards`;
             {/* Connect & Support Section */}
             <View className="mb-8">
               <Text style={{ color: '#f59e0b', fontSize: 16, fontFamily: 'Lexend-SemiBold', marginBottom: 16 }}>
-                Connect & Support
+                {t('settings.sections.connectSupport')}
               </Text>
               
               <View className="bg-white/5 rounded-xl overflow-hidden">
@@ -1071,7 +1071,7 @@ Best regards`;
                     <Ionicons name="people" size={18} color="#f97316" />
                   </View>
                   <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium', flex: 1 }}>
-                    Follow Us
+                    {t('settings.sections.followUs')}
                   </Text>
                   <View style={{ flexDirection: 'row', gap: 12 }}>
                     <AnimatedTouchableOpacity
@@ -1130,7 +1130,7 @@ Best regards`;
                     <Ionicons name="mail" size={18} color="#f97316" />
                   </View>
                   <Text style={{ color: 'white', fontSize: 16, fontFamily: 'Lexend-Medium', flex: 1 }}>
-                    Email Support
+                    {t('settings.items.emailSupport')}
                   </Text>
                   <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.4)" />
                 </AnimatedTouchableOpacity>
@@ -1181,7 +1181,7 @@ Best regards`;
             {/* Account & Legal Section */}
             <View className="mb-8">
               <Text style={{ color: '#f59e0b', fontSize: 16, fontFamily: 'Lexend-SemiBold', marginBottom: 16 }}>
-                Account & Legal
+                {t('settings.sections.accountLegal')}
               </Text>
               
               <View className="bg-white/5 rounded-xl overflow-hidden">

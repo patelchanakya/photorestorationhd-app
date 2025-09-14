@@ -222,7 +222,7 @@ export default function PhotoMagicUploadScreen() {
         error: error?.toString() || 'unknown_error'
       });
       
-      Alert.alert('Error', 'Failed to select image. Please try again.');
+      Alert.alert(t('common.error'), t('photoMagic.failedToSelectImage'));
       console.error('Image picker error:', error);
     } finally {
       setIsSelecting(false);
@@ -308,7 +308,7 @@ export default function PhotoMagicUploadScreen() {
         error: error?.toString() || 'unknown_error'
       });
       
-      Alert.alert('Error', 'Failed to take photo. Please try again.');
+      Alert.alert(t('common.error'), t('photoMagic.failedToTakePhoto'));
       console.error('Camera error:', error);
       
       // Resume video playback on error if component is still mounted

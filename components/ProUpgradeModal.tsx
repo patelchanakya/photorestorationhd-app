@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Modal, Platform } from 'react-native';
 import { IconSymbol } from './ui/IconSymbol';
+import { useTranslation } from 'react-i18next';
 import { presentPaywall } from '@/services/revenuecat';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,14 +16,18 @@ interface ProUpgradeModalProps {
   onSuccess?: () => void;
 }
 
-export function ProUpgradeModal({ 
-  visible, 
-  onClose, 
-  title = "Upgrade to Pro", 
-  message = "You've reached your video generation limit",
-  ctaLabel = 'Get Pro Now',
+export function ProUpgradeModal({
+  visible,
+  onClose,
+  title,
+  message,
+  ctaLabel,
   onSuccess,
 }: ProUpgradeModalProps) {
+  const { t } = useTranslation();
+  const modalTitle = title || t('modals.upgrade.title');
+  const modalMessage = message || t('modals.upgrade.videoLimit');
+  const modalCTALabel = ctaLabel || t('modals.upgrade.cta');
   const insets = useSafeAreaInsets();
   const handleGetPro = async () => {
     try {
@@ -59,18 +64,18 @@ export function ProUpgradeModal({
   const proFeatures = [
     {
       icon: '🎬',
-      title: 'Back to Life Animated Videos',
-      description: 'Create animated videos from your photos'
+      title: t('modals.upgrade.features.backToLife.title'),
+      description: t('modals.upgrade.features.backToLife.description')
     },
     {
       icon: '🚀',
-      title: 'Priority Processing',
-      description: 'Your photos and videos process faster'
+      title: t('modals.upgrade.features.priority.title'),
+      description: t('modals.upgrade.features.priority.description')
     },
     {
       icon: '🪄',
-      title: 'Text Edits Magic',
-      description: 'Unlock the Text Edits magic feature'
+      title: t('modals.upgrade.features.textEdits.title'),
+      description: t('modals.upgrade.features.textEdits.description')
     }
   ];
 
@@ -94,10 +99,10 @@ export function ProUpgradeModal({
               <IconSymbol name="crown.fill" size={28} color="#FFFFFF" />
             </View>
             <Text className="text-white text-2xl font-bold text-center mb-2">
-              {title}
+              {modalTitle}
             </Text>
             <Text className="text-gray-400 text-base text-center leading-relaxed">
-              {message}
+              {modalMessage}
             </Text>
           </View>
 
@@ -127,7 +132,7 @@ export function ProUpgradeModal({
               className="bg-gradient-to-r from-amber-500 to-amber-500 rounded-2xl py-4 px-6"
               activeOpacity={0.8}
             >
-              <Text className="text-black text-center font-bold text-lg">{ctaLabel}</Text>
+              <Text className="text-black text-center font-bold text-lg">{modalCTALabel}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -136,7 +141,7 @@ export function ProUpgradeModal({
               activeOpacity={0.8}
             >
               <Text className="text-white/90 text-center font-semibold text-base">
-                Maybe Later
+                {t('modals.upgrade.buttons.later')}
               </Text>
             </TouchableOpacity>
           </View>
