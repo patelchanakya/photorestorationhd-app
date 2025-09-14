@@ -166,26 +166,13 @@ const FeatureCardBase = React.memo(React.forwardRef<View, {
   item: CardItem;
   onPress: (item: CardItem) => void;
   index?: number;
-  disabled?: boolean;
 }>(({
   item,
   onPress,
-  index = 0,
-  disabled = false
+  index = 0
 }, ref) => {
   const { t } = useTranslation();
   const scaleValue = React.useRef(new Animated.Value(1)).current;
-  const opacityValue = React.useRef(new Animated.Value(disabled ? 0.3 : 1)).current;
-
-  React.useEffect(() => {
-    if (!disabled) {
-      Animated.timing(opacityValue, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true
-      }).start();
-    }
-  }, [disabled, opacityValue]);
 
   const handlePressIn = React.useCallback(() => {
     try { Haptics.selectionAsync(); } catch {}
@@ -208,15 +195,13 @@ const FeatureCardBase = React.memo(React.forwardRef<View, {
     <TouchableOpacity
     ref={ref}
     activeOpacity={0.9}
-    onPress={() => !disabled && onPress(item)}
-    onPressIn={!disabled ? handlePressIn : undefined}
-    onPressOut={!disabled ? handlePressOut : undefined}
+    onPress={() => onPress(item)}
+    onPressIn={handlePressIn}
+    onPressOut={handlePressOut}
     style={styles.cardContainer}
-    disabled={disabled}
   >
     <Animated.View style={[styles.cardView, {
-      transform: [{ scale: scaleValue }],
-      opacity: opacityValue
+      transform: [{ scale: scaleValue }]
     }]}>
       {item.video ? (
         <CardVideo video={item.video} />
@@ -256,8 +241,7 @@ const FeatureCardBase = React.memo(React.forwardRef<View, {
   );
 }), (prevProps, nextProps) => {
   return prevProps.item.id === nextProps.item.id &&
-         prevProps.index === nextProps.index &&
-         prevProps.disabled === nextProps.disabled;
+         prevProps.index === nextProps.index;
 });
 
 const Card = React.memo(FeatureCardBase);
@@ -377,7 +361,7 @@ const GridCard = React.memo(({
     </TouchableOpacity>
   );
 }, (prevProps, nextProps) => {
-  return prevProps.item.id === nextProps.item.id && 
+  return prevProps.item.id === nextProps.item.id &&
          prevProps.index === nextProps.index &&
          prevProps.isVisible === nextProps.isVisible;
 });
@@ -398,15 +382,6 @@ export function FeatureCardsList({
 
   // Track visible grid cards for performance optimization (videos only)
   const [visibleGridIndices, setVisibleGridIndices] = React.useState<Set<number>>(new Set([0, 1, 2, 3])); // Show first 4 initially
-  const [buttonsEnabled, setButtonsEnabled] = React.useState(false);
-
-  // Enable buttons after delay to prevent rapid tapping
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setButtonsEnabled(true);
-    }, 800);
-    return () => clearTimeout(timer);
-  }, []);
 
   // Handle request idea submission
   const handleRequestIdea = React.useCallback(async () => {
@@ -482,10 +457,8 @@ export function FeatureCardsList({
     );
   }, [isPro]);
 
-  // Memoize handlePress to prevent re-creation
-  const handlePress = React.useCallback(async (item: CardItem) => {
-    if (!buttonsEnabled) return;
-
+  // Handle tile press - simplified like other sections
+  const handlePress = async (item: CardItem) => {
     if (item.route === '/backgrounds' && onOpenBackgrounds) {
       onOpenBackgrounds();
       return;
@@ -496,7 +469,7 @@ export function FeatureCardsList({
     }
     const functionType = item.functionType ?? 'restoration';
     const translatedTitle = t(item.titleKey);
-    
+
     // PROMPT LOGGING: Track which feature card is selected
     if (__DEV__) {
       console.log('🎯 FEATURE CARD SELECTED:', {
@@ -506,7 +479,7 @@ export function FeatureCardsList({
         styleKey: item.styleKey
       });
     }
-    
+
     // Track feature tile selection
     analyticsService.trackTileUsage({
       category: 'feature',
@@ -516,12 +489,12 @@ export function FeatureCardsList({
       styleKey: item.styleKey,
       stage: 'selected'
     });
-    
+
     // Open native picker first, then open Quick Edit sheet prefilled
     // No permission check needed on iOS 11+ - PHPickerViewController handles privacy
-    const result = await ImagePicker.launchImageLibraryAsync({ 
-      mediaTypes: ['images'], 
-      allowsEditing: false, 
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: false,
       quality: 1,
       presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
       preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
@@ -529,16 +502,16 @@ export function FeatureCardsList({
     });
     if (!result.canceled && result.assets[0]) {
       try {
-        useQuickEditStore.getState().openWithImage({ 
-          functionType, 
-          imageUri: result.assets[0].uri, 
-          styleKey: item.styleKey, 
+        useQuickEditStore.getState().openWithImage({
+          functionType,
+          imageUri: result.assets[0].uri,
+          styleKey: item.styleKey,
           styleName: translatedTitle,
           customPrompt: item.customPrompt
         });
       } catch {}
     }
-  }, [onOpenBackgrounds, onOpenClothes, router, t, currentLanguage, buttonsEnabled]);
+  };
 
   if (!compact) {
     return (
@@ -549,7 +522,6 @@ export function FeatureCardsList({
             item={c}
             onPress={handlePress}
             ref={index === 0 ? firstTileRef : null}
-            disabled={!buttonsEnabled}
           />
         ))}
         
@@ -733,7 +705,7 @@ export function FeatureCardsList({
   return (
     <View style={{ paddingTop: 8, paddingBottom: 24 }}>
       {/* Featured card - always plays video */}
-      <Card item={featured} onPress={handlePress} ref={firstTileRef} disabled={!buttonsEnabled} />
+      <Card item={featured} onPress={handlePress} ref={firstTileRef} />
       
       {/* Grid cards - 2 columns with viewport optimization */}
       <View 
