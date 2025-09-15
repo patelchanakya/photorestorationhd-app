@@ -41,6 +41,8 @@ dist/
 coverage/
 ios/build/
 ios/Pods/
+ios/.xcode.env.local
+/ios
 
 # Documentation directories
 docs/
