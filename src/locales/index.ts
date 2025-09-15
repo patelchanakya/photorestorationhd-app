@@ -3,33 +3,17 @@ import { initReactI18next } from 'react-i18next';
 import * as Localization from 'expo-localization';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Import all translation files
+// Import only supported translation files
 import ar from './ar/translations.json';
 import da from './da/translations.json';
 import de from './de/translations.json';
-import enAU from './en-AU/translations.json';
 import enCA from './en-CA/translations.json';
 import enGB from './en-GB/translations.json';
 import enUS from './en-US/translations.json';
 import esES from './es-ES/translations.json';
 import esMX from './es-MX/translations.json';
-import fi from './fi/translations.json';
-import frCA from './fr-CA/translations.json';
-import fr from './fr/translations.json';
-import hr from './hr/translations.json';
-import it from './it/translations.json';
-import ja from './ja/translations.json';
-import ko from './ko/translations.json';
-import nl from './nl/translations.json';
-import no from './no/translations.json';
-import pl from './pl/translations.json';
 import ptBR from './pt-BR/translations.json';
 import ptPT from './pt-PT/translations.json';
-import ru from './ru/translations.json';
-import sv from './sv/translations.json';
-import tr from './tr/translations.json';
-import uk from './uk/translations.json';
-import zhCN from './zh-CN/translations.json';
 
 // Storage keys for language detection system
 const LANGUAGE_STORAGE_KEY = '@app_language'; // Current selected language
@@ -40,30 +24,14 @@ const MANUAL_SELECTION_STORAGE_KEY = '@app_language_manual'; // Was language man
 const resources = {
   'en-US': { translation: enUS },
   'ar': { translation: ar },
-  'hr': { translation: hr },
   'da': { translation: da },
-  'nl': { translation: nl },
-  'en-AU': { translation: enAU },
+  'de': { translation: de },
   'en-CA': { translation: enCA },
   'en-GB': { translation: enGB },
-  'fi': { translation: fi },
-  'fr': { translation: fr },
-  'fr-CA': { translation: frCA },
-  'de': { translation: de },
-  'it': { translation: it },
-  'ja': { translation: ja },
-  'ko': { translation: ko },
-  'no': { translation: no },
-  'pl': { translation: pl },
+  'es-ES': { translation: esES },
+  'es-MX': { translation: esMX },
   'pt-BR': { translation: ptBR },
   'pt-PT': { translation: ptPT },
-  'ru': { translation: ru },
-  'es-MX': { translation: esMX },
-  'es-ES': { translation: esES },
-  'sv': { translation: sv },
-  'tr': { translation: tr },
-  'uk': { translation: uk },
-  'zh-CN': { translation: zhCN },
 };
 
 export type AvailableLanguage = keyof typeof resources;
@@ -72,30 +40,14 @@ export type AvailableLanguage = keyof typeof resources;
 export const languageNames: Record<AvailableLanguage, string> = {
   'en-US': 'English (US)',
   'ar': 'العربية',
-  'hr': 'Hrvatski',
   'da': 'Dansk',
-  'nl': 'Nederlands',
-  'en-AU': 'English (Australia)',
+  'de': 'Deutsch',
   'en-CA': 'English (Canada)',
   'en-GB': 'English (UK)',
-  'fi': 'Suomi',
-  'fr': 'Français',
-  'fr-CA': 'Français (Canada)',
-  'de': 'Deutsch',
-  'it': 'Italiano',
-  'ja': '日本語',
-  'ko': '한국어',
-  'no': 'Norsk',
-  'pl': 'Polski',
+  'es-ES': 'Español (España)',
+  'es-MX': 'Español (México)',
   'pt-BR': 'Português (Brasil)',
   'pt-PT': 'Português (Portugal)',
-  'ru': 'Русский',
-  'es-MX': 'Español (México)',
-  'es-ES': 'Español (España)',
-  'sv': 'Svenska',
-  'tr': 'Türkçe',
-  'uk': 'Українська',
-  'zh-CN': '中文 (简体)',
 };
 
 export const availableLanguages = Object.keys(resources) as AvailableLanguage[];
@@ -116,15 +68,15 @@ function getDeviceLanguage(): AvailableLanguage {
       console.log('🌍 [i18n] Language code:', locales[0].languageCode);
     }
 
-    // Try exact match first
+    // Try exact match first - only check supported languages
     if (deviceLocale in resources) {
       if (__DEV__) {
-        console.log('🌍 [i18n] Exact locale match found:', deviceLocale);
+        console.log('🌍 [i18n] Exact locale match found (supported):', deviceLocale);
       }
       return deviceLocale as AvailableLanguage;
     }
 
-    // Try language code only (e.g., 'en' from 'en-US')
+    // Try language code only (e.g., 'en' from 'en-US') - only check supported languages
     const languageCode = locales[0].languageCode;
     if (languageCode) {
       // Find first matching language, prioritizing main variants
@@ -140,7 +92,7 @@ function getDeviceLanguage(): AvailableLanguage {
 
       if (matchingLang) {
         if (__DEV__) {
-          console.log('🌍 [i18n] Language code match found:', matchingLang);
+          console.log('🌍 [i18n] Language code match found (supported):', matchingLang);
         }
         return matchingLang as AvailableLanguage;
       }
@@ -148,7 +100,7 @@ function getDeviceLanguage(): AvailableLanguage {
   }
 
   if (__DEV__) {
-    console.log('🌍 [i18n] No match found, falling back to en-US');
+    console.log('🌍 [i18n] No supported language match found, falling back to en-US');
   }
 
   return 'en-US';
@@ -276,17 +228,12 @@ i18n
     compatibilityJSON: 'v3',
     resources,
 
-    // Proper regional fallback configuration for all 26 languages
+    // Fallback configuration for supported languages only
     fallbackLng: {
-      // English variants fallback to each other, then to base English
-      'en-CA': ['en-US', 'en-GB', 'en-AU'],
-      'en-GB': ['en-US', 'en-CA', 'en-AU'],
-      'en-AU': ['en-US', 'en-GB', 'en-CA'],
-      'en-US': ['en-GB', 'en-CA', 'en-AU'],
-
-      // French variants fallback to each other, then to English
-      'fr-CA': ['fr', 'en-CA', 'en-US'],
-      'fr': ['fr-CA', 'en-US'],
+      // English variants fallback to each other
+      'en-CA': ['en-US', 'en-GB'],
+      'en-GB': ['en-US', 'en-CA'],
+      'en-US': ['en-GB', 'en-CA'],
 
       // Spanish variants fallback to each other, then to English
       'es-MX': ['es-ES', 'en-US'],
@@ -296,23 +243,10 @@ i18n
       'pt-BR': ['pt-PT', 'en-US'],
       'pt-PT': ['pt-BR', 'en-US'],
 
-      // All other languages fallback to English variants
+      // All other supported languages fallback to English
       'ar': ['en-US'],
-      'hr': ['en-US'],
-      'da': ['sv', 'no', 'en-US'], // Nordic languages fallback to each other
-      'sv': ['da', 'no', 'en-US'],
-      'no': ['sv', 'da', 'en-US'],
-      'nl': ['de', 'en-US'], // Germanic languages fallback to each other
-      'de': ['nl', 'en-US'],
-      'fi': ['sv', 'en-US'], // Finnish fallback to Swedish (common in Finland)
-      'it': ['en-US'],
-      'ja': ['en-US'],
-      'ko': ['en-US'],
-      'pl': ['en-US'],
-      'ru': ['uk', 'en-US'], // Slavic languages fallback to each other
-      'uk': ['ru', 'en-US'],
-      'tr': ['en-US'],
-      'zh-CN': ['en-US'],
+      'da': ['de', 'en-US'], // Germanic languages fallback to each other
+      'de': ['da', 'en-US'],
 
       // Default fallback chain
       'default': ['en-US', 'en-GB', 'en-CA']

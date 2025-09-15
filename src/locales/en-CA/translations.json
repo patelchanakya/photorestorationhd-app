@@ -1018,7 +1018,7 @@
       "socialProof": {
         "photosRestored": "{{count}} photos restored",
         "recentActivity": "{{timeAgo}} in {{city}}, someone {{action}}",
-        "testimonial": "{{quote}} - {{author}}",
+        "testimonial": "{{quote}}\n-{{author}}",
         "totalPhotos": "2,847,293",
         "testimonialText": "This is my favourite hobby",
         "authorName": "Sarah",
@@ -1080,7 +1080,7 @@
       "upgrade": {
         "title": "Unlock Pro Features",
         "features": "Get more photos • Premium styles • Priority processing",
-        "action": "Get Unlimited",
+        "action": "Go Pro",
         "skip": "Maybe Later"
       }
     },
