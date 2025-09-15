@@ -1,6 +1,7 @@
 import React from 'react';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
 
 import { OnboardingV4Provider, useOnboardingV4Context } from '@/contexts/OnboardingV4Context';
 import { useOnboardingV4Analytics } from '@/hooks/useOnboardingV4Analytics';
