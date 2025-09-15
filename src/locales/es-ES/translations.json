@@ -524,7 +524,12 @@
     "failedToTakePhoto": "No se pudo tomar la foto. Por favor, inténtalo de nuevo."
   },
   "sharing": {
-    "defaultMessage": "¡Mira mi foto restaurada!"
+    "defaultMessage": "¡Mira mi foto restaurada!",
+    "notAvailable": "Compartir no está disponible en este dispositivo",
+    "dialogTitle": "Comparte tu foto restaurada",
+    "photoLibraryPermissionRequired": "Se requiere acceso a la biblioteca de fotos para guardar imágenes. Por favor, actívalo en Ajustes.",
+    "photoSavedSuccess": "¡Foto guardada en galería!",
+    "saveToGalleryFailed": "Error al guardar foto en galería."
   },
   "errorBoundary": {
     "message": "La aplicación encontró un error. Por favor, inténtalo de nuevo."
@@ -1017,8 +1022,24 @@
       "demoPhoto": "Procesando Foto de Demostración",
       "socialProof": {
         "photosRestored": "{{count}} fotos restauradas",
-        "recentActivity": "Alguien en {{city}} acaba de {{action}}",
-        "testimonial": "{{quote}} - {{author}}"
+        "recentActivity": "{{timeAgo}} en {{city}}, alguien {{action}}",
+        "testimonial": "{{quote}} - {{author}}",
+        "totalPhotos": "2.847.293",
+        "testimonialText": "Este es mi pasatiempo favorito",
+        "authorName": "Sarah",
+        "actions": {
+          "autoRestore": "restauró una foto con Auto-Restaurar",
+          "backgroundRemoval": "mejoró una foto con Eliminación de Fondo",
+          "colorize": "añadió color a una foto con Colorear",
+          "repair": "reparó una foto con Reparar",
+          "clarify": "aclaró una foto con Clarificar",
+          "brighten": "iluminó una foto con Iluminar",
+          "descratch": "limpió una foto con Quitar Arañazos",
+          "backgroundStyle": "transformó una foto con un Estilo de Fondo",
+          "memorialStyle": "honró memorias con Estilo Memorial",
+          "photoMagic": "creó magia con Magia de Fotos"
+        },
+        "timeFormat": "hace {{minutes}} minutos"
       }
     },
     "result": {

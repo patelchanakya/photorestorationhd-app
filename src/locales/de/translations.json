@@ -524,7 +524,12 @@
 "failedToTakePhoto": "Foto konnte nicht aufgenommen werden. Bitte versuche es erneut."
 },
 "sharing": {
-"defaultMessage": "Schau dir mein wiederhergestelltes Foto an!"
+"defaultMessage": "Schau dir mein wiederhergestelltes Foto an!",
+"notAvailable": "Teilen ist auf diesem Gerät nicht verfügbar",
+"dialogTitle": "Teile dein wiederhergestelltes Foto",
+"photoLibraryPermissionRequired": "Fotobibliothekszugriff ist erforderlich, um Bilder zu speichern. Bitte aktiviere es in den Einstellungen.",
+"photoSavedSuccess": "Foto in Galerie gespeichert!",
+"saveToGalleryFailed": "Foto konnte nicht in Galerie gespeichert werden."
 },
 "errorBoundary": {
 "message": "Die App ist auf einen Fehler gestoßen. Bitte versuche es erneut."
@@ -1017,8 +1022,24 @@
 "demoPhoto": "Demofoto wird bearbeitet",
 "socialProof": {
 "photosRestored": "{{count}} Fotos wiederhergestellt",
-"recentActivity": "Jemand in {{city}} hat gerade {{action}}",
-"testimonial": "{{quote}} - {{author}}"
+"recentActivity": "{{timeAgo}} in {{city}}, jemand {{action}}",
+"testimonial": "{{quote}} - {{author}}",
+"totalPhotos": "2.847.293",
+"testimonialText": "Das ist mein liebstes Hobby",
+"authorName": "Sarah",
+"actions": {
+"autoRestore": "stellte ein Foto mit Auto-Wiederherstellung wieder her",
+"backgroundRemoval": "verbesserte ein Foto mit Hintergrundentfernung",
+"colorize": "fügte Farbe zu einem Foto mit Kolorieren hinzu",
+"repair": "reparierte ein Foto mit Reparieren",
+"clarify": "schärfte ein Foto mit Klarstellen",
+"brighten": "hellte ein Foto mit Aufhellen auf",
+"descratch": "reinigte ein Foto mit Entkratzen",
+"backgroundStyle": "transformierte ein Foto mit einem Hintergrundstil",
+"memorialStyle": "ehrte Erinnerungen mit Gedenkstil",
+"photoMagic": "erschuf Magie mit Foto-Magie"
+},
+"timeFormat": "vor {{minutes}} Minuten"
 }
 },
 "result": {

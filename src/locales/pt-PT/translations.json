@@ -1017,8 +1017,24 @@
     "demoPhoto": "Processando Foto de Demonstração",
     "socialProof": {
       "photosRestored": "{{count}} fotos restauradas",
-      "recentActivity": "Alguém em {{city}} acabou de {{action}}",
-      "testimonial": "{{quote}} - {{author}}"
+      "recentActivity": "{{timeAgo}} em {{city}}, alguém {{action}}",
+      "testimonial": "{{quote}} - {{author}}",
+      "totalPhotos": "2.847.293",
+      "testimonialText": "Este é o meu passatempo favorito",
+      "authorName": "Sarah",
+      "actions": {
+        "autoRestore": "restaurou uma fotografia com Auto-Restaurar",
+        "backgroundRemoval": "melhorou uma fotografia com Remoção de Fundo",
+        "colorize": "adicionou cor a uma fotografia com Colorir",
+        "repair": "reparou uma fotografia com Reparar",
+        "clarify": "clarificou uma fotografia com Clarificar",
+        "brighten": "iluminou uma fotografia com Iluminar",
+        "descratch": "limpou uma fotografia com Remover Riscos",
+        "backgroundStyle": "transformou uma fotografia com um Estilo de Fundo",
+        "memorialStyle": "honrou memórias com Estilo Memorial",
+        "photoMagic": "criou magia com Magia de Fotografias"
+      },
+      "timeFormat": "há {{minutes}} minutos"
     }
   },
   "result": {
@@ -1076,6 +1092,14 @@
       "title": "Preservar Memórias",
       "subtitle": "Fotos de família, tributos memoriais, herança"
     }
+  },
+  "sharing": {
+    "defaultMessage": "Veja a minha fotografia restaurada!",
+    "notAvailable": "Partilha não está disponível neste dispositivo",
+    "dialogTitle": "Partilhe a sua fotografia restaurada",
+    "photoLibraryPermissionRequired": "Acesso à biblioteca de fotografias é necessário para guardar imagens. Por favor, active nas Definições.",
+    "photoSavedSuccess": "Fotografia guardada na galeria!",
+    "saveToGalleryFailed": "Falha ao guardar fotografia na galeria."
   }
 },
 "sharing": {

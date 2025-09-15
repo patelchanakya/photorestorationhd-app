@@ -1017,8 +1017,24 @@
       "demoPhoto": "Behandler demofoto",
       "socialProof": {
         "photosRestored": "{{count}} fotos gendannet",
-        "recentActivity": "Nogen i {{city}} har lige {{action}}",
-        "testimonial": "{{quote}} - {{author}}"
+        "recentActivity": "{{timeAgo}} i {{city}}, nogen {{action}}",
+        "testimonial": "{{quote}} - {{author}}",
+        "totalPhotos": "2.847.293",
+        "testimonialText": "Dette er min yndlingshobby",
+        "authorName": "Sarah",
+        "actions": {
+          "autoRestore": "restaurerede et billede med Auto-Gendan",
+          "backgroundRemoval": "forbedrede et billede med Baggrundsjernelse",
+          "colorize": "tilføjede farve til et billede med Farvelæg",
+          "repair": "reparerede et billede med Reparer",
+          "clarify": "skærpede et billede med Afklar",
+          "brighten": "lysende et billede med Lys op",
+          "descratch": "rensede et billede med Fjern ridser",
+          "backgroundStyle": "transformerede et billede med en Baggrundsstil",
+          "memorialStyle": "ærede minder med Mindestil",
+          "photoMagic": "skabte magi med Billedmagi"
+        },
+        "timeFormat": "{{minutes}} minutter siden"
       }
     },
     "result": {
@@ -1079,6 +1095,12 @@
     }
   },
   "sharing": {
+    "defaultMessage": "Se mit restaurerede billede!",
+    "notAvailable": "Deling er ikke tilgængelig på denne enhed",
+    "dialogTitle": "Del dit restaurerede billede",
+    "photoLibraryPermissionRequired": "Billedbiblioteksadgang er påkrævet for at gemme billeder. Aktivér det i Indstillinger.",
+    "photoSavedSuccess": "Billede gemt i galleri!",
+    "saveToGalleryFailed": "Kunne ikke gemme billede i galleri.",
     "linkCopied": {
       "title": "Link kopieret",
       "message": "App-linket er blevet kopieret til dit udklipsholder!"

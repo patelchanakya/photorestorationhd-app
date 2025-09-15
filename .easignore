@@ -113,3 +113,48 @@ yarn-error.log*
 # Locale files to ignore
 src/locales/en-CA/secondfile.json
 src/locales/en-CA/firsthalf.json
+
+# Unused components and screens (dead code)
+app/onboarding-v3.tsx
+app/onboarding-test-simple.tsx
+
+# Unused debug/development components
+components/ABTestDebugger.tsx
+components/AnimatedAddRemove.tsx
+components/AppLifecycleDebug.tsx
+components/CircularProgress.tsx
+components/CurtainRevealImage.tsx
+components/CustomSplashScreen.tsx
+components/DebugI18n.tsx
+components/HeroRepairTile.tsx
+components/JobBlockingModal.tsx
+components/ModeChips.tsx
+components/ModesFilterBar.tsx
+components/PhotoPicker.tsx
+components/PhotoProcessingModal.tsx
+components/PopularExamples.tsx
+components/RestorePurchasesHint.tsx
+components/RevenueCatErrorBoundary.tsx
+components/RollbackMonitor.tsx
+components/StyleCollections.tsx
+components/UsageLimitBanner.tsx
+
+# Unused UI components
+components/ui/ShimmerText.tsx
+components/ui/TabBarBackground.tsx
+components/ui/TabBarBackground.ios.tsx
+
+# Unused onboarding v3 components
+components/Onboarding/RatingScreen.tsx
+components/Onboarding/shared/LockIcon.tsx
+components/Onboarding/shared/ProgressDots.tsx
+
+# Unused hooks
+hooks/useThemeColor.ts
+hooks/useScreenFocus.ts
+hooks/usePersistentQuery.ts
+
+# Unused utilities/services
+utils/performanceConfig.ts
+services/replicateDirectCheck.ts
+services/stableUserId.ts

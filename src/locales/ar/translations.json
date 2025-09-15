@@ -1017,8 +1017,24 @@
     "demoPhoto": "معالجة الصورة التوضيحية",
     "socialProof": {
     "photosRestored": "تم استعادة {{count}} صورة",
-    "recentActivity": "شخص في {{city}} {{action}} للتو",
-    "testimonial": "{{quote}} - {{author}}"
+    "recentActivity": "{{timeAgo}} في {{city}}، شخص ما {{action}}",
+    "testimonial": "{{quote}} - {{author}}",
+    "totalPhotos": "2,847,293",
+    "testimonialText": "هذه هوايتي المفضلة",
+    "authorName": "سارة",
+    "actions": {
+      "autoRestore": "استعاد صورة بالاستعادة التلقائية",
+      "backgroundRemoval": "حسّن صورة بإزالة الخلفية",
+      "colorize": "أضاف لوناً إلى صورة بالتلوين",
+      "repair": "أصلح صورة بالإصلاح",
+      "clarify": "وضّح صورة بالتوضيح",
+      "brighten": "أضاء صورة بالإضاءة",
+      "descratch": "نظّف صورة بإزالة الخدوش",
+      "backgroundStyle": "حوّل صورة بنمط الخلفية",
+      "memorialStyle": "كرّم ذكريات بنمط التذكار",
+      "photoMagic": "صنع سحراً بسحر الصور"
+    },
+    "timeFormat": "منذ {{minutes}} دقيقة"
     }
     },
     "result": {
@@ -1030,7 +1046,17 @@
     "openingShare": "جاري فتح المشاركة...",
     "shared": "✓ تمت المشاركة",
     "startTrial": "ابدأ التجربة المجانية",
-    "maybeLater": "ربما لاحقًا"
+    "maybeLater": "ربما لاحقًا",
+    "buttons": {
+    "saving": "جاري الحفظ...",
+    "saved": "تم الحفظ",
+    "save": "حفظ",
+    "sharing": "جاري المشاركة...",
+    "shared": "تمت المشاركة",
+    "share": "شارك",
+    "getMorePhotos": "احصل على المزيد من الصور",
+    "exploreApp": "استكشف التطبيق"
+    }
     },
     "savePermission": {
     "title": "حفظ استعادتك؟",
@@ -1079,6 +1105,12 @@
     }
     },
     "sharing": {
+    "defaultMessage": "شاهد صورتي المستعادة!",
+    "notAvailable": "المشاركة غير متاحة على هذا الجهاز",
+    "dialogTitle": "شارك صورتك المستعادة",
+    "photoLibraryPermissionRequired": "يلزم الوصول إلى مكتبة الصور لحفظ الصور. يرجى تمكينه في الإعدادات.",
+    "photoSavedSuccess": "تم حفظ الصورة في المعرض!",
+    "saveToGalleryFailed": "فشل في حفظ الصورة في المعرض.",
     "linkCopied": {
     "title": "تم نسخ الرابط",
     "message": "تم نسخ رابط التطبيق إلى الحافظة!"

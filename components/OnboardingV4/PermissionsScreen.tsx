@@ -15,6 +15,7 @@ import Animated, {
 
 import { OnboardingButton } from '@/components/Onboarding/shared/OnboardingButton';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { useTranslation } from 'react-i18next';
 
 interface PermissionsScreenV4Props {
   onContinue: () => void;
@@ -129,6 +130,7 @@ const FallingPhoto = React.memo(({
 });
 
 export function PermissionsScreenV4({ onContinue }: PermissionsScreenV4Props) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const titleOpacity = useSharedValue(0);
@@ -241,7 +243,7 @@ export function PermissionsScreenV4({ onContinue }: PermissionsScreenV4Props) {
               You can change this later in settings
             </Text>
             <OnboardingButton
-              title="Allow Access"
+              title={t('deviceCarousel.allowAccess')}
               onPress={onContinue}
               variant="primary"
               size="large"

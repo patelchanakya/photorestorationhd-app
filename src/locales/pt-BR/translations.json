@@ -1017,8 +1017,24 @@
     "demoPhoto": "Processando Foto de Demonstração",
     "socialProof": {
       "photosRestored": "{{count}} fotos restauradas",
-      "recentActivity": "Alguém em {{city}} acabou de {{action}}",
-      "testimonial": "{{quote}} - {{author}}"
+      "recentActivity": "{{timeAgo}} em {{city}}, alguém {{action}}",
+      "testimonial": "{{quote}} - {{author}}",
+      "totalPhotos": "2.847.293",
+      "testimonialText": "Este é meu hobby favorito",
+      "authorName": "Sarah",
+      "actions": {
+        "autoRestore": "restaurou uma foto com Auto-Restaurar",
+        "backgroundRemoval": "melhorou uma foto com Remoção de Fundo",
+        "colorize": "adicionou cor a uma foto com Colorir",
+        "repair": "consertou uma foto com Reparar",
+        "clarify": "clarificou uma foto com Clarificar",
+        "brighten": "iluminou uma foto com Iluminar",
+        "descratch": "limpou uma foto com Remover Riscos",
+        "backgroundStyle": "transformou uma foto com um Estilo de Fundo",
+        "memorialStyle": "honrou memórias com Estilo Memorial",
+        "photoMagic": "criou mágica com Mágica de Fotos"
+      },
+      "timeFormat": "há {{minutes}} minutos"
     }
   },
   "result": {
@@ -1079,6 +1095,12 @@
   }
 },
 "sharing": {
+  "defaultMessage": "Veja minha foto restaurada!",
+  "notAvailable": "Compartilhamento não está disponível neste dispositivo",
+  "dialogTitle": "Compartilhe sua foto restaurada",
+  "photoLibraryPermissionRequired": "Acesso à biblioteca de fotos é necessário para salvar imagens. Por favor, ative nas Configurações.",
+  "photoSavedSuccess": "Foto salva na galeria!",
+  "saveToGalleryFailed": "Falha ao salvar foto na galeria.",
   "linkCopied": {
     "title": "Link Copiado",
     "message": "O link do aplicativo foi copiado para sua área de transferência!"

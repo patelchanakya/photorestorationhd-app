@@ -203,7 +203,7 @@
       "title": "Colorize",
       "subtitle": "Add colors to B&W photos"
     },
-    "colorize": {
+    "colorise": {
       "title": "Colorize",
       "subtitle": "Add colors to B&W photos"
     },
@@ -342,7 +342,7 @@
       "addWings": "Add Angel Wings",
       "addWingsDesc": "Beautiful wings that match your photo",
       "waterStainDamage": "Water/Stain Damage",
-      "waterStainDamageDesc": "Remove water damage, stains, and discolouration",
+      "waterStainDamageDesc": "Remove water damage, stains, and discoloration",
       "fixMyPhoto": "Auto-Restore",
       "fixMyPhotoDesc": "Fix tears, scratches, and damage in old photos",
       "professionalOutfit": "Professional Outfit",
@@ -358,7 +358,7 @@
       "makeSlimmer": "Make Slimmer",
       "makeSlimmerDesc": "Natural body enhancement",
       "colorize": "Colorize",
-      "colorizeDesc": "Bring old B&W photos to life with realistic colors",
+      "coloriseDesc": "Bring old B&W photos to life with realistic colors",
       "clarify": "Clarify",
       "clarifyDesc": "Make blurry photos crystal clear",
       "brighten": "Brighten",
@@ -612,7 +612,7 @@
       "maybeLater": "Maybe Later"
     },
     "sheet": {
-      "colorizePhoto": "Colorize Photo",
+      "colorizePhoto": "Colourise Photo",
       "restorePhoto": "Restore Photo",
       "repairPhoto": "Repair Photo",
       "descratchPhoto": "Descratch Photo",
@@ -926,7 +926,7 @@
     "types": {
       "repair": "Repaired Photo",
       "unblur": "Enhanced Photo",
-      "colorize": "Colorized Photo",
+      "colorize": "Colourised Photo",
       "descratch": "Restored Photo",
       "enlighten": "Brightened Photo",
       "outfit": "Outfit Changed",
@@ -992,7 +992,7 @@
       "options": {
         "fixOldPhotos": "Fix Old Family Photos",
         "repairTorn": "Repair Torn & Ripped Photos",
-        "colorizeBlackWhite": "Colorize Black & White",
+        "colorizeBlackWhite": "Colourise Black & White",
         "removeWaterDamage": "Remove Water Damage",
         "sharpenFaces": "Clear Up Blurry Faces",
         "removeScratches": "Remove Scratches & Marks",
@@ -1017,8 +1017,24 @@
       "demoPhoto": "Processing Demo Photo",
       "socialProof": {
         "photosRestored": "{{count}} photos restored",
-        "recentActivity": "Someone in {{city}} just {{action}}",
-        "testimonial": "{{quote}} - {{author}}"
+        "recentActivity": "{{timeAgo}} in {{city}}, someone {{action}}",
+        "testimonial": "{{quote}} - {{author}}",
+        "totalPhotos": "2,847,293",
+        "testimonialText": "This is my favorite hobby",
+        "authorName": "Sarah",
+        "actions": {
+          "autoRestore": "restored a photo with Auto-Restore",
+          "backgroundRemoval": "enhanced a photo with Background Removal",
+          "colorize": "brought color to a photo with Colourise",
+          "repair": "fixed a photo with Repair",
+          "clarify": "sharpened a photo with Clarify",
+          "brighten": "brightened a photo with Brighten",
+          "descratch": "cleaned up a photo with Descratch",
+          "backgroundStyle": "transformed a photo with a Background Style",
+          "memorialStyle": "honored memories with Memorial Style",
+          "photoMagic": "created magic with Photo Magic"
+        },
+        "timeFormat": "{{minutes}} minutes ago"
       }
     },
     "result": {
@@ -1030,7 +1046,17 @@
       "openingShare": "Opening Share...",
       "shared": "✓ Shared",
       "startTrial": "Start Free Trial",
-      "maybeLater": "Maybe later"
+      "maybeLater": "Maybe later",
+      "buttons": {
+        "saving": "Saving...",
+        "saved": "Saved",
+        "save": "Save",
+        "sharing": "Sharing...",
+        "shared": "Shared",
+        "share": "Share",
+        "getMorePhotos": "Get More Photos",
+        "exploreApp": "Explore App"
+      }
     },
     "savePermission": {
       "title": "Save Your Restoration?",
@@ -1079,6 +1105,12 @@
     }
   },
   "sharing": {
+    "defaultMessage": "Check out my restored photo!",
+    "notAvailable": "Sharing is not available on this device",
+    "dialogTitle": "Share your restored photo",
+    "photoLibraryPermissionRequired": "Photo library access is required to save images. Please enable it in Settings.",
+    "photoSavedSuccess": "Photo saved to gallery!",
+    "saveToGalleryFailed": "Failed to save photo to gallery.",
     "linkCopied": {
       "title": "Link Copied",
       "message": "The app link has been copied to your clipboard!"

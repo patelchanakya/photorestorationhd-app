@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, Share } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Alert } from 'react-native';
+import * as Sharing from 'expo-sharing';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as MediaLibrary from 'expo-media-library';
@@ -66,15 +67,20 @@ export function ResultConversionScreen({
         return;
       }
 
-      // Open native iOS share sheet
-      const shareResult = await Share.share({
-        url: imageUri
+      // Check if sharing is available
+      if (!(await Sharing.isAvailableAsync())) {
+        Alert.alert(t('common.error'), t('sharing.notAvailable'));
+        return;
+      }
+
+      // Share the image using expo-sharing for better file handling
+      await Sharing.shareAsync(imageUri, {
+        mimeType: 'image/jpeg',
+        dialogTitle: t('sharing.dialogTitle')
       });
 
-      // Mark as shared if user completed the share action
-      if (shareResult.action === Share.sharedAction) {
-        setSharedToGallery(true);
-      }
+      // Mark as shared since expo-sharing doesn't return action status
+      setSharedToGallery(true);
 
     } catch (error) {
       console.error('Failed to share photo:', error);
@@ -103,7 +109,7 @@ export function ResultConversionScreen({
       if (status !== 'granted') {
         Alert.alert(
           t('common.error'),
-          'Photo library access is required to save images. Please enable it in Settings.'
+          t('sharing.photoLibraryPermissionRequired')
         );
         return;
       }
@@ -111,11 +117,11 @@ export function ResultConversionScreen({
       // Save to photo library
       await MediaLibrary.saveToLibraryAsync(imageUri);
       setSavedToGallery(true);
-      Alert.alert(t('common.success'), 'Photo saved to gallery!');
+      Alert.alert(t('common.success'), t('sharing.photoSavedSuccess'));
 
     } catch (error) {
       console.error('Failed to save photo:', error);
-      Alert.alert(t('common.error'), 'Failed to save photo to gallery.');
+      Alert.alert(t('common.error'), t('sharing.saveToGalleryFailed'));
     } finally {
       setIsSaving(false);
     }
@@ -217,7 +223,7 @@ export function ResultConversionScreen({
               disabled={isSaving || savedToGallery}
             >
               <Text style={styles.actionButtonText}>
-                {isSaving ? 'Saving...' : savedToGallery ? 'Saved' : 'Save'}
+                {isSaving ? t('onboardingV4.result.buttons.saving') : savedToGallery ? t('onboardingV4.result.buttons.saved') : t('onboardingV4.result.buttons.save')}
               </Text>
             </TouchableOpacity>
 
@@ -230,7 +236,7 @@ export function ResultConversionScreen({
               disabled={isSharing || sharedToGallery}
             >
               <Text style={styles.actionButtonText}>
-                {isSharing ? 'Sharing...' : sharedToGallery ? 'Shared' : 'Share'}
+                {isSharing ? t('onboardingV4.result.buttons.sharing') : sharedToGallery ? t('onboardingV4.result.buttons.shared') : t('onboardingV4.result.buttons.share')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -240,7 +246,7 @@ export function ResultConversionScreen({
         <View style={[styles.bottomContent, { paddingBottom: insets.bottom + 20 }]}>
           <Animated.View style={buttonsStyle}>
             <OnboardingButton
-              title="Get More Photos"
+              title={t('onboardingV4.result.buttons.getMorePhotos')}
               onPress={onStartTrial}
               variant="primary"
               size="large"
@@ -248,7 +254,7 @@ export function ResultConversionScreen({
             />
 
             <OnboardingButton
-              title="Explore App"
+              title={t('onboardingV4.result.buttons.exploreApp')}
               onPress={onMaybeLater}
               variant="secondary"
               size="medium"

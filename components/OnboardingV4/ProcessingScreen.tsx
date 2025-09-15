@@ -16,6 +16,7 @@ import Animated, {
 import { useOnboardingV4Analytics } from '@/hooks/useOnboardingV4Analytics';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 import { useTranslation } from 'react-i18next';
+import { getLocales, getCalendars } from 'expo-localization';
 
 // Toggle for mock vs real API - change to false for production
 const USE_MOCK_API = false;
@@ -34,22 +35,153 @@ interface ProcessingScreenProps {
   onError: (error: Error) => void;
 }
 
-const SOCIAL_PROOF_DATA = {
-  totalPhotos: '2,847,293',
-  recentActivity: {
-    city: 'Toronto',
-    action: 'restored a 1952 wedding photo'
-  },
-  testimonial: {
-    text: '"Brought my mom to tears"',
-    author: 'Sarah'
+// Dynamic city data based on regions
+const CITIES_BY_REGION = {
+  US: ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia', 'San Antonio', 'San Diego', 'Dallas', 'Austin', 'San Jose', 'Fort Worth', 'Charlotte', 'Seattle', 'Denver', 'Boston', 'Nashville', 'Detroit', 'Portland', 'Las Vegas'],
+  CA: ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa', 'Edmonton', 'Quebec City', 'Winnipeg', 'Hamilton', 'London', 'Halifax', 'Victoria', 'Saskatoon', 'Regina', 'Kelowna'],
+  GB: ['London', 'Birmingham', 'Manchester', 'Liverpool', 'Leeds', 'Sheffield', 'Bristol', 'Glasgow', 'Edinburgh', 'Cardiff', 'Belfast', 'Newcastle', 'Nottingham', 'Plymouth'],
+  AU: ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide', 'Gold Coast', 'Newcastle', 'Canberra', 'Wollongong', 'Geelong', 'Hobart', 'Townsville', 'Cairns'],
+  DE: ['Berlin', 'Hamburg', 'Munich', 'Cologne', 'Frankfurt', 'Stuttgart', 'Düsseldorf', 'Leipzig', 'Dortmund', 'Essen', 'Bremen', 'Dresden', 'Hanover'],
+  FR: ['Paris', 'Marseille', 'Lyon', 'Toulouse', 'Nice', 'Nantes', 'Montpellier', 'Strasbourg', 'Bordeaux', 'Lille', 'Rennes', 'Reims', 'Saint-Étienne'],
+  DEFAULT: ['London', 'New York', 'Tokyo', 'Sydney', 'Toronto', 'Berlin', 'Paris', 'Madrid', 'Rome', 'Amsterdam', 'Stockholm', 'Copenhagen', 'Vienna']
+};
+
+const getRestorationActions = (t: any) => [
+  t('onboardingV4.processing.socialProof.actions.autoRestore'),
+  t('onboardingV4.processing.socialProof.actions.backgroundRemoval'),
+  t('onboardingV4.processing.socialProof.actions.colorize'),
+  t('onboardingV4.processing.socialProof.actions.repair'),
+  t('onboardingV4.processing.socialProof.actions.clarify'),
+  t('onboardingV4.processing.socialProof.actions.brighten'),
+  t('onboardingV4.processing.socialProof.actions.descratch'),
+  t('onboardingV4.processing.socialProof.actions.backgroundStyle'),
+  t('onboardingV4.processing.socialProof.actions.memorialStyle'),
+  t('onboardingV4.processing.socialProof.actions.photoMagic')
+];
+
+// Comprehensive timezone to city mapping (no permissions needed)
+const TIMEZONE_TO_CITY = {
+  // North America
+  'America/New_York': 'New York',
+  'America/Chicago': 'Chicago',
+  'America/Denver': 'Denver',
+  'America/Los_Angeles': 'Los Angeles',
+  'America/Toronto': 'Toronto',
+  'America/Vancouver': 'Vancouver',
+  'America/Montreal': 'Montreal',
+  'America/Phoenix': 'Phoenix',
+  'America/Detroit': 'Detroit',
+  'America/Boston': 'Boston',
+  'America/Miami': 'Miami',
+  'America/Seattle': 'Seattle',
+
+  // Europe
+  'Europe/London': 'London',
+  'Europe/Paris': 'Paris',
+  'Europe/Berlin': 'Berlin',
+  'Europe/Madrid': 'Madrid',
+  'Europe/Rome': 'Rome',
+  'Europe/Amsterdam': 'Amsterdam',
+  'Europe/Stockholm': 'Stockholm',
+  'Europe/Copenhagen': 'Copenhagen',
+  'Europe/Vienna': 'Vienna',
+  'Europe/Brussels': 'Brussels',
+  'Europe/Dublin': 'Dublin',
+  'Europe/Zurich': 'Zurich',
+
+  // Asia Pacific
+  'Asia/Tokyo': 'Tokyo',
+  'Asia/Shanghai': 'Shanghai',
+  'Asia/Singapore': 'Singapore',
+  'Asia/Hong_Kong': 'Hong Kong',
+  'Asia/Seoul': 'Seoul',
+  'Asia/Mumbai': 'Mumbai',
+  'Asia/Dubai': 'Dubai',
+  'Asia/Bangkok': 'Bangkok',
+  'Australia/Sydney': 'Sydney',
+  'Australia/Melbourne': 'Melbourne',
+  'Australia/Brisbane': 'Brisbane',
+  'Australia/Perth': 'Perth',
+
+  // South America
+  'America/Sao_Paulo': 'São Paulo',
+  'America/Buenos_Aires': 'Buenos Aires',
+  'America/Mexico_City': 'Mexico City',
+  'America/Lima': 'Lima',
+
+  // Africa & Middle East
+  'Africa/Cairo': 'Cairo',
+  'Africa/Lagos': 'Lagos',
+  'Africa/Johannesburg': 'Johannesburg',
+  'Asia/Jerusalem': 'Jerusalem'
+} as const;
+
+// Get user's city from timezone (most accurate, no permissions)
+const getUserCity = (): string => {
+  try {
+    const locale = getLocales()[0];
+    const calendar = getCalendars()[0];
+    const timezone = calendar?.timeZone;
+    const region = locale?.regionCode || 'DEFAULT';
+
+    // Primary: Direct timezone mapping (most accurate)
+    if (timezone && TIMEZONE_TO_CITY[timezone as keyof typeof TIMEZONE_TO_CITY]) {
+      return TIMEZONE_TO_CITY[timezone as keyof typeof TIMEZONE_TO_CITY];
+    }
+
+    // Secondary: Extract city from timezone string
+    if (timezone) {
+      const timezoneParts = timezone.split('/');
+      if (timezoneParts.length > 1) {
+        const cityName = timezoneParts[timezoneParts.length - 1].replace(/_/g, ' ');
+        if (cityName && cityName !== 'GMT' && cityName.length > 2) {
+          return cityName;
+        }
+      }
+    }
+
+    // Tertiary: Regional fallback
+    const cities = CITIES_BY_REGION[region as keyof typeof CITIES_BY_REGION] || CITIES_BY_REGION.DEFAULT;
+    return cities[Math.floor(Math.random() * cities.length)];
+
+  } catch {
+    // Ultimate fallback - just show something nice
+    return 'your city';
   }
+};
+
+// Generate a random time ago (5-30 minutes)
+const getRandomTimeAgo = (t: any) => {
+  const minutes = Math.floor(Math.random() * 26) + 5; // 5-30 minutes
+  return t('onboardingV4.processing.socialProof.timeFormat', { minutes });
+};
+
+// Get dynamic social proof data
+const getDynamicSocialProofData = (t: any) => {
+  const userCity = getUserCity();
+  const restorationActions = getRestorationActions(t);
+  const randomAction = restorationActions[Math.floor(Math.random() * restorationActions.length)];
+  const timeAgo = getRandomTimeAgo(t);
+
+  return {
+    totalPhotos: t('onboardingV4.processing.socialProof.totalPhotos'),
+    recentActivity: {
+      city: userCity,
+      action: randomAction,
+      timeAgo: timeAgo
+    },
+    testimonial: {
+      text: `"${t('onboardingV4.processing.socialProof.testimonialText')}"`,
+      author: t('onboardingV4.processing.socialProof.authorName')
+    }
+  };
 };
 
 export function ProcessingScreen({ photo, intent, functionType, onComplete, onError }: ProcessingScreenProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { trackSocialProofShown } = useOnboardingV4Analytics();
+  const [socialProofData] = React.useState(() => getDynamicSocialProofData(t));
 
   console.log('📸 [PROCESSING] Screen initialized:', {
     intent,
@@ -278,30 +410,25 @@ export function ProcessingScreen({ photo, intent, functionType, onComplete, onEr
 
         {/* Social Proof Section */}
         <Animated.View style={[styles.socialProofContainer, socialProofStyle]}>
-          {/* Photo counter */}
-          <Animated.View style={[styles.statItem, counterStyle]}>
-            <Text style={styles.statIcon}>📊</Text>
-            <Text style={styles.statText}>{t('onboardingV4.processing.socialProof.photosRestored', { count: SOCIAL_PROOF_DATA.totalPhotos })}</Text>
-          </Animated.View>
-
           {/* Recent activity */}
-          <View style={styles.statItem}>
+          <View style={styles.statCard}>
             <Text style={styles.statIcon}>📍</Text>
             <Text style={styles.statText}>
               {t('onboardingV4.processing.socialProof.recentActivity', {
-                city: SOCIAL_PROOF_DATA.recentActivity.city,
-                action: SOCIAL_PROOF_DATA.recentActivity.action
+                timeAgo: socialProofData.recentActivity.timeAgo,
+                city: socialProofData.recentActivity.city,
+                action: socialProofData.recentActivity.action
               })}
             </Text>
           </View>
 
           {/* Testimonial */}
-          <View style={styles.statItem}>
+          <View style={styles.statCard}>
             <Text style={styles.statIcon}>⭐</Text>
             <Text style={styles.statText}>
               {t('onboardingV4.processing.socialProof.testimonial', {
-                quote: SOCIAL_PROOF_DATA.testimonial.text,
-                author: SOCIAL_PROOF_DATA.testimonial.author
+                quote: socialProofData.testimonial.text,
+                author: socialProofData.testimonial.author
               })}
             </Text>
           </View>
@@ -395,20 +522,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: '100%',
   },
-  statItem: {
+  statCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
-    paddingHorizontal: 16,
+    marginBottom: 32,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   statIcon: {
-    fontSize: 20,
-    marginRight: 12,
+    fontSize: 24,
+    marginRight: 16,
   },
   statText: {
     flex: 1,
-    fontSize: 14,
-    color: '#9CA3AF',
-    lineHeight: 18,
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.85)',
+    lineHeight: 22,
   },
 });
