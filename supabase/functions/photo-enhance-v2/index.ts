@@ -79,9 +79,10 @@ serve(async (req) => {
     supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // CRITICAL: Check usage limits BEFORE initializing Replicate or processing image
+    const isPro = user_id && user_id !== 'anonymous' &&
+      (user_id.startsWith('store:') || user_id.startsWith('orig:') || user_id.startsWith('fallback:'));
+
     if (user_id && user_id !== 'anonymous') {
-      const isPro = user_id.startsWith('store:') || user_id.startsWith('orig:') || user_id.startsWith('fallback:');
-      
       if (isPro) {
         console.log('✅ Pro user detected - unlimited photos, skipping database check');
       } else {
@@ -102,6 +103,30 @@ serve(async (req) => {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
+      }
+    }
+
+    // Rate limit for Pro users (40 requests per UTC day)
+    if (isPro) {
+      const startOfToday = new Date();
+      startOfToday.setUTCHours(0, 0, 0, 0);
+
+      const { data: todayRequests, error: rateError } = await supabase
+        .from('photo_predictions')
+        .select('id')
+        .eq('user_id', user_id)
+        .gte('created_at', startOfToday.toISOString());
+
+      if (!rateError && todayRequests && todayRequests.length >= 40) {
+        console.log('❌ Pro user daily limit exceeded:', user_id);
+        return new Response(JSON.stringify({
+          success: false,
+          error: "GPU resources exhausted. Team is working on it.",
+          code: "SERVICE_BUSY"
+        }), {
+          status: 503,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
     }
 
