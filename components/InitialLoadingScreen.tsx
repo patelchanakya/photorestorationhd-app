@@ -11,7 +11,7 @@ import { useQuickEditStore } from '@/store/quickEditStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, Platform, Text, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Platform, Text, View, AppState } from 'react-native';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import Animated, {
     useAnimatedStyle,
@@ -40,36 +40,75 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
   const [currentVideo, setCurrentVideo] = useState<'loading' | 'done'>('loading');
   const [isNavigating, setIsNavigating] = useState(false);
 
+  // Background handling
+  const wasBackgroundedRef = useRef(false);
+  const startTimeRef = useRef(Date.now());
+
   // Fade animation for smooth transition
   const fadeOpacity = useSharedValue(1);
+
+  // Restart loading process after backgrounding
+  const restartLoadingProcess = () => {
+    if (!isMountedRef.current) return;
+
+    // Reset flags
+    wasBackgroundedRef.current = false;
+    setIsNavigating(false);
+
+    // Reset fade
+    fadeOpacity.value = 1;
+
+    // Restart video from beginning
+    try {
+      videoPlayer.currentTime = 0;
+      videoPlayer.play();
+    } catch (error) {
+      console.log('Video restart handled');
+    }
+
+    // Reset start time
+    startTimeRef.current = Date.now();
+
+    if (__DEV__) {
+      console.log('🔄 Loading process restarted after backgrounding');
+    }
+  };
 
   // Main loading video player - play once only
   const videoPlayer = useVideoPlayer(require('../assets/videos/loading.mp4'), (player) => {
     try {
       player.loop = false;  // Play once only
       player.muted = true;
-      // Set up video end listener
-      player.addListener('playingChange', (isPlaying) => {
-        if (!isPlaying && player.currentTime > 0) {
-          // Video has ended, start fade out
-          if (isMountedRef.current && !isNavigating) {
-            setIsNavigating(true);
-            fadeOpacity.value = withTiming(0, { duration: 300 }, () => {
-              // After fade completes, trigger navigation
-              if (isMountedRef.current) {
-                setTimeout(() => {
-                  onLoadingComplete();
-                }, 100);
-              }
-            });
-          }
-        }
-      });
+      // Note: playingChange event is unreliable, using timer-based approach instead
     } catch (error) {
       console.error('Loading video player init error:', error);
     }
   });
 
+
+  // Handle app state changes for backgrounding
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'background') {
+        wasBackgroundedRef.current = true;
+        // Pause video when app goes to background
+        try {
+          if (videoPlayer && videoPlayer.playing) {
+            videoPlayer.pause();
+          }
+        } catch (error) {
+          console.log('Video pause handled');
+        }
+      } else if (nextState === 'active' && wasBackgroundedRef.current) {
+        // App came back - restart the loading process
+        restartLoadingProcess();
+      }
+    });
+
+    return () => {
+      subscription?.remove();
+    };
+  }, []);
 
   // Cleanup video players on unmount
   useEffect(() => {
@@ -77,7 +116,7 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
 
     return () => {
       isMountedRef.current = false;
-      
+
       // Cleanup both video players
       try {
         if (videoPlayer) {
@@ -123,16 +162,33 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
             console.log('Loading video play error handled');
           }
         }
-        
-        // Wait for 4-second video to complete and initialize services in parallel
-        const [_] = await Promise.all([
-          new Promise(resolve => setTimeout(resolve, 4000)), // 4-second loading video duration
-          initializeServices()
-        ]);
+
+        // Initialize services (no artificial timer needed - video is our timer)
+        await initializeServices();
 
         if (__DEV__) {
-          console.log('✅ Loading video and services complete');
+          console.log('✅ Services initialization complete');
         }
+
+        // Since video end event is unreliable, use a timer that matches video duration
+        const videoEndTime = 4000; // Video is exactly 4 seconds
+        const elapsed = Date.now() - startTimeRef.current;
+        const remainingTime = Math.max(0, videoEndTime - elapsed);
+
+        setTimeout(() => {
+          if (!isNavigating && isMountedRef.current) {
+            if (__DEV__) {
+              console.log('🎬 4-second video timer complete, navigating...');
+            }
+            setIsNavigating(true);
+            fadeOpacity.value = withTiming(0, { duration: 300 });
+            setTimeout(() => {
+              if (isMountedRef.current) {
+                onLoadingComplete();
+              }
+            }, 400);
+          }
+        }, remainingTime);
 
         // Check pro status after loading video (RevenueCat should be ready by now)
         let isProUser = false;
@@ -176,10 +232,10 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
           }
           setInitialRoute('explore');
           markInitialized();
-          onLoadingComplete();
+          // Let video end trigger navigation
           return;
         }
-        
+
         // TEMP: Always show OnboardingV4 for development/testing
         if (__DEV__) {
           console.log('🎯 DEVELOPMENT MODE - Always showing OnboardingV4');
@@ -189,17 +245,17 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
           }
           setInitialRoute('explore');
           markInitialized();
-          onLoadingComplete();
+          // Let video end trigger navigation
           return;
         }
-        
+
         // Go to OnboardingV4 (always in dev, new users in prod)
         if (__DEV__) {
           console.log('🎯 Going to OnboardingV4');
         }
         setInitialRoute('onboarding-v4');
         markInitialized();
-        onLoadingComplete();
+        // Let video end trigger navigation
 
       } catch (error) {
         if (__DEV__) {
@@ -211,11 +267,32 @@ export default function InitialLoadingScreen({ onLoadingComplete }: InitialLoadi
         }
         setInitialRoute('explore');
         markInitialized();
-        onLoadingComplete();
+        // Let video end trigger navigation (or timeout)
       }
     };
 
     handleAppInitialization();
+
+    // Safety timeout in case video fails completely
+    const safetyTimeout = setTimeout(() => {
+      if (!isNavigating && isMountedRef.current) {
+        if (__DEV__) {
+          console.warn('⚠️ Safety timeout triggered - forcing navigation');
+        }
+        setIsNavigating(true);
+        // Don't use withTiming callback - just navigate directly
+        fadeOpacity.value = withTiming(0, { duration: 300 });
+        setTimeout(() => {
+          if (isMountedRef.current) {
+            onLoadingComplete();
+          }
+        }, 400); // After fade duration
+      }
+    }, 10000); // 10 seconds safety net (should never be needed)
+
+    return () => {
+      clearTimeout(safetyTimeout);
+    };
   }, []);
 
   // Initialize all services
