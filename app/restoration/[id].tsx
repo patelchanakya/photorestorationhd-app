@@ -421,8 +421,7 @@ export default function RestorationScreen() {
             }
             
             const shareResult = await Share.share({
-              url: shareUrl,
-              message: t('sharing.defaultMessage'),
+              url: shareUrl
             });
             
             if (__DEV__) {
@@ -484,8 +483,7 @@ export default function RestorationScreen() {
         }
         
         const shareResult = await Share.share({
-          url: shareUrl,
-          message: t('sharing.defaultMessage'),
+          url: shareUrl
         });
         
         if (__DEV__) {

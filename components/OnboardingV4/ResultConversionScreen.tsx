@@ -2,9 +2,10 @@ import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, Share } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { 
-  useAnimatedStyle, 
-  useSharedValue, 
+import * as MediaLibrary from 'expo-media-library';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
   withTiming,
   withSpring,
   withDelay,
@@ -43,6 +44,8 @@ export function ResultConversionScreen({
   const insets = useSafeAreaInsets();
   const [isSharing, setIsSharing] = React.useState(false);
   const [sharedToGallery, setSharedToGallery] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [savedToGallery, setSavedToGallery] = React.useState(false);
   
   const checkmarkScale = useSharedValue(0);
   const titleOpacity = useSharedValue(0);
@@ -65,8 +68,7 @@ export function ResultConversionScreen({
 
       // Open native iOS share sheet
       const shareResult = await Share.share({
-        url: imageUri,
-        message: t('sharing.defaultMessage'),
+        url: imageUri
       });
 
       // Mark as shared if user completed the share action
@@ -79,6 +81,43 @@ export function ResultConversionScreen({
       Alert.alert(t('common.error'), t('alerts.errors.sharing.message'));
     } finally {
       setIsSharing(false);
+    }
+  };
+
+  const handleSaveToGallery = async () => {
+    if (isSaving) return;
+
+    try {
+      setIsSaving(true);
+
+      // Use the restored photo URI, or fallback to before photo
+      const imageUri = afterPhoto?.uri || beforePhoto?.uri;
+      if (!imageUri) {
+        Alert.alert(t('common.error'), t('alerts.noPhotoAvailable'));
+        return;
+      }
+
+      // Request permission (uses default system prompt)
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+
+      if (status !== 'granted') {
+        Alert.alert(
+          t('common.error'),
+          'Photo library access is required to save images. Please enable it in Settings.'
+        );
+        return;
+      }
+
+      // Save to photo library
+      await MediaLibrary.saveToLibraryAsync(imageUri);
+      setSavedToGallery(true);
+      Alert.alert(t('common.success'), 'Photo saved to gallery!');
+
+    } catch (error) {
+      console.error('Failed to save photo:', error);
+      Alert.alert(t('common.error'), 'Failed to save photo to gallery.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -166,20 +205,35 @@ export function ResultConversionScreen({
           )}
         </Animated.View>
 
-        {/* Share to gallery button */}
+        {/* Share and Save buttons */}
         <Animated.View style={[styles.shareMessage, saveMessageStyle]}>
-          <TouchableOpacity 
-            style={[
-              styles.shareButton, 
-              sharedToGallery && styles.shareButtonDisabled
-            ]} 
-            onPress={handleShareToGallery}
-            disabled={isSharing || sharedToGallery}
-          >
-            <Text style={styles.shareButtonText}>
-              {isSharing ? t('onboardingV4.result.openingShare') : sharedToGallery ? t('onboardingV4.result.shared') : t('onboardingV4.result.shareWork')}
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.buttonsRow}>
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                savedToGallery && styles.actionButtonDisabled
+              ]}
+              onPress={handleSaveToGallery}
+              disabled={isSaving || savedToGallery}
+            >
+              <Text style={styles.actionButtonText}>
+                {isSaving ? 'Saving...' : savedToGallery ? 'Saved' : 'Save'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                sharedToGallery && styles.actionButtonDisabled
+              ]}
+              onPress={handleShareToGallery}
+              disabled={isSharing || sharedToGallery}
+            >
+              <Text style={styles.actionButtonText}>
+                {isSharing ? 'Sharing...' : sharedToGallery ? 'Shared' : 'Share'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </Animated.View>
 
         {/* Action Buttons */}
@@ -294,22 +348,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 60,
   },
-  shareButton: {
+  buttonsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  actionButton: {
     backgroundColor: 'rgba(34, 197, 94, 0.15)',
     borderWidth: 1,
     borderColor: '#22c55e',
     borderRadius: 20,
     paddingHorizontal: 20,
     paddingVertical: 10,
+    minWidth: 80,
   },
-  shareButtonDisabled: {
+  actionButtonDisabled: {
     backgroundColor: 'rgba(34, 197, 94, 0.05)',
     borderColor: 'rgba(34, 197, 94, 0.3)',
   },
-  shareButtonText: {
+  actionButtonText: {
     fontSize: 14,
     color: '#22c55e',
     fontWeight: '600',
+    textAlign: 'center',
   },
   bottomContent: {
     flex: 1,
