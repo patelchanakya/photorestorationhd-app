@@ -240,7 +240,7 @@ export function ResultConversionScreen({
         <View style={[styles.bottomContent, { paddingBottom: insets.bottom + 20 }]}>
           <Animated.View style={buttonsStyle}>
             <OnboardingButton
-              title={t('onboardingV4.result.startTrial')}
+              title="Get More Photos"
               onPress={onStartTrial}
               variant="primary"
               size="large"
@@ -248,7 +248,7 @@ export function ResultConversionScreen({
             />
 
             <OnboardingButton
-              title={t('onboardingV4.result.maybeLater')}
+              title="Explore App"
               onPress={onMaybeLater}
               variant="secondary"
               size="medium"
