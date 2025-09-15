@@ -235,19 +235,28 @@ class AnalyticsService {
     this.track(`screen_${screenName}`, properties);
   }
 
+  // Session tile counter for tracking usage patterns
+  private static tileUsageCount = 0;
+
   // Tile usage tracking
   trackTileUsage(params: {
-    category: 'outfit' | 'background' | 'memorial' | 'popular' | 'feature' | 'style';
+    category: 'outfit' | 'background' | 'memorial' | 'popular' | 'feature' | 'style' | 'onboarding_intent' | 'text_edit' | 'magic';
     tileName: string;
     tileId: string;
-    functionType?: string;
+    functionType?: string | null;
     styleKey?: string;
     customPrompt?: string;
     stage: 'selected' | 'started' | 'completed' | 'failed';
     success?: boolean;
     processingTime?: number;
+    metadata?: Record<string, string>;
   }) {
-    const { category, tileName, tileId, functionType, styleKey, customPrompt, stage, success, processingTime } = params;
+    const { category, tileName, tileId, functionType, styleKey, customPrompt, stage, success, processingTime, metadata } = params;
+
+    // Increment session counter for selected tiles
+    if (stage === 'selected') {
+      AnalyticsService.tileUsageCount++;
+    }
     
     // Track in Clarity based on stage
     switch (stage) {
@@ -255,7 +264,9 @@ class AnalyticsService {
         clarityService.trackTileSelected(category, tileName, tileId, {
           function_type: functionType || '',
           style_key: styleKey || '',
-          has_custom_prompt: customPrompt ? 'true' : 'false'
+          has_custom_prompt: customPrompt ? 'true' : 'false',
+          session_tile_count: AnalyticsService.tileUsageCount.toString(),
+          ...metadata
         });
         break;
       
@@ -275,7 +286,7 @@ class AnalyticsService {
         break;
     }
     
-    // Also track as general event
+    // Also track as general event with enhanced metadata
     this.track(`tile_${stage}`, {
       category,
       tile_name: tileName,
@@ -283,8 +294,17 @@ class AnalyticsService {
       function_type: functionType,
       style_key: styleKey,
       success: success,
-      processing_time: processingTime
+      processing_time: processingTime,
+      session_tile_count: AnalyticsService.tileUsageCount,
+      ...metadata
     });
+
+    // Set session-level tags for easy filtering
+    if (stage === 'selected') {
+      clarityService.setCustomTag('tiles_used_session', AnalyticsService.tileUsageCount.toString());
+      clarityService.setCustomTag('last_tile_category', category);
+      clarityService.setCustomTag('last_tile_function', functionType || 'none');
+    }
     
     if (__DEV__) {
       console.log(`📊 Tile Usage: ${tileName} (${category}) - ${stage}`);

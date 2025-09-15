@@ -9,6 +9,7 @@ import { permissionsService } from '@/services/permissions';
 import { presentPaywall } from '@/services/revenuecat';
 import { useQuickEditStore } from '@/store/quickEditStore';
 import { restorationService } from '@/services/supabase';
+import { analyticsService } from '@/services/analytics';
 
 // V4 Screen Components
 import { WelcomeScreenV4 } from '@/components/OnboardingV4/WelcomeScreen';
@@ -134,11 +135,33 @@ function OnboardingV4Flow() {
 
   const handleIntentSelection = async (intentId: string) => {
     const selectedOption = INTENT_OPTIONS.find(opt => opt.id === intentId);
+    const tileIndex = INTENT_OPTIONS.findIndex(opt => opt.id === intentId);
+
     console.log('🎯 [ONBOARDING-V4] Intent selected:', {
       intentId,
       functionType: selectedOption?.functionType,
       label: selectedOption?.label
     });
+
+    // Enhanced tile tracking with more metadata
+    try {
+      analyticsService.trackTileUsage({
+        stage: 'selected',
+        tileName: selectedOption?.label || intentId,
+        tileId: intentId,
+        category: 'onboarding_intent',
+        functionType: selectedOption?.functionType || null,
+        metadata: {
+          tile_position: tileIndex.toString(),
+          tile_icon: selectedOption?.icon || '',
+          is_explore_option: intentId === 'just-explore' ? 'true' : 'false',
+          onboarding_version: 'v4',
+          total_options: INTENT_OPTIONS.length.toString()
+        }
+      });
+    } catch (error) {
+      console.error('Failed to track intent tile selection:', error);
+    }
 
     await selectIntent(intentId);
     await trackIntentSelected(intentId);

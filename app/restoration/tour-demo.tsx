@@ -10,6 +10,8 @@ import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import { Asset } from 'expo-asset';
 import { presentPaywall } from '@/services/revenuecat';
+import { analyticsService } from '@/services/analytics';
+import { clarityService } from '@/services/clarityService';
 import React, { useRef, useState, useEffect } from 'react';
 import {
   Dimensions,
@@ -61,9 +63,33 @@ export default function TourDemoScreen() {
 
   const isTourMode = tourComplete === 'true';
 
+  // Track tour demo started on mount
+  useEffect(() => {
+    try {
+      analyticsService.track('tour_demo_started', {
+        tour_complete: isTourMode ? 'true' : 'false',
+        screen_width: SCREEN_WIDTH,
+        screen_height: SCREEN_HEIGHT,
+        is_small_device: isSmallDevice ? 'true' : 'false'
+      });
+      clarityService.setCustomTag('tour_demo_session', 'active');
+    } catch (error) {
+      console.error('Failed to track tour demo started:', error);
+    }
+  }, [isTourMode]);
+
   // Helper function to show success modal with animation
   const showSuccessModal = () => {
     if (!hasShownSuccessModal) {
+      // Track success modal shown
+      try {
+        analyticsService.track('tour_demo_success_modal_shown', {
+          tour_complete: isTourMode ? 'true' : 'false'
+        });
+      } catch (error) {
+        console.error('Failed to track success modal:', error);
+      }
+
       setShowTourSuccessModal(true);
       setHasShownSuccessModal(true);
       // Start animation
@@ -78,14 +104,27 @@ export default function TourDemoScreen() {
 
 
   const handleDismiss = () => {
+    try {
+      analyticsService.track('tour_demo_dismissed', {
+        tour_complete: isTourMode ? 'true' : 'false',
+        action_type: 'back_button'
+      });
+    } catch (error) {
+      console.error('Failed to track tour demo dismissed:', error);
+    }
     router.dismissTo('/explore');
   };
 
   const handleExport = async () => {
     try {
+      // Track save button tapped
+      analyticsService.track('tour_demo_save_tapped', {
+        tour_complete: isTourMode ? 'true' : 'false'
+      });
+
       // Show saving modal
       setShowSavingModal(true);
-      
+
       // Haptic feedback
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
       
@@ -112,6 +151,12 @@ export default function TourDemoScreen() {
       
       // Trigger success state in modal
       savingModalRef.current?.showSuccess();
+
+      // Track successful save
+      analyticsService.track('tour_demo_saved_successfully', {
+        tour_complete: isTourMode ? 'true' : 'false',
+        save_method: 'camera_roll'
+      });
       
     } catch (err: any) {
       console.error('Save failed, attempting fallback to share:', err);
@@ -164,6 +209,11 @@ export default function TourDemoScreen() {
 
   const handleShare = async () => {
     try {
+      // Track share button tapped
+      analyticsService.track('tour_demo_share_tapped', {
+        tour_complete: isTourMode ? 'true' : 'false'
+      });
+
       console.log('🎯 Tour demo share - starting share process...');
       
       // Load the bundled asset using expo-asset
@@ -185,6 +235,12 @@ export default function TourDemoScreen() {
         dialogTitle: t('common.shareRestoredPhoto'),
       });
 
+      // Track successful share
+      analyticsService.track('tour_demo_shared_successfully', {
+        tour_complete: isTourMode ? 'true' : 'false',
+        share_method: 'expo_sharing'
+      });
+
       // Show success modal after share modal closes (regardless of whether they shared or cancelled)
       if (isTourMode && !hasShownSuccessModal) {
         setTimeout(() => showSuccessModal(), 300);
@@ -200,6 +256,12 @@ export default function TourDemoScreen() {
         const shareResult = await Share.share({
           url: imageUri,
           message: t('sharing.defaultMessage'),
+        });
+
+        // Track fallback share
+        analyticsService.track('tour_demo_shared_successfully', {
+          tour_complete: isTourMode ? 'true' : 'false',
+          share_method: 'react_native_share'
         });
 
         // Show success modal after share modal closes (regardless of share/cancel)

@@ -193,7 +193,7 @@ const AddRemoveTile = React.memo(({ item, index, tileWidth, fontSize }: { item: 
   const handlePress = async () => {
     // Track tile selection
     analyticsService.trackTileUsage({
-      category: 'addremove',
+      category: 'popular',
       tileName: translatedTitle,
       tileId: item.id,
       functionType: 'custom',

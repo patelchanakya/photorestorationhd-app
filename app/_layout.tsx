@@ -175,7 +175,11 @@ export default function RootLayout() {
         const deviceType = width > 768 ? 'tablet' : 'phone';
         
         clarityService.setAppContext(version, deviceType);
-        
+
+        // Reset session tracking for new app launch
+        clarityService.resetSessionTracking();
+        clarityService.setCustomTag('app_session_start', Date.now().toString());
+
         if (__DEV__) {
           console.log('✅ Clarity app context set:', { version, deviceType });
         }

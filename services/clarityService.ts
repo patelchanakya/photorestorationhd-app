@@ -310,11 +310,74 @@ class ClarityService {
     this.setCustomTag('tile_name', tileName);
     this.setCustomTag('tile_id', tileId);
     this.setCustomTag('tile_error', error.substring(0, 100)); // Truncate for privacy
-    
+
     this.sendCustomEvent(`tile_error_${category}`);
-    
+
     if (__DEV__) {
       console.log(`⚠️ Tile Error: ${tileName} (${category}) - ${error}`);
+    }
+  }
+
+  // Enhanced tracking methods for better variation analysis
+  trackOnboardingFlow(version: 'v3' | 'v4', step: string, metadata?: Record<string, string>) {
+    this.setCustomTag('onboarding_version', version);
+    this.setCustomTag('onboarding_current_step', step);
+
+    if (metadata) {
+      Object.entries(metadata).forEach(([key, value]) => {
+        this.setCustomTag(`onboarding_${key}`, value);
+      });
+    }
+
+    this.sendCustomEvent(`onboarding_${version}_${step}`);
+
+    if (__DEV__) {
+      console.log(`🎯 Onboarding Flow: ${version} - ${step}`, metadata);
+    }
+  }
+
+  trackTourDemoSession(tourComplete: boolean, action: string, metadata?: Record<string, string>) {
+    this.setCustomTag('tour_demo_completed', tourComplete ? 'true' : 'false');
+    this.setCustomTag('tour_demo_action', action);
+
+    if (metadata) {
+      Object.entries(metadata).forEach(([key, value]) => {
+        this.setCustomTag(`tour_${key}`, value);
+      });
+    }
+
+    this.sendCustomEvent(`tour_demo_${action}`);
+
+    if (__DEV__) {
+      console.log(`🎯 Tour Demo: ${action} (complete: ${tourComplete})`, metadata);
+    }
+  }
+
+  trackVariationExperiment(experimentName: string, variant: string, metadata?: Record<string, string>) {
+    this.setCustomTag('experiment_name', experimentName);
+    this.setCustomTag('experiment_variant', variant);
+
+    if (metadata) {
+      Object.entries(metadata).forEach(([key, value]) => {
+        this.setCustomTag(`experiment_${key}`, value);
+      });
+    }
+
+    this.sendCustomEvent(`experiment_${experimentName}_${variant}`);
+
+    if (__DEV__) {
+      console.log(`🧪 A/B Test: ${experimentName} = ${variant}`, metadata);
+    }
+  }
+
+  // Reset session counters (useful for new sessions)
+  resetSessionTracking() {
+    this.setCustomTag('tiles_used_session', '0');
+    this.setCustomTag('last_tile_category', '');
+    this.setCustomTag('last_tile_function', '');
+
+    if (__DEV__) {
+      console.log('🔄 Clarity session tracking reset');
     }
   }
 }
