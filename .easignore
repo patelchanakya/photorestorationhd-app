@@ -39,6 +39,8 @@ __tests__/
 build-*.ipa
 dist/
 coverage/
+ios/build/
+ios/Pods/
 
 # Documentation directories
 docs/
