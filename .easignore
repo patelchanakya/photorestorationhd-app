@@ -143,6 +143,7 @@ components/UsageLimitBanner.tsx
 components/ui/ShimmerText.tsx
 components/ui/TabBarBackground.tsx
 components/ui/TabBarBackground.ios.tsx
+components/ui/IconSymbol.ios.tsx
 
 # Unused onboarding v3 components
 components/Onboarding/RatingScreen.tsx
