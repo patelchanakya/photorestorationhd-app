@@ -607,8 +607,8 @@
       "description": "الآن تعرف كيفية استخدام جميع أدواتنا.",
       "complete": "✓ انتهى البرنامج التعليمي",
       "unlockPro": "افتح ميزات برو",
-      "features": "استعادة غير محدودة • أنماط مميزة • معالجة ذات أولوية",
-      "getUnlimited": "احصل على غير محدود",
+      "features": "Get more photos • Premium styles • Priority processing",
+      "getUnlimited": "Go Pro",
       "maybeLater": "ربما لاحقًا"
     },
     "sheet": {
@@ -979,9 +979,9 @@
     },
     "onboardingV4": {
     "welcome": {
-    "appName": "كليفر",
-    "title": "أصلح صورك القديمة",
-    "subtitle": "استعادة صور احترافية وتعديلات في ثوانٍ",
+    "appName": "ذكي",
+    "title": "أعد الحياة إلى صورك",
+    "subtitle": "استعادة الصور وإصلاحها وتعديلها في ثوانٍ",
     "getStarted": "ابدأ"
     },
     "intentCapture": {
@@ -1053,7 +1053,7 @@
       },
       "upgrade": {
         "title": "فتح الميزات المميزة",
-        "features": "استعادة غير محدودة • أنماط مميزة • معالجة ذات أولوية",
+        "features": "Get more photos • Premium styles • Priority processing",
         "action": "احصل على غير محدود",
         "skip": "ربما لاحقاً"
       }

@@ -607,8 +607,8 @@
       "description": "Now you know how to use all our tools.",
       "complete": "✓ Tutorial Complete",
       "unlockPro": "Unlock Pro Features",
-      "features": "Unlimited restorations • Premium styles • Priority processing",
-      "getUnlimited": "Get Unlimited",
+      "features": "Get more photos • Premium styles • Priority processing",
+      "getUnlimited": "Go Pro",
       "maybeLater": "Maybe Later"
     },
     "sheet": {
@@ -980,8 +980,8 @@
   "onboardingV4": {
     "welcome": {
       "appName": "Clever",
-      "title": "Fix your old photos",
-      "subtitle": "Professional photo restoration & edits in seconds",
+      "title": "Bring photos back to life",
+      "subtitle": "Photo restoration, repair, & edits in seconds",
       "getStarted": "Get Started"
     },
     "intentCapture": {
@@ -1053,7 +1053,7 @@
       },
       "upgrade": {
         "title": "Unlock Pro Features",
-        "features": "Unlimited restorations • Premium styles • Priority processing",
+        "features": "Get more photos • Premium styles • Priority processing",
         "action": "Get Unlimited",
         "skip": "Maybe Later"
       }

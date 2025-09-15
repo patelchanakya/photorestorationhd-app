@@ -607,8 +607,8 @@
 "description": "Jetzt weißt du, wie du all unsere Werkzeuge benutzt.",
 "complete": "✓ Tutorial abgeschlossen",
 "unlockPro": "Pro-Funktionen freischalten",
-"features": "Unbegrenzte Wiederherstellungen • Premium-Stile • Priorisierte Bearbeitung",
-"getUnlimited": "Unbegrenzt erhalten",
+"features": "Get more photos • Premium styles • Priority processing",
+"getUnlimited": "Go Pro",
 "maybeLater": "Vielleicht später"
 },
 "sheet": {
@@ -979,9 +979,9 @@
 },
 "onboardingV4": {
 "welcome": {
-"appName": "Clever",
-"title": "Repariere deine alten Fotos",
-"subtitle": "Professionelle Fotowiederherstellung & -bearbeitung in Sekunden",
+"appName": "Klug",
+"title": "Erwecke Fotos zum Leben",
+"subtitle": "Fotowiederherstellung, Reparatur & Bearbeitung in Sekunden",
 "getStarted": "Loslegen"
 },
 "intentCapture": {
@@ -1053,7 +1053,7 @@
   },
   "upgrade": {
     "title": "Pro-Funktionen freischalten",
-    "features": "Unbegrenzte Wiederherstellungen • Premium-Stile • Prioritätsverarbeitung",
+    "features": "Get more photos • Premium styles • Priority processing",
     "action": "Unbegrenzt Erhalten",
     "skip": "Vielleicht Später"
   }

@@ -607,8 +607,8 @@
       "description": "Ahora sabes cómo usar todas nuestras herramientas.",
       "complete": "✓ Tutorial Completo",
       "unlockPro": "Desbloquear Funciones Pro",
-      "features": "Restauraciones ilimitadas • Estilos premium • Procesamiento prioritario",
-      "getUnlimited": "Obtener Ilimitado",
+      "features": "Get more photos • Premium styles • Priority processing",
+      "getUnlimited": "Go Pro",
       "maybeLater": "Quizás Más Tarde"
     },
     "sheet": {
@@ -979,9 +979,9 @@
   },
   "onboardingV4": {
     "welcome": {
-      "appName": "Clever",
-      "title": "Arregla tus fotos antiguas",
-      "subtitle": "Restauración y ediciones de fotos profesionales en segundos",
+      "appName": "Inteligente",
+      "title": "Dale vida a tus fotos",
+      "subtitle": "Restauración de fotos, reparación & ediciones en segundos",
       "getStarted": "Empezar"
     },
     "intentCapture": {
@@ -1053,7 +1053,7 @@
       },
       "upgrade": {
         "title": "Desbloquear Funciones Pro",
-        "features": "Restauraciones ilimitadas • Estilos premium • Procesamiento prioritario",
+        "features": "Get more photos • Premium styles • Priority processing",
         "action": "Obtener Ilimitado",
         "skip": "Quizás Más Tarde"
       }

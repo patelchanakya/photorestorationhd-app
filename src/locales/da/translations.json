@@ -606,8 +606,8 @@
         "description": "Nu ved du, hvordan du bruger alle vores værktøjer.",
         "complete": "✓ Vejledning fuldført",
         "unlockPro": "Lås op for Pro-funktioner",
-        "features": "Ubegrænset gendannelse • Premium stilarter • Prioriteret behandling",
-        "getUnlimited": "Få ubegrænset",
+        "features": "Get more photos • Premium styles • Priority processing",
+        "getUnlimited": "Go Pro",
         "maybeLater": "Måske senere"
       },
       "sheet": {
@@ -979,9 +979,9 @@
   },
   "onboardingV4": {
     "welcome": {
-      "appName": "Clever",
-      "title": "Reparer dine gamle fotos",
-      "subtitle": "Professionel fotogendannelse og redigering på få sekunder",
+      "appName": "Klog",
+      "title": "Bring fotos tilbage til live",
+      "subtitle": "Fotogendannelse, reparation & redigering på få sekunder",
       "getStarted": "Kom i gang"
     },
     "intentCapture": {
@@ -1053,7 +1053,7 @@
       },
       "upgrade": {
         "title": "Lås Pro-funktioner op",
-        "features": "Ubegrænset gendannelse • Premium stile • Prioritetsbehandling",
+        "features": "Get more photos • Premium styles • Priority processing",
         "action": "Få Ubegrænset",
         "skip": "Måske Senere"
       }
