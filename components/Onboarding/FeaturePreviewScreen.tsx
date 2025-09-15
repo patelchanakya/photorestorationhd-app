@@ -390,6 +390,6 @@ function getPreviewMedia(featureId: string): PreviewMedia {
     'beach_background': { type: 'image', source: require('../../assets/images/backgrounds/thumbnail/beach/beach.jpeg') },
   };
 
-  // Fallback to default video
-  return mediaMap[featureId] || { type: 'video', source: require('../../assets/videos/magic/backtolife/thumbnail/btl-0.mp4') };
+  // Return null if no media found
+  return mediaMap[featureId] || null;
 }
