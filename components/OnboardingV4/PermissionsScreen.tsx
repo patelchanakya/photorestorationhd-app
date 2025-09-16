@@ -13,7 +13,7 @@ import Animated, {
   Easing
 } from 'react-native-reanimated';
 
-import { OnboardingButton } from '@/components/Onboarding/shared/OnboardingButton';
+import { OnboardingButton } from '@/components/OnboardingV4/shared/OnboardingButton';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useTranslation } from 'react-i18next';
 

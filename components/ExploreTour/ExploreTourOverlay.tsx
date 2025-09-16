@@ -11,7 +11,7 @@ import Animated, {
   Easing
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { OnboardingButton } from '@/components/Onboarding/shared/OnboardingButton';
+import { OnboardingButton } from '@/components/OnboardingV4/shared/OnboardingButton';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Image as ExpoImage } from 'expo-image';
 import { Image as RNImage } from 'react-native';
