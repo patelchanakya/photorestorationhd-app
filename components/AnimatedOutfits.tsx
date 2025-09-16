@@ -34,7 +34,7 @@ const DEFAULT_OUTFITS: OutfitItem[] = [
   },
   { 
     id: 'outfit-2', 
-    titleKey: 'outfits.changeColor', 
+    titleKey: 'outfits.changeColour', 
     type: 'video', 
     video: require('../assets/videos/magic/outfits/thumbnail/change-color/colorchange.mp4'), 
     outfitPrompt: "Keep the person's clothing design, fabric texture, material properties, shape, and style exactly the same, but change the color to a random, attractive color that looks natural and flattering. Avoid overly bright colors - choose stylish, wearable colors. Ensure the new color appears natural under existing lighting conditions with proper fabric sheen and material behavior. Maintain exact facial features, hairstyle, body position, and original lighting with natural shadows. Do not alter background, accessories, or pose - only change the clothing color." 
