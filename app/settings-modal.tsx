@@ -792,7 +792,7 @@ Issue Description:
 
 SUPPORT ID: ${supportId}
 Device: ${Platform.OS} ${Platform.Version}
-App Version: 2.0.4
+App Version: 2.0.5
 
 Please include the Support ID above in your message so we can assist you quickly.
 
@@ -1254,7 +1254,7 @@ Best regards`;
                       {t('settings.items.version')}
                     </Text>
                     <Text className="text-white/60 text-sm">
-                      2.0.4
+                      2.0.5
                     </Text>
                   </View>
                 </View>
