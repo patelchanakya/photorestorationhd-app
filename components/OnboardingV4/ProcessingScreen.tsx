@@ -17,6 +17,7 @@ import { useOnboardingV4Analytics } from '@/hooks/useOnboardingV4Analytics';
 import { usePhotoRestoration } from '@/hooks/usePhotoRestoration';
 import { useTranslation } from 'react-i18next';
 import { getLocales, getCalendars } from 'expo-localization';
+import { type FunctionType } from '@/services/photoGenerationV2';
 
 // Toggle for mock vs real API - change to false for production
 const USE_MOCK_API = false;
@@ -30,7 +31,7 @@ interface PhotoData {
 interface ProcessingScreenProps {
   photo: PhotoData | null;
   intent: string | null;
-  functionType: string | null;
+  functionType: FunctionType | null;
   onComplete: (result: { uri: string; processingTime: number }) => void;
   onError: (error: Error) => void;
 }
@@ -231,7 +232,7 @@ export function ProcessingScreen({ photo, intent, functionType, onComplete, onEr
     }
 
     try {
-      const actualFunctionType = functionType || 'restoration';
+      const actualFunctionType: FunctionType = functionType || 'restoration';
 
       console.log('🔧 [PROCESSING] Using functionType:', {
         received: functionType,

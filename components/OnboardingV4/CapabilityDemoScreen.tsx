@@ -23,7 +23,7 @@ interface IntentOption {
   demoImages: string[];
   video?: any;
   image?: any;
-  functionType?: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'restore_repair' | 'water_damage' | null;
+  functionType?: 'restoration' | 'repair' | 'unblur' | 'colorize' | 'descratch' | 'enlighten' | 'restore_repair' | 'water_damage' | 'nano_banana' | null;
   customPrompt?: string;
 }
 

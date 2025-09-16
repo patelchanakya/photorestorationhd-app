@@ -296,7 +296,7 @@ export function MemorialFeatures({ memorialItems = DEFAULT_MEMORIAL_ITEMS }: { m
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 16 }}
         onScroll={handleScroll}
-        scrollEventThrottle={16}
+        scrollEventThrottle={100} // Throttle to reduce performance impact
       >
         {memorialItems.map((item, index) => (
           <Animated.View

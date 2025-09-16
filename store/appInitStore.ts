@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type InitialRoute = 'explore' | 'onboarding-v3';
+export type InitialRoute = 'explore' | 'onboarding-v3' | 'onboarding-v4';
 
 export interface RecoveryState {
   hasRecovery: boolean;

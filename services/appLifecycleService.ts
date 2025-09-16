@@ -10,6 +10,7 @@ class AppLifecycleService {
   private backgroundTime: number | null = null;
   private appStateSubscription: any = null;
   private isInitialized = false;
+  private storeResetFunctions: (() => void)[] = [];
 
   initialize() {
     if (this.isInitialized) return;
@@ -110,11 +111,14 @@ class AppLifecycleService {
         }
       }
 
-      // Step 2: Clear background timestamp
+      // Step 2: Reset all registered stores
+      this.resetAllStores();
+
+      // Step 3: Clear background timestamp
       await AsyncStorage.removeItem(BACKGROUND_TIME_KEY);
       this.backgroundTime = null;
 
-      // Step 3: Just restart the app - exactly like killing it
+      // Step 4: Just restart the app - exactly like killing it
       if (__DEV__) {
         console.log('🔄 Restarting app...');
       }
@@ -140,6 +144,36 @@ class AppLifecycleService {
       console.log('🔄 Force restarting app...');
     }
     await this.performSeamlessRestart();
+  }
+
+  // Register a store reset function
+  registerStoreReset(resetFunction: () => void): () => void {
+    this.storeResetFunctions.push(resetFunction);
+
+    // Return unregister function
+    return () => {
+      const index = this.storeResetFunctions.indexOf(resetFunction);
+      if (index > -1) {
+        this.storeResetFunctions.splice(index, 1);
+      }
+    };
+  }
+
+  // Reset all registered stores
+  private resetAllStores() {
+    if (__DEV__) {
+      console.log(`🔄 Resetting ${this.storeResetFunctions.length} registered stores`);
+    }
+
+    this.storeResetFunctions.forEach((resetFn, index) => {
+      try {
+        resetFn();
+      } catch (error) {
+        if (__DEV__) {
+          console.error(`🔄 Error resetting store ${index}:`, error);
+        }
+      }
+    });
   }
 
   // Get current background duration (for debugging)
