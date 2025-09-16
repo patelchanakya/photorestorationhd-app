@@ -126,151 +126,53 @@ const DEFAULT_BACKGROUNDS: BackgroundItem[] = [
   },
 ];
 
-// Video content component - only rendered when player exists
-const VideoContent = ({ player, videoIndex, isVisible }: { player: any; videoIndex: number; isVisible: boolean }) => {
-  const isMountedRef = useRef(true);
-  const shouldBePlayingRef = useRef(false);
-  
+// VideoView component with simple visibility-based playback control
+const VideoViewWithPlayer = ({ video, index, isVisible }: { video: any; index?: number; isVisible?: boolean }) => {
+  const videoIndex = index || 0;
+
   const playbackRate = React.useMemo(() => {
     // Faster playback speeds for better looping
     const rates = [1.1, 1.0, 1.2, 1.1, 1.3, 1.2];
     return rates[videoIndex % rates.length];
   }, [videoIndex]);
-  
+
   const initialSeek = React.useMemo(() => {
     // Start at different points in the video (0-2 seconds)
     return (videoIndex * 0.3) % 2;
   }, [videoIndex]);
 
-  // Monitor playback status with expo's useEvent hook - player is ALWAYS valid here
-  const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing || false });
-
-  // Visibility-based pause/play - MAIN performance optimization
-  React.useEffect(() => {
-    if (!isMountedRef.current) return;
-    
+  // Always create player but control playback based on visibility
+  const player = useVideoPlayer(video, (player: any) => {
     try {
-      if (!isVisible && player && player.playing) {
-        // Pause when scrolled out of view
-        player.pause();
-        shouldBePlayingRef.current = false;
-        if (__DEV__) console.log(`⏸️ Paused background video ${videoIndex} (scrolled away)`);
-      } else if (isVisible && player && !player.playing && shouldBePlayingRef.current) {
-        // Resume when scrolled back into view
+      player.loop = true;
+      player.muted = true;
+      player.playbackRate = playbackRate;
+      player.currentTime = initialSeek;
+      console.log(`🎬 Created background video player ${videoIndex}`);
+    } catch (error) {
+      console.error('AnimatedBackgrounds video player init error:', error);
+    }
+  });
+
+  // Control playback based on visibility
+  React.useEffect(() => {
+    if (!player) return;
+
+    try {
+      if (isVisible && !player.playing) {
         player.play();
-        if (__DEV__) console.log(`▶️ Resumed background video ${videoIndex} (scrolled back)`);
+        console.log(`▶️ Playing background video ${videoIndex}`);
+      } else if (!isVisible && player.playing) {
+        player.pause();
+        console.log(`⏸️ Pausing background video ${videoIndex}`);
       }
     } catch (error) {
-      // Ignore visibility errors
+      console.error('Background video visibility control error:', error);
     }
   }, [isVisible, player, videoIndex]);
 
-  // Auto-recovery: restart video if it should be playing but isn't (with debounce)
-  React.useEffect(() => {
-    if (!isPlaying && shouldBePlayingRef.current && isMountedRef.current && isVisible) {
-      const recoveryTimeout = setTimeout(() => {
-        try {
-          if (player && player.status !== 'idle' && isMountedRef.current) {
-            player.play();
-          }
-        } catch (error) {
-          // Ignore recovery errors - player may be released
-        }
-      }, 100);
-      
-      return () => clearTimeout(recoveryTimeout);
-    }
-  }, [isPlaying, player, isVisible]);
-
-  // Cleanup video player on unmount
-  React.useEffect(() => {
-    isMountedRef.current = true;
-    
-    return () => {
-      isMountedRef.current = false;
-      shouldBePlayingRef.current = false;
-      
-      try {
-        if (player && typeof player.status !== 'undefined') {
-          const status = player.status;
-          if (status !== 'idle') {
-            player.pause();
-          }
-          player.release();
-        }
-      } catch (error) {
-        if (__DEV__) {
-          console.log('AnimatedBackgrounds video cleanup handled');
-        }
-      }
-    };
-  }, []);
-
-  // Initial playback setup with consistent timing
-  React.useEffect(() => {
-    if (!player) return;
-    
-    // Consistent staggered timing without random offset
-    const playTimer = setTimeout(() => {
-      if (!isMountedRef.current) return;
-      
-      try {
-        if (player.status !== 'idle') {
-          player.currentTime = initialSeek;
-          player.play();
-          shouldBePlayingRef.current = true;
-        }
-      } catch (e) {
-        // Ignore initial play errors
-      }
-    }, videoIndex * 150); // Consistent 150ms delay per video
-    
-    return () => clearTimeout(playTimer);
-  }, [player, videoIndex, initialSeek]);
-
-  // Handle app state changes (backgrounding/foregrounding)
-  React.useEffect(() => {
-    const handleAppStateChange = (nextAppState: string) => {
-      if (nextAppState === 'active' && shouldBePlayingRef.current && isMountedRef.current) {
-        try {
-          if (player && !player.playing && player.status !== 'idle') {
-            setTimeout(() => {
-              if (isMountedRef.current) {
-                player.play();
-              }
-            }, 100 + videoIndex * 50);
-          }
-        } catch (error) {
-          // Ignore resume errors
-        }
-      }
-    };
-
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
-    return () => subscription?.remove();
-  }, [player, videoIndex]);
-
-  // Handle navigation focus (returning to screen)
-  useFocusEffect(
-    React.useCallback(() => {
-      if (shouldBePlayingRef.current && isMountedRef.current) {
-        try {
-          if (player && !player.playing && player.status !== 'idle') {
-            setTimeout(() => {
-              if (isMountedRef.current) {
-                player.play();
-              }
-            }, 100 + videoIndex * 50);
-          }
-        } catch (error) {
-          // Ignore focus resume errors
-        }
-      }
-    }, [player, videoIndex])
-  );
-
   return (
-    <Animated.View 
+    <Animated.View
       entering={FadeIn.delay(videoIndex * 100).duration(800)}
       style={{ width: '100%', height: '100%' }}
     >
@@ -283,36 +185,6 @@ const VideoContent = ({ player, videoIndex, isVisible }: { player: any; videoInd
       />
     </Animated.View>
   );
-};
-
-// Wrapper component that only renders VideoContent when player exists
-const VideoViewWithPlayer = ({ video, index, isVisible }: { video: any; index?: number; isVisible?: boolean }) => {
-  const videoIndex = index || 0;
-  const player = useVideoPlayer(video, (player: any) => {
-    player.loop = true;
-    player.muted = true;
-  }); // No artificial limit - viewport handles it
-
-  if (!player) {
-    // Show placeholder when video player limit is reached
-    return (
-      <Animated.View 
-        entering={FadeIn.delay(videoIndex * 100).duration(800)}
-        style={{ 
-          width: '100%', 
-          height: '100%', 
-          backgroundColor: '#1a1a1a',
-          justifyContent: 'center',
-          alignItems: 'center'
-        }}
-      >
-        <Text style={{ color: '#666', fontSize: 11 }}>Video Loading...</Text>
-      </Animated.View>
-    );
-  }
-
-  // Only render VideoContent when player exists - useEvent will always have valid player
-  return <VideoContent player={player} videoIndex={videoIndex} isVisible={isVisible ?? true} />;
 };
 
 interface AnimatedBackgroundsProps {

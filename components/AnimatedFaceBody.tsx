@@ -107,115 +107,60 @@ const DEFAULT_FACEBODY: FaceBodyItem[] = [
   }
 ];
 
-// Video content component - only rendered when player exists
-const VideoContent = ({ player, videoIndex, isVisible }: { player: any; videoIndex: number; isVisible: boolean }) => {
-  const isMountedRef = useRef(true);
-  const shouldBePlayingRef = useRef(false);
-  
+// VideoView component with simple visibility-based playback control
+const VideoViewWithPlayer = ({ video, index, isVisible }: { video: any; index?: number; isVisible?: boolean }) => {
+  const videoIndex = index || 0;
+
   const playbackRate = React.useMemo(() => {
+    // Faster playback speeds for better looping
     const rates = [1.1, 1.0, 1.2, 1.1, 1.3, 1.2];
     return rates[videoIndex % rates.length];
   }, [videoIndex]);
-  
+
   const initialSeek = React.useMemo(() => {
+    // Start at different points in the video (0-2 seconds)
     return (videoIndex * 0.3) % 2;
   }, [videoIndex]);
 
-  // useEvent is ALWAYS called with valid player here
-  const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing || false });
-
-  // Visibility-based pause/play - MAIN performance optimization
-  React.useEffect(() => {
-    if (!isMountedRef.current) return;
-    
+  // Always create player but control playback based on visibility
+  const player = useVideoPlayer(video, (player: any) => {
     try {
-      if (!isVisible && player && player.playing) {
-        // Pause when scrolled out of view
-        player.pause();
-        shouldBePlayingRef.current = false;
-        if (__DEV__) console.log(`⏸️ Paused video ${videoIndex} (scrolled away)`);
-      } else if (isVisible && player && !player.playing && shouldBePlayingRef.current) {
-        // Resume when scrolled back into view
+      player.loop = true;
+      player.muted = true;
+      player.playbackRate = playbackRate;
+      player.currentTime = initialSeek;
+      console.log(`🎬 Created facebody video player ${videoIndex}`);
+    } catch (error) {
+      console.error('AnimatedFaceBody video player init error:', error);
+    }
+  });
+
+  // Control playback based on visibility
+  React.useEffect(() => {
+    if (!player) return;
+
+    try {
+      if (isVisible && !player.playing) {
         player.play();
-        if (__DEV__) console.log(`▶️ Resumed video ${videoIndex} (scrolled back)`);
+        console.log(`▶️ Playing facebody video ${videoIndex}`);
+      } else if (!isVisible && player.playing) {
+        player.pause();
+        console.log(`⏸️ Pausing facebody video ${videoIndex}`);
       }
     } catch (error) {
-      // Ignore visibility errors
+      console.error('FaceBody video visibility control error:', error);
     }
   }, [isVisible, player, videoIndex]);
 
-  // Auto-recovery: restart video if it should be playing but isn't (with debounce)
-  React.useEffect(() => {
-    if (!isPlaying && shouldBePlayingRef.current && isMountedRef.current && isVisible) {
-      const recoveryTimeout = setTimeout(() => {
-        try {
-          if (player && player.status !== 'idle' && isMountedRef.current) {
-            player.play();
-          }
-        } catch (error) {
-          // Ignore recovery errors - player may be released
-        }
-      }, 100);
-      
-      return () => clearTimeout(recoveryTimeout);
-    }
-  }, [isPlaying, player, isVisible]);
+  // Monitor playback status
+  const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
 
-  // Cleanup video player on unmount
-  React.useEffect(() => {
-    isMountedRef.current = true;
-    
-    return () => {
-      isMountedRef.current = false;
-      shouldBePlayingRef.current = false;
-      
-      try {
-        if (player && typeof player.status !== 'undefined') {
-          const status = player.status;
-          if (status !== 'idle') {
-            player.pause();
-          }
-          player.release();
-        }
-      } catch (error) {
-        // Silent cleanup
-      }
-    };
-  }, []);
-
-  // Initial playback setup (only when player exists)
-  React.useEffect(() => {
-    if (!player) return;
-    
-    const playTimer = setTimeout(() => {
-      if (!isMountedRef.current || !player) return;
-      
-      try {
-        if (player.status !== 'idle') {
-          player.currentTime = initialSeek;
-          player.play();
-          shouldBePlayingRef.current = true;
-        }
-      } catch (e) {
-        // Ignore initial play errors
-      }
-    }, videoIndex * 150);
-    
-    return () => clearTimeout(playTimer);
-  }, [player, videoIndex, initialSeek]);
-
-  // Handle app state changes (backgrounding/foregrounding)
+  // Handle app state changes for background/foreground
   React.useEffect(() => {
     const handleAppStateChange = (nextAppState: string) => {
-      if (nextAppState === 'active' && shouldBePlayingRef.current && isMountedRef.current) {
+      if (nextAppState === 'active' && player && !player.playing) {
         try {
-          if (player && !player.playing && player.status !== 'idle') {
-            setTimeout(() => {
-              if (isMountedRef.current) {
-                player.play();
-              }
-            }, 100 + videoIndex * 50);
-          }
+          player.play();
         } catch (error) {
           // Ignore resume errors
         }
@@ -224,64 +169,35 @@ const VideoContent = ({ player, videoIndex, isVisible }: { player: any; videoInd
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
     return () => subscription?.remove();
-  }, [player, videoIndex]);
+  }, [player]);
 
-  // Handle navigation focus (returning to screen)
+  // Handle navigation focus
   useFocusEffect(
     React.useCallback(() => {
-      if (shouldBePlayingRef.current && isMountedRef.current) {
+      if (player && !player.playing) {
         try {
-          if (player && !player.playing && player.status !== 'idle') {
-            setTimeout(() => {
-              if (isMountedRef.current) {
-                player.play();
-              }
-            }, 100 + videoIndex * 50);
-          }
+          player.play();
         } catch (error) {
           // Ignore focus resume errors
         }
       }
-    }, [player, videoIndex])
+    }, [player])
   );
 
   return (
-    <VideoView
-      player={player}
+    <Animated.View
+      entering={FadeIn.delay(videoIndex * 100).duration(800)}
       style={{ width: '100%', height: '100%' }}
-      contentFit="cover"
-      nativeControls={false}
-      allowsFullscreen={false}
-    />
+    >
+      <VideoView
+        player={player}
+        style={{ width: '100%', height: '100%', opacity: 0.95 }}
+        contentFit="cover"
+        nativeControls={false}
+        allowsFullscreen={false}
+      />
+    </Animated.View>
   );
-};
-
-// Wrapper component that only renders VideoContent when player exists
-const VideoViewWithPlayer = ({ video, index, isVisible }: { video: any; index?: number; isVisible?: boolean }) => {
-  const { t } = useTranslation();
-  const videoIndex = index || 0;
-
-  const player = useVideoPlayer(video, (player: any) => {
-    player.loop = true;
-    player.muted = true;
-  }); // No artificial limit - viewport handles it
-
-  if (!player) {
-    return (
-      <View style={{ 
-        width: '100%', 
-        height: '100%', 
-        backgroundColor: '#1a1a1a',
-        justifyContent: 'center',
-        alignItems: 'center'
-      }}>
-        <Text style={{ color: '#666', fontSize: 11 }}>{t('common.videoLoading')}</Text>
-      </View>
-    );
-  }
-
-  // Only render VideoContent when player exists - useEvent will always have valid player
-  return <VideoContent player={player} videoIndex={videoIndex} isVisible={isVisible ?? true} />;
 };
 
 // Individual tile component - with viewport-based video loading
@@ -346,18 +262,12 @@ const FaceBodyTile = React.memo(({ item, index, tileWidth, fontSize, isVisible }
       >
         {/* Render video only when visible, otherwise show placeholder */}
         {item.type === 'video' && item.video && isVisible ? (
-          <View style={{ 
-            width: '100%', 
-            height: '100%',
-            ...(item.id === 'facebody-new-1' || item.id === 'facebody-new-2' ? { transform: [{ scale: 1.5 }] } : {})
-          }}>
-            <VideoViewWithPlayer video={item.video} index={index} isVisible={isVisible} />
-          </View>
+          <VideoViewWithPlayer video={item.video} index={index} isVisible={isVisible} />
         ) : item.type === 'video' && item.video && !isVisible ? (
           // Show static placeholder when not visible
-          <View style={{ 
-            width: '100%', 
-            height: '100%', 
+          <View style={{
+            width: '100%',
+            height: '100%',
             backgroundColor: '#1a1a1a',
             justifyContent: 'center',
             alignItems: 'center'

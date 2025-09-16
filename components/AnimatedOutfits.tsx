@@ -77,24 +77,9 @@ const DEFAULT_OUTFITS: OutfitItem[] = [
 ];
 
 
-// VideoView component with conditional rendering for optimal performance
+// VideoView component with visibility-based playback control
 const VideoViewWithPlayer = ({ video, index, isVisible }: { video: any; index?: number; isVisible?: boolean }) => {
   const videoIndex = index || 0;
-
-  // Don't create player at all if not visible - return placeholder instead
-  if (!isVisible) {
-    return (
-      <View style={{
-        width: '100%',
-        height: '100%',
-        backgroundColor: '#1a1a1a',
-        justifyContent: 'center',
-        alignItems: 'center'
-      }}>
-        <Text style={{ color: '#666', fontSize: 24 }}>👔</Text>
-      </View>
-    );
-  }
 
   const playbackRate = React.useMemo(() => {
     // Faster playback speeds for better looping
@@ -107,19 +92,35 @@ const VideoViewWithPlayer = ({ video, index, isVisible }: { video: any; index?: 
     return (videoIndex * 0.3) % 2;
   }, [videoIndex]);
 
-  // Only create player when actually visible
+  // Always create player but control playback based on visibility
   const player = useVideoPlayer(video, (player: any) => {
     try {
       player.loop = true;
       player.muted = true;
       player.playbackRate = playbackRate;
       player.currentTime = initialSeek;
-      player.play();
       console.log(`🎬 Created outfit video player ${videoIndex}`);
     } catch (error) {
       console.error('AnimatedOutfits video player init error:', error);
     }
   });
+
+  // Control playback based on visibility
+  React.useEffect(() => {
+    if (!player) return;
+
+    try {
+      if (isVisible && !player.playing) {
+        player.play();
+        console.log(`▶️ Playing outfit video ${videoIndex}`);
+      } else if (!isVisible && player.playing) {
+        player.pause();
+        console.log(`⏸️ Pausing outfit video ${videoIndex}`);
+      }
+    } catch (error) {
+      console.error('Outfit video visibility control error:', error);
+    }
+  }, [isVisible, player, videoIndex]);
 
   // Monitor playback status
   const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
