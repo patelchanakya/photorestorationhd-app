@@ -117,6 +117,8 @@ src/locales/en-CA/firsthalf.json
 # Unused components and screens (dead code)
 app/onboarding-v3.tsx
 app/onboarding-test-simple.tsx
+app/photo-magic.tsx
+app/text-edits.tsx
 
 # Unused debug/development components
 components/ABTestDebugger.tsx
@@ -146,6 +148,7 @@ components/ui/TabBarBackground.ios.tsx
 components/ui/IconSymbol.ios.tsx
 
 # Unused onboarding v3 components
+components/Onboarding/
 components/Onboarding/RatingScreen.tsx
 components/Onboarding/shared/LockIcon.tsx
 components/Onboarding/shared/ProgressDots.tsx

@@ -19,36 +19,7 @@ export default function PhotoMagicUploadScreen() {
   const isMountedRef = useRef(true);
   const shouldBePlayingRef = useRef(false);
 
-  // Video player setup - matches working components exactly
-  const videoPlayer = useVideoPlayer(require('../assets/videos/text-edit.mp4'), (player) => {
-    try {
-      player.loop = true;
-      player.muted = true;
-      player.playbackRate = 1.0;
-    } catch (error) {
-      console.error('PhotoMagic video player init error:', error);
-    }
-  });
 
-  // Monitor playback status
-  const { isPlaying } = useEvent(videoPlayer, 'playingChange', { isPlaying: videoPlayer.playing });
-
-  // Auto-recovery: restart video if it should be playing but isn't (with debounce)
-  React.useEffect(() => {
-    if (!isPlaying && shouldBePlayingRef.current && isMountedRef.current) {
-      const recoveryTimeout = setTimeout(() => {
-        try {
-          if (videoPlayer && videoPlayer.status !== 'idle' && isMountedRef.current) {
-            videoPlayer.play();
-          }
-        } catch (error) {
-          // Ignore recovery errors - player may be released
-        }
-      }, 100);
-      
-      return () => clearTimeout(recoveryTimeout);
-    }
-  }, [isPlaying, videoPlayer]);
 
   // Track screen view on mount
   React.useEffect(() => {
@@ -57,25 +28,6 @@ export default function PhotoMagicUploadScreen() {
     });
   }, [width]);
 
-  // Initial playback setup
-  React.useEffect(() => {
-    if (!videoPlayer) return;
-    
-    const playTimer = setTimeout(() => {
-      if (!isMountedRef.current) return;
-      
-      try {
-        if (videoPlayer.status !== 'idle') {
-          videoPlayer.play();
-          shouldBePlayingRef.current = true;
-        }
-      } catch (error) {
-        // Ignore initial play errors
-      }
-    }, 300);
-    
-    return () => clearTimeout(playTimer);
-  }, [videoPlayer]);
 
   // Handle app state changes (backgrounding/foregrounding)
   React.useEffect(() => {
