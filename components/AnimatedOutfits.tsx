@@ -76,116 +76,60 @@ const DEFAULT_OUTFITS: OutfitItem[] = [
   },
 ];
 
-// Video content component - only rendered when player exists  
-const VideoContent = ({ player, videoIndex, isVisible }: { player: any; videoIndex: number; isVisible: boolean }) => {
-  const isMountedRef = useRef(true);
-  const shouldBePlayingRef = useRef(false);
-  
+
+// VideoView component with conditional rendering for optimal performance
+const VideoViewWithPlayer = ({ video, index, isVisible }: { video: any; index?: number; isVisible?: boolean }) => {
+  const videoIndex = index || 0;
+
+  // Don't create player at all if not visible - return placeholder instead
+  if (!isVisible) {
+    return (
+      <View style={{
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#1a1a1a',
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}>
+        <Text style={{ color: '#666', fontSize: 24 }}>👔</Text>
+      </View>
+    );
+  }
+
   const playbackRate = React.useMemo(() => {
     // Faster playback speeds for better looping
     const rates = [1.1, 1.0, 1.2, 1.1, 1.3, 1.2];
     return rates[videoIndex % rates.length];
   }, [videoIndex]);
-  
+
   const initialSeek = React.useMemo(() => {
     // Start at different points in the video (0-2 seconds)
     return (videoIndex * 0.3) % 2;
   }, [videoIndex]);
 
-  // Monitor playback status with expo's useEvent hook - player is ALWAYS valid here
-  const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing || false });
-
-  // Visibility-based pause/play - MAIN performance optimization
-  React.useEffect(() => {
-    if (!isMountedRef.current) return;
-    
+  // Only create player when actually visible
+  const player = useVideoPlayer(video, (player: any) => {
     try {
-      if (!isVisible && player && player.playing) {
-        // Pause when scrolled out of view
-        player.pause();
-        shouldBePlayingRef.current = false;
-        if (__DEV__) console.log(`⏸️ Paused outfit video ${videoIndex} (scrolled away)`);
-      } else if (isVisible && player && !player.playing && shouldBePlayingRef.current) {
-        // Resume when scrolled back into view
-        player.play();
-        if (__DEV__) console.log(`▶️ Resumed outfit video ${videoIndex} (scrolled back)`);
-      }
+      player.loop = true;
+      player.muted = true;
+      player.playbackRate = playbackRate;
+      player.currentTime = initialSeek;
+      player.play();
+      console.log(`🎬 Created outfit video player ${videoIndex}`);
     } catch (error) {
-      // Ignore visibility errors
+      console.error('AnimatedOutfits video player init error:', error);
     }
-  }, [isVisible, player, videoIndex]);
+  });
 
-  // Auto-recovery: restart video if it should be playing but isn't (with debounce)
-  React.useEffect(() => {
-    if (!isPlaying && shouldBePlayingRef.current && isMountedRef.current && isVisible) {
-      const recoveryTimeout = setTimeout(() => {
-        try {
-          if (player && player.status !== 'idle' && isMountedRef.current) {
-            player.play();
-          }
-        } catch (error) {
-          // Ignore recovery errors - player may be released
-        }
-      }, 100);
-      
-      return () => clearTimeout(recoveryTimeout);
-    }
-  }, [isPlaying, player, isVisible]);
+  // Monitor playback status
+  const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
 
-  // Cleanup video player on unmount
-  React.useEffect(() => {
-    isMountedRef.current = true;
-    
-    return () => {
-      isMountedRef.current = false;
-      shouldBePlayingRef.current = false;
-      
-      try {
-        if (player && typeof player.status !== 'undefined') {
-          const status = player.status;
-          if (status !== 'idle') {
-            player.pause();
-          }
-          player.release();
-        }
-      } catch (error) {
-      }
-    };
-  }, []);
-
-  // Initial playback setup (only when player exists)
-  React.useEffect(() => {
-    if (!player) return;
-    
-    const playTimer = setTimeout(() => {
-      if (!isMountedRef.current || !player) return;
-      
-      try {
-        if (player.status !== 'idle') {
-          player.currentTime = initialSeek;
-          player.play();
-          shouldBePlayingRef.current = true;
-        }
-      } catch (e) {
-        // Ignore initial play errors
-      }
-    }, videoIndex * 150);
-    
-    return () => clearTimeout(playTimer);
-  }, [player, videoIndex, initialSeek]);
-
-  // Handle app state changes (backgrounding/foregrounding)
+  // Handle app state changes for background/foreground
   React.useEffect(() => {
     const handleAppStateChange = (nextAppState: string) => {
-      if (nextAppState === 'active' && shouldBePlayingRef.current && isMountedRef.current) {
+      if (nextAppState === 'active' && player && !player.playing) {
         try {
-          if (player && !player.playing && player.status !== 'idle') {
-            setTimeout(() => {
-              if (isMountedRef.current) {
-                player.play();
-              }
-            }, 100 + videoIndex * 50);
-          }
+          player.play();
         } catch (error) {
           // Ignore resume errors
         }
@@ -194,29 +138,23 @@ const VideoContent = ({ player, videoIndex, isVisible }: { player: any; videoInd
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
     return () => subscription?.remove();
-  }, [player, videoIndex]);
+  }, [player]);
 
-  // Handle navigation focus (returning to screen)
+  // Handle navigation focus
   useFocusEffect(
     React.useCallback(() => {
-      if (shouldBePlayingRef.current && isMountedRef.current) {
+      if (player && !player.playing) {
         try {
-          if (player && !player.playing && player.status !== 'idle') {
-            setTimeout(() => {
-              if (isMountedRef.current) {
-                player.play();
-              }
-            }, 100 + videoIndex * 50);
-          }
+          player.play();
         } catch (error) {
           // Ignore focus resume errors
         }
       }
-    }, [player, videoIndex])
+    }, [player])
   );
 
   return (
-    <Animated.View 
+    <Animated.View
       entering={FadeIn.delay(videoIndex * 100).duration(800)}
       style={{ width: '100%', height: '100%' }}
     >
@@ -229,39 +167,6 @@ const VideoContent = ({ player, videoIndex, isVisible }: { player: any; videoInd
       />
     </Animated.View>
   );
-};
-
-// VideoView component with lazy loading and performance optimization
-const VideoViewWithPlayer = ({ video, index, isVisible }: { video: any; index?: number; isVisible?: boolean }) => {
-  const { t } = useTranslation();
-  const videoIndex = index || 0;
-
-  const player = useVideoPlayer(video, (player: any) => {
-    player.loop = true;
-    player.muted = true;
-  }); // No artificial limit - viewport handles it
-
-  if (!player) {
-    return (
-      <Animated.View 
-        entering={FadeIn.delay(videoIndex * 100).duration(800)}
-        style={{ width: '100%', height: '100%' }}
-      >
-        <View style={{ 
-          width: '100%', 
-          height: '100%', 
-          backgroundColor: '#1a1a1a',
-          justifyContent: 'center',
-          alignItems: 'center'
-        }}>
-          <Text style={{ color: '#666', fontSize: 12 }}>{t('common.loading')}</Text>
-        </View>
-      </Animated.View>
-    );
-  }
-
-  // Only render VideoContent when player exists - useEvent will always have valid player
-  return <VideoContent player={player} videoIndex={videoIndex} isVisible={isVisible ?? true} />;
 };
 
 export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: OutfitItem[] }) {
@@ -334,7 +239,7 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
       allowsEditing: false, 
       quality: 1,
       presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
-      preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.CURRENT,
+      preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
       exif: false
     });
     if (!result.canceled && result.assets[0]) {
@@ -379,7 +284,7 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
             >
               {/* Render video only when visible, otherwise show placeholder */}
               {item.type === 'video' && item.video && isVisible ? (
-                <VideoViewWithPlayer video={item.video} index={index} isVisible={isVisible} />
+                <VideoViewWithPlayer video={item.video} index={index} isVisible={visibleIndices.has(index)} />
               ) : item.type === 'video' && item.video && !isVisible ? (
                 // Show static placeholder when not visible
                 <View style={{ 

@@ -112,144 +112,60 @@ const DEFAULT_MEMORIAL_ITEMS: MemorialItem[] = [
   }
 ];
 
-// VideoView component with lazy loading and performance optimization
+// VideoView component with visibility-based playback control
 const VideoViewWithPlayer = ({ video, index, isVisible = true }: { video: any; index?: number; isVisible?: boolean }) => {
-  const { t } = useTranslation();
   const videoIndex = index || 0;
-  const isMountedRef = useRef(true);
-  const shouldBePlayingRef = useRef(false);
-  const containerRef = useRef<View>(null);
-  
-  // Worklet-based performance optimization
-  const isPlayingShared = useSharedValue(false);
-  const shouldBePlayingShared = useSharedValue(false);
-  
-  // Lazy loading - only create player when visible
-  const [shouldCreatePlayer, setShouldCreatePlayer] = useState(isVisible);
-  
+
   const playbackRate = React.useMemo(() => {
     // Faster playback speeds for better looping
     const rates = [1.1, 1.2, 1.0, 1.3, 1.1, 1.2];
     return rates[videoIndex % rates.length];
   }, [videoIndex]);
-  
+
   const initialSeek = React.useMemo(() => {
     // Start at different points in the video (0-2 seconds)
     return (videoIndex * 0.3) % 2;
   }, [videoIndex]);
-  
-  // Update player creation based on visibility
-  React.useEffect(() => {
-    if (isVisible && !shouldCreatePlayer) {
-      // Delay player creation to reduce initial load
-      const timer = setTimeout(() => {
-        if (isMountedRef.current) {
-          setShouldCreatePlayer(true);
-        }
-      }, videoIndex * 200 + 100); // Shorter delay when visible
-      
-      return () => clearTimeout(timer);
-    } else if (!isVisible && shouldCreatePlayer) {
-      // Pause video when scrolled away
-      setShouldCreatePlayer(false);
-      shouldBePlayingRef.current = false;
-    }
-  }, [isVisible, shouldCreatePlayer, videoIndex]);
 
-  const player = useVideoPlayer(shouldCreatePlayer ? video : null, (player) => {
-    if (!player || !shouldCreatePlayer) return;
+  // Always create player but control playback based on visibility
+  const player = useVideoPlayer(video, (player) => {
     try {
       player.loop = true;
       player.muted = true;
       player.playbackRate = playbackRate;
+      player.currentTime = initialSeek;
+      console.log(`🎬 Created memorial video player ${videoIndex}`);
     } catch (error) {
-      console.error('AnimatedBackgrounds video player init error:', error);
+      console.error('AnimatedMemorial video player init error:', error);
     }
   });
 
-  // Monitor playback status with expo's useEvent hook
+  // Control playback based on visibility
+  React.useEffect(() => {
+    if (!player) return;
+
+    try {
+      if (isVisible && !player.playing) {
+        player.play();
+        console.log(`▶️ Playing memorial video ${videoIndex}`);
+      } else if (!isVisible && player.playing) {
+        player.pause();
+        console.log(`⏸️ Pausing memorial video ${videoIndex}`);
+      }
+    } catch (error) {
+      console.error('Memorial video visibility control error:', error);
+    }
+  }, [isVisible, player, videoIndex]);
+
+  // Monitor playback status
   const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
 
-  // Simple shared value updates without infinite loops
-  React.useEffect(() => {
-    isPlayingShared.value = isPlaying;
-  }, [isPlaying]);
-
-  React.useEffect(() => {
-    shouldBePlayingShared.value = shouldBePlayingRef.current;
-  }, [shouldBePlayingRef.current]);
-
-  // Traditional recovery fallback (debounced)
-  React.useEffect(() => {
-    if (!isPlaying && shouldBePlayingRef.current && isMountedRef.current) {
-      const recoveryTimeout = setTimeout(() => {
-        try {
-          if (player && player.status !== 'idle' && isMountedRef.current) {
-            player.play();
-          }
-        } catch (error) {
-          // Ignore recovery errors - player may be released
-        }
-      }, 100);
-      
-      return () => clearTimeout(recoveryTimeout);
-    }
-  }, [isPlaying, player]);
-
-  // Cleanup video player on unmount
-  React.useEffect(() => {
-    isMountedRef.current = true;
-    
-    return () => {
-      isMountedRef.current = false;
-      shouldBePlayingRef.current = false;
-      
-      try {
-        if (player && typeof player.status !== 'undefined') {
-          const status = player.status;
-          if (status !== 'idle') {
-            player.pause();
-          }
-          player.release();
-        }
-      } catch (error) {
-      }
-    };
-  }, []);
-
-  // Initial playback setup with staggered timing (only when player exists)
-  React.useEffect(() => {
-    if (!player || !shouldCreatePlayer) return;
-    
-    const playTimer = setTimeout(() => {
-      if (!isMountedRef.current || !player) return;
-      
-      try {
-        if (player.status !== 'idle') {
-          player.currentTime = initialSeek;
-          player.play();
-          shouldBePlayingRef.current = true;
-        }
-      } catch (error) {
-        // Ignore initial play errors
-      }
-    }, videoIndex * 150);
-    
-    return () => clearTimeout(playTimer);
-  }, [player, videoIndex, initialSeek, shouldCreatePlayer]);
-
-  // Handle app state changes (backgrounding/foregrounding)
+  // Handle app state changes for background/foreground
   React.useEffect(() => {
     const handleAppStateChange = (nextAppState: string) => {
-      if (nextAppState === 'active' && shouldBePlayingRef.current && isMountedRef.current) {
+      if (nextAppState === 'active' && player && !player.playing) {
         try {
-          if (player && !player.playing && player.status !== 'idle') {
-            setTimeout(() => {
-              if (isMountedRef.current) {
-                player.play();
-              }
-            }, 100 + videoIndex * 50);
-          }
+          player.play();
         } catch (error) {
           // Ignore resume errors
         }
@@ -258,53 +174,33 @@ const VideoViewWithPlayer = ({ video, index, isVisible = true }: { video: any; i
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
     return () => subscription?.remove();
-  }, [player, videoIndex]);
+  }, [player]);
 
-  // Handle navigation focus (returning to screen)
+  // Handle navigation focus
   useFocusEffect(
     React.useCallback(() => {
-      if (shouldBePlayingRef.current && isMountedRef.current) {
+      if (player && !player.playing) {
         try {
-          if (player && !player.playing && player.status !== 'idle') {
-            setTimeout(() => {
-              if (isMountedRef.current) {
-                player.play();
-              }
-            }, 100 + videoIndex * 50);
-          }
+          player.play();
         } catch (error) {
           // Ignore focus resume errors
         }
       }
-    }, [player, videoIndex])
+    }, [player])
   );
 
   return (
-    <Animated.View 
-      ref={containerRef}
-      entering={FadeIn.delay(videoIndex * 100).duration(600)} 
+    <Animated.View
+      entering={FadeIn.delay(videoIndex * 100).duration(600)}
       style={{ width: '100%', height: '100%' }}
     >
-      {shouldCreatePlayer && player ? (
-        <VideoView
-          player={player}
-          style={{ width: '100%', height: '100%', opacity: 0.95 }}
-          contentFit="cover"
-          nativeControls={false}
-          allowsFullscreen={false}
-        />
-      ) : (
-        // Placeholder while loading
-        <View style={{ 
-          width: '100%', 
-          height: '100%', 
-          backgroundColor: '#1a1a1a',
-          justifyContent: 'center',
-          alignItems: 'center'
-        }}>
-          <Text style={{ color: '#666', fontSize: 12 }}>{t('common.loading')}</Text>
-        </View>
-      )}
+      <VideoView
+        player={player}
+        style={{ width: '100%', height: '100%', opacity: 0.95 }}
+        contentFit="cover"
+        nativeControls={false}
+        allowsFullscreen={false}
+      />
     </Animated.View>
   );
 };
@@ -380,7 +276,7 @@ export function MemorialFeatures({ memorialItems = DEFAULT_MEMORIAL_ITEMS }: { m
       allowsEditing: false, 
       quality: 1,
       presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
-      preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.CURRENT,
+      preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
       exif: false
     });
     if (!result.canceled && result.assets[0]) {
@@ -421,24 +317,13 @@ export function MemorialFeatures({ memorialItems = DEFAULT_MEMORIAL_ITEMS }: { m
                 backgroundColor: '#000000' 
               }}
             >
-              {/* Render video only when visible, otherwise show placeholder */}
-              {item.type === 'video' && item.video && visibleIndices.has(index) ? (
-                <VideoViewWithPlayer 
-                  video={item.video} 
-                  index={index} 
+              {/* Render video with conditional player creation */}
+              {item.type === 'video' && item.video ? (
+                <VideoViewWithPlayer
+                  video={item.video}
+                  index={index}
                   isVisible={visibleIndices.has(index)}
                 />
-              ) : item.type === 'video' && item.video && !visibleIndices.has(index) ? (
-                // Show static placeholder when not visible
-                <View style={{ 
-                  width: '100%', 
-                  height: '100%', 
-                  backgroundColor: '#1a1a1a',
-                  justifyContent: 'center',
-                  alignItems: 'center'
-                }}>
-                  <Text style={{ color: '#666', fontSize: 24 }}>✨</Text>
-                </View>
               ) : item.image ? (
                 <ExpoImage 
                   source={item.image} 

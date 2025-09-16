@@ -737,7 +737,7 @@ export default function RestorationScreen() {
                 allowsEditing: false, 
                 quality: 1,
                 presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
-                preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.CURRENT,
+                preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
                 exif: false
               });
               

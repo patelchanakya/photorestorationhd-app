@@ -188,7 +188,7 @@ export default function PhotoMagicUploadScreen() {
         quality: 1,
         allowsMultipleSelection: false,
         presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
-        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.CURRENT,
+        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
         exif: false,
       });
 

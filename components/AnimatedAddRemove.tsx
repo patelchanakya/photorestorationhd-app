@@ -206,7 +206,7 @@ const AddRemoveTile = React.memo(({ item, index, tileWidth, fontSize }: { item: 
       allowsEditing: false, 
       quality: 1,
       presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
-      preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.CURRENT,
+      preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
       exif: false
     });
 

@@ -292,7 +292,7 @@ export function QuickEditSheet({ generateButtonRef }: QuickEditSheetProps = {}) 
       mediaTypes: ['images'], 
       quality: 1,
       presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
-      preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.CURRENT,
+      preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
       exif: false
     });
     

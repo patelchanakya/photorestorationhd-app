@@ -53,7 +53,7 @@ export function ImageSelector({ selectedImage, onImageSelected, disabled = false
         allowsEditing: false, 
         quality: 1,
         presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
-        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.CURRENT,
+        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
         exif: false
       });
       
