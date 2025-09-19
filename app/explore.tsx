@@ -411,7 +411,7 @@ export default function HomeGalleryLikeScreen() {
       case 'outfits':
         return <AnimatedOutfits />;
       case 'magic':
-        return <FeatureCardsList compact onOpenBackgrounds={() => openQuick('background')} onOpenClothes={() => openQuick('nano_outfit')} firstTileRef={repairTileRef} />;
+        return <FeatureCardsList compact onOpenBackgrounds={() => openQuick('background')} onOpenClothes={() => openQuick('nano_outfit')} firstTileRef={repairTileRef as any} />;
       case 'requestFeature':
         return (
           <View style={[exploreStyles.requestSection, {
@@ -830,7 +830,6 @@ export default function HomeGalleryLikeScreen() {
         estimatedItemSize={600} // More accurate estimate for video sections
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: bottomPadding }}
-        initialNumToRender={1} // Only render first section initially
         maxToRenderPerBatch={1} // Render one section at a time
         windowSize={3} // Reduce memory window (was 5)
         removeClippedSubviews={true}
