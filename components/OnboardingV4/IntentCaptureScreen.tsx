@@ -384,7 +384,7 @@ export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenPr
           viewabilityConfig={viewabilityConfig}
           onViewableItemsChanged={onViewableItemsChanged}
           removeClippedSubviews={true}
-          windowSize={2}
+          windowSize={5}
           maxToRenderPerBatch={columnsCount * 2}
           initialNumToRender={columnsCount * 2}
         />

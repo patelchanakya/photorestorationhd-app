@@ -538,6 +538,12 @@ export function FeatureCardsList({
     setVisibleIndices(new Set(viewableItems.map(item => item.index)));
   }, []);
 
+  const getItemLayout = React.useCallback((data: any, index: number) => ({
+    length: 274, // 260px card height + 14px margin
+    offset: 274 * index,
+    index,
+  }), []);
+
   if (!compact) {
     return (
       <View style={{ paddingTop: 8, paddingBottom: 24 }}>
@@ -547,8 +553,9 @@ export function FeatureCardsList({
           renderItem={renderCard}
           viewabilityConfig={viewabilityConfig}
           onViewableItemsChanged={onViewableItemsChanged}
+          getItemLayout={getItemLayout}
           removeClippedSubviews={true}
-          windowSize={2}
+          windowSize={5}
           maxToRenderPerBatch={3}
           initialNumToRender={3}
           scrollEnabled={false}

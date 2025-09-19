@@ -1,26 +1,25 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-import '../global.css';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GlobalNotifications } from '@/components/GlobalNotifications';
 import { JobProvider } from '@/contexts/JobContext';
 import { RevenueCatProvider } from '@/contexts/RevenueCatContext';
-import '@/src/locales/index';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { AppState, AppStateStatus, Dimensions, LogBox, Platform, View } from 'react-native';
-import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import { clarityService } from '@/services/clarityService';
-import * as Clarity from '@microsoft/react-native-clarity';
+import '@/src/locales/index';
 import NetInfo from '@react-native-community/netinfo';
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider, focusManager, onlineManager } from '@tanstack/react-query';
 import Constants from 'expo-constants';
+import { useFonts } from 'expo-font';
 import { Image as ExpoImage } from 'expo-image';
-import React, { useEffect, useRef } from 'react';
+import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React, { useEffect } from 'react';
+import { AppState, AppStateStatus, Dimensions, LogBox, Platform, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Purchases, { LOG_LEVEL } from 'react-native-purchases';
+import 'react-native-reanimated';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
+import '../global.css';
 
 // Immediate black background injection to prevent white flash at app startup
 if (typeof document !== 'undefined') {
