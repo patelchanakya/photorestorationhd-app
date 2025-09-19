@@ -85,19 +85,19 @@ export function OnboardingButton({
 
     const sizeStyles = {
       small: {
-        paddingVertical: variant === 'skip' ? 8 : responsive.spacing(12), // Fixed size for skip
-        paddingHorizontal: variant === 'skip' ? 16 : responsive.spacing(20), // Fixed size for skip
-        minHeight: variant === 'skip' ? 36 : responsive.spacing(44) // Fixed size for skip
+        paddingVertical: variant === 'skip' ? 8 : (responsive.isTablet ? responsive.spacing(12) : 12), // Fixed size for skip
+        paddingHorizontal: variant === 'skip' ? 16 : (responsive.isTablet ? responsive.spacing(20) : 20), // Fixed size for skip
+        minHeight: variant === 'skip' ? 36 : (responsive.isTablet ? responsive.spacing(44) : 44) // Fixed size for skip
       },
       medium: {
-        paddingVertical: responsive.spacing(16),
-        paddingHorizontal: responsive.spacing(28),
-        minHeight: responsive.spacing(50)
+        paddingVertical: responsive.isTablet ? responsive.spacing(16) : 16,
+        paddingHorizontal: responsive.isTablet ? responsive.spacing(28) : 28,
+        minHeight: responsive.isTablet ? responsive.spacing(50) : 50
       },
       large: {
-        paddingVertical: responsive.spacing(18),
-        paddingHorizontal: responsive.spacing(responsive.isTablet ? 32 : 28),
-        minHeight: responsive.spacing(56)
+        paddingVertical: responsive.isTablet ? responsive.spacing(18) : 18,
+        paddingHorizontal: responsive.isTablet ? responsive.spacing(32) : 28,
+        minHeight: responsive.isTablet ? responsive.spacing(56) : 56
       },
     };
 
@@ -144,9 +144,9 @@ export function OnboardingButton({
     };
 
     const sizeStyles = {
-      small: { fontSize: variant === 'skip' ? 14 : responsive.fontSize(16) }, // Fixed size for skip
-      medium: { fontSize: responsive.fontSize(18) },
-      large: { fontSize: responsive.fontSize(20) },
+      small: { fontSize: variant === 'skip' ? 14 : (responsive.isTablet ? responsive.fontSize(16) : 16) }, // Fixed size for skip
+      medium: { fontSize: responsive.isTablet ? responsive.fontSize(18) : 18 },
+      large: { fontSize: responsive.isTablet ? responsive.fontSize(20) : 20 },
     };
 
     const variantStyles = {

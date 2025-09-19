@@ -32,8 +32,6 @@ export function WelcomeScreenV4({ onContinue }: WelcomeScreenV4Props) {
   const buttonScale = useSharedValue(0.8);
   const exitOpacity = useSharedValue(1);
 
-  // Get responsive image dimensions - full width on tablets
-  const imageContainer = responsive.imageContainer(1.5); // Better aspect ratio for welcome collage
 
   // A/B testing copy
   const welcomeCopy = React.useMemo(() => getWelcomeCopy(), []);
@@ -97,44 +95,45 @@ export function WelcomeScreenV4({ onContinue }: WelcomeScreenV4Props) {
 
   return (
     <Animated.View style={[styles.container, containerStyle]}>
+      {/* Image at top - absolute full screen width */}
+      <View style={{
+        position: 'absolute',
+        top: insets.top,
+        left: 0,
+        right: 0,
+        width: '100%',
+        height: responsive.isTablet ? 300 : 260,
+        zIndex: 1,
+      }}>
+        <Image
+          source={require('../../assets/images/onboarding/welcomescreen.png')}
+          style={{ width: '100%', height: '100%' }}
+          contentFit="cover"
+          transition={300}
+        />
+      </View>
+
       <View style={[
         styles.content,
         {
-          paddingTop: insets.top + responsive.spacing(responsive.isTablet ? 25 : 15)
+          paddingTop: insets.top + (responsive.isTablet ? 320 : 280)
         }
       ]}>
-        {/* Image at top - full width on tablets */}
-        <View style={[
-          styles.imageContainer,
-          {
-            width: imageContainer.width,
-            height: imageContainer.height,
-            marginBottom: responsive.spacing(responsive.isTablet ? 20 : 15),
-            alignSelf: responsive.isTablet ? 'stretch' : 'center' // Full width on tablets
-          }
-        ]}>
-          <Image
-            source={require('../../assets/images/onboarding/welcomescreen.png')}
-            style={styles.topImage}
-            contentFit={responsive.isTablet ? "cover" : "contain"} // Better fit for tablets
-            transition={300}
-          />
-        </View>
 
         {/* Main Content */}
         <View style={[
           styles.centerContent,
-          { paddingHorizontal: responsive.contentPadding }
+          { paddingHorizontal: responsive.isTablet ? responsive.contentPadding : 24 }
         ]}>
           {/* App Logo */}
           <View style={[
             styles.logoContainer,
-            { marginBottom: responsive.spacing(25) }
+            { marginBottom: responsive.isTablet ? responsive.spacing(25) : 25 }
           ]}>
             <Text style={[
               styles.logo,
               {
-                fontSize: responsive.fontSize(28)
+                fontSize: responsive.isTablet ? responsive.fontSize(28) : 28
               }
             ]}>
               {t('onboardingV4.welcome.appName')}
@@ -145,9 +144,9 @@ export function WelcomeScreenV4({ onContinue }: WelcomeScreenV4Props) {
             <Text style={[
               styles.title,
               {
-                fontSize: responsive.fontSize(34),
-                marginBottom: responsive.spacing(15),
-                lineHeight: responsive.lineHeight(responsive.fontSize(34))
+                fontSize: responsive.isTablet ? responsive.fontSize(34) : 34,
+                marginBottom: responsive.isTablet ? responsive.spacing(15) : 15,
+                lineHeight: responsive.isTablet ? responsive.lineHeight(responsive.fontSize(34)) : (34 * 1.2)
               }
             ]}>
               {t(welcomeCopy.titleKey)}
@@ -158,9 +157,9 @@ export function WelcomeScreenV4({ onContinue }: WelcomeScreenV4Props) {
             <Text style={[
               styles.subtitle,
               {
-                fontSize: responsive.fontSize(16),
-                lineHeight: responsive.lineHeight(responsive.fontSize(16)),
-                paddingHorizontal: responsive.isTablet ? responsive.spacing(40) : responsive.width(8)
+                fontSize: responsive.isTablet ? responsive.fontSize(16) : 16,
+                lineHeight: responsive.isTablet ? responsive.lineHeight(responsive.fontSize(16)) : (16 * 1.2),
+                paddingHorizontal: responsive.isTablet ? responsive.spacing(40) : 32
               }
             ]}>
               {t(welcomeCopy.subtitleKey)}
@@ -172,7 +171,7 @@ export function WelcomeScreenV4({ onContinue }: WelcomeScreenV4Props) {
         <View style={[
           styles.bottomContent,
           {
-            paddingBottom: insets.bottom + responsive.spacing(20),
+            paddingBottom: insets.bottom + (responsive.isTablet ? responsive.spacing(20) : 20),
             paddingHorizontal: responsive.contentPadding
           }
         ]}>

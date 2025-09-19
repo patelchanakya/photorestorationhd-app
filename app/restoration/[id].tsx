@@ -704,10 +704,10 @@ export default function RestorationScreen() {
         {/* Clean Header */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 }}>
           <TouchableOpacity onPress={handleDismiss} style={{ padding: 8, marginLeft: -8 }}>
-            <IconSymbol name="chevron.left" size={responsive.fontSize(isSmallDevice ? 20 : 24)} color="#EAEAEA" />
+            <IconSymbol name="chevron.left" size={responsive.isTablet ? responsive.fontSize(isSmallDevice ? 20 : 24) : (isSmallDevice ? 20 : 24)} color="#EAEAEA" />
           </TouchableOpacity>
           <View style={{ flex: 1, marginHorizontal: 8 }}>
-            <Text style={{ fontSize: responsive.fontSize(isSmallDevice ? 14 : 16), fontWeight: '600', color: '#FFFFFF', textAlign: 'center' }} numberOfLines={1}>
+            <Text style={{ fontSize: responsive.isTablet ? responsive.fontSize(isSmallDevice ? 14 : 16) : (isSmallDevice ? 14 : 16), fontWeight: '600', color: '#FFFFFF', textAlign: 'center' }} numberOfLines={1}>
               {restoration?.function_type === 'repair' ? 'Repaired Photo' :
                restoration?.function_type === 'unblur' ? 'Enhanced Photo' : 
                restoration?.function_type === 'colorize' ? 'Colorized Photo' : 
@@ -758,7 +758,7 @@ export default function RestorationScreen() {
             }}
             style={{ padding: 8, marginRight: -8 }}
           >
-            <IconSymbol name="camera" size={responsive.fontSize(isSmallDevice ? 18 : 20)} color="#9ca3af" />
+            <IconSymbol name="camera" size={responsive.isTablet ? responsive.fontSize(isSmallDevice ? 18 : 20) : (isSmallDevice ? 18 : 20)} color="#9ca3af" />
           </TouchableOpacity>
         </View>
 
@@ -792,7 +792,7 @@ export default function RestorationScreen() {
               <BeforeAfterSlider
                 beforeUri={originalUri}
                 afterUri={restoredUri || originalUri}
-                style={{ marginVertical: responsive.spacing(isTinyDevice ? 10 : 20) }}
+                style={{ marginVertical: responsive.isTablet ? responsive.spacing(isTinyDevice ? 10 : 20) : (isTinyDevice ? 10 : 20) }}
                 simpleSlider={simpleSlider}
               />
             </View>
@@ -804,13 +804,13 @@ export default function RestorationScreen() {
                 <TouchableOpacity style={{ flex: 1, height: 56, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' }} onPress={handleShare}>
                   <LinearGradient colors={['#059669', '#10b981']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
                   <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ color: '#0B0B0F', fontWeight: '900', fontSize: responsive.fontSize(16) }}>Share</Text>
+                    <Text style={{ color: '#0B0B0F', fontWeight: '900', fontSize: responsive.isTablet ? responsive.fontSize(16) : 16 }}>Share</Text>
                   </View>
                 </TouchableOpacity>
 
                 {/* Save Button */}
                 <TouchableOpacity style={{ flex: 1, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' }} onPress={handleExport}>
-                  <Text style={{ color: '#fff', fontWeight: '900', fontSize: responsive.fontSize(16) }}>Save</Text>
+                  <Text style={{ color: '#fff', fontWeight: '900', fontSize: responsive.isTablet ? responsive.fontSize(16) : 16 }}>Save</Text>
                 </TouchableOpacity>
               </View>
             </View>

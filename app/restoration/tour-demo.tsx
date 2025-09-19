@@ -294,11 +294,11 @@ export default function TourDemoScreen() {
           borderBottomColor: 'rgba(255,255,255,0.08)' 
         }}>
           <TouchableOpacity onPress={handleDismiss} style={{ padding: 8, marginLeft: -8 }}>
-            <IconSymbol name="chevron.left" size={responsive.fontSize(isSmallDevice ? 20 : 24)} color="#EAEAEA" />
+            <IconSymbol name="chevron.left" size={responsive.isTablet ? responsive.fontSize(isSmallDevice ? 20 : 24) : (isSmallDevice ? 20 : 24)} color="#EAEAEA" />
           </TouchableOpacity>
           <View style={{ flex: 1, marginHorizontal: 8 }}>
             <Text style={{
-              fontSize: responsive.fontSize(isSmallDevice ? 14 : 16),
+              fontSize: responsive.isTablet ? responsive.fontSize(isSmallDevice ? 14 : 16) : (isSmallDevice ? 14 : 16),
               fontWeight: '600',
               color: '#FFFFFF',
               textAlign: 'center'
@@ -326,7 +326,7 @@ export default function TourDemoScreen() {
               <BeforeAfterSlider
                 beforeUri={Image.resolveAssetSource(beforeImage).uri}
                 afterUri={Image.resolveAssetSource(afterImage).uri}
-                style={{ marginVertical: responsive.spacing(isTinyDevice ? 10 : 20) }}
+                style={{ marginVertical: responsive.isTablet ? responsive.spacing(isTinyDevice ? 10 : 20) : (isTinyDevice ? 10 : 20) }}
                 simpleSlider={simpleSlider}
               />
             </View>
@@ -354,7 +354,7 @@ export default function TourDemoScreen() {
                     style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
                   />
                   <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ color: '#0B0B0F', fontWeight: '900', fontSize: responsive.fontSize(16) }}>{t('onboardingV4.tourDemo.actions.share')}</Text>
+                    <Text style={{ color: '#0B0B0F', fontWeight: '900', fontSize: responsive.isTablet ? responsive.fontSize(16) : 16 }}>{t('onboardingV4.tourDemo.actions.share')}</Text>
                   </View>
                 </TouchableOpacity>
 
@@ -371,7 +371,7 @@ export default function TourDemoScreen() {
                   onPress={handleExport}
                   activeOpacity={0.8}
                 >
-                  <Text style={{ color: '#fff', fontWeight: '900', fontSize: responsive.fontSize(16) }}>{t('onboardingV4.tourDemo.actions.save')}</Text>
+                  <Text style={{ color: '#fff', fontWeight: '900', fontSize: responsive.isTablet ? responsive.fontSize(16) : 16 }}>{t('onboardingV4.tourDemo.actions.save')}</Text>
                 </TouchableOpacity>
               </View>
             </View>

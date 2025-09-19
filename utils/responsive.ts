@@ -125,7 +125,7 @@ export const getGridColumns = (): number => {
   } else if (deviceType.includes('ipad')) {
     return 2; // 2 columns on other iPads
   } else {
-    return 1; // 1 column on phones
+    return 2; // 2 columns on all phones
   }
 };
 

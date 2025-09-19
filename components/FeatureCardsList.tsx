@@ -220,8 +220,8 @@ const FeatureCardBase = React.memo(React.forwardRef<View, {
     onPressIn={handlePressIn}
     onPressOut={handlePressOut}
     style={[styles.cardContainer, {
-      marginHorizontal: responsive.spacing(16),
-      marginBottom: responsive.spacing(14)
+      marginHorizontal: responsive.isTablet ? responsive.spacing(16) : 16,
+      marginBottom: responsive.isTablet ? responsive.spacing(14) : 14
     }]}
   >
     <Animated.View style={[styles.cardView, {
@@ -239,7 +239,7 @@ const FeatureCardBase = React.memo(React.forwardRef<View, {
           priority={index < 6 ? "high" : "low"}
           placeholderContentFit={responsive.isTablet ? "contain" : "cover"}
           transition={0}
-          recyclingKey={item.id}
+          recyclingKey={`featured_${item.id}`}
         />
       )}
       <LinearGradient
@@ -250,24 +250,24 @@ const FeatureCardBase = React.memo(React.forwardRef<View, {
       
       <View style={styles.cardContent}>
         <Text style={[styles.cardTitle, {
-          fontSize: responsive.fontSize(20),
-          marginBottom: responsive.spacing(8)
+          fontSize: responsive.isTablet ? responsive.fontSize(20) : 20,
+          marginBottom: responsive.isTablet ? responsive.spacing(8) : 8
         }]}>
           {t(item.titleKey)}
         </Text>
 
         <View style={[styles.cardActionButton, {
-          paddingHorizontal: responsive.spacing(16),
-          paddingVertical: responsive.spacing(8),
-          borderRadius: responsive.borderRadius(20)
+          paddingHorizontal: responsive.isTablet ? responsive.spacing(16) : 16,
+          paddingVertical: responsive.isTablet ? responsive.spacing(8) : 8,
+          borderRadius: responsive.isTablet ? responsive.borderRadius(20) : 20
         }]}>
           <Text style={[styles.cardActionText, {
-            fontSize: responsive.fontSize(13),
-            marginLeft: responsive.spacing(6)
+            fontSize: responsive.isTablet ? responsive.fontSize(13) : 13,
+            marginLeft: responsive.isTablet ? responsive.spacing(6) : 6
           }]} numberOfLines={1}>
             {t('photoProcessor.choosePhoto')}
           </Text>
-          <IconSymbol name="chevron.right" size={responsive.fontSize(14)} color="#FFFFFF" />
+          <IconSymbol name="chevron.right" size={responsive.isTablet ? responsive.fontSize(14) : 14} color="#FFFFFF" />
         </View>
       </View>
       
@@ -310,7 +310,10 @@ const GridCard = React.memo(({
   const calculatedCardWidth = availableWidth / columns;
   const cardWidth = Math.min(calculatedCardWidth, maxCardWidth);
 
-  const cardHeight = cardWidth * (responsive.isTablet ? 1.0 : 1.2); // Shorter aspect ratio on tablets
+  // Keep proper aspect ratio without cutting off images
+  const cardHeight = responsive.isTablet ?
+    cardWidth * 1.0 : // Tablets: square-ish
+    cardWidth * 1.1; // Phones: slightly taller to show full image
 
   const handlePressIn = React.useCallback(() => {
     try { Haptics.selectionAsync(); } catch {}
@@ -338,14 +341,14 @@ const GridCard = React.memo(({
       style={{
         width: cardWidth,
         paddingHorizontal: cardGap / 2,
-        paddingVertical: responsive.spacing(8),
+        paddingVertical: responsive.isTablet ? responsive.spacing(8) : 8,
       }}
     >
       <ReanimatedAnimated.View 
         entering={FadeIn.delay(index * 80).duration(800)}
         style={{
           height: cardHeight,
-          borderRadius: responsive.borderRadius(18),
+          borderRadius: responsive.isTablet ? responsive.borderRadius(18) : 18,
           overflow: 'hidden',
           backgroundColor: 'transparent'
         }}
@@ -366,7 +369,7 @@ const GridCard = React.memo(({
               priority="low"
               placeholderContentFit="cover"
               transition={0}
-              recyclingKey={`${item.id}_placeholder`}
+              recyclingKey={`grid_placeholder_${item.id}`}
             />
           )
         ) : (
@@ -378,7 +381,7 @@ const GridCard = React.memo(({
             priority={index < 4 ? "high" : "low"}
             placeholderContentFit="cover"
             transition={0}
-            recyclingKey={item.id}
+            recyclingKey={`grid_${item.id}`}
           />
         )}
         
@@ -389,29 +392,29 @@ const GridCard = React.memo(({
         />
         
         <View style={[styles.gridCardContent, {
-          left: responsive.spacing(12),
-          right: responsive.spacing(12),
-          bottom: responsive.spacing(12)
+          left: responsive.isTablet ? responsive.spacing(12) : 12,
+          right: responsive.isTablet ? responsive.spacing(12) : 12,
+          bottom: responsive.isTablet ? responsive.spacing(12) : 12
         }]}>
           <Text style={[styles.gridCardTitle, {
-            fontSize: responsive.fontSize(16),
-            marginBottom: responsive.spacing(6)
+            fontSize: responsive.isTablet ? responsive.fontSize(16) : 16,
+            marginBottom: responsive.isTablet ? responsive.spacing(6) : 6
           }]}>
             {t(item.titleKey)}
           </Text>
 
           <View style={[styles.gridActionButton, {
-            paddingHorizontal: responsive.spacing(12),
-            paddingVertical: responsive.spacing(6),
-            borderRadius: responsive.borderRadius(14)
+            paddingHorizontal: responsive.isTablet ? responsive.spacing(12) : 12,
+            paddingVertical: responsive.isTablet ? responsive.spacing(6) : 6,
+            borderRadius: responsive.isTablet ? responsive.borderRadius(14) : 14
           }]}>
             <Text style={[styles.gridActionText, {
-              fontSize: responsive.fontSize(11),
-              marginLeft: responsive.spacing(4)
+              fontSize: responsive.isTablet ? responsive.fontSize(11) : 11,
+              marginLeft: responsive.isTablet ? responsive.spacing(4) : 4
             }]} numberOfLines={1}>
               {t('photoProcessor.choosePhoto')}
             </Text>
-            <IconSymbol name="chevron.right" size={responsive.fontSize(12)} color="#FFFFFF" />
+            <IconSymbol name="chevron.right" size={responsive.isTablet ? responsive.fontSize(12) : 12} color="#FFFFFF" />
           </View>
         </View>
         </Animated.View>
@@ -658,50 +661,50 @@ export function FeatureCardsList({
               
               <View style={{ alignItems: 'center' }}>
                 <View style={{
-                  width: responsive.spacing(40),
-                  height: responsive.spacing(40),
-                  borderRadius: responsive.spacing(20),
+                  width: responsive.isTablet ? responsive.spacing(40) : 40,
+                  height: responsive.isTablet ? responsive.spacing(40) : 40,
+                  borderRadius: responsive.isTablet ? responsive.spacing(20) : 20,
                   backgroundColor: 'rgba(255,255,255,0.12)',
                   borderWidth: 1,
                   borderColor: 'rgba(255,255,255,0.2)',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginBottom: responsive.spacing(10)
+                  marginBottom: responsive.isTablet ? responsive.spacing(10) : 10
                 }}>
-                  <IconSymbol name="lightbulb" size={responsive.fontSize(20)} color="#D4A574" />
+                  <IconSymbol name="lightbulb" size={responsive.isTablet ? responsive.fontSize(20) : 20} color="#D4A574" />
                 </View>
                 <Text style={{
                   color: '#D4A574',
-                  fontSize: responsive.fontSize(16),
+                  fontSize: responsive.isTablet ? responsive.fontSize(16) : 16,
                   fontFamily: 'Lexend-Bold',
                   letterSpacing: -0.2,
-                  marginBottom: responsive.spacing(4),
+                  marginBottom: responsive.isTablet ? responsive.spacing(4) : 4,
                   textAlign: 'center'
                 }}>
                   {t('magic.requestIdea')}
                 </Text>
                 <Text style={{
                   color: 'rgba(255,255,255,0.7)',
-                  fontSize: responsive.fontSize(11),
+                  fontSize: responsive.isTablet ? responsive.fontSize(11) : 11,
                   textAlign: 'center',
-                  marginBottom: responsive.spacing(8)
+                  marginBottom: responsive.isTablet ? responsive.spacing(8) : 8
                 }}>
                   {t('magic.requestIdeaSubtitle')}
                 </Text>
 
                 <View style={{
                   backgroundColor: 'rgba(255,255,255,0.12)',
-                  borderRadius: responsive.borderRadius(12),
-                  paddingHorizontal: responsive.spacing(12),
-                  paddingVertical: responsive.spacing(6),
+                  borderRadius: responsive.isTablet ? responsive.borderRadius(12) : 12,
+                  paddingHorizontal: responsive.isTablet ? responsive.spacing(12) : 12,
+                  paddingVertical: responsive.isTablet ? responsive.spacing(6) : 6,
                   flexDirection: 'row',
                   alignItems: 'center',
-                  gap: responsive.spacing(4),
+                  gap: responsive.isTablet ? responsive.spacing(4) : 4,
                   borderWidth: 1,
                   borderColor: 'rgba(255,255,255,0.18)'
                 }}>
-                  <IconSymbol name="envelope" size={responsive.fontSize(12)} color="#D4A574" />
-                  <Text style={{ color: '#D4A574', fontSize: responsive.fontSize(11), fontFamily: 'Lexend-SemiBold' }}>
+                  <IconSymbol name="envelope" size={responsive.isTablet ? responsive.fontSize(12) : 12} color="#D4A574" />
+                  <Text style={{ color: '#D4A574', fontSize: responsive.isTablet ? responsive.fontSize(11) : 11, fontFamily: 'Lexend-SemiBold' }}>
                     {t('magic.send')}
                   </Text>
                 </View>
@@ -735,50 +738,50 @@ export function FeatureCardsList({
               
               <View style={{ alignItems: 'center' }}>
                 <View style={{
-                  width: responsive.spacing(40),
-                  height: responsive.spacing(40),
-                  borderRadius: responsive.spacing(20),
+                  width: responsive.isTablet ? responsive.spacing(40) : 40,
+                  height: responsive.isTablet ? responsive.spacing(40) : 40,
+                  borderRadius: responsive.isTablet ? responsive.spacing(20) : 20,
                   backgroundColor: 'rgba(255,255,255,0.12)',
                   borderWidth: 1,
                   borderColor: 'rgba(255,255,255,0.2)',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginBottom: responsive.spacing(10)
+                  marginBottom: responsive.isTablet ? responsive.spacing(10) : 10
                 }}>
-                  <IconSymbol name="chevron.right" size={responsive.fontSize(20)} color="#C1A28A" />
+                  <IconSymbol name="chevron.right" size={responsive.isTablet ? responsive.fontSize(20) : 20} color="#C1A28A" />
                 </View>
                 <Text style={{
                   color: '#C1A28A',
-                  fontSize: responsive.fontSize(16),
+                  fontSize: responsive.isTablet ? responsive.fontSize(16) : 16,
                   fontFamily: 'Lexend-Bold',
                   letterSpacing: -0.2,
-                  marginBottom: responsive.spacing(4),
+                  marginBottom: responsive.isTablet ? responsive.spacing(4) : 4,
                   textAlign: 'center'
                 }}>
                   {t('magic.reportBug.title')}
                 </Text>
                 <Text style={{
                   color: 'rgba(255,255,255,0.7)',
-                  fontSize: responsive.fontSize(11),
+                  fontSize: responsive.isTablet ? responsive.fontSize(11) : 11,
                   textAlign: 'center',
-                  marginBottom: responsive.spacing(8)
+                  marginBottom: responsive.isTablet ? responsive.spacing(8) : 8
                 }}>
                   {t('magic.reportBugSubtitle')}
                 </Text>
 
                 <View style={{
                   backgroundColor: 'rgba(255,255,255,0.12)',
-                  borderRadius: responsive.borderRadius(12),
-                  paddingHorizontal: responsive.spacing(12),
-                  paddingVertical: responsive.spacing(6),
+                  borderRadius: responsive.isTablet ? responsive.borderRadius(12) : 12,
+                  paddingHorizontal: responsive.isTablet ? responsive.spacing(12) : 12,
+                  paddingVertical: responsive.isTablet ? responsive.spacing(6) : 6,
                   flexDirection: 'row',
                   alignItems: 'center',
-                  gap: responsive.spacing(4),
+                  gap: responsive.isTablet ? responsive.spacing(4) : 4,
                   borderWidth: 1,
                   borderColor: 'rgba(255,255,255,0.18)'
                 }}>
-                  <IconSymbol name="exclamationmark.triangle" size={responsive.fontSize(12)} color="#C1A28A" />
-                  <Text style={{ color: '#C1A28A', fontSize: responsive.fontSize(11), fontFamily: 'Lexend-SemiBold' }}>
+                  <IconSymbol name="exclamationmark.triangle" size={responsive.isTablet ? responsive.fontSize(12) : 12} color="#C1A28A" />
+                  <Text style={{ color: '#C1A28A', fontSize: responsive.isTablet ? responsive.fontSize(11) : 11, fontFamily: 'Lexend-SemiBold' }}>
                     {t('magic.report')}
                   </Text>
                 </View>
@@ -819,8 +822,8 @@ export function FeatureCardsList({
   const [featured, ...rest] = CARDS;
   return (
     <View style={{
-      paddingTop: responsive.spacing(8),
-      paddingBottom: responsive.spacing(24),
+      paddingTop: responsive.isTablet ? responsive.spacing(8) : 8,
+      paddingBottom: responsive.isTablet ? responsive.spacing(24) : 24,
       maxWidth: responsive.isTablet ? 1200 : '100%',
       alignSelf: 'center',
       width: '100%'
@@ -829,13 +832,19 @@ export function FeatureCardsList({
       <Card item={featured} onPress={handlePress} ref={firstTileRef} />
 
       {/* Grid cards - responsive columns with FlatList optimization */}
-      <View style={{ paddingHorizontal: responsive.contentPadding, paddingTop: responsive.spacing(8) }}>
+      <View style={{
+        paddingHorizontal: responsive.isTablet ? responsive.contentPadding : 16,
+        paddingTop: responsive.isTablet ? responsive.spacing(8) : 8
+      }}>
         <FlatList
           data={rest}
           keyExtractor={keyExtractor}
           renderItem={renderGridCard}
           numColumns={responsive.gridColumns}
-          columnWrapperStyle={{ justifyContent: 'center', gap: responsive.spacing(8) }}
+          columnWrapperStyle={responsive.gridColumns > 1 ? {
+            justifyContent: 'center',
+            gap: responsive.isTablet ? responsive.spacing(8) : 8
+          } : undefined}
           removeClippedSubviews={true}
           scrollEnabled={false}
           showsVerticalScrollIndicator={false}

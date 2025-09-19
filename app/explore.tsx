@@ -415,10 +415,10 @@ export default function HomeGalleryLikeScreen() {
       case 'requestFeature':
         return (
           <View style={[exploreStyles.requestSection, {
-            paddingHorizontal: responsive.spacing(16),
-            paddingTop: responsive.spacing(6),
-            paddingBottom: responsive.spacing(8),
-            gap: responsive.spacing(8),
+            paddingHorizontal: responsive.isTablet ? responsive.spacing(16) : 16,
+            paddingTop: responsive.isTablet ? responsive.spacing(6) : 6,
+            paddingBottom: responsive.isTablet ? responsive.spacing(8) : 8,
+            gap: responsive.isTablet ? responsive.spacing(8) : 8,
             maxWidth: responsive.isTablet ? 600 : '100%',
             alignSelf: 'center',
             width: '100%'
@@ -426,9 +426,9 @@ export default function HomeGalleryLikeScreen() {
             {/* Rate Us - First */}
             <TouchableOpacity
               style={[exploreStyles.requestButton, {
-                paddingVertical: responsive.spacing(8),
-                paddingHorizontal: responsive.spacing(12),
-                borderRadius: responsive.borderRadius(12)
+                paddingVertical: responsive.isTablet ? responsive.spacing(8) : 8,
+                paddingHorizontal: responsive.isTablet ? responsive.spacing(12) : 12,
+                borderRadius: responsive.isTablet ? responsive.borderRadius(12) : 12
               }]}
               activeOpacity={0.7}
               onPress={async () => {
@@ -451,16 +451,16 @@ export default function HomeGalleryLikeScreen() {
                 }
               }}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: responsive.spacing(6) }}>
-                <IconSymbol name="star.fill" size={responsive.fontSize(14)} color="rgba(255,255,255,0.8)" />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: responsive.isTablet ? responsive.spacing(6) : 6 }}>
+                <IconSymbol name="star.fill" size={responsive.isTablet ? responsive.fontSize(14) : 14} color="rgba(255,255,255,0.8)" />
                 <View style={{ flex: 1 }}>
                   <Text style={[exploreStyles.requestButtonTitle, {
-                    fontSize: responsive.fontSize(13)
+                    fontSize: responsive.isTablet ? responsive.fontSize(13) : 13
                   }]}>
                     {t('explore.rateUs.title')}
                   </Text>
                   <Text style={[exploreStyles.requestButtonSubtitle, {
-                    fontSize: responsive.fontSize(11)
+                    fontSize: responsive.isTablet ? responsive.fontSize(11) : 11
                   }]}>
                     {t('explore.rateUs.subtitle')}
                   </Text>
@@ -470,9 +470,9 @@ export default function HomeGalleryLikeScreen() {
 
             <TouchableOpacity
               style={[exploreStyles.requestButton, {
-                paddingVertical: responsive.spacing(8),
-                paddingHorizontal: responsive.spacing(12),
-                borderRadius: responsive.borderRadius(12)
+                paddingVertical: responsive.isTablet ? responsive.spacing(8) : 8,
+                paddingHorizontal: responsive.isTablet ? responsive.spacing(12) : 12,
+                borderRadius: responsive.isTablet ? responsive.borderRadius(12) : 12
               }]}
               activeOpacity={0.7}
               onPress={() => {
@@ -507,16 +507,16 @@ export default function HomeGalleryLikeScreen() {
                 );
               }}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: responsive.spacing(6) }}>
-                <IconSymbol name="lightbulb" size={responsive.fontSize(14)} color="rgba(255,255,255,0.8)" />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: responsive.isTablet ? responsive.spacing(6) : 6 }}>
+                <IconSymbol name="lightbulb" size={responsive.isTablet ? responsive.fontSize(14) : 14} color="rgba(255,255,255,0.8)" />
                 <View style={{ flex: 1 }}>
                   <Text style={[exploreStyles.requestButtonTitle, {
-                    fontSize: responsive.fontSize(13)
+                    fontSize: responsive.isTablet ? responsive.fontSize(13) : 13
                   }]}>
                     {t('explore.requestFeature.title')}
                   </Text>
                   <Text style={[exploreStyles.requestButtonSubtitle, {
-                    fontSize: responsive.fontSize(11)
+                    fontSize: responsive.isTablet ? responsive.fontSize(11) : 11
                   }]}>
                     {t('explore.requestFeature.subtitle')}
                   </Text>
@@ -526,9 +526,9 @@ export default function HomeGalleryLikeScreen() {
 
             <TouchableOpacity
               style={[exploreStyles.requestButton, {
-                paddingVertical: responsive.spacing(8),
-                paddingHorizontal: responsive.spacing(12),
-                borderRadius: responsive.borderRadius(12)
+                paddingVertical: responsive.isTablet ? responsive.spacing(8) : 8,
+                paddingHorizontal: responsive.isTablet ? responsive.spacing(12) : 12,
+                borderRadius: responsive.isTablet ? responsive.borderRadius(12) : 12
               }]}
               activeOpacity={0.7}
               onPress={() => {
@@ -563,16 +563,16 @@ export default function HomeGalleryLikeScreen() {
                 );
               }}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: responsive.spacing(6) }}>
-                <IconSymbol name="exclamationmark.triangle" size={responsive.fontSize(14)} color="rgba(255,255,255,0.8)" />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: responsive.isTablet ? responsive.spacing(6) : 6 }}>
+                <IconSymbol name="exclamationmark.triangle" size={responsive.isTablet ? responsive.fontSize(14) : 14} color="rgba(255,255,255,0.8)" />
                 <View style={{ flex: 1 }}>
                   <Text style={[exploreStyles.requestButtonTitle, {
-                    fontSize: responsive.fontSize(13)
+                    fontSize: responsive.isTablet ? responsive.fontSize(13) : 13
                   }]}>
                     {t('explore.reportBug.title')}
                   </Text>
                   <Text style={[exploreStyles.requestButtonSubtitle, {
-                    fontSize: responsive.fontSize(11)
+                    fontSize: responsive.isTablet ? responsive.fontSize(11) : 11
                   }]}>
                     {t('explore.reportBug.subtitle')}
                   </Text>

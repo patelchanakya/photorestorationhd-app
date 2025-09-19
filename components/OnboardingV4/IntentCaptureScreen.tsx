@@ -1,14 +1,14 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, useWindowDimensions, AppState, FlatList } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Image as ExpoImage } from 'expo-image';
-import { VideoView, useVideoPlayer } from 'expo-video';
-import { useFocusEffect } from '@react-navigation/native';
-import Animated, { FadeIn, useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
-import { IconSymbol } from '../ui/IconSymbol';
-import { useTranslation } from 'react-i18next';
 import { useResponsive } from '@/utils/responsive';
+import { useFocusEffect } from '@react-navigation/native';
+import { Image as ExpoImage } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import { VideoView, useVideoPlayer } from 'expo-video';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { AppState, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { IconSymbol } from '../ui/IconSymbol';
 
 // Map intent IDs to translation keys
 const getIntentTranslationKey = (intentId: string): string => {
@@ -259,13 +259,13 @@ export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenPr
   }));
 
   // Calculate responsive grid dimensions
-  const columnsCount = responsive.gridColumns;
-  const containerPadding = responsive.contentPadding;
-  const itemGap = responsive.spacing(16);
+  const columnsCount = responsive.isTablet ? responsive.gridColumns : 2; // Fixed 2 columns for phones
+  const containerPadding = responsive.isTablet ? responsive.contentPadding : 16; // Fixed padding for phones
+  const itemGap = responsive.isTablet ? responsive.spacing(16) : 16;
   const totalGapWidth = (columnsCount - 1) * itemGap;
   const availableWidth = responsive.dimensions.width - (containerPadding * 2) - totalGapWidth;
   const tileWidth = availableWidth / columnsCount;
-  const tileHeight = tileWidth * (responsive.isTablet ? 1.1 : 1.2); // Slightly less height on tablets
+  const tileHeight = tileWidth * (responsive.isTablet ? 1.2 : 1.4); // Make tiles bigger
 
   // Default intent options - photo restoration focused with "Just Exploring" option
   const defaultOptions: IntentOption[] = [
@@ -341,7 +341,10 @@ export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenPr
   const keyExtractor = React.useCallback((item: IntentOption) => item.id, []);
 
   const renderIntentTile = React.useCallback(({ item, index }: { item: IntentOption; index: number }) => (
-    <View style={{ width: tileWidth, height: tileHeight }}>
+      <View style={{
+        width: tileWidth,
+        height: tileHeight
+      }}>
       <IntentTile
         option={item}
         index={index}
@@ -349,7 +352,7 @@ export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenPr
         isVisible={visibleIndices.has(index)}
       />
     </View>
-  ), [tileWidth, tileHeight, onSelect, visibleIndices]);
+  ), [tileWidth, tileHeight, onSelect, visibleIndices, responsive]);
 
   const viewabilityConfig = React.useMemo(() => ({
     itemVisiblePercentThreshold: 50
@@ -364,13 +367,13 @@ export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenPr
       colors={['#000000', '#000000']}
       style={styles.container}
     >
-      <View style={[styles.content, { paddingTop: insets.top + responsive.spacing(40) }]}>
+      <View style={[styles.content, { paddingTop: insets.top + (responsive.isTablet ? responsive.spacing(40) : 40) }]}>
         {/* Header */}
         <Animated.View style={[styles.header, headerStyle, { paddingHorizontal: containerPadding }]}>
-          <Text style={[styles.title, { fontSize: responsive.fontSize(28), marginBottom: responsive.spacing(8) }]}>
+          <Text style={[styles.title, { fontSize: responsive.isTablet ? responsive.fontSize(28) : 28, marginBottom: responsive.isTablet ? responsive.spacing(8) : 8 }]}>
             {t('onboardingV4.intentCapture.title')}
           </Text>
-          <Text style={[styles.subtitle, { fontSize: responsive.fontSize(16) }]}>
+          <Text style={[styles.subtitle, { fontSize: responsive.isTablet ? responsive.fontSize(16) : 16 }]}>
             {t('onboardingV4.intentCapture.subtitle')}
           </Text>
         </Animated.View>
@@ -381,8 +384,11 @@ export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenPr
           keyExtractor={keyExtractor}
           renderItem={renderIntentTile}
           numColumns={columnsCount}
-          columnWrapperStyle={columnsCount > 1 ? { gap: itemGap, paddingHorizontal: containerPadding } : undefined}
-          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + responsive.spacing(20) }]}
+            columnWrapperStyle={columnsCount > 1 ? { 
+              justifyContent: 'center',
+              gap: responsive.isTablet ? responsive.spacing(12) : 12
+            } : undefined}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + (responsive.isTablet ? responsive.spacing(20) : 20) }]}
           style={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
           viewabilityConfig={viewabilityConfig}
