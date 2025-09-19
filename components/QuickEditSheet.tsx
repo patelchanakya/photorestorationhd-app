@@ -19,7 +19,7 @@ import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import React from 'react';
-import { ActivityIndicator, Dimensions, Modal, Platform, Pressable, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, Modal, Platform, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -613,6 +613,13 @@ export function QuickEditSheet({ generateButtonRef }: QuickEditSheetProps = {}) 
         setIsLimitError(false);
       } else if (errorMsg.includes('GPU resources exhausted') || e?.code === 'SERVICE_BUSY') {
         // Keep the original message: "GPU resources exhausted. Team is working on it."
+        setIsLimitError(false);
+      } else if (errorMsg.includes('flagged as sensitive') || errorMsg.includes('E005')) {
+        Alert.alert(
+          'Image Not Supported',
+          'This image couldn\'t be processed due to content guidelines. Try another photo or crop the image to focus on a different area.',
+          [{ text: 'Got it' }]
+        );
         setIsLimitError(false);
       } else {
         setIsLimitError(false);

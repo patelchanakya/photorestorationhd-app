@@ -326,6 +326,7 @@ export function DeviceTwoRowCarousel({ functionType, firstTileRef }: DeviceTwoRo
         disableIntervalMomentum={true} // Prevent over-scrolling
         decelerationRate="fast" // Faster deceleration
         ListFooterComponent={loadingMore ? LoadingFooter : EmptyFooter}
+        removeClippedSubviews={true}
       />
     </View>
   );

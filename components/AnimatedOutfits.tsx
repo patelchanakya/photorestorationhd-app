@@ -2,17 +2,14 @@
 import { analyticsService } from '@/services/analytics';
 import { useTranslation } from 'react-i18next';
 import { useQuickEditStore } from '@/store/quickEditStore';
-import { useFocusEffect } from '@react-navigation/native';
-import { useEvent } from 'expo';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { VideoView } from 'expo-video';
 import { useVideoPlayer } from 'expo-video';
-import React, { useRef, useState } from 'react';
-import { AppState, ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import React, { useState, useCallback, useEffect } from 'react';
+import { FlatList, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 
 interface OutfitItem {
   id: string;
@@ -77,88 +74,23 @@ const DEFAULT_OUTFITS: OutfitItem[] = [
 ];
 
 
-// VideoView component with visibility-based playback control
-const VideoViewWithPlayer = ({ video, index, isVisible }: { video: any; index?: number; isVisible?: boolean }) => {
-  const videoIndex = index || 0;
-
-  const playbackRate = React.useMemo(() => {
-    // Faster playback speeds for better looping
-    const rates = [1.1, 1.0, 1.2, 1.1, 1.3, 1.2];
-    return rates[videoIndex % rates.length];
-  }, [videoIndex]);
-
-  const initialSeek = React.useMemo(() => {
-    // Start at different points in the video (0-2 seconds)
-    return (videoIndex * 0.3) % 2;
-  }, [videoIndex]);
-
-  // Always create player but control playback based on visibility
-  const player = useVideoPlayer(video, (player: any) => {
-    try {
-      player.loop = true;
-      player.muted = true;
-      player.playbackRate = playbackRate;
-      player.currentTime = initialSeek;
-      console.log(`🎬 Created outfit video player ${videoIndex}`);
-    } catch (error) {
-      console.error('AnimatedOutfits video player init error:', error);
-    }
+const VideoViewWithPlayer = ({ video, isVisible }: { video: any; isVisible: boolean }) => {
+  const player = useVideoPlayer(video, (player) => {
+    player.loop = true;
+    player.muted = true;
+    player.audioMixingMode = 'mixWithOthers';
   });
 
-  // Control playback based on visibility
-  React.useEffect(() => {
-    if (!player) return;
-
-    try {
-      if (isVisible && !player.playing) {
-        player.play();
-        console.log(`▶️ Playing outfit video ${videoIndex}`);
-      } else if (!isVisible && player.playing) {
-        player.pause();
-        console.log(`⏸️ Pausing outfit video ${videoIndex}`);
-      }
-    } catch (error) {
-      console.error('Outfit video visibility control error:', error);
+  useEffect(() => {
+    if (isVisible) {
+      player?.play();
+    } else {
+      player?.pause();
     }
-  }, [isVisible, player, videoIndex]);
-
-  // Monitor playback status
-  const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
-
-  // Handle app state changes for background/foreground
-  React.useEffect(() => {
-    const handleAppStateChange = (nextAppState: string) => {
-      if (nextAppState === 'active' && player && !player.playing) {
-        try {
-          player.play();
-        } catch (error) {
-          // Ignore resume errors
-        }
-      }
-    };
-
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
-    return () => subscription?.remove();
-  }, [player]);
-
-  // Handle navigation focus
-  useFocusEffect(
-    React.useCallback(() => {
-      if (player && !player.playing) {
-        try {
-          player.play();
-        } catch (error) {
-          // Ignore focus resume errors
-        }
-      }
-    }, [player])
-  );
+  }, [isVisible, player]);
 
   return (
-    <Animated.View
-      entering={FadeIn.delay(videoIndex * 100).duration(800)}
-      style={{ width: '100%', height: '100%' }}
-    >
+    <View style={{ width: '100%', height: '100%' }}>
       <VideoView
         player={player}
         style={{ width: '100%', height: '100%', opacity: 0.95 }}
@@ -166,9 +98,126 @@ const VideoViewWithPlayer = ({ video, index, isVisible }: { video: any; index?: 
         nativeControls={false}
         allowsFullscreen={false}
       />
-    </Animated.View>
+    </View>
   );
 };
+
+const OutfitTile = React.memo(({ item, tileWidth, fontSize, isVisible = false }: { item: OutfitItem; tileWidth: number; fontSize: number; isVisible?: boolean }) => {
+  const { t } = useTranslation();
+  const router = useRouter();
+
+  const handleOutfitSelect = async () => {
+    const translatedTitle = t(item.titleKey);
+
+    console.log('🎨 OUTFIT STYLE SELECTED:', {
+      id: item.id,
+      title: translatedTitle,
+      prompt: item.outfitPrompt
+    });
+
+    analyticsService.trackTileUsage({
+      category: 'outfit',
+      tileName: translatedTitle,
+      tileId: item.id,
+      functionType: 'nano_outfit',
+      customPrompt: item.outfitPrompt,
+      stage: 'selected'
+    });
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: false,
+      quality: 1,
+      presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
+      preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
+      exif: false
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      try {
+        useQuickEditStore.getState().openWithImage({
+          functionType: 'nano_outfit' as any,
+          imageUri: result.assets[0].uri,
+          styleName: translatedTitle,
+          styleKey: item.id
+        });
+      } catch {
+        router.push({
+          pathname: '/text-edits',
+          params: {
+            imageUri: result.assets[0].uri,
+            prompt: item.outfitPrompt || translatedTitle,
+            mode: 'outfit'
+          }
+        });
+      }
+    }
+  };
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.9}
+      onPress={handleOutfitSelect}
+      style={{
+        width: tileWidth,
+        aspectRatio: 9/16,
+        borderRadius: 16,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.08)',
+        backgroundColor: '#0b0b0f',
+        marginRight: 10
+      }}
+    >
+      {item.type === 'video' && item.video ? (
+        <VideoViewWithPlayer video={item.video} isVisible={isVisible} />
+      ) : (
+        <ExpoImage
+          source={item.image}
+          style={{ width: '100%', height: '100%' }}
+          contentFit="cover"
+          transition={0}
+        />
+      )}
+
+      <LinearGradient
+        colors={["transparent", "rgba(0,0,0,0.4)", "rgba(0,0,0,0.9)"]}
+        locations={[0, 0.6, 1]}
+        start={{ x: 0.5, y: 0.2 }}
+        end={{ x: 0.5, y: 1 }}
+        style={{ position: 'absolute', inset: 0 as any }}
+      />
+
+      <View style={{
+        position: 'absolute',
+        left: 8,
+        right: 8,
+        bottom: 8,
+        minHeight: 38,
+        justifyContent: 'flex-end',
+        backgroundColor: 'transparent'
+      }}>
+        <Text
+          adjustsFontSizeToFit={true}
+          minimumFontScale={0.7}
+          style={{
+            color: '#FFFFFF',
+            fontFamily: 'Lexend-Bold',
+            fontSize: fontSize + 1,
+            lineHeight: (fontSize + 1) * 1.3,
+            textAlign: 'center',
+            textShadowColor: 'rgba(0,0,0,0.8)',
+            textShadowOffset: { width: 0, height: 1 },
+            textShadowRadius: 3,
+            letterSpacing: -0.2
+          }}
+        >
+          {t(item.titleKey)}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+});
 
 export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: OutfitItem[] }) {
   const { width, height } = useWindowDimensions();
@@ -176,191 +225,60 @@ export function AnimatedOutfits({ outfits = DEFAULT_OUTFITS }: { outfits?: Outfi
   const longestSide = Math.max(width, height);
   const isTabletLike = shortestSide >= 768;
   const isSmallPhone = longestSide <= 700;
-  const { t } = useTranslation();
-  
-  // Responsive tile dimensions - optimized for text visibility and mobile/tablet experience
+
   const tileWidth = isTabletLike ? 105 : (isSmallPhone ? 90 : 105);
   const fontSize = isTabletLike ? 13 : (isSmallPhone ? 11 : 12);
-  
-  // Track visible tiles based on scroll position
-  const [visibleIndices, setVisibleIndices] = React.useState<Set<number>>(new Set([0, 1, 2])); // Initially show first 3
-  
-  const handleScroll = React.useCallback((event: any) => {
-    const scrollX = event.nativeEvent.contentOffset.x;
-    const viewportWidth = width - 32; // Account for padding
-    
-    // Calculate which tiles are visible (with some buffer)
-    const firstVisibleIndex = Math.max(0, Math.floor((scrollX - 50) / (tileWidth + 10))); 
-    const lastVisibleIndex = Math.min(
-      outfits.length - 1, 
-      Math.ceil((scrollX + viewportWidth + 50) / (tileWidth + 10))
-    );
-    
-    const newVisibleIndices = new Set<number>();
-    for (let i = firstVisibleIndex; i <= lastVisibleIndex; i++) {
-      newVisibleIndices.add(i);
-    }
-    
-    // Only update if changed to prevent unnecessary re-renders
-    if (newVisibleIndices.size !== visibleIndices.size || 
-        ![...newVisibleIndices].every(i => visibleIndices.has(i))) {
-      setVisibleIndices(newVisibleIndices);
-      
-      if (__DEV__) {
-        console.log('🎨 Outfits visible tiles:', [...newVisibleIndices]);
-      }
-    }
-  }, [tileWidth, width, visibleIndices, outfits.length]);
-  
-  const router = useRouter();
-  const handleOutfitSelect = async (outfit: OutfitItem) => {
-    // No Pro gating - all outfits are now free
-    const translatedTitle = t(outfit.titleKey);
-    
-    // PROMPT LOGGING: Track which outfit style is selected
-    console.log('🎨 OUTFIT STYLE SELECTED:', {
-      id: outfit.id,
-      title: translatedTitle,
-      prompt: outfit.outfitPrompt
-    });
-    
-    // Track outfit tile selection
-    analyticsService.trackTileUsage({
-      category: 'outfit',
-      tileName: translatedTitle,
-      tileId: outfit.id,
-      functionType: 'nano_outfit',
-      customPrompt: outfit.outfitPrompt,
-      stage: 'selected'
-    });
-    
-    // Launch image picker then open Quick Edit sheet in outfit mode
-    const result = await ImagePicker.launchImageLibraryAsync({ 
-      mediaTypes: ['images'], 
-      allowsEditing: false, 
-      quality: 1,
-      presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
-      preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
-      exif: false
-    });
-    if (!result.canceled && result.assets[0]) {
-      try {
-        useQuickEditStore.getState().openWithImage({ functionType: 'nano_outfit' as any, imageUri: result.assets[0].uri, styleName: translatedTitle, styleKey: outfit.id });
-      } catch {
-        // fallback: existing flow
-        router.push({ pathname: '/text-edits', params: { imageUri: result.assets[0].uri, prompt: outfit.outfitPrompt || translatedTitle, mode: 'outfit' } });
-      }
-    }
+
+  const [visibleIndices, setVisibleIndices] = useState(new Set<number>());
+
+  const viewabilityConfig = {
+    itemVisiblePercentThreshold: 50
   };
+
+  const onViewableItemsChanged = useCallback(({ viewableItems }: { viewableItems: any[] }) => {
+    setVisibleIndices(new Set(viewableItems.map(item => item.index)));
+  }, []);
 
   return (
     <View style={{ marginTop: 16, marginBottom: 8, position: 'relative' }}>
-      <ScrollView 
-        horizontal 
+      <FlatList
+        data={outfits}
+        horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 16 }}
-        onScroll={handleScroll}
-        scrollEventThrottle={100} // Throttle to reduce performance impact
-      >
-        {outfits.map((item, index) => {
-          const isVisible = visibleIndices.has(index);
-          return (
-            <Animated.View
-            key={item.id}
-            entering={FadeIn.delay(index * 100).duration(800)}
-            style={{ width: tileWidth, marginRight: index === outfits.length - 1 ? 0 : 10 }}
-          >
-            <TouchableOpacity
-              activeOpacity={0.9}
-              onPress={() => handleOutfitSelect(item)}
-              style={{ 
-                width: tileWidth, 
-                aspectRatio: 9/16, 
-                borderRadius: 16, 
-                overflow: 'hidden', 
-                borderWidth: 1, 
-                borderColor: 'rgba(255,255,255,0.08)', 
-                backgroundColor: '#0b0b0f' 
-              }}
-            >
-              {/* Render video only when visible, otherwise show placeholder */}
-              {item.type === 'video' && item.video && isVisible ? (
-                <VideoViewWithPlayer video={item.video} index={index} isVisible={visibleIndices.has(index)} />
-              ) : item.type === 'video' && item.video && !isVisible ? (
-                // Show static placeholder when not visible
-                <View style={{ 
-                  width: '100%', 
-                  height: '100%', 
-                  backgroundColor: '#1a1a1a',
-                  justifyContent: 'center',
-                  alignItems: 'center'
-                }}>
-                  <Text style={{ color: '#666', fontSize: 24 }}>👔</Text>
-                </View>
-              ) : (
-                <ExpoImage 
-                  source={item.image} 
-                  style={{ width: '100%', height: '100%' }} 
-                  contentFit="cover" 
-                  transition={0} 
-                />
-              )}
-              
-              {/* Enhanced gradient overlay for better text contrast */}
-              <LinearGradient
-                colors={["transparent", "rgba(0,0,0,0.4)", "rgba(0,0,0,0.9)"]}
-                locations={[0, 0.6, 1]}
-                start={{ x: 0.5, y: 0.2 }}
-                end={{ x: 0.5, y: 1 }}
-                style={{ position: 'absolute', inset: 0 as any }}
-              />
-              
-              {/* Enhanced bottom label with text shadows */}
-              <View style={{ 
-                position: 'absolute', 
-                left: 8, 
-                right: 8, 
-                bottom: 8, 
-                minHeight: 38, 
-                justifyContent: 'flex-end',
-                backgroundColor: 'transparent' // Add solid background for shadow efficiency
-              }}>
-                <Text 
-                  adjustsFontSizeToFit={true}
-                  minimumFontScale={0.7}
-                  style={{ 
-                    color: '#FFFFFF', 
-                    fontFamily: 'Lexend-Bold', 
-                    fontSize: fontSize + 1,
-                    lineHeight: (fontSize + 1) * 1.3,
-                    textAlign: 'center',
-                    textShadowColor: 'rgba(0,0,0,0.8)',
-                    textShadowOffset: { width: 0, height: 1 },
-                    textShadowRadius: 3,
-                    letterSpacing: -0.2
-                  }}
-                >
-                  {t(item.titleKey)}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </Animated.View>
-          );
+        keyExtractor={(item) => item.id}
+        renderItem={({ item, index }) => (
+          <OutfitTile
+            item={item}
+            tileWidth={tileWidth}
+            fontSize={fontSize}
+            isVisible={visibleIndices.has(index)}
+          />
+        )}
+        windowSize={2}
+        maxToRenderPerBatch={3}
+        initialNumToRender={3}
+        getItemLayout={(data, index) => ({
+          length: tileWidth + 10,
+          offset: (tileWidth + 10) * index,
+          index,
         })}
-      </ScrollView>
-      
-      {/* Right edge gradient */}
+        viewabilityConfig={viewabilityConfig}
+        onViewableItemsChanged={onViewableItemsChanged}
+        removeClippedSubviews={true}
+      />
+
       <LinearGradient
         colors={['transparent', '#0B0B0F']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
-        style={{ 
-          position: 'absolute', 
-          right: 0, 
-          top: 0, 
-          bottom: 0, 
-          width: 30, 
-          pointerEvents: 'none' 
+        style={{
+          position: 'absolute',
+          right: 0,
+          top: 0,
+          bottom: 0,
+          width: 30,
+          pointerEvents: 'none'
         }}
       />
     </View>

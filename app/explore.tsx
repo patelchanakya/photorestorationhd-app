@@ -66,6 +66,7 @@ export default function HomeGalleryLikeScreen() {
   // Tour state
   const [showTourOverlay, setShowTourOverlay] = React.useState(false);
   const [tourStep, setTourStep] = React.useState(0);
+
   
   // Refs for tour highlighting
   const navigationRef = React.useRef<View>(null);
@@ -126,6 +127,7 @@ export default function HomeGalleryLikeScreen() {
     // Only request on first visit to explore
     requestPermissions();
   }, []);
+
 
   // Initialize tour when showTour parameter is present
   React.useEffect(() => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, useWindowDimensions, AppState } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, useWindowDimensions, AppState, FlatList } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image as ExpoImage } from 'expo-image';
@@ -53,35 +53,26 @@ const TileVideo = React.memo(({ video, isVisible = true }: { video: any; isVisib
     playerRef.current = player;
     player.loop = true;
     player.muted = true;
+    player.audioMixingMode = 'mixWithOthers';
     
     // Mark as ready and start playing if visible
     setIsReady(true);
     setHasError(false);
-    if (isVisible && isMountedRef.current) {
-      shouldBePlayingRef.current = true;
-      setTimeout(() => {
-        if (isMountedRef.current && playerRef.current) {
-          try {
-            playerRef.current.play();
-          } catch (error) {
-            setHasError(true);
-            console.warn('Video play failed:', error);
-          }
-        }
-      }, 150);
-    }
   });
 
   // Handle visibility changes
   React.useEffect(() => {
     if (!isReady || !isMountedRef.current) return;
-    
+
     try {
-      if (!isVisible && playerRef.current?.playing) {
+      if (isVisible && playerRef.current) {
+        shouldBePlayingRef.current = true;
+        if (!playerRef.current.playing) {
+          playerRef.current.play();
+        }
+      } else if (!isVisible && playerRef.current?.playing) {
         playerRef.current.pause();
         shouldBePlayingRef.current = false;
-      } else if (isVisible && playerRef.current && !playerRef.current.playing && shouldBePlayingRef.current) {
-        playerRef.current.play();
       }
     } catch {
       // Ignore visibility errors
@@ -180,11 +171,13 @@ const TileVideo = React.memo(({ video, isVisible = true }: { video: any; isVisib
 function IntentTile({
   option,
   index,
-  onPress
+  onPress,
+  isVisible = true
 }: {
   option: IntentOption;
   index: number;
   onPress: () => void;
+  isVisible?: boolean;
 }) {
   const { t } = useTranslation();
 
@@ -209,7 +202,7 @@ function IntentTile({
       >
         <View style={styles.tileContent}>
           {option.video ? (
-            <TileVideo video={option.video} />
+            <TileVideo video={option.video} isVisible={isVisible} />
           ) : (
             <ExpoImage 
               source={option.image || undefined} 
@@ -249,7 +242,10 @@ export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenPr
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  
+
+  // Track visible items for video performance optimization
+  const [visibleIndices, setVisibleIndices] = React.useState<Set<number>>(new Set([0, 1, 2, 3])); // Show first 4 initially
+
   // Smooth entrance animations
   const headerOpacity = useSharedValue(0);
   
@@ -341,6 +337,28 @@ export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenPr
 
   const displayOptions = options.length > 0 ? options : defaultOptions;
 
+  // Memoized FlatList callbacks
+  const keyExtractor = React.useCallback((item: IntentOption) => item.id, []);
+
+  const renderIntentTile = React.useCallback(({ item, index }: { item: IntentOption; index: number }) => (
+    <View style={{ width: tileWidth, height: tileHeight }}>
+      <IntentTile
+        option={item}
+        index={index}
+        onPress={() => onSelect(item.id)}
+        isVisible={visibleIndices.has(index)}
+      />
+    </View>
+  ), [tileWidth, tileHeight, onSelect, visibleIndices]);
+
+  const viewabilityConfig = React.useMemo(() => ({
+    itemVisiblePercentThreshold: 50
+  }), []);
+
+  const onViewableItemsChanged = React.useCallback(({ viewableItems }: { viewableItems: any[] }) => {
+    setVisibleIndices(new Set(viewableItems.map(item => item.index)));
+  }, []);
+
   return (
     <LinearGradient
       colors={['#000000', '#000000']}
@@ -354,26 +372,22 @@ export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenPr
         </Animated.View>
 
         {/* Intent Options Grid */}
-        <ScrollView 
-          style={styles.scrollContainer}
+        <FlatList
+          data={displayOptions}
+          keyExtractor={keyExtractor}
+          renderItem={renderIntentTile}
+          numColumns={columnsCount}
+          columnWrapperStyle={columnsCount > 1 ? { gap: itemGap, paddingHorizontal: containerPadding } : undefined}
           contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]}
+          style={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
-        >
-          <View style={[styles.grid, { 
-            gap: itemGap,
-            paddingHorizontal: containerPadding 
-          }]}>
-            {displayOptions.map((option, index) => (
-              <View key={option.id} style={{ width: tileWidth, height: tileHeight }}>
-                <IntentTile
-                  option={option}
-                  index={index}
-                  onPress={() => onSelect(option.id)}
-                />
-              </View>
-            ))}
-          </View>
-        </ScrollView>
+          viewabilityConfig={viewabilityConfig}
+          onViewableItemsChanged={onViewableItemsChanged}
+          removeClippedSubviews={true}
+          windowSize={2}
+          maxToRenderPerBatch={columnsCount * 2}
+          initialNumToRender={columnsCount * 2}
+        />
       </View>
     </LinearGradient>
   );

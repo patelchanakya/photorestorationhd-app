@@ -10,12 +10,9 @@ import { JobProvider } from '@/contexts/JobContext';
 import { RevenueCatProvider } from '@/contexts/RevenueCatContext';
 import '@/src/locales/index';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { useAutoRollbackRecovery } from '@/hooks/useRollbackRecovery';
 import { AppState, AppStateStatus, Dimensions, LogBox, Platform, View } from 'react-native';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import { clarityService } from '@/services/clarityService';
-import { memoryManager } from '@/services/memoryManager';
-import { appLifecycleService } from '@/services/appLifecycleService';
 import * as Clarity from '@microsoft/react-native-clarity';
 import NetInfo from '@react-native-community/netinfo';
 import { QueryClient, QueryClientProvider, focusManager, onlineManager } from '@tanstack/react-query';
@@ -166,7 +163,6 @@ export default function RootLayout() {
       await clarityService.initialize();
 
       // Initialize app lifecycle service for background restart management
-      appLifecycleService.initialize();
       
       // Set initial app context for Clarity
       try {
@@ -260,7 +256,6 @@ export default function RootLayout() {
 
     // Cleanup services on unmount
     return () => {
-      appLifecycleService.destroy();
     };
   }, []);
 
@@ -302,7 +297,6 @@ export default function RootLayout() {
 
 function MainNavigator() {
   // Auto-rollback recovery for failed usage charges
-  useAutoRollbackRecovery();
   
   // Reduced logging noise - only log first render
   const hasLoggedRef = React.useRef(false);

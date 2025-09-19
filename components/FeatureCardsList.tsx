@@ -20,7 +20,7 @@ import { useRouter } from 'expo-router';
 import { VideoView } from 'expo-video';
 import { useVideoPlayer } from 'expo-video';
 import React from 'react';
-import { Alert, Animated, AppState, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { Alert, Animated, AppState, FlatList, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import ReanimatedAnimated, { FadeIn } from 'react-native-reanimated';
 import { useFocusEffect } from '@react-navigation/native';
 import { IconSymbol } from './ui/IconSymbol';
@@ -35,8 +35,13 @@ const CardVideo = React.memo(({ video }: { video: any }) => {
   const player = useVideoPlayer(video, (player: any) => {
     player.loop = true;
     player.muted = true;
-    player.play(); // Auto-play for feature cards
-    shouldBePlayingRef.current = true;
+    player.audioMixingMode = 'mixWithOthers';
+
+    // Delay playback to prevent blocking main thread
+    setTimeout(() => {
+      player.play();
+      shouldBePlayingRef.current = true;
+    }, 200);
   });
 
   // Handle app state changes (backgrounding/foregrounding)
@@ -380,7 +385,8 @@ export function FeatureCardsList({
   const { t, i18n } = useTranslation();
   const currentLanguage = i18n.language;
 
-  // Track visible grid cards for performance optimization (videos only)
+  // Track visible cards for performance optimization (videos only)
+  const [visibleIndices, setVisibleIndices] = React.useState<Set<number>>(new Set([0])); // Show first item initially
   const [visibleGridIndices, setVisibleGridIndices] = React.useState<Set<number>>(new Set([0, 1, 2, 3])); // Show first 4 initially
 
   // Handle request idea submission
@@ -513,18 +519,42 @@ export function FeatureCardsList({
     }
   };
 
+  // Memoized callbacks for FlatList
+  const keyExtractor = React.useCallback((item: CardItem) => item.id, []);
+
+  const renderCard = React.useCallback(({ item, index }: { item: CardItem; index: number }) => (
+    <Card
+      item={item}
+      onPress={handlePress}
+      ref={index === 0 ? firstTileRef : null}
+    />
+  ), [handlePress, firstTileRef]);
+
+  const viewabilityConfig = React.useMemo(() => ({
+    itemVisiblePercentThreshold: 50
+  }), []);
+
+  const onViewableItemsChanged = React.useCallback(({ viewableItems }: { viewableItems: any[] }) => {
+    setVisibleIndices(new Set(viewableItems.map(item => item.index)));
+  }, []);
+
   if (!compact) {
     return (
       <View style={{ paddingTop: 8, paddingBottom: 24 }}>
-        {CARDS.map((c, index) => (
-          <Card
-            key={c.id}
-            item={c}
-            onPress={handlePress}
-            ref={index === 0 ? firstTileRef : null}
-          />
-        ))}
-        
+        <FlatList
+          data={CARDS}
+          keyExtractor={keyExtractor}
+          renderItem={renderCard}
+          viewabilityConfig={viewabilityConfig}
+          onViewableItemsChanged={onViewableItemsChanged}
+          removeClippedSubviews={true}
+          windowSize={2}
+          maxToRenderPerBatch={3}
+          initialNumToRender={3}
+          scrollEnabled={false}
+          showsVerticalScrollIndicator={false}
+        />
+
         {/* Request your idea & Report bug side-by-side cards */}
         <View style={{ flexDirection: 'row', marginHorizontal: 16, marginBottom: 14, gap: 12 }}>
           {/* Request your idea card - smaller */}
@@ -685,6 +715,16 @@ export function FeatureCardsList({
     );
   }
 
+  // Memoized callbacks for grid FlatList
+  const renderGridCard = React.useCallback(({ item, index }: { item: CardItem; index: number }) => (
+    <GridCard
+      item={item}
+      onPress={handlePress}
+      index={index}
+      isVisible={visibleGridIndices.has(index)}
+    />
+  ), [handlePress, visibleGridIndices]);
+
   // Since grid cards are in a fixed layout (not scrollable), all should be visible
   // This optimization is mainly for video tiles, but our grid has mostly images anyway
   React.useEffect(() => {
@@ -694,7 +734,7 @@ export function FeatureCardsList({
       allGridIndices.add(i);
     }
     setVisibleGridIndices(allGridIndices);
-    
+
     if (__DEV__) {
       console.log('📜 Restoration grid - all tiles visible:', [...allGridIndices]);
     }
@@ -706,26 +746,19 @@ export function FeatureCardsList({
     <View style={{ paddingTop: 8, paddingBottom: 24 }}>
       {/* Featured card - always plays video */}
       <Card item={featured} onPress={handlePress} ref={firstTileRef} />
-      
-      {/* Grid cards - 2 columns with viewport optimization */}
-      <View 
-        style={{ 
-          flexDirection: 'row', 
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-          paddingHorizontal: 16,
-          paddingTop: 8 
-        }}
-      >
-        {rest.map((item, index) => (
-          <GridCard 
-            key={item.id}
-            item={item} 
-            onPress={handlePress}
-            index={index}
-            isVisible={visibleGridIndices.has(index)}
-          />
-        ))}
+
+      {/* Grid cards - 2 columns with FlatList optimization */}
+      <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
+        <FlatList
+          data={rest}
+          keyExtractor={keyExtractor}
+          renderItem={renderGridCard}
+          numColumns={2}
+          columnWrapperStyle={{ justifyContent: 'center', gap: 8 }}
+          removeClippedSubviews={true}
+          scrollEnabled={false}
+          showsVerticalScrollIndicator={false}
+        />
       </View>
     </View>
   );
