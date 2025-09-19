@@ -1,9 +1,10 @@
-// Onboarding Design System Constants
+// Responsive Design System Constants
+import { responsiveFontSize, responsiveSpacing, responsiveBorderRadius } from '@/utils/responsive';
 
 export const ONBOARDING_COLORS = {
-  // Backgrounds  
+  // Backgrounds
   background: '#000000',
-  backgroundGradientStart: '#000000', 
+  backgroundGradientStart: '#000000',
   backgroundGradientEnd: '#000000',
   cardBackground: '#000000',
   cardBackgroundHover: '#111111',
@@ -11,7 +12,7 @@ export const ONBOARDING_COLORS = {
 
   // Accents
   accent: '#F97316',
-  accentLight: '#FB923C', 
+  accentLight: '#FB923C',
   accentDark: '#EA580C',
   accentBackground: 'rgba(249, 115, 22, 0.08)',
   accentBackgroundSelected: 'rgba(249, 115, 22, 0.12)',
@@ -34,38 +35,41 @@ export const ONBOARDING_COLORS = {
   borderSelected: 'rgba(249, 115, 22, 0.5)',
 } as const;
 
+// Responsive spacing - scales based on device type
 export const ONBOARDING_SPACING = {
-  xs: 4,
-  sm: 8, 
-  md: 12,
-  lg: 16,
-  xl: 20,
-  xxl: 24,
-  xxxl: 32,
-  huge: 40,
-  massive: 48,
+  xs: responsiveSpacing(4),
+  sm: responsiveSpacing(8),
+  md: responsiveSpacing(12),
+  lg: responsiveSpacing(16),
+  xl: responsiveSpacing(20),
+  xxl: responsiveSpacing(24),
+  xxxl: responsiveSpacing(32),
+  huge: responsiveSpacing(40),
+  massive: responsiveSpacing(48),
 } as const;
 
+// Responsive border radius - scales appropriately
 export const ONBOARDING_BORDER_RADIUS = {
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
-  xxl: 24,
+  sm: responsiveBorderRadius(8),
+  md: responsiveBorderRadius(12),
+  lg: responsiveBorderRadius(16),
+  xl: responsiveBorderRadius(20),
+  xxl: responsiveBorderRadius(24),
 } as const;
 
+// Responsive typography - scales based on device type
 export const ONBOARDING_TYPOGRAPHY = {
-  // Font sizes
-  xs: 12,
-  sm: 14,
-  base: 16,
-  lg: 18,
-  xl: 20,
-  xxl: 24,
-  xxxl: 28,
-  huge: 32,
-  massive: 36,
-  giant: 48,
+  // Font sizes - responsive
+  xs: responsiveFontSize(12),
+  sm: responsiveFontSize(14),
+  base: responsiveFontSize(16),
+  lg: responsiveFontSize(18),
+  xl: responsiveFontSize(20),
+  xxl: responsiveFontSize(24),
+  xxxl: responsiveFontSize(28),
+  huge: responsiveFontSize(32),
+  massive: responsiveFontSize(36),
+  giant: responsiveFontSize(48),
 
   // Font weights
   normal: '400' as const,

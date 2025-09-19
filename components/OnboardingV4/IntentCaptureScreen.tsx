@@ -8,6 +8,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import Animated, { FadeIn, useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { IconSymbol } from '../ui/IconSymbol';
 import { useTranslation } from 'react-i18next';
+import { useResponsive } from '@/utils/responsive';
 
 // Map intent IDs to translation keys
 const getIntentTranslationKey = (intentId: string): string => {
@@ -241,31 +242,30 @@ function IntentTile({
 export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const responsive = useResponsive();
 
   // Track visible items for video performance optimization
   const [visibleIndices, setVisibleIndices] = React.useState<Set<number>>(new Set([0, 1, 2, 3])); // Show first 4 initially
 
   // Smooth entrance animations
   const headerOpacity = useSharedValue(0);
-  
+
   React.useEffect(() => {
     headerOpacity.value = withTiming(1, { duration: 500 });
   }, []);
-  
+
   const headerStyle = useAnimatedStyle(() => ({
     opacity: headerOpacity.value,
   }));
 
-  // Calculate grid dimensions
-  const isTablet = width >= 768;
-  const columnsCount = isTablet ? 3 : 2;
-  const containerPadding = 24;
-  const itemGap = 16;
+  // Calculate responsive grid dimensions
+  const columnsCount = responsive.gridColumns;
+  const containerPadding = responsive.contentPadding;
+  const itemGap = responsive.spacing(16);
   const totalGapWidth = (columnsCount - 1) * itemGap;
-  const availableWidth = width - (containerPadding * 2) - totalGapWidth;
+  const availableWidth = responsive.dimensions.width - (containerPadding * 2) - totalGapWidth;
   const tileWidth = availableWidth / columnsCount;
-  const tileHeight = tileWidth * 1.2;
+  const tileHeight = tileWidth * (responsive.isTablet ? 1.1 : 1.2); // Slightly less height on tablets
 
   // Default intent options - photo restoration focused with "Just Exploring" option
   const defaultOptions: IntentOption[] = [
@@ -364,11 +364,15 @@ export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenPr
       colors={['#000000', '#000000']}
       style={styles.container}
     >
-      <View style={[styles.content, { paddingTop: insets.top + 40 }]}>
+      <View style={[styles.content, { paddingTop: insets.top + responsive.spacing(40) }]}>
         {/* Header */}
-        <Animated.View style={[styles.header, headerStyle]}>
-          <Text style={styles.title}>{t('onboardingV4.intentCapture.title')}</Text>
-          <Text style={styles.subtitle}>{t('onboardingV4.intentCapture.subtitle')}</Text>
+        <Animated.View style={[styles.header, headerStyle, { paddingHorizontal: containerPadding }]}>
+          <Text style={[styles.title, { fontSize: responsive.fontSize(28), marginBottom: responsive.spacing(8) }]}>
+            {t('onboardingV4.intentCapture.title')}
+          </Text>
+          <Text style={[styles.subtitle, { fontSize: responsive.fontSize(16) }]}>
+            {t('onboardingV4.intentCapture.subtitle')}
+          </Text>
         </Animated.View>
 
         {/* Intent Options Grid */}
@@ -378,7 +382,7 @@ export function IntentCaptureScreen({ options, onSelect }: IntentCaptureScreenPr
           renderItem={renderIntentTile}
           numColumns={columnsCount}
           columnWrapperStyle={columnsCount > 1 ? { gap: itemGap, paddingHorizontal: containerPadding } : undefined}
-          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + responsive.spacing(20) }]}
           style={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
           viewabilityConfig={viewabilityConfig}
@@ -402,18 +406,14 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 32,
-    paddingHorizontal: 24,
   },
   title: {
-    fontSize: 28,
     fontWeight: 'bold',
     color: '#FFFFFF',
     textAlign: 'center',
     letterSpacing: 0.5,
-    marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
     color: '#9CA3AF',
     textAlign: 'center',
     fontFamily: 'Lexend-Regular',
@@ -423,10 +423,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 20,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
   },
   tileContainer: {
     flex: 1,

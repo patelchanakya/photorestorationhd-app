@@ -3,6 +3,7 @@ import { analyticsService } from '@/services/analytics';
 import { featureRequestService } from '@/services/featureRequestService';
 import { useTranslation } from 'react-i18next';
 import { useQuickEditStore } from '@/store/quickEditStore';
+import { useResponsive } from '@/utils/responsive';
 import * as Haptics from 'expo-haptics';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -177,7 +178,22 @@ const FeatureCardBase = React.memo(React.forwardRef<View, {
   index = 0
 }, ref) => {
   const { t } = useTranslation();
+  const responsive = useResponsive();
   const scaleValue = React.useRef(new Animated.Value(1)).current;
+
+  // Calculate responsive height for featured cards
+  const getFeaturedCardHeight = () => {
+    if (responsive.isTablet) {
+      // Use 16:10 aspect ratio for tablets to show more content
+      const cardWidth = responsive.dimensions.width - (responsive.spacing(32));
+      return Math.round(cardWidth * 0.625); // 16:10 ratio
+    } else {
+      // Keep existing phone height
+      return 260;
+    }
+  };
+
+  const cardHeight = getFeaturedCardHeight();
 
   const handlePressIn = React.useCallback(() => {
     try { Haptics.selectionAsync(); } catch {}
@@ -203,21 +219,25 @@ const FeatureCardBase = React.memo(React.forwardRef<View, {
     onPress={() => onPress(item)}
     onPressIn={handlePressIn}
     onPressOut={handlePressOut}
-    style={styles.cardContainer}
+    style={[styles.cardContainer, {
+      marginHorizontal: responsive.spacing(16),
+      marginBottom: responsive.spacing(14)
+    }]}
   >
     <Animated.View style={[styles.cardView, {
+      height: cardHeight,
       transform: [{ scale: scaleValue }]
     }]}>
       {item.video ? (
         <CardVideo video={item.video} />
       ) : (
-        <ExpoImage 
-          source={item.image || undefined} 
-          style={styles.cardImage} 
-          contentFit="cover"
+        <ExpoImage
+          source={item.image || undefined}
+          style={styles.cardImage}
+          contentFit={responsive.isTablet ? "contain" : "cover"}
           cachePolicy="memory-disk"
           priority={index < 6 ? "high" : "low"}
-          placeholderContentFit="cover"
+          placeholderContentFit={responsive.isTablet ? "contain" : "cover"}
           transition={0}
           recyclingKey={item.id}
         />
@@ -229,15 +249,25 @@ const FeatureCardBase = React.memo(React.forwardRef<View, {
       />
       
       <View style={styles.cardContent}>
-        <Text style={styles.cardTitle}>
+        <Text style={[styles.cardTitle, {
+          fontSize: responsive.fontSize(20),
+          marginBottom: responsive.spacing(8)
+        }]}>
           {t(item.titleKey)}
         </Text>
-        
-        <View style={styles.cardActionButton}>
-          <Text style={styles.cardActionText} numberOfLines={1}>
+
+        <View style={[styles.cardActionButton, {
+          paddingHorizontal: responsive.spacing(16),
+          paddingVertical: responsive.spacing(8),
+          borderRadius: responsive.borderRadius(20)
+        }]}>
+          <Text style={[styles.cardActionText, {
+            fontSize: responsive.fontSize(13),
+            marginLeft: responsive.spacing(6)
+          }]} numberOfLines={1}>
             {t('photoProcessor.choosePhoto')}
           </Text>
-          <IconSymbol name="chevron.right" size={14} color="#FFFFFF" />
+          <IconSymbol name="chevron.right" size={responsive.fontSize(14)} color="#FFFFFF" />
         </View>
       </View>
       
@@ -265,13 +295,22 @@ const GridCard = React.memo(({
   isVisible: boolean;
 }) => {
   const { t } = useTranslation();
-  const { width } = useWindowDimensions();
+  const responsive = useResponsive();
   const scaleValue = React.useRef(new Animated.Value(1)).current;
-  
-  // Calculate grid card dimensions
-  // Account for container padding (16*2=32) and gap between cards (4*2=8)
-  const cardWidth = (width - 32 - 8) / 2; // 2 columns with proper spacing
-  const cardHeight = cardWidth * 1.2;
+
+  // Calculate responsive grid card dimensions with max width constraint
+  const columns = responsive.gridColumns;
+  const containerPadding = responsive.contentPadding;
+  const cardGap = responsive.spacing(8);
+  const totalGapWidth = (columns - 1) * cardGap;
+  const availableWidth = responsive.dimensions.width - (containerPadding * 2) - totalGapWidth;
+
+  // Add maximum width constraint for professional look
+  const maxCardWidth = responsive.isTablet ? 400 : Infinity;
+  const calculatedCardWidth = availableWidth / columns;
+  const cardWidth = Math.min(calculatedCardWidth, maxCardWidth);
+
+  const cardHeight = cardWidth * (responsive.isTablet ? 1.0 : 1.2); // Shorter aspect ratio on tablets
 
   const handlePressIn = React.useCallback(() => {
     try { Haptics.selectionAsync(); } catch {}
@@ -298,15 +337,15 @@ const GridCard = React.memo(({
       onPressOut={handlePressOut}
       style={{
         width: cardWidth,
-        paddingHorizontal: 4,
-        paddingVertical: 8,
+        paddingHorizontal: cardGap / 2,
+        paddingVertical: responsive.spacing(8),
       }}
     >
       <ReanimatedAnimated.View 
         entering={FadeIn.delay(index * 80).duration(800)}
         style={{
           height: cardHeight,
-          borderRadius: 18,
+          borderRadius: responsive.borderRadius(18),
           overflow: 'hidden',
           backgroundColor: 'transparent'
         }}
@@ -349,16 +388,30 @@ const GridCard = React.memo(({
           style={styles.gradientOverlay}
         />
         
-        <View style={styles.gridCardContent}>
-          <Text style={styles.gridCardTitle}>
+        <View style={[styles.gridCardContent, {
+          left: responsive.spacing(12),
+          right: responsive.spacing(12),
+          bottom: responsive.spacing(12)
+        }]}>
+          <Text style={[styles.gridCardTitle, {
+            fontSize: responsive.fontSize(16),
+            marginBottom: responsive.spacing(6)
+          }]}>
             {t(item.titleKey)}
           </Text>
-          
-          <View style={styles.gridActionButton}>
-            <Text style={styles.gridActionText} numberOfLines={1}>
+
+          <View style={[styles.gridActionButton, {
+            paddingHorizontal: responsive.spacing(12),
+            paddingVertical: responsive.spacing(6),
+            borderRadius: responsive.borderRadius(14)
+          }]}>
+            <Text style={[styles.gridActionText, {
+              fontSize: responsive.fontSize(11),
+              marginLeft: responsive.spacing(4)
+            }]} numberOfLines={1}>
               {t('photoProcessor.choosePhoto')}
             </Text>
-            <IconSymbol name="chevron.right" size={12} color="#FFFFFF" />
+            <IconSymbol name="chevron.right" size={responsive.fontSize(12)} color="#FFFFFF" />
           </View>
         </View>
         </Animated.View>
@@ -384,6 +437,7 @@ export function FeatureCardsList({
   const { isPro } = useRevenueCat();
   const { t, i18n } = useTranslation();
   const currentLanguage = i18n.language;
+  const responsive = useResponsive();
 
   // Track visible cards for performance optimization (videos only)
   const [visibleIndices, setVisibleIndices] = React.useState<Set<number>>(new Set([0])); // Show first item initially
@@ -546,7 +600,13 @@ export function FeatureCardsList({
 
   if (!compact) {
     return (
-      <View style={{ paddingTop: 8, paddingBottom: 24 }}>
+      <View style={{
+        paddingTop: responsive.spacing(8),
+        paddingBottom: responsive.spacing(24),
+        maxWidth: responsive.isTablet ? 1200 : '100%',
+        alignSelf: 'center',
+        width: '100%'
+      }}>
         <FlatList
           data={CARDS}
           keyExtractor={keyExtractor}
@@ -563,12 +623,20 @@ export function FeatureCardsList({
         />
 
         {/* Request your idea & Report bug side-by-side cards */}
-        <View style={{ flexDirection: 'row', marginHorizontal: 16, marginBottom: 14, gap: 12 }}>
+        <View style={{
+          flexDirection: 'row',
+          marginHorizontal: responsive.spacing(16),
+          marginBottom: responsive.spacing(14),
+          gap: responsive.spacing(12),
+          maxWidth: responsive.isTablet ? 600 : '100%',
+          alignSelf: 'center',
+          width: '100%'
+        }}>
           {/* Request your idea card - smaller */}
           <TouchableOpacity
             activeOpacity={0.9}
             onPress={handleRequestIdea}
-            style={{ flex: 1 }}
+            style={{ flex: 1, maxWidth: responsive.isTablet ? 280 : '100%' }}
           >
             <View style={{ 
               height: 140, 
@@ -590,50 +658,50 @@ export function FeatureCardsList({
               
               <View style={{ alignItems: 'center' }}>
                 <View style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
+                  width: responsive.spacing(40),
+                  height: responsive.spacing(40),
+                  borderRadius: responsive.spacing(20),
                   backgroundColor: 'rgba(255,255,255,0.12)',
                   borderWidth: 1,
                   borderColor: 'rgba(255,255,255,0.2)',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginBottom: 10
+                  marginBottom: responsive.spacing(10)
                 }}>
-                  <IconSymbol name="lightbulb" size={20} color="#D4A574" />
+                  <IconSymbol name="lightbulb" size={responsive.fontSize(20)} color="#D4A574" />
                 </View>
-                <Text style={{ 
-                  color: '#D4A574', 
-                  fontSize: 16, 
-                  fontFamily: 'Lexend-Bold', 
+                <Text style={{
+                  color: '#D4A574',
+                  fontSize: responsive.fontSize(16),
+                  fontFamily: 'Lexend-Bold',
                   letterSpacing: -0.2,
-                  marginBottom: 4,
+                  marginBottom: responsive.spacing(4),
                   textAlign: 'center'
                 }}>
                   {t('magic.requestIdea')}
                 </Text>
-                <Text style={{ 
-                  color: 'rgba(255,255,255,0.7)', 
-                  fontSize: 11,
+                <Text style={{
+                  color: 'rgba(255,255,255,0.7)',
+                  fontSize: responsive.fontSize(11),
                   textAlign: 'center',
-                  marginBottom: 8
+                  marginBottom: responsive.spacing(8)
                 }}>
                   {t('magic.requestIdeaSubtitle')}
                 </Text>
-                
+
                 <View style={{
                   backgroundColor: 'rgba(255,255,255,0.12)',
-                  borderRadius: 12,
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
+                  borderRadius: responsive.borderRadius(12),
+                  paddingHorizontal: responsive.spacing(12),
+                  paddingVertical: responsive.spacing(6),
                   flexDirection: 'row',
                   alignItems: 'center',
-                  gap: 4,
+                  gap: responsive.spacing(4),
                   borderWidth: 1,
                   borderColor: 'rgba(255,255,255,0.18)'
                 }}>
-                  <IconSymbol name="envelope" size={12} color="#D4A574" />
-                  <Text style={{ color: '#D4A574', fontSize: 11, fontFamily: 'Lexend-SemiBold' }}>
+                  <IconSymbol name="envelope" size={responsive.fontSize(12)} color="#D4A574" />
+                  <Text style={{ color: '#D4A574', fontSize: responsive.fontSize(11), fontFamily: 'Lexend-SemiBold' }}>
                     {t('magic.send')}
                   </Text>
                 </View>
@@ -645,7 +713,7 @@ export function FeatureCardsList({
           <TouchableOpacity
             activeOpacity={0.9}
             onPress={handleBugReport}
-            style={{ flex: 1 }}
+            style={{ flex: 1, maxWidth: responsive.isTablet ? 280 : '100%' }}
           >
             <View style={{ 
               height: 140, 
@@ -667,50 +735,50 @@ export function FeatureCardsList({
               
               <View style={{ alignItems: 'center' }}>
                 <View style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
+                  width: responsive.spacing(40),
+                  height: responsive.spacing(40),
+                  borderRadius: responsive.spacing(20),
                   backgroundColor: 'rgba(255,255,255,0.12)',
                   borderWidth: 1,
                   borderColor: 'rgba(255,255,255,0.2)',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginBottom: 10
+                  marginBottom: responsive.spacing(10)
                 }}>
-                  <IconSymbol name="chevron.right" size={20} color="#C1A28A" />
+                  <IconSymbol name="chevron.right" size={responsive.fontSize(20)} color="#C1A28A" />
                 </View>
-                <Text style={{ 
-                  color: '#C1A28A', 
-                  fontSize: 16, 
-                  fontFamily: 'Lexend-Bold', 
+                <Text style={{
+                  color: '#C1A28A',
+                  fontSize: responsive.fontSize(16),
+                  fontFamily: 'Lexend-Bold',
                   letterSpacing: -0.2,
-                  marginBottom: 4,
+                  marginBottom: responsive.spacing(4),
                   textAlign: 'center'
                 }}>
                   {t('magic.reportBug.title')}
                 </Text>
-                <Text style={{ 
-                  color: 'rgba(255,255,255,0.7)', 
-                  fontSize: 11,
+                <Text style={{
+                  color: 'rgba(255,255,255,0.7)',
+                  fontSize: responsive.fontSize(11),
                   textAlign: 'center',
-                  marginBottom: 8
+                  marginBottom: responsive.spacing(8)
                 }}>
                   {t('magic.reportBugSubtitle')}
                 </Text>
-                
+
                 <View style={{
                   backgroundColor: 'rgba(255,255,255,0.12)',
-                  borderRadius: 12,
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
+                  borderRadius: responsive.borderRadius(12),
+                  paddingHorizontal: responsive.spacing(12),
+                  paddingVertical: responsive.spacing(6),
                   flexDirection: 'row',
                   alignItems: 'center',
-                  gap: 4,
+                  gap: responsive.spacing(4),
                   borderWidth: 1,
                   borderColor: 'rgba(255,255,255,0.18)'
                 }}>
-                  <IconSymbol name="exclamationmark.triangle" size={12} color="#C1A28A" />
-                  <Text style={{ color: '#C1A28A', fontSize: 11, fontFamily: 'Lexend-SemiBold' }}>
+                  <IconSymbol name="exclamationmark.triangle" size={responsive.fontSize(12)} color="#C1A28A" />
+                  <Text style={{ color: '#C1A28A', fontSize: responsive.fontSize(11), fontFamily: 'Lexend-SemiBold' }}>
                     {t('magic.report')}
                   </Text>
                 </View>
@@ -750,18 +818,24 @@ export function FeatureCardsList({
   // Compact: show first item as Featured, rest as 2-column grid
   const [featured, ...rest] = CARDS;
   return (
-    <View style={{ paddingTop: 8, paddingBottom: 24 }}>
+    <View style={{
+      paddingTop: responsive.spacing(8),
+      paddingBottom: responsive.spacing(24),
+      maxWidth: responsive.isTablet ? 1200 : '100%',
+      alignSelf: 'center',
+      width: '100%'
+    }}>
       {/* Featured card - always plays video */}
       <Card item={featured} onPress={handlePress} ref={firstTileRef} />
 
-      {/* Grid cards - 2 columns with FlatList optimization */}
-      <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
+      {/* Grid cards - responsive columns with FlatList optimization */}
+      <View style={{ paddingHorizontal: responsive.contentPadding, paddingTop: responsive.spacing(8) }}>
         <FlatList
           data={rest}
           keyExtractor={keyExtractor}
           renderItem={renderGridCard}
-          numColumns={2}
-          columnWrapperStyle={{ justifyContent: 'center', gap: 8 }}
+          numColumns={responsive.gridColumns}
+          columnWrapperStyle={{ justifyContent: 'center', gap: responsive.spacing(8) }}
           removeClippedSubviews={true}
           scrollEnabled={false}
           showsVerticalScrollIndicator={false}
@@ -777,7 +851,6 @@ const styles = StyleSheet.create({
     marginBottom: 14
   },
   cardView: {
-    height: 260,
     borderRadius: 24,
     overflow: 'hidden',
     backgroundColor: 'transparent'

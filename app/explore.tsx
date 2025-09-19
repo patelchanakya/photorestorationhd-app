@@ -16,6 +16,7 @@ import { restorationService } from '@/services/supabase';
 import { useTranslation } from 'react-i18next';
 import { useAppInitStore } from '@/store/appInitStore';
 import { useQuickEditStore } from '@/store/quickEditStore';
+import { useResponsive } from '@/utils/responsive';
 import Constants from 'expo-constants';
 import * as StoreReview from 'expo-store-review';
 import * as ImagePicker from 'expo-image-picker';
@@ -48,6 +49,7 @@ const sections: SectionData[] = [
 
 export default function HomeGalleryLikeScreen() {
   const settingsNavLock = React.useRef(false);
+  const responsive = useResponsive();
   const insets = useSafeAreaInsets();
   const { t, i18n } = useTranslation();
   const router = useRouter();
@@ -412,10 +414,22 @@ export default function HomeGalleryLikeScreen() {
         return <FeatureCardsList compact onOpenBackgrounds={() => openQuick('background')} onOpenClothes={() => openQuick('nano_outfit')} firstTileRef={repairTileRef} />;
       case 'requestFeature':
         return (
-          <View style={exploreStyles.requestSection}>
+          <View style={[exploreStyles.requestSection, {
+            paddingHorizontal: responsive.spacing(16),
+            paddingTop: responsive.spacing(6),
+            paddingBottom: responsive.spacing(8),
+            gap: responsive.spacing(8),
+            maxWidth: responsive.isTablet ? 600 : '100%',
+            alignSelf: 'center',
+            width: '100%'
+          }]}>
             {/* Rate Us - First */}
-            <TouchableOpacity 
-              style={exploreStyles.requestButton}
+            <TouchableOpacity
+              style={[exploreStyles.requestButton, {
+                paddingVertical: responsive.spacing(8),
+                paddingHorizontal: responsive.spacing(12),
+                borderRadius: responsive.borderRadius(12)
+              }]}
               activeOpacity={0.7}
               onPress={async () => {
                 // Track rate us click
@@ -437,28 +451,36 @@ export default function HomeGalleryLikeScreen() {
                 }
               }}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <IconSymbol name="star.fill" size={14} color="rgba(255,255,255,0.8)" />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: responsive.spacing(6) }}>
+                <IconSymbol name="star.fill" size={responsive.fontSize(14)} color="rgba(255,255,255,0.8)" />
                 <View style={{ flex: 1 }}>
-                  <Text style={exploreStyles.requestButtonTitle}>
+                  <Text style={[exploreStyles.requestButtonTitle, {
+                    fontSize: responsive.fontSize(13)
+                  }]}>
                     {t('explore.rateUs.title')}
                   </Text>
-                  <Text style={exploreStyles.requestButtonSubtitle}>
+                  <Text style={[exploreStyles.requestButtonSubtitle, {
+                    fontSize: responsive.fontSize(11)
+                  }]}>
                     {t('explore.rateUs.subtitle')}
                   </Text>
                 </View>
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={exploreStyles.requestButton}
+            <TouchableOpacity
+              style={[exploreStyles.requestButton, {
+                paddingVertical: responsive.spacing(8),
+                paddingHorizontal: responsive.spacing(12),
+                borderRadius: responsive.borderRadius(12)
+              }]}
               activeOpacity={0.7}
               onPress={() => {
                 analyticsService.track('request_feature_clicked', {
                   source: 'explore_page',
                   is_pro: isPro ? 'true' : 'false'
                 });
-                
+
                 Alert.prompt(
                   t('explore.alerts.requestFeature.title'),
                   t('explore.alerts.requestFeature.message'),
@@ -485,21 +507,29 @@ export default function HomeGalleryLikeScreen() {
                 );
               }}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <IconSymbol name="lightbulb" size={14} color="rgba(255,255,255,0.8)" />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: responsive.spacing(6) }}>
+                <IconSymbol name="lightbulb" size={responsive.fontSize(14)} color="rgba(255,255,255,0.8)" />
                 <View style={{ flex: 1 }}>
-                  <Text style={exploreStyles.requestButtonTitle}>
+                  <Text style={[exploreStyles.requestButtonTitle, {
+                    fontSize: responsive.fontSize(13)
+                  }]}>
                     {t('explore.requestFeature.title')}
                   </Text>
-                  <Text style={exploreStyles.requestButtonSubtitle}>
+                  <Text style={[exploreStyles.requestButtonSubtitle, {
+                    fontSize: responsive.fontSize(11)
+                  }]}>
                     {t('explore.requestFeature.subtitle')}
                   </Text>
                 </View>
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={exploreStyles.requestButton}
+            <TouchableOpacity
+              style={[exploreStyles.requestButton, {
+                paddingVertical: responsive.spacing(8),
+                paddingHorizontal: responsive.spacing(12),
+                borderRadius: responsive.borderRadius(12)
+              }]}
               activeOpacity={0.7}
               onPress={() => {
                 analyticsService.track('bug_report_clicked', {
@@ -533,13 +563,17 @@ export default function HomeGalleryLikeScreen() {
                 );
               }}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <IconSymbol name="exclamationmark.triangle" size={14} color="rgba(255,255,255,0.8)" />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: responsive.spacing(6) }}>
+                <IconSymbol name="exclamationmark.triangle" size={responsive.fontSize(14)} color="rgba(255,255,255,0.8)" />
                 <View style={{ flex: 1 }}>
-                  <Text style={exploreStyles.requestButtonTitle}>
+                  <Text style={[exploreStyles.requestButtonTitle, {
+                    fontSize: responsive.fontSize(13)
+                  }]}>
                     {t('explore.reportBug.title')}
                   </Text>
-                  <Text style={exploreStyles.requestButtonSubtitle}>
+                  <Text style={[exploreStyles.requestButtonSubtitle, {
+                    fontSize: responsive.fontSize(11)
+                  }]}>
                     {t('explore.reportBug.subtitle')}
                   </Text>
                 </View>

@@ -1,19 +1,20 @@
 import React from 'react';
 import { Text, TouchableOpacity, ViewStyle, TextStyle, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { 
-  useAnimatedStyle, 
-  useSharedValue, 
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
   withSpring,
-  withTiming 
+  withTiming
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { ONBOARDING_COLORS, ONBOARDING_BORDER_RADIUS, ONBOARDING_SHADOWS, ONBOARDING_TYPOGRAPHY } from './constants';
+import { useResponsive } from '@/utils/responsive';
 
 interface OnboardingButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'skip';
   disabled?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
@@ -31,6 +32,7 @@ export function OnboardingButton({
   textStyle,
   size = 'large'
 }: OnboardingButtonProps) {
+  const responsive = useResponsive();
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
 
@@ -61,28 +63,46 @@ export function OnboardingButton({
   }));
 
   const getButtonStyle = (): ViewStyle => {
+    const borderRadius = responsive.borderRadius(28);
+
+    // Skip buttons don't use responsive constraints - stay small
+    const buttonConstraints = variant === 'skip' ? {} : responsive.buttonWidth();
+
     const baseStyle: ViewStyle = {
-      borderRadius: 28, // Much more rounded (pill shape)
+      borderRadius,
       alignItems: 'center',
       justifyContent: 'center',
-      overflow: 'hidden', // For gradient backgrounds
-      backgroundColor: '#F97316', // Solid background for shadow optimization
+      overflow: 'hidden',
+      backgroundColor: '#F97316',
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.25,
       shadowRadius: 4,
       elevation: 4,
+      ...buttonConstraints,
+      alignSelf: 'center', // Center the button
     };
 
     const sizeStyles = {
-      small: { paddingVertical: 14, paddingHorizontal: 24, minHeight: 44 },
-      medium: { paddingVertical: 18, paddingHorizontal: 32, minHeight: 50 },
-      large: { paddingVertical: 20, paddingHorizontal: 40, minHeight: 56 },
+      small: {
+        paddingVertical: variant === 'skip' ? 8 : responsive.spacing(12), // Fixed size for skip
+        paddingHorizontal: variant === 'skip' ? 16 : responsive.spacing(20), // Fixed size for skip
+        minHeight: variant === 'skip' ? 36 : responsive.spacing(44) // Fixed size for skip
+      },
+      medium: {
+        paddingVertical: responsive.spacing(16),
+        paddingHorizontal: responsive.spacing(28),
+        minHeight: responsive.spacing(50)
+      },
+      large: {
+        paddingVertical: responsive.spacing(18),
+        paddingHorizontal: responsive.spacing(responsive.isTablet ? 32 : 28),
+        minHeight: responsive.spacing(56)
+      },
     };
 
     const variantStyles = {
       primary: {
-        // Primary buttons will use gradient background
         shadowColor: ONBOARDING_COLORS.accent,
         shadowOpacity: 0.4,
       },
@@ -99,6 +119,14 @@ export function OnboardingButton({
         shadowOpacity: 0,
         elevation: 0,
       },
+      skip: {
+        backgroundColor: 'rgba(255, 255, 255, 0.08)', // Very subtle background
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.12)', // Subtle border
+        shadowOpacity: 0,
+        shadowRadius: 0,
+        elevation: 0,
+      },
     };
 
     return {
@@ -110,32 +138,36 @@ export function OnboardingButton({
 
   const getTextStyle = (): TextStyle => {
     const baseStyle: TextStyle = {
-      fontFamily: 'Lexend-Bold', // Bolder text for better visibility
+      fontFamily: 'Lexend-Bold',
       textAlign: 'center',
       letterSpacing: 0.5,
     };
 
     const sizeStyles = {
-      small: { fontSize: ONBOARDING_TYPOGRAPHY.base },
-      medium: { fontSize: ONBOARDING_TYPOGRAPHY.lg },
-      large: { fontSize: ONBOARDING_TYPOGRAPHY.xl },
+      small: { fontSize: variant === 'skip' ? 14 : responsive.fontSize(16) }, // Fixed size for skip
+      medium: { fontSize: responsive.fontSize(18) },
+      large: { fontSize: responsive.fontSize(20) },
     };
 
     const variantStyles = {
-      primary: { 
+      primary: {
         color: '#FFFFFF',
         textShadowColor: 'rgba(0, 0, 0, 0.25)',
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 2,
       },
-      secondary: { 
+      secondary: {
         color: ONBOARDING_COLORS.textPrimary,
         textShadowColor: 'rgba(0, 0, 0, 0.3)',
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 1,
       },
-      ghost: { 
+      ghost: {
         color: ONBOARDING_COLORS.textSecondary,
+      },
+      skip: {
+        color: 'rgba(255, 255, 255, 0.7)', // Muted text color
+        fontFamily: 'Lexend-Medium', // Less bold than other buttons
       },
     };
 
@@ -153,6 +185,7 @@ export function OnboardingButton({
   );
 
   const buttonStyle = getButtonStyle();
+  const borderRadius = responsive.borderRadius(28);
 
   if (variant === 'primary') {
     return (
@@ -174,7 +207,7 @@ export function OnboardingButton({
             right: 0,
             top: 0,
             bottom: 0,
-            borderRadius: 28,
+            borderRadius,
           }}
         />
         {/* Subtle overlay for extra depth */}
@@ -186,7 +219,7 @@ export function OnboardingButton({
             right: 0,
             top: 0,
             bottom: 0,
-            borderRadius: 28,
+            borderRadius,
           }}
         />
         {renderButtonContent()}

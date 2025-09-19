@@ -2,6 +2,7 @@ import { BeforeAfterSlider } from '@/components/BeforeAfterSlider';
 import { SavingModal, type SavingModalRef } from '@/components/SavingModal';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useRestorationStore } from '@/store/restorationStore';
+import { useResponsive } from '@/utils/responsive';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -47,6 +48,7 @@ const isTinyDevice = SCREEN_HEIGHT < 700;
 
 export default function TourDemoScreen() {
   const { tourComplete } = useLocalSearchParams();
+  const responsive = useResponsive();
   const simpleSlider = useRestorationStore((state) => state.simpleSlider);
   const safeAreaInsets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -292,14 +294,14 @@ export default function TourDemoScreen() {
           borderBottomColor: 'rgba(255,255,255,0.08)' 
         }}>
           <TouchableOpacity onPress={handleDismiss} style={{ padding: 8, marginLeft: -8 }}>
-            <IconSymbol name="chevron.left" size={isSmallDevice ? 20 : 24} color="#EAEAEA" />
+            <IconSymbol name="chevron.left" size={responsive.fontSize(isSmallDevice ? 20 : 24)} color="#EAEAEA" />
           </TouchableOpacity>
           <View style={{ flex: 1, marginHorizontal: 8 }}>
-            <Text style={{ 
-              fontSize: isSmallDevice ? 14 : 16, 
-              fontWeight: '600', 
-              color: '#FFFFFF', 
-              textAlign: 'center' 
+            <Text style={{
+              fontSize: responsive.fontSize(isSmallDevice ? 14 : 16),
+              fontWeight: '600',
+              color: '#FFFFFF',
+              textAlign: 'center'
             }} numberOfLines={1}>
               {t('onboardingV4.tourDemo.screen.title')}
             </Text>
@@ -324,7 +326,7 @@ export default function TourDemoScreen() {
               <BeforeAfterSlider
                 beforeUri={Image.resolveAssetSource(beforeImage).uri}
                 afterUri={Image.resolveAssetSource(afterImage).uri}
-                style={{ marginVertical: isTinyDevice ? 10 : 20 }}
+                style={{ marginVertical: responsive.spacing(isTinyDevice ? 10 : 20) }}
                 simpleSlider={simpleSlider}
               />
             </View>
@@ -352,7 +354,7 @@ export default function TourDemoScreen() {
                     style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
                   />
                   <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ color: '#0B0B0F', fontWeight: '900', fontSize: 16 }}>{t('onboardingV4.tourDemo.actions.share')}</Text>
+                    <Text style={{ color: '#0B0B0F', fontWeight: '900', fontSize: responsive.fontSize(16) }}>{t('onboardingV4.tourDemo.actions.share')}</Text>
                   </View>
                 </TouchableOpacity>
 
@@ -369,7 +371,7 @@ export default function TourDemoScreen() {
                   onPress={handleExport}
                   activeOpacity={0.8}
                 >
-                  <Text style={{ color: '#fff', fontWeight: '900', fontSize: 16 }}>{t('onboardingV4.tourDemo.actions.save')}</Text>
+                  <Text style={{ color: '#fff', fontWeight: '900', fontSize: responsive.fontSize(16) }}>{t('onboardingV4.tourDemo.actions.save')}</Text>
                 </TouchableOpacity>
               </View>
             </View>

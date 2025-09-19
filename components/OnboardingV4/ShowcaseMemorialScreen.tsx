@@ -164,7 +164,7 @@ export function ShowcaseMemorialScreen({ onContinue, onSkip }: ShowcaseMemorialS
           <OnboardingButton
             title={t('onboardingV4.showcase.skip')}
             onPress={onSkip}
-            variant="secondary"
+            variant="skip"
             size="small"
           />
         </View>

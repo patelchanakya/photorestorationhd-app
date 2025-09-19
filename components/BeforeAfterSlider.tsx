@@ -1,4 +1,5 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { useResponsive } from '@/utils/responsive';
 import React, { useState } from 'react';
 import { Dimensions, Image as RNImage, View } from 'react-native';
 import { PanGestureHandler } from 'react-native-gesture-handler';
@@ -16,9 +17,36 @@ interface BeforeAfterSliderProps {
 }
 
 const BeforeAfterSliderComponent = ({ beforeUri, afterUri, style, simpleSlider = false }: BeforeAfterSliderProps) => {
+  const responsive = useResponsive();
   const [containerWidth, setContainerWidth] = useState(300);
   const sliderPosition = useSharedValue(0.5);
   const [dragging, setDragging] = useState(false);
+
+  // Calculate responsive height for images
+  const getImageHeight = () => {
+    if (responsive.isTablet) {
+      // Use percentage of screen height for tablets, with minimums for each size
+      const baseHeight = responsive.height(50); // 50% of screen height
+
+      switch (responsive.deviceType) {
+        case 'ipad_mini':
+          return Math.max(baseHeight, 400);
+        case 'ipad_regular':
+          return Math.max(baseHeight, 500);
+        case 'ipad_pro_11':
+          return Math.max(baseHeight, 600);
+        case 'ipad_pro_13':
+          return Math.max(baseHeight, 700);
+        default:
+          return Math.max(baseHeight, 400);
+      }
+    } else {
+      // Keep existing phone sizing
+      return SCREEN_WIDTH < 380 ? 280 : 320;
+    }
+  };
+
+  const imageHeight = getImageHeight();
   
   // Reset slider position when component mounts
   React.useEffect(() => {
@@ -79,10 +107,10 @@ const BeforeAfterSliderComponent = ({ beforeUri, afterUri, style, simpleSlider =
     <View style={[{ backgroundColor: 'rgba(0,0,0,0.01)' }, style]}>
       {/* Image container */}
       <PanGestureHandler onGestureEvent={gestureHandler}>
-        <Animated.View 
-          style={{ 
-            height: SCREEN_WIDTH < 380 ? 280 : 320, 
-            position: 'relative', 
+        <Animated.View
+          style={{
+            height: imageHeight,
+            position: 'relative',
             backgroundColor: '#ffffff',
             maxHeight: '100%'
           }}

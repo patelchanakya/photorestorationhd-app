@@ -173,7 +173,7 @@ export function ShowcaseBackgroundsScreen({ onContinue, onSkip }: ShowcaseBackgr
           <OnboardingButton
             title={t('onboardingV4.showcase.skip')}
             onPress={onSkip}
-            variant="secondary"
+            variant="skip"
             size="small"
           />
         </View>

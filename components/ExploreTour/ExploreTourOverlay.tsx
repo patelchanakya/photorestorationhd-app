@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, useWindowDimensions, Pressable, Alert, Linking } from 'react-native';
-import Animated, { 
-  useAnimatedStyle, 
-  useSharedValue, 
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
   withTiming,
   withSpring,
   withDelay,
@@ -24,6 +24,7 @@ import { Asset } from 'expo-asset';
 import { LinearGradient } from 'expo-linear-gradient';
 import { presentPaywall } from '@/services/revenuecat';
 import { useTranslation } from 'react-i18next';
+import { useResponsive } from '@/utils/responsive';
 import * as MediaLibrary from 'expo-media-library';
 
 interface TourStep {
@@ -70,10 +71,10 @@ export function ExploreTourOverlay({
 }: ExploreTourOverlayProps) {
   const { t, i18n } = useTranslation();
   const safeAreaInsets = useSafeAreaInsets();
+  const responsive = useResponsive();
 
   // Force re-render when language changes (matches explore.tsx pattern)
   const currentLanguage = i18n.language;
-  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
   const savePhotoMutation = useSavePhoto();
   const router = useRouter();
   const [isAutoAdvancing, setIsAutoAdvancing] = React.useState(false); // Disable auto-advance
@@ -381,23 +382,23 @@ export function ExploreTourOverlay({
   const currentTourStep = steps[currentStep];
   const isLastStep = currentStep === steps.length - 1;
 
-  // Smart tooltip positioning to avoid blocking highlighted elements
+  // Smart responsive tooltip positioning to avoid blocking highlighted elements
   const getTooltipPosition = () => {
-    const horizontalPadding = 20;
-    const tooltipPadding = 20; // Space between tooltip and highlighted area
-    const safeTopArea = (insets?.top || safeAreaInsets.top) + 60;
-    const safeBottomArea = (insets?.bottom || safeAreaInsets.bottom) + 80;
-    
+    const horizontalPadding = responsive.spacing(20);
+    const tooltipPadding = responsive.spacing(20); // Space between tooltip and highlighted area
+    const safeTopArea = (insets?.top || safeAreaInsets.top) + responsive.spacing(60);
+    const safeBottomArea = (insets?.bottom || safeAreaInsets.bottom) + responsive.spacing(80);
+
     if (highlightArea) {
       const highlightBottom = highlightArea.y + highlightArea.height;
       const highlightTop = highlightArea.y;
-      const screenCenter = SCREEN_HEIGHT / 2;
+      const screenCenter = responsive.dimensions.height / 2;
       
       // If highlight is in upper half, position tooltip below it
       if (highlightTop < screenCenter) {
         const topPosition = highlightBottom + tooltipPadding;
         // Ensure we don't go too close to bottom
-        if (topPosition + 200 < SCREEN_HEIGHT - safeBottomArea) {
+        if (topPosition + responsive.spacing(200) < responsive.dimensions.height - safeBottomArea) {
           return {
             top: topPosition,
             left: horizontalPadding,
@@ -405,12 +406,12 @@ export function ExploreTourOverlay({
           };
         }
       }
-      
+
       // If highlight is in lower half, position tooltip above it
       if (highlightTop > screenCenter) {
-        const bottomPosition = SCREEN_HEIGHT - highlightTop + tooltipPadding;
+        const bottomPosition = responsive.dimensions.height - highlightTop + tooltipPadding;
         // Ensure we don't go too close to top
-        if (highlightTop - 200 > safeTopArea) {
+        if (highlightTop - responsive.spacing(200) > safeTopArea) {
           return {
             bottom: bottomPosition,
             left: horizontalPadding,
@@ -491,11 +492,11 @@ export function ExploreTourOverlay({
             styles.highlightBorder,
             pulseStyle,
             {
-              top: highlightArea.y - 2,
-              left: highlightArea.x - 2,
-              width: highlightArea.width + 4,
-              height: highlightArea.height + 4,
-              borderRadius: (highlightArea.borderRadius || 0) + 2,
+              top: highlightArea.y - responsive.spacing(2),
+              left: highlightArea.x - responsive.spacing(2),
+              width: highlightArea.width + responsive.spacing(4),
+              height: highlightArea.height + responsive.spacing(4),
+              borderRadius: (highlightArea.borderRadius || 0) + responsive.spacing(2),
             },
           ]}
         />
@@ -507,7 +508,7 @@ export function ExploreTourOverlay({
     if (!showSheet || showSuccess) return null;
 
     const usedInsets = insets || safeAreaInsets;
-    const MEDIA_HEIGHT = 240;
+    const MEDIA_HEIGHT = responsive.isTablet ? 320 : 240; // Larger on tablets
 
     return (
       <View style={{ 
@@ -524,30 +525,30 @@ export function ExploreTourOverlay({
         zIndex: 5,
         elevation: 5
       }}>
-        <View style={{ 
-          padding: 16, 
-          paddingBottom: Math.max(12, usedInsets.bottom + 8) 
+        <View style={{
+          padding: responsive.spacing(16),
+          paddingBottom: Math.max(responsive.spacing(12), usedInsets.bottom + responsive.spacing(8))
         }}>
           {/* Header - matching real QuickEditSheet exactly */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <View style={{ width: 24, height: 24 }} />
-            <Text style={{ color: '#EAEAEA', fontSize: 16, fontFamily: 'Lexend-Bold' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: responsive.spacing(10) }}>
+            <View style={{ width: responsive.spacing(24), height: responsive.spacing(24) }} />
+            <Text style={{ color: '#EAEAEA', fontSize: responsive.fontSize(16), fontFamily: 'Lexend-Bold' }}>
               {t('tour.sheet.colorizePhoto')}
             </Text>
-            <View style={{ width: 24, height: 24 }} />
+            <View style={{ width: responsive.spacing(24), height: responsive.spacing(24) }} />
           </View>
 
           {/* Photo Container - matching QuickEditSheet exactly */}
-          <View style={{ 
-            height: MEDIA_HEIGHT, 
-            borderRadius: 16, 
-            overflow: 'hidden', 
-            borderWidth: 1, 
-            borderColor: 'rgba(255,255,255,0.18)', 
-            backgroundColor: 'rgba(255,255,255,0.06)', 
-            alignItems: 'center', 
+          <View style={{
+            height: MEDIA_HEIGHT,
+            borderRadius: responsive.borderRadius(16),
+            overflow: 'hidden',
+            borderWidth: 1,
+            borderColor: 'rgba(255,255,255,0.18)',
+            backgroundColor: 'rgba(255,255,255,0.06)',
+            alignItems: 'center',
             justifyContent: 'center',
-            marginBottom: 20
+            marginBottom: responsive.spacing(20)
           }}>
             {/* Before/After Image */}
             <ExpoImage 
@@ -561,9 +562,9 @@ export function ExploreTourOverlay({
             {/* Loading Overlay with text animation */}
             {tourLoading && (
               <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.65)', alignItems: 'center', justifyContent: 'center' }}>
-                <View style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.4)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' }}>
-                  <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, textAlign: 'center', marginBottom: 4 }}>{t('tour.processing.pleaseWait')}</Text>
-                  <Text style={{ color: '#F59E0B', fontSize: 16, fontFamily: 'Lexend-Black', textAlign: 'center' }}>
+                <View style={{ paddingHorizontal: responsive.spacing(16), paddingVertical: responsive.spacing(10), borderRadius: responsive.borderRadius(16), backgroundColor: 'rgba(0,0,0,0.4)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' }}>
+                  <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: responsive.fontSize(12), textAlign: 'center', marginBottom: responsive.spacing(4) }}>{t('tour.processing.pleaseWait')}</Text>
+                  <Text style={{ color: '#F59E0B', fontSize: responsive.fontSize(16), fontFamily: 'Lexend-Black', textAlign: 'center' }}>
                     {getTourLoadingMessage(tourProgress)}
                   </Text>
                 </View>
@@ -589,7 +590,7 @@ export function ExploreTourOverlay({
                   opacity: tourLoading ? 0.5 : 1
                 }}
               >
-                <Text style={{ color: '#fff', fontWeight: '900', fontSize: 16 }}>{t('tour.buttons.crop')}</Text>
+                <Text style={{ color: '#fff', fontWeight: '900', fontSize: responsive.fontSize(16) }}>{t('tour.buttons.crop')}</Text>
               </TouchableOpacity>
               
               {/* Generate Button Container with Highlight */}
@@ -671,7 +672,7 @@ export function ExploreTourOverlay({
                   }
                 }}
               >
-                <Text style={{ color: '#fff', fontFamily: 'Lexend-Bold', fontSize: 16 }}>{t('tour.buttons.viewResult')}</Text>
+                <Text style={{ color: '#fff', fontFamily: 'Lexend-Bold', fontSize: responsive.fontSize(16) }}>{t('tour.buttons.viewResult')}</Text>
               </TouchableOpacity>
               
               <Animated.View style={{ flex: 1 }}>
@@ -779,7 +780,7 @@ export function ExploreTourOverlay({
                     backgroundColor: '#10B981'
                   }} />
                   <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ color: '#0B0B0F', fontFamily: 'Lexend-Bold', fontSize: 16 }}>{t('tour.buttons.save')}</Text>
+                    <Text style={{ color: '#0B0B0F', fontFamily: 'Lexend-Bold', fontSize: responsive.fontSize(16) }}>{t('tour.buttons.save')}</Text>
                   </View>
                 </TouchableOpacity>
               </Animated.View>
@@ -851,41 +852,41 @@ export function ExploreTourOverlay({
           </View>
           
           <Text style={{
-            fontSize: 20,
+            fontSize: responsive.fontSize(20),
             fontFamily: 'Lexend-SemiBold',
             color: '#FFFFFF',
             textAlign: 'center',
-            marginBottom: 8
+            marginBottom: responsive.spacing(8)
           }}>
 {t('tour.success.title')}
           </Text>
-          
+
           <Text style={{
-            fontSize: 14,
+            fontSize: responsive.fontSize(14),
             color: '#A1A1AA',
             textAlign: 'center',
-            lineHeight: 20
+            lineHeight: responsive.lineHeight(responsive.fontSize(14))
           }}>
 {t('tour.success.description')}
           </Text>
         </View>
 
         {/* Simplified progress */}
-        <View style={{ 
-          alignItems: 'center', 
-          marginBottom: 20,
-          paddingHorizontal: 20 
+        <View style={{
+          alignItems: 'center',
+          marginBottom: responsive.spacing(20),
+          paddingHorizontal: responsive.spacing(20)
         }}>
           <View style={{
             backgroundColor: 'rgba(16, 185, 129, 0.1)',
-            paddingHorizontal: 16,
-            paddingVertical: 8,
-            borderRadius: 20,
+            paddingHorizontal: responsive.spacing(16),
+            paddingVertical: responsive.spacing(8),
+            borderRadius: responsive.borderRadius(20),
             borderWidth: 1,
             borderColor: 'rgba(16, 185, 129, 0.2)'
           }}>
             <Text style={{
-              fontSize: 13,
+              fontSize: responsive.fontSize(13),
               color: '#10B981',
               textAlign: 'center',
               fontFamily: 'Lexend-Medium'
@@ -1028,16 +1029,23 @@ export function ExploreTourOverlay({
               styles.tooltip,
               {
                 position: 'absolute',
-                top: SCREEN_HEIGHT * 0.12,
-                left: 24,
-                right: 24,
+                top: responsive.dimensions.height * 0.12,
+                left: responsive.spacing(24),
+                right: responsive.spacing(24),
               },
               tooltipStyle,
             ]}
           >
-            <View style={styles.tooltipContent}>
-              <Text style={styles.tooltipTitle}>{currentTourStep.title}</Text>
-              <Text style={styles.tooltipDescription}>{currentTourStep.description}</Text>
+            <View style={[styles.tooltipContent, { padding: responsive.spacing(24) }]}>
+              <Text style={[styles.tooltipTitle, {
+                fontSize: responsive.fontSize(18),
+                marginBottom: responsive.spacing(8)
+              }]}>{currentTourStep.title}</Text>
+              <Text style={[styles.tooltipDescription, {
+                fontSize: responsive.fontSize(14),
+                lineHeight: responsive.lineHeight(responsive.fontSize(14)),
+                marginBottom: responsive.spacing(20)
+              }]}>{currentTourStep.description}</Text>
               
               {/* Progress indicator */}
               <View style={styles.progressContainer}>
@@ -1103,9 +1111,16 @@ export function ExploreTourOverlay({
               tooltipStyle,
             ]}
           >
-            <View style={styles.tooltipContent}>
-              <Text style={styles.tooltipTitle}>{currentTourStep.title}</Text>
-              <Text style={styles.tooltipDescription}>{currentTourStep.description}</Text>
+            <View style={[styles.tooltipContent, { padding: responsive.spacing(24) }]}>
+              <Text style={[styles.tooltipTitle, {
+                fontSize: responsive.fontSize(18),
+                marginBottom: responsive.spacing(8)
+              }]}>{currentTourStep.title}</Text>
+              <Text style={[styles.tooltipDescription, {
+                fontSize: responsive.fontSize(14),
+                lineHeight: responsive.lineHeight(responsive.fontSize(14)),
+                marginBottom: responsive.spacing(20)
+              }]}>{currentTourStep.description}</Text>
               
               {/* Progress indicator */}
               <View style={styles.progressContainer}>
@@ -1210,21 +1225,16 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   tooltipContent: {
-    padding: 24,
+    // padding handled inline with responsive.spacing()
   },
   tooltipTitle: {
-    fontSize: 18,
     fontWeight: '700',
     color: '#FFFFFF',
-    marginBottom: 8,
     textAlign: 'center',
   },
   tooltipDescription: {
-    fontSize: 14,
     color: '#9CA3AF',
-    lineHeight: 20,
     textAlign: 'center',
-    marginBottom: 20,
   },
   progressContainer: {
     alignItems: 'center',

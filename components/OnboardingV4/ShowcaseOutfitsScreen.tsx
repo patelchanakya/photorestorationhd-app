@@ -173,7 +173,7 @@ export function ShowcaseOutfitsScreen({ onContinue, onSkip }: ShowcaseOutfitsScr
           <OnboardingButton
             title={t('onboardingV4.showcase.skip')}
             onPress={onSkip}
-            variant="secondary"
+            variant="skip"
             size="small"
           />
         </View>
